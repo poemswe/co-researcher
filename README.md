@@ -249,9 +249,6 @@ python run_eval.py all --model gemini
 # → Generates reports in results/
 ```
 
-## Publishing & Distribution
-
-For detailed instructions on how to publish this suite for all three platforms, see the [Publishing Guide](PUBLISHING.md).
 
 ## Features in Detail
 
