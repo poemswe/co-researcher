@@ -5,6 +5,10 @@
 - **Difficulty**: Hard
 - **Focus**: Detecting research and cognitive biases
 
+## Rubric Profile
+- **Primary**: analytical-quality (75%)
+- **Secondary**: output-structure (25%)
+
 ## Task Prompt
 
 ```

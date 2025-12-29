@@ -5,6 +5,10 @@
 - **Difficulty**: Medium
 - **Focus**: Conducting thematic analysis on text data
 
+## Rubric Profile
+- **Primary**: qualitative-quality (75%)
+- **Secondary**: output-structure (25%)
+
 ## Task Prompt
 
 ```

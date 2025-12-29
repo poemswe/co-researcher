@@ -5,6 +5,11 @@
 - **Difficulty**: Medium
 - **Focus**: Converting research questions to testable hypotheses
 
+## Rubric Profile
+- **Primary**: design-quality (60%)
+- **Secondary**: analytical-quality (30%)
+- **Tertiary**: output-structure (10%)
+
 ## Task Prompt
 
 ```

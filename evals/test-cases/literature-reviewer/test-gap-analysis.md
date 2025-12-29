@@ -5,6 +5,11 @@
 - **Difficulty**: Medium
 - **Focus**: Gap analysis and synthesis
 
+## Rubric Profile
+- **Primary**: research-quality (70%)
+- **Secondary**: analytical-quality (20%)
+- **Tertiary**: output-structure (10%)
+
 ## Task Prompt
 
 ```

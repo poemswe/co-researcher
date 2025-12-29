@@ -5,6 +5,10 @@
 - **Difficulty**: Hard
 - **Focus**: Breaking down problems to fundamental truths
 
+## Rubric Profile
+- **Primary**: analytical-quality (70%)
+- **Secondary**: output-structure (30%)
+
 ## Task Prompt
 
 ```

@@ -5,6 +5,10 @@
 - **Difficulty**: Hard
 - **Focus**: Reasoning under conflicting evidence
 
+## Rubric Profile
+- **Primary**: analytical-quality (75%)
+- **Secondary**: output-structure (25%)
+
 ## Task Prompt
 
 ```

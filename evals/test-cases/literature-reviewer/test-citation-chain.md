@@ -5,6 +5,11 @@
 - **Difficulty**: Hard
 - **Focus**: Citation chaining and influence mapping
 
+## Rubric Profile
+- **Primary**: research-quality (70%)
+- **Secondary**: analytical-quality (20%)
+- **Tertiary**: output-structure (10%)
+
 ## Task Prompt
 
 ```

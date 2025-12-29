@@ -5,6 +5,11 @@
 - **Difficulty**: Medium
 - **Area**: Methodological Rigor
 
+## Rubric Profile
+- **Primary**: analytical-quality (50%)
+- **Secondary**: research-quality (30%)
+- **Tertiary**: output-structure (20%)
+
 ## Task Prompt
 
 ```

@@ -5,6 +5,10 @@
 - **Difficulty**: Hard
 - **Focus**: Methodological bias identification in interview protocols
 
+## Rubric Profile
+- **Primary**: qualitative-quality (75%)
+- **Secondary**: output-structure (25%)
+
 ## Task Prompt
 
 ```

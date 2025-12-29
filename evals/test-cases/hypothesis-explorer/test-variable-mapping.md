@@ -5,6 +5,11 @@
 - **Difficulty**: Hard
 - **Focus**: Identifying and mapping all relevant variables
 
+## Rubric Profile
+- **Primary**: design-quality (60%)
+- **Secondary**: analytical-quality (30%)
+- **Tertiary**: output-structure (10%)
+
 ## Task Prompt
 
 ```
