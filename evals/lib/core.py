@@ -152,7 +152,7 @@ def find_cli(provider: str) -> Optional[str]:
     return None
 
 
-def run_cli(model: str, prompt: str, timeout: int = 300, cwd: Optional[str] = None) -> tuple[bool, str, str]:
+def run_cli(model: str, prompt: str, timeout: int = 600, cwd: Optional[str] = None) -> tuple[bool, str, str]:
     provider, version = (model.split(":", 1) + [None])[:2]
     provider = provider.lower()
     
@@ -180,7 +180,7 @@ def run_cli(model: str, prompt: str, timeout: int = 300, cwd: Optional[str] = No
         return False, "", str(e)
 
 
-def execute_agent(agent_name: str, prompt: str, timeout: int = 300, model: str = "claude") -> AgentResult:
+def execute_agent(agent_name: str, prompt: str, timeout: int = 600, model: str = "claude") -> AgentResult:
     start = time.time()
     methodology = strip_frontmatter(load_file(EVALS_DIR.parent / "agents" / f"{agent_name}.md"))
     tmpl = "agent_prompt" if methodology else "agent_prompt_fallback"
@@ -191,7 +191,7 @@ def execute_agent(agent_name: str, prompt: str, timeout: int = 300, model: str =
     return AgentResult(ok, out, time.time() - start, err or None)
 
 
-def evaluate_output(tc: TestCase, output: str, timeout: int = 300, model: str = "claude") -> EvaluationReport:
+def evaluate_output(tc: TestCase, output: str, timeout: int = 600, model: str = "claude") -> EvaluationReport:
     rpt = EvaluationReport(tc, AgentResult(True, output, 0))
     
     rubrics = "\n".join(f"\n--- {f.stem} ---\n{f.read_text()}" for f in (tc.file_path.parent.parent / "rubrics").glob("*.md")) if tc.file_path else ""
@@ -211,11 +211,11 @@ def evaluate_output(tc: TestCase, output: str, timeout: int = 300, model: str = 
         return rpt
     
     rpt.judge_output = out
-    rpt.research_quality = rx_int(r"RESEARCH_QUALITY:\s*(\d+)", out)
-    rpt.reasoning_quality = rx_int(r"REASONING_QUALITY:\s*(\d+)", out)
-    rpt.output_structure = rx_int(r"OUTPUT_STRUCTURE:\s*(\d+)", out)
+    rpt.research_quality = rx_int(r"RESEARCH_QUALITY[*`]*\s*[:=]\s*(\d+)", out)
+    rpt.reasoning_quality = rx_int(r"REASONING_QUALITY[*`]*\s*[:=]\s*(\d+)", out)
+    rpt.output_structure = rx_int(r"OUTPUT_STRUCTURE[*`]*\s*[:=]\s*(\d+)", out)
     
-    if m := re.search(r"OVERALL_SCORE:\s*([\d.]+)", out):
+    if m := re.search(r"OVERALL_SCORE[*`]*\s*[:=]\s*([\d.]+)", out):
         rpt.overall_score = float(m.group(1))
     else:
         w = tc.rubric_weights
@@ -229,16 +229,27 @@ def evaluate_output(tc: TestCase, output: str, timeout: int = 300, model: str = 
 
 def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude") -> Path:
     tc, ar, w = rpt.test_case, rpt.agent_result, rpt.test_case.rubric_weights
-    name = tc.file_path.stem if tc.file_path else tc.name
-    # provider only for filename
-    model_name = model.split(":")[0].lower()
+    name = tc.file_path.stem.replace("test-", "") if tc.file_path else tc.name
+    model_slug = model.split(":")[0].lower()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    path = out_dir / tc.agent / f"{name}_{model_name}_{timestamp}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    rpt.report_path = path
+    # Flat naming: {model}_{agent}_{test}.md
+    filename = f"{model_slug}_{tc.agent}_{name}.md"
     
-    path.write_text(f"""# Evaluation Report: {tc.name}
+    # Write to latest/ (overwrite)
+    latest_dir = out_dir / "latest"
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    latest_path = latest_dir / filename
+    
+    # Also archive to history/ with timestamp
+    history_dir = out_dir / "history"
+    history_dir.mkdir(parents=True, exist_ok=True)
+    history_filename = f"{timestamp}_{filename}"
+    history_path = history_dir / history_filename
+    
+    rpt.report_path = latest_path
+    
+    content = f"""# Evaluation Report: {tc.name}
 
 **Date**: {datetime.now():%Y-%m-%d %H:%M:%S}  **Model**: {model}  **Agent**: {tc.agent}
 **Test**: {name}  **Difficulty**: {tc.difficulty}  **Status**: {"ERROR ⚠" if not ar.success else "PASS ✓" if rpt.passed else "FAIL ✗"}
@@ -264,11 +275,16 @@ def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude")
 
 ## Judge
 {rpt.judge_output}
-""")
-    return path
+"""
+
+    # Write to both locations
+    latest_path.write_text(content)
+    history_path.write_text(content)
+    
+    return latest_path
 
 
-def generate_summary(reports: list[EvaluationReport], out_dir: Path) -> Path:
+def generate_summary(reports: list[EvaluationReport], out_dir: Path, model: str = "claude") -> Path:
     n = len(reports)
     ok = sum(r.passed and r.agent_result.success for r in reports)
     fail = sum(not r.passed and r.agent_result.success for r in reports)
@@ -283,9 +299,12 @@ def generate_summary(reports: list[EvaluationReport], out_dir: Path) -> Path:
         if r.agent_result.success:
             a["scores"].append(r.overall_score)
     
-    path = out_dir / "index.md"
+    # Write to latest/
+    latest_dir = out_dir / "latest"
+    latest_dir.mkdir(parents=True, exist_ok=True)
+    path = latest_dir / "index.md"
     path.write_text(f"""# Evaluation Report
-**Date**: {datetime.now():%Y-%m-%d %H:%M:%S}  **Tests**: {n}
+**Date**: {datetime.now():%Y-%m-%d %H:%M:%S}  **Tests**: {n}  **Model**: {model}
 
 | Status | Count | % |
 |--------|-------|---|
@@ -304,6 +323,6 @@ def generate_summary(reports: list[EvaluationReport], out_dir: Path) -> Path:
 |-------|------|-------|--------|
 {"".join(f"| {r.test_case.agent} | {r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name} | {'-' if not r.agent_result.success else f'{r.overall_score:.0f}'} | {'ERR' if not r.agent_result.success else 'PASS' if r.passed else 'FAIL'} |" + chr(10) for r in reports)}
 ## Details
-{"".join(f"- [{r.test_case.agent}/{r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name}]({r.report_path.relative_to(out_dir)})" + chr(10) for r in reports if r.report_path)}
+{"".join(f"- [{r.test_case.agent}/{r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name}]({r.report_path.name})" + chr(10) for r in reports if r.report_path)}
 """)
     return path

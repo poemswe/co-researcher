@@ -38,7 +38,7 @@ def list_tests():
     print(f"Total: {total} tests across {len(agents)} agents\n")
 
 
-def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude", index: int = 1, total: int = 1):
+def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude", index: int = 1, total: int = 1, out_dir: Path = RESULTS_DIR):
     progress = f"[{index}/{total}] " if total > 1 else ""
     print(f"\n{progress}🧪 Running: {agent}/{test} (model: {model})")
     
@@ -69,13 +69,13 @@ def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude"
     print(f"   {status} Score: {report.overall_score:.0f}/100")
     print(f"      Research: {report.research_quality}, Reasoning: {report.reasoning_quality}, Structure: {report.output_structure}")
     
-    report_path = generate_report(report, RESULTS_DIR, model=model)
+    report_path = generate_report(report, out_dir, model=model)
     print(f"   📁 Report: {report_path.relative_to(EVALS_DIR)}")
     
     return report
 
 
-def run_agent_tests(agent: str, verbose: bool = False, model: str = "claude"):
+def run_agent_tests(agent: str, verbose: bool = False, model: str = "claude", out_dir: Path = RESULTS_DIR):
     print(f"\n🔬 Running all tests for: {agent} (model: {model})")
     
     tests = discover_tests(TEST_CASES_DIR, agent=agent)
@@ -89,14 +89,17 @@ def run_agent_tests(agent: str, verbose: bool = False, model: str = "claude"):
     reports = []
     for i, test_case in enumerate(tests, 1):
         test_name = test_case.file_path.stem.replace("test-", "") if test_case.file_path else test_case.name
-        report = run_test(agent, test_name, verbose, model, index=i, total=len(tests))
+        report = run_test(agent, test_name, verbose, model, index=i, total=len(tests), out_dir=out_dir)
         if report:
             reports.append(report)
+    
+    if reports:
+        generate_summary(reports, out_dir, model=model)
     
     return reports
 
 
-def run_all_tests(verbose: bool = False, model: str = "claude"):
+def run_all_tests(verbose: bool = False, model: str = "claude", out_dir: Path = RESULTS_DIR):
     print(f"\n🚀 Running full evaluation suite (model: {model})\n")
     
     tests = discover_tests(TEST_CASES_DIR)
@@ -114,7 +117,7 @@ def run_all_tests(verbose: bool = False, model: str = "claude"):
             print(f"{'='*50}")
         
         test_name = test_case.file_path.stem.replace("test-", "") if test_case.file_path else test_case.name
-        report = run_test(test_case.agent, test_name, verbose, model, index=i, total=total_tests)
+        report = run_test(test_case.agent, test_name, verbose, model, index=i, total=total_tests, out_dir=out_dir)
         if report:
             reports.append(report)
     
@@ -123,7 +126,7 @@ def run_all_tests(verbose: bool = False, model: str = "claude"):
         print("📊 Generating Summary Report")
         print(f"{'='*50}")
         
-        summary_path = generate_summary(reports, RESULTS_DIR)
+        summary_path = generate_summary(reports, out_dir, model=model)
         print(f"\n📁 Summary: {summary_path.relative_to(EVALS_DIR)}")
         
         passed = sum(1 for r in reports if r.passed and r.agent_result.success)
@@ -184,11 +187,11 @@ Examples:
     if command == "list":
         list_tests()
     elif command == "all":
-        run_all_tests(verbose=args.verbose, model=args.model)
+        run_all_tests(verbose=args.verbose, model=args.model, out_dir=RESULTS_DIR)
     elif len(args.args) == 1:
-        run_agent_tests(command, verbose=args.verbose, model=args.model)
+        run_agent_tests(command, verbose=args.verbose, model=args.model, out_dir=RESULTS_DIR)
     elif len(args.args) == 2:
-        run_test(args.args[0], args.args[1], verbose=args.verbose, model=args.model)
+        run_test(args.args[0], args.args[1], verbose=args.verbose, model=args.model, out_dir=RESULTS_DIR)
     else:
         print(f"Unknown command: {' '.join(args.args)}")
         parser.print_help()
