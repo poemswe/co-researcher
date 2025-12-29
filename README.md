@@ -6,7 +6,8 @@ A PhD-level research capabilities plugin for Claude Code that provides specializ
 
 - **6 Specialized Research Agents** - Expert agents for different research approaches
 - **5 Research Skills** - Focused skill modules for specific research tasks
-- **4 Research Commands** - Quick-access commands for common research operations
+- **5 Research Commands** - Quick-access commands for common research operations (with argument support)
+- **13 Test Cases** - Comprehensive evaluation suite for agents with automated scoring
 - **Credibility Assessment** - Automatic evaluation of web sources for reliability
 - **Academic Rigor** - PhD-level methodologies for literature reviews, hypothesis testing, and critical analysis
 
@@ -61,17 +62,64 @@ Synthesizes research findings into coherent narratives with uncertainty quantifi
 
 ## Commands
 
+All commands support optional arguments for streamlined workflows:
+
 ### /research
-Start a new research project with scope definition, question formulation, and methodology planning. Sets up a research plan with clear phases and deploys appropriate specialized agents.
+Start a new research project with scope definition, question formulation, and methodology planning.
+
+**Usage:**
+```
+/research                          # Interactive: asks for topic
+/research machine learning         # Pre-fill topic, skip initial prompt
+```
+
+**Argument hint:** `[topic] | [research-question]`
 
 ### /analyze
 Begin critical analysis of claims, evidence, or research. Evaluate evidence quality, identify logical fallacies, and assess methodological soundness.
 
+**Usage:**
+```
+/analyze                           # Interactive: asks what to analyze
+/analyze AI bias in hiring         # Pre-fill subject, skip initial prompt
+```
+
+**Argument hint:** `[claim] | [url] | [topic-to-analyze]`
+
 ### /bibliography
-Generate and manage research bibliographies. Extract citations, organize sources, and format references.
+Generate and manage research bibliographies. Extract citations, organize sources, and format references in various academic styles.
+
+**Usage:**
+```
+/bibliography                      # Interactive: asks for style and sources
+/bibliography apa                  # Pre-fill style, ready for sources
+```
+
+**Argument hint:** `[style] | apa | mla | chicago | ieee | harvard | vancouver`
 
 ### /synthesize
 Integrate findings from multiple research sources into a coherent summary. Combines evidence, identifies patterns, and draws evidence-based conclusions.
+
+**Usage:**
+```
+/synthesize                        # Interactive: asks for topic
+/synthesize pandemic response      # Pre-fill topic, skip initial prompt
+```
+
+**Argument hint:** `[topic] | [research-question]`
+
+### /eval
+Run evaluation tests against agents to assess quality and performance using rubric-based scoring.
+
+**Usage:**
+```
+/eval all                                          # Run all 13 tests
+/eval literature-reviewer                          # Test one agent
+/eval critical-analyzer fallacy-detection          # Run specific test
+/eval list                                         # Show available tests
+```
+
+**Argument hint:** `[agent] [test-name] | all | list`
 
 ## How It Works
 
@@ -87,40 +135,59 @@ Integrate findings from multiple research sources into a coherent summary. Combi
 co-researcher/
 ├── agents/              # 6 specialized research agents
 ├── skills/             # 5 focused research skill modules
-├── commands/           # 4 quick-access research commands
-├── hooks/              # Credibility assessment hook
-├── evals/              # Test cases and evaluation rubrics
+├── commands/           # 5 quick-access research commands (with argument support)
+├── hooks/              # Credibility assessment hook for web sources
+├── evals/              # Test cases, evaluation rubrics, judges
+│   ├── test-cases/     # 13 test cases across 6 agents
+│   ├── rubrics/        # Research quality, reasoning quality, output structure
+│   └── judges/         # LLM-based evaluation judges
 └── .claude-plugin/     # Plugin manifest
 ```
 
 ## Quick Start
 
-### Basic Literature Review
-```
-Start with: "I need to understand what research says about [topic]"
-Triggers: literature-reviewer agent
-Output: Systematic review with sources and research gaps
-```
-
-### Evaluate a Research Paper
-```
-Start with: "Please evaluate the methodology of this paper"
-Triggers: critical-analyzer agent
-Output: Detailed critique of validity, biases, and limitations
+### Start Research Project
+```bash
+/research climate change impacts
+# → Opens with topic pre-filled
+# → Refines research question
+# → Suggests appropriate methodology
+# → Deploys specialized agents
 ```
 
-### Design a Study
-```
-Start with: "Help me develop a testable hypothesis for my research"
-Triggers: hypothesis-explorer agent
-Output: Hypothesis framework with variables and design recommendations
+### Analyze a Claim
+```bash
+/analyze correlation vs causation
+# → Begins critical analysis
+# → Identifies logical fallacies
+# → Evaluates evidence quality
+# → Suggests alternatives
 ```
 
-### Fact-Check Claims
+### Generate Bibliography
+```bash
+/bibliography apa
+# → Ready with APA format selected
+# → Provide sources (URLs or text)
+# → Returns formatted citations
 ```
-Start with: "Investigate whether this claim is true"
-Triggers: multi-source-investigation skill
-Output: Evidence-based assessment with source verification
+
+### Synthesize Findings
+```bash
+/synthesize remote work effectiveness
+# → Integrates multiple sources
+# → Identifies patterns
+# → Quantifies uncertainty
+# → Draws conclusions
+```
+
+### Evaluate Agent Quality
+```bash
+/eval all
+# → Runs all 13 tests across 6 agents
+# → Applies rubric-based scoring
+# → Generates quality report
+# → Shows strengths/weaknesses
 ```
 
 ## Features in Detail
@@ -169,24 +236,52 @@ Automatic evaluation of web sources retrieved during research:
 
 This plugin follows Claude Code plugin architecture:
 - Auto-discovered components in `agents/`, `skills/`, `commands/` directories
-- Markdown-based frontmatter for configuration
+- Markdown-based frontmatter for configuration with `argument-hint` support
 - Modular design with independent agents and skills
 - Comprehensive test cases in `evals/` directory
-- Evaluation rubrics for quality assessment
+- Multi-dimensional evaluation rubrics with automated scoring
 
-### Test Coverage
-Comprehensive test cases included for all agents:
-- Literature Reviewer: basic search, citation chains, gap analysis
-- Critical Analyzer: bias identification, fallacy detection, methodology critique
-- Hypothesis Explorer: hypothesis formulation, variable mapping
-- Lateral Thinker: analogy finding, first principles reasoning
-- Qual Researcher: coding strategy, thematic analysis
-- Quant Analyst: statistical method selection, effect size interpretation
+### Evaluation Framework
 
-### Evaluation Rubrics
-- Research quality assessment
-- Reasoning quality evaluation
-- Output structure validation
+**Test Suite:** 13 test cases across 6 agents
+
+| Agent | Tests | Coverage |
+|-------|-------|----------|
+| Literature Reviewer | 3 | basic-search, gap-analysis, citation-chain |
+| Critical Analyzer | 3 | fallacy-detection, bias-identification, methodology-critique |
+| Hypothesis Explorer | 2 | hypothesis-formulation, variable-mapping |
+| Quantitative Analyst | 2 | stat-method-selection, effect-size-interpretation |
+| Qualitative Researcher | 2 | thematic-analysis, coding-strategy |
+| Lateral Thinker | 2 | analogy-finding, first-principles |
+
+**Evaluation Dimensions:**
+- **Research Quality** (100 points): Source credibility, comprehensiveness, accuracy, citations
+- **Reasoning Quality** (100 points): Logic, bias detection, methodology critique, alternatives
+- **Output Structure** (100 points): Organization, completeness, clarity, visual communication
+
+**Passing Criteria:** ≥ 70/100 overall score + primary dimension threshold + all must-include behaviors
+
+Run evaluations with:
+```bash
+/eval all                              # Full test suite
+/eval literature-reviewer              # Agent-specific tests
+/eval critical-analyzer fallacy-detection  # Single test
+```
+
+### Command Argument Support
+
+All commands support optional arguments using `argument-hint` in frontmatter:
+
+```yaml
+---
+argument-hint: [arg1] [arg2] | option1 | option2
+---
+```
+
+Arguments are accessible in command content via:
+- `$ARGUMENTS` - entire argument string
+- `$1`, `$2` - individual positional arguments
+- `{% if $ARGUMENTS %}` - conditional rendering
 
 ## License
 
