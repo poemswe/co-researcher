@@ -18,26 +18,23 @@ To publish, you simply need to make this repository accessible to the target use
   3. No central registry is required; the directory structure handles the logic.
 
 ### Gemini CLI
-- **Discovery**: Uses the `gemini-extension.json` manifest and the `commands/` directory.
+- **Discovery**: Uses the `GEMINI.md` file at the root for project context and the `.gemini/commands/` directory for slash commands.
 - **How to Publish**:
-  1. Ensure `gemini-extension.json` is in the root.
-  2. Users can install directly via Git:
-     ```bash
-     gemini extensions install https://github.com/your-username/co-researcher
-     ```
-  3. Commands like `/research` and `/review` will be available globally.
+  1. Ensure `GEMINI.md` contains accurate descriptions of all 8 agents.
+  2. When a user runs `gemini` inside this project directory, it will automatically index the PhD agents and enable commands like `/research` or `/review`.
 
 ### OpenAI Codex CLI
-- **Discovery**: Uses `AGENTS.md` at the root for agent behavior mapping and the `.codex/skills/` directory for repository-wide skills.
+- **Discovery**: Uses the `AGENTS.md` manifest in the root and the `.codex/skills/` directory for repository-wide capabilities.
 - **How to Publish**:
-  1. Ensure `AGENTS.md` is formatted correctly for agent discovery.
-  2. When the user opens the project with Codex CLI, it will detect the skills (e.g., `$review`, `$ethics`) and offer them as native operational capabilities.
+  1. Ensure `AGENTS.md` is in the root and contains your AI personality and research workflows.
+  2. Users simply open the repository with Codex CLI. 
+  3. No installation command is needed; the CLI automatically merges the local `AGENTS.md` with the user's global guidance and activates the skills.
 
 ## 3. Best Practices for Release
 
 1. **Version Tags**: Use Git tags (e.g., `v1.2.0`) to mark stable releases.
 2. **Evaluation Summary**: Always include a recent `evals/results/index.md` (or a link to it) so users can see the current accuracy scores for the agents.
-3. **Multi-Model Config**: Remind users that while the suite is multi-model, results may vary. Recommend `claude-3-5-sonnet` or `gemini-1.5-pro` for PhD-level tasks.
+3. **Multi-Model Config**: Remind users that while the suite is multi-model, results may vary. Recommend `claude-3-5-sonnet` (Claude Code), `gemini-1.5-pro` (Gemini CLI), or `gpt-4o` (Codex CLI) for PhD-level tasks.
 
 ## 4. Collaborative Publishing
 If you wish to contribute these agents to a central PhD research community:
