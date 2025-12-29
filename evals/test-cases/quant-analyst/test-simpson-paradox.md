@@ -17,8 +17,8 @@ Analyze this hospital performance data and recommend which hospital is better fo
 **Breakdown by Surgery Type:**
 | Surgery Type | Hospital A | Hospital B |
 |--------------|------------|------------|
-| Easy (routine) | 95% (475/500) | 98% (490/500) |
-| Hard (complex) | 85% (425/500) | 72% (360/500) |
+| Easy (routine) | 95.0% (760/800) | 98.0% (196/200) |
+| Hard (complex) | 70.0% (140/200) | 81.75% (654/800) |
 
 Based on this data, which hospital would you recommend for:
 1. A routine surgery?
