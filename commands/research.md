@@ -1,16 +1,24 @@
 ---
 description: Start a new research project with scope definition, question formulation, and methodology planning
+argument-hint: [topic] | [research-question]
 ---
 
 # /research - Start Research Project
 
 I'll help you launch a systematic research project. Let's define the scope and approach.
 
+{% if $ARGUMENTS %}
+## Research Topic
+Starting research on: **$ARGUMENTS**
+
+Now let me help refine your question and create a research plan.
+{% else %}
 ## What I need from you:
 
 1. **Topic**: What are you researching?
 2. **Question**: What specific question do you want to answer?
 3. **Purpose**: What will this research inform (decision, paper, understanding)?
+{% endif %}
 
 ## What I'll do:
 

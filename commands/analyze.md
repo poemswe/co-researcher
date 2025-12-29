@@ -1,10 +1,15 @@
 ---
 description: Critically analyze content, claims, or arguments with rigorous evaluation
+argument-hint: [claim] | [url] | [topic-to-analyze]
 ---
 
 # /analyze - Critical Analysis
 
+{% if $ARGUMENTS %}
+I'll conduct a rigorous critical analysis of: **$ARGUMENTS**
+{% else %}
 I'll conduct a rigorous critical analysis of content you provide.
+{% endif %}
 
 ## What I'll evaluate:
 
@@ -35,11 +40,15 @@ I'll conduct a rigorous critical analysis of content you provide.
 
 ## What I need:
 
+{% if not $ARGUMENTS %}
 Provide one of:
 - URL to content
 - Text to analyze
 - Paper/document reference
 - Claim or argument
+{% else %}
+Ready to analyze. Provide the full content, URL, or additional context if needed.
+{% endif %}
 
 ## Output:
 

@@ -1,5 +1,6 @@
 ---
 description: Generate formatted bibliography and citations in various academic styles
+argument-hint: [style] | apa | mla | chicago | ieee | harvard | vancouver
 ---
 
 # /bibliography - Citation Management
@@ -43,9 +44,15 @@ Add brief annotations describing each source's contribution
 
 ## What I need:
 
+{% if $ARGUMENTS and ($ARGUMENTS contains "apa" or $ARGUMENTS contains "mla" or $ARGUMENTS contains "chicago" or $ARGUMENTS contains "ieee" or $ARGUMENTS contains "harvard" or $ARGUMENTS contains "vancouver") %}
+1. **Sources**: URLs, text descriptions, or "from our research"
+2. **Style**: Using **$ARGUMENTS** format
+3. **Annotated?**: Whether to include annotations
+{% else %}
 1. **Sources**: URLs, text descriptions, or "from our research"
 2. **Style**: Which citation style to use
 3. **Annotated?**: Whether to include annotations
+{% endif %}
 
 ## Output Options:
 

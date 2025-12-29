@@ -1,10 +1,15 @@
 ---
 description: Synthesize findings from multiple sources into coherent conclusions with uncertainty quantification
+argument-hint: [topic] | [research-question]
 ---
 
 # /synthesize - Research Synthesis
 
+{% if $ARGUMENTS %}
+I'll integrate findings on **$ARGUMENTS** into coherent, actionable conclusions.
+{% else %}
 I'll integrate findings from multiple sources into coherent, actionable conclusions.
+{% endif %}
 
 ## What I'll do:
 
