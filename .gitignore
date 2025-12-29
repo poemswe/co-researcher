@@ -1,0 +1,8 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# Eval results (regenerated on each run)
+evals/results/

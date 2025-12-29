@@ -7,6 +7,7 @@ from .core import (
     execute_agent,
     evaluate_output,
     generate_report,
+    generate_summary,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "execute_agent",
     "evaluate_output",
     "generate_report",
+    "generate_summary",
 ]

@@ -151,11 +151,80 @@ def discover_tests(test_dir: Path, agent_filter: Optional[str] = None, test_filt
     return tests
 
 
-def execute_agent(agent_name: str, prompt: str, timeout: int = 300) -> AgentResult:
+def find_model_cli(model: str = "claude") -> Optional[str]:
+    import shutil
+    import os
+    
+    home = Path.home()
+    
+    if model == "claude":
+        if shutil.which("claude"):
+            return "claude"
+        claude_paths = [
+            home / ".claude" / "local" / "claude",
+            home / ".local" / "bin" / "claude",
+            Path("/usr/local/bin/claude"),
+        ]
+        for path in claude_paths:
+            if path.exists() and os.access(path, os.X_OK):
+                return str(path)
+    
+    elif model == "gemini":
+        if shutil.which("gemini"):
+            return "gemini"
+        gemini_paths = [
+            Path("/usr/local/bin/gemini"),
+            home / ".local" / "bin" / "gemini",
+        ]
+        for path in gemini_paths:
+            if path.exists() and os.access(path, os.X_OK):
+                return str(path)
+    
+    return None
+
+
+def build_cli_command(model: str, cli_path: str, prompt: str) -> list[str]:
+    if model == "claude":
+        return [cli_path, "--print", "-p", prompt]
+    elif model == "gemini":
+        return [cli_path, "-p", prompt]
+    return [cli_path, prompt]
+
+
+def load_agent_methodology(agent_name: str) -> str:
+    evals_dir = Path(__file__).parent.parent
+    agents_dir = evals_dir.parent / "agents"
+    agent_file = agents_dir / f"{agent_name}.md"
+    
+    if agent_file.exists():
+        content = agent_file.read_text()
+        if "---" in content:
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                return parts[2].strip()
+        return content
+    return ""
+
+
+def execute_agent(agent_name: str, prompt: str, timeout: int = 300, model: str = "claude") -> AgentResult:
     import time
+    import tempfile
     start = time.time()
 
-    full_prompt = f"""You are the {agent_name} agent from the co-researcher plugin.
+    methodology = load_agent_methodology(agent_name)
+    
+    if methodology:
+        full_prompt = f"""You are the {agent_name} agent.
+
+## Your Methodology and Output Format
+{methodology}
+
+## Task to Execute
+{prompt}
+
+Follow your methodology above and produce output in the specified format."""
+    else:
+        full_prompt = f"""You are the {agent_name} agent from the co-researcher plugin.
 
 Execute this task using your expertise:
 
@@ -163,13 +232,25 @@ Execute this task using your expertise:
 
 Provide a complete, thorough response following your agent's methodology and output format."""
 
-    try:
-        result = subprocess.run(
-            ["claude", "--print", "-p", full_prompt],
-            capture_output=True,
-            text=True,
-            timeout=timeout,
+    cli_path = find_model_cli(model)
+    if not cli_path:
+        return AgentResult(
+            success=False,
+            output="",
+            duration_seconds=0,
+            error=f"{model} CLI not found. Install it first.",
         )
+
+    try:
+        cmd = build_cli_command(model, cli_path, full_prompt)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=tmpdir,
+            )
 
         duration = time.time() - start
 
@@ -199,7 +280,7 @@ Provide a complete, thorough response following your agent's methodology and out
             success=False,
             output="",
             duration_seconds=0,
-            error="claude CLI not found. Make sure it's installed and in PATH.",
+            error=f"{model} CLI not found. Make sure it's installed and in PATH.",
         )
     except Exception as e:
         return AgentResult(
@@ -210,7 +291,7 @@ Provide a complete, thorough response following your agent's methodology and out
         )
 
 
-def evaluate_output(test_case: TestCase, agent_output: str, timeout: int = 300) -> EvaluationReport:
+def evaluate_output(test_case: TestCase, agent_output: str, timeout: int = 300, model: str = "claude") -> EvaluationReport:
     import time
 
     report = EvaluationReport(
@@ -280,9 +361,15 @@ RESULT: [PASS or FAIL]
 
 Then provide detailed justification."""
 
+    cli_path = find_model_cli(model)
+    if not cli_path:
+        report.judge_output = f"{model} CLI not found"
+        return report
+
     try:
+        cmd = build_cli_command(model, cli_path, judge_prompt)
         result = subprocess.run(
-            ["claude", "--print", "-p", judge_prompt],
+            cmd,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -345,7 +432,7 @@ Then provide detailed justification."""
     return report
 
 
-def generate_report(report: EvaluationReport, output_dir: Path) -> Path:
+def generate_report(report: EvaluationReport, output_dir: Path, model: str = "claude") -> Path:
     agent_dir = output_dir / report.test_case.agent
     agent_dir.mkdir(parents=True, exist_ok=True)
 
@@ -359,6 +446,7 @@ def generate_report(report: EvaluationReport, output_dir: Path) -> Path:
     content = f"""# Evaluation Report: {report.test_case.name}
 
 **Date**: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+**Model**: {model}
 **Agent**: {report.test_case.agent}
 **Test**: {test_name}
 **Difficulty**: {report.test_case.difficulty}
