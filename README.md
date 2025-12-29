@@ -4,12 +4,13 @@ A PhD-level research capabilities plugin for Claude Code that provides specializ
 
 ## Features
 
-- **6 Specialized Research Agents** - Expert agents for different research approaches
-- **5 Research Skills** - Focused skill modules for specific research tasks
-- **5 Research Commands** - Quick-access commands for common research operations (with argument support)
-- **13 Test Cases** - Comprehensive evaluation suite for agents with automated scoring
-- **Credibility Assessment** - Automatic evaluation of web sources for reliability
-- **Academic Rigor** - PhD-level methodologies for literature reviews, hypothesis testing, and critical analysis
+- **8 Specialized Research Agents** - Expert agents for different research approaches
+- **7 Research Skills** - Focused skill modules for specific research tasks
+- **6 Research Commands** - Quick-access commands for common research operations
+- **22 Test Cases** - Comprehensive evaluation suite for agents with automated scoring
+- **Python Eval Framework** - CLI-based testing with multi-model support (Claude, Gemini, Codex)
+- **Multi-Platform Support** - Works with Claude Code, Gemini CLI, and OpenAI Codex CLI
+- **Academic Rigor** - PhD-level methodologies for research tasks
 
 ## Agents
 
@@ -33,15 +34,41 @@ Expert in creative and lateral thinking for research. Finds cross-domain analogi
 
 **Use when:** Stuck on a problem, seeking innovation, exploring unconventional approaches
 
+### 5. Peer Reviewer
+Rigorous academic manuscript/proposal review. Evaluates contribution, methodology, and rigor.
+
+**Use when:** Seeking critical feedback on research drafts or evaluating others' work.
+
+### 6. Ethics Expert
+Research ethics, IRB compliance, and data privacy specialist.
+
+**Use when:** Planning studies involving human subjects, sensitive data, or high-impact technologies.
+
 ### 5. Qualitative Researcher
 Expert in qualitative research methods. Conducts thematic analysis, develops coding schemes, applies grounded theory, performs discourse analysis, and ensures rigor through triangulation.
 
 **Use when:** Analyzing text, interviews, observations, or other non-numerical data
 
-### 6. Quantitative Analyst
+### 8. Quantitative Analyst
 Expert in quantitative research methods. Selects appropriate statistical tests, interprets effect sizes, assesses statistical power, identifies common pitfalls, and recommends data visualization.
 
 **Use when:** Analyzing numerical data, planning statistical analyses, interpreting quantitative results
+
+## Core Research Principles
+
+All 8 agents in this suite are governed by these fundamental research principles to ensure PhD-level integrity:
+
+### 1. Factual Integrity
+- **No Fabrication**: Agents are strictly forbidden from inventing sources, data, citations, or participant quotes.
+- **Evidence-Based**: Every claim must be traceable to a retrieved source or a logical first-principle derivation.
+
+### 2. Honesty Above Fulfillment
+- **Quality over Quantity**: If a task asks for a specific count (e.g., "5 papers") but only fewer exist, agents provide ONLY the legitimate items.
+- **Reporting Limitations**: If evidence is missing or insufficient to answer a query, reporting the "research gap" is prioritized over "simulating success."
+
+### 3. Uncertainty Calibration
+- **Objectivity**: Agents maintain a neutral, PhD-level tone.
+- **Probabilistic Language**: Agents use appropriate descriptors (e.g., "highly likely," "preliminary evidence suggests") when data is incomplete or conflicting.
 
 ## Skills
 
@@ -108,18 +135,43 @@ Integrate findings from multiple research sources into a coherent summary. Combi
 
 **Argument hint:** `[topic] | [research-question]`
 
-### /eval
-Run evaluation tests against agents to assess quality and performance using rubric-based scoring.
+### /review
+Start a PhD-level academic peer review of a manuscript, research proposal, or draft report.
 
 **Usage:**
 ```
-/eval all                                          # Run all 13 tests
-/eval literature-reviewer                          # Test one agent
-/eval critical-analyzer fallacy-detection          # Run specific test
-/eval list                                         # Show available tests
+/review                           # Interactive: asks for content
+/review draft.pdf                 # Pre-fill content/file
 ```
 
-**Argument hint:** `[agent] [test-name] | all | list`
+**Argument hint:** `[manuscript-text] | [url] | [draft-file-path]`
+
+### /ethics
+Conduct a PhD-level ethical analysis of a research design, study protocol, or data management plan.
+
+**Usage:**
+```
+/ethics                           # Interactive: asks for protocol
+/ethics study_design.md           # Pre-fill protocol
+```
+
+**Argument hint:** `[study-design] | [url] | [protocol-file-path]`
+
+## Evaluation Framework
+
+Run tests using the Python CLI:
+
+```bash
+cd evals
+python run_eval.py list                    # List all tests
+python run_eval.py all                     # Run all with Claude
+python run_eval.py all --model gemini      # Run with Gemini
+python run_eval.py all --model codex       # Run with Codex
+python run_eval.py all --model claude:sonnet  # Specific model version
+python run_eval.py critical-analyzer       # Test one agent
+```
+
+**Full documentation:** See [evals/runner.md](evals/runner.md)
 
 ## How It Works
 
@@ -133,15 +185,21 @@ Run evaluation tests against agents to assess quality and performance using rubr
 
 ```
 co-researcher/
-├── agents/              # 6 specialized research agents
-├── skills/             # 5 focused research skill modules
-├── commands/           # 5 quick-access research commands (with argument support)
-├── hooks/              # Credibility assessment hook for web sources
-├── evals/              # Test cases, evaluation rubrics, judges
-│   ├── test-cases/     # 13 test cases across 6 agents
-│   ├── rubrics/        # Research quality, reasoning quality, output structure
-│   └── judges/         # LLM-based evaluation judges
-└── .claude-plugin/     # Plugin manifest
+├── agents/              # 8 specialized research agents
+├── skills/              # 7 focused research skill modules
+├── commands/            # 6 quick-access research commands
+├── hooks/               # Credibility assessment hook
+├── AGENTS.md            # Codex CLI agent manifest
+├── GEMINI.md            # Gemini CLI agent manifest
+├── .gemini/commands/    # Gemini CLI native slash commands
+├── .codex/skills/       # Codex CLI native repository skills
+├── evals/               # Python evaluation framework
+│   ├── run_eval.py      # CLI entry point
+│   ├── lib/core.py      # Core evaluation logic
+│   ├── prompts/         # Judge and agent prompt templates
+│   ├── rubrics/         # Research, reasoning, structure rubrics
+│   └── test-cases/      # 20 tests across 6 agents
+└── .claude-plugin/      # Plugin manifest
 ```
 
 ## Quick Start
@@ -183,11 +241,11 @@ co-researcher/
 
 ### Evaluate Agent Quality
 ```bash
-/eval all
-# → Runs all 13 tests across 6 agents
-# → Applies rubric-based scoring
-# → Generates quality report
-# → Shows strengths/weaknesses
+cd evals
+python run_eval.py all --model gemini
+# → Runs all 20 tests across 6 agents
+# → Multi-model support (Claude, Gemini)
+# → Generates reports in results/
 ```
 
 ## Features in Detail
@@ -243,29 +301,54 @@ This plugin follows Claude Code plugin architecture:
 
 ### Evaluation Framework
 
-**Test Suite:** 13 test cases across 6 agents
+**Test Suite:** 22 test cases across 8 agents (including 6 hard adversarial tests)
 
 | Agent | Tests | Coverage |
-|-------|-------|----------|
-| Literature Reviewer | 3 | basic-search, gap-analysis, citation-chain |
-| Critical Analyzer | 3 | fallacy-detection, bias-identification, methodology-critique |
-| Hypothesis Explorer | 2 | hypothesis-formulation, variable-mapping |
-| Quantitative Analyst | 2 | stat-method-selection, effect-size-interpretation |
-| Qualitative Researcher | 2 | thematic-analysis, coding-strategy |
-| Lateral Thinker | 2 | analogy-finding, first-principles |
+|-------|-------|---------|
+| Literature Reviewer | 4 | basic-search, gap-analysis, citation-chain, hallucination-detection |
+| Critical Analyzer | 4 | fallacy-detection, bias-identification, methodology-critique, contradictory-evidence |
+| Hypothesis Explorer | 3 | hypothesis-formulation, variable-mapping, unfalsifiable-claim |
+| Quantitative Analyst | 3 | stat-method-selection, effect-size-interpretation, simpson-paradox |
+| Qualitative Researcher | 3 | thematic-analysis, coding-strategy, leading-questions |
+| Lateral Thinker | 3 | analogy-finding, first-principles, constraint-satisfaction |
+| Peer Reviewer | 1 | test-manuscript-critique |
+| Ethics Expert | 1 | test-privacy-risk |
 
 **Evaluation Dimensions:**
 - **Research Quality** (100 points): Source credibility, comprehensiveness, accuracy, citations
 - **Reasoning Quality** (100 points): Logic, bias detection, methodology critique, alternatives
 - **Output Structure** (100 points): Organization, completeness, clarity, visual communication
 
-**Passing Criteria:** ≥ 70/100 overall score + primary dimension threshold + all must-include behaviors
+**Passing Criteria:** ≥ 70/100 overall (Hard tests: ≥80)
 
 Run evaluations with:
 ```bash
-/eval all                              # Full test suite
-/eval literature-reviewer              # Agent-specific tests
-/eval critical-analyzer fallacy-detection  # Single test
+cd evals
+python run_eval.py all                     # Full suite with Claude
+python run_eval.py all --model gemini      # With Gemini
+python run_eval.py critical-analyzer       # Agent-specific
+```
+
+### Native CLI Usage (Gemini & Codex)
+
+You can also use the agents and commands directly in your preferred CLI:
+
+**Gemini CLI:**
+Supports native slash commands!
+```bash
+gemini /research "Climate Change"
+gemini /analyze "https://example.com/paper.pdf"
+gemini /review "Provide paper draft"
+gemini /ethics "Propose study design"
+```
+
+**Codex CLI:**
+Supports repository skills!
+```bash
+codex "$research Climate Change"
+codex "$analyze Evidence analysis"
+codex "$review Draft manuscript"
+codex "$ethics Study design"
 ```
 
 ### Command Argument Support
