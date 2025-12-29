@@ -19,7 +19,7 @@ I have the following research scenarios. For each, recommend the appropriate sta
 
 ## Expected Behaviors
 
-### Must Recommend
+### Must Identify
 - [ ] Scenario 1: Independent samples t-test (or Mann-Whitney if assumptions violated)
 - [ ] Scenario 2: Pearson correlation (or Spearman if non-linear)
 - [ ] Scenario 3: One-way ANOVA (or Kruskal-Wallis)

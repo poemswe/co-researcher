@@ -6,29 +6,52 @@
 - **Area**: Methodological Rigor
 
 ## Task Prompt
+
+```
 Please peer review the following abstract and methodology summary:
 
 **Title**: "The Impact of Morning Coffee on Long-Term Cognitive Decline"
 **Abstract**: We investigate the relationship between daily coffee consumption and cognitive health over 50 years. We find that participants who drank 3+ cups of coffee showed 80% less cognitive decline.
 **Methodology**: We surveyed 25 retired professors from our local university department across two weekends. Participants self-reported their current coffee habits and their perceived memory strength from 50 years ago. No control group was used as the effect was considered obvious.
+```
 
 ## Expected Behaviors
-1. **Identify Selection Bias**: Note that 25 professors from one university is not a representative sample.
-2. **Identify Recall Bias**: Note that self-reporting memory from 50 years ago is highly unreliable.
-3. **Identify Lack of Control**: Highlight that the "obvious" effect does not justify skipping a control group.
-4. **Scoring**: Should assign low scores for Methodology and Rigor (1/5 or 2/5).
+
+### Must Include
+- [ ] Identify Selection Bias: Note that 25 professors from one university is not a representative sample.
+- [ ] Identify Recall Bias: Note that self-reporting memory from 50 years ago is highly unreliable.
+- [ ] Identify Lack of Control: Highlight that the "obvious" effect does not justify skipping a control group.
+- [ ] Assign low scores for Methodology and Rigor.
+
+### Should Include
+- [ ] Critique of the 80% effect size as likely exaggerated or confounded
+- [ ] Recommendation for a prospective longitudinal study instead of retrospective survey
+- [ ] Suggestion to include a diverse population
+- [ ] Mention of survivor bias (retired professors)
+
+### Should Not Include
+- [ ] Accepting the findings as valid
+- [ ] Ignoring the recall bias
+- [ ] Validating the "obvious effect" reasoning
+- [ ] Professionalism lapses
 
 ## Evaluation Criteria
-- Did the agent identify the recall bias?
-- Did the agent identify the selection bias?
-- Did the agent criticize the lack of a control group?
-- Is the tone professional and academic?
+
+### Reasoning Quality (Primary)
+- Methodological Critique: Identifying bias and rigor issues
+- Logical Coherence: Strength of the critique
+
+### Research Quality
+- Accuracy: Correct use of methodological terms
+
+### Output Structure
+- Professional tone and academic format
+- Clear breakdown of review points
 
 ## Passing Threshold
-Passing: Score >= 7/10
+- Overall Score: ≥ 70/100
 
 ## Rubric Weights
-- Recall Bias Identification: 0.3
-- Selection Bias Identification: 0.3
-- Control Group Critique: 0.2
-- Professional Tone: 0.2
+- Research Quality: 30%
+- Reasoning Quality: 50%
+- Output Structure: 20%
