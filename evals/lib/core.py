@@ -1,13 +1,18 @@
+import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import cache
 from pathlib import Path
 from typing import Optional
 
 
-@dataclass
+@dataclass(slots=True)
 class TestCase:
     name: str
     agent: str
@@ -18,13 +23,11 @@ class TestCase:
     should_include: list[str] = field(default_factory=list)
     should_not_include: list[str] = field(default_factory=list)
     passing_threshold: int = 70
-    primary_dimension: Optional[str] = None
-    primary_threshold: Optional[int] = None
     rubric_weights: dict[str, int] = field(default_factory=dict)
     file_path: Optional[Path] = None
 
 
-@dataclass
+@dataclass(slots=True)
 class AgentResult:
     success: bool
     output: str
@@ -32,7 +35,7 @@ class AgentResult:
     error: Optional[str] = None
 
 
-@dataclass
+@dataclass(slots=True)
 class EvaluationReport:
     test_case: TestCase
     agent_result: AgentResult
@@ -46,520 +49,255 @@ class EvaluationReport:
     must_include_missed: list[str] = field(default_factory=list)
 
 
-def parse_test_case(file_path: Path) -> TestCase:
-    content = file_path.read_text()
+EVALS_DIR = Path(__file__).parent.parent
+DEFAULT_WEIGHTS = {"research_quality": 33, "reasoning_quality": 34, "output_structure": 33}
 
-    name_match = re.search(r"#\s*Test Case:\s*(.+)", content)
-    name = name_match.group(1).strip() if name_match else file_path.stem
+CLI_CONFIG = {
+    "claude": {
+        "base": ["--print", "--verbose"],
+        "tools": ["--tools", "WebSearch,WebFetch,Read"],
+        "prompt_style": "flag",
+    },
+    "gemini": {
+        "base": [],
+        "tools": ["--yolo"],
+        "prompt_style": "positional",
+    },
+    "codex": {
+        "base": ["exec", "--full-auto"],
+        "tools": [],
+        "prompt_style": "positional",
+    },
+}
 
-    agent_match = re.search(r"\*\*Agent\*\*:\s*(\S+)", content)
-    agent = agent_match.group(1) if agent_match else "unknown"
 
-    difficulty_match = re.search(r"\*\*Difficulty\*\*:\s*(\S+)", content)
-    difficulty = difficulty_match.group(1) if difficulty_match else "Medium"
+@cache
+def load_file(path: Path) -> str:
+    return path.read_text() if path.exists() else ""
 
-    focus_match = re.search(r"\*\*Focus\*\*:\s*(.+)", content)
-    focus = focus_match.group(1).strip() if focus_match else ""
 
-    prompt_match = re.search(r"##\s*Task Prompt\s*\n+```\n?(.*?)```", content, re.DOTALL)
-    task_prompt = prompt_match.group(1).strip() if prompt_match else ""
+def load_template(name: str) -> str:
+    return strip_frontmatter(load_file(EVALS_DIR / "prompts" / f"{name}.md"))
 
-    must_include = extract_checklist(content, "Must Include") or extract_checklist(content, "Must Identify")
-    should_include = extract_checklist(content, "Should Include")
-    should_not_include = extract_checklist(content, "Should Not Include")
 
-    threshold_match = re.search(r"Overall Score:\s*[≥>=]+\s*(\d+)", content)
-    passing_threshold = int(threshold_match.group(1)) if threshold_match else 70
+def strip_frontmatter(content: str) -> str:
+    return content.split("---", 2)[2].strip() if content.count("---") >= 2 else content
 
-    primary_match = re.search(r"(\w+\s*Quality):\s*[≥>=]+\s*(\d+)/100\s*\(primary", content, re.IGNORECASE)
-    if primary_match:
-        primary_dimension = primary_match.group(1).strip()
-        primary_threshold = int(primary_match.group(2))
-    else:
-        primary_match = re.search(r"(\w+\s*Quality):\s*[≥>=]+\s*(\d+)/100", content, re.IGNORECASE)
-        if primary_match:
-            primary_dimension = primary_match.group(1).strip()
-            primary_threshold = int(primary_match.group(2))
-        else:
-            primary_dimension = None
-            primary_threshold = None
 
-    rubric_weights = {}
-    weights_section = re.search(r"##\s*Rubric Weights\s*\n(.*?)(?=\n##|\Z)", content, re.DOTALL)
-    if weights_section:
-        for line in weights_section.group(1).split("\n"):
-            weight_match = re.search(r"(\w+\s*Quality):\s*(\d+)%", line)
-            if weight_match:
-                rubric_weights[weight_match.group(1).strip().lower().replace(" ", "_")] = int(weight_match.group(2))
+def rx(pattern: str, text: str, default="", flags=0) -> str:
+    return m.group(1).strip() if (m := re.search(pattern, text, flags)) else default
 
-    if not rubric_weights:
-        rubric_weights = {"research_quality": 33, "reasoning_quality": 34, "output_structure": 33}
 
+def rx_int(pattern: str, text: str, default=0) -> int:
+    return int(m.group(1)) if (m := re.search(pattern, text)) else default
+
+
+def rx_list(pattern: str, text: str) -> list[str]:
+    return [x.strip() for x in m.group(1).split(",") if x.strip()] if (m := re.search(pattern, text)) and m.group(1).lower() != "none" else []
+
+
+def checklist(content: str, section: str) -> list[str]:
+    if not (m := re.search(rf"###\s*{section}\s*\n(.*?)(?=\n###|\n##|\Z)", content, re.DOTALL)):
+        return []
+    return [m.group(1).strip() for line in m.group(1).split("\n") if (m := re.search(r"-\s*\[.\]\s*(.+)", line))]
+
+
+def parse_test_case(path: Path) -> TestCase:
+    c = path.read_text()
+    weights = {m.group(1).lower().replace(" ", "_"): int(m.group(2)) for m in re.finditer(r"(\w+ Quality):\s*(\d+)%", c)}
     return TestCase(
-        name=name,
-        agent=agent,
-        difficulty=difficulty,
-        focus=focus,
-        task_prompt=task_prompt,
-        must_include=must_include,
-        should_include=should_include,
-        should_not_include=should_not_include,
-        passing_threshold=passing_threshold,
-        primary_dimension=primary_dimension,
-        primary_threshold=primary_threshold,
-        rubric_weights=rubric_weights,
-        file_path=file_path,
+        name=rx(r"#\s*Test Case:\s*(.+)", c, path.stem),
+        agent=rx(r"Agent[*`]*:\s*[*`]*([\w-]+)[*`]*", c, "unknown"),
+        difficulty=rx(r"Difficulty[*`]*:\s*[*`]*(\w+)[*`]*", c, "Medium"),
+        focus=rx(r"Focus[*`]*:\s*[*`]*(.*?)[*`]*(?:\n|$)", c),
+        task_prompt=rx(r"##\s*Task Prompt\s*\n+```\n?(.*?)```", c, flags=re.DOTALL),
+        must_include=checklist(c, "Must Include") or checklist(c, "Must Identify"),
+        should_include=checklist(c, "Should Include"),
+        should_not_include=checklist(c, "Should Not Include"),
+        passing_threshold=rx_int(r"Overall Score:\s*[≥>=]+\s*(\d+)", c, 70),
+        rubric_weights=weights or DEFAULT_WEIGHTS.copy(),
+        file_path=path,
     )
 
 
-def extract_checklist(content: str, section_name: str) -> list[str]:
-    pattern = rf"###\s*{section_name}\s*\n(.*?)(?=\n###|\n##|\Z)"
-    match = re.search(pattern, content, re.DOTALL)
-    if not match:
-        return []
-
-    items = []
-    for line in match.group(1).split("\n"):
-        item_match = re.search(r"-\s*\[.\]\s*(.+)", line)
-        if item_match:
-            items.append(item_match.group(1).strip())
-    return items
-
-
-def discover_tests(test_dir: Path, agent_filter: Optional[str] = None, test_filter: Optional[str] = None) -> list[TestCase]:
+def discover_tests(test_dir: Path, agent: Optional[str] = None, test: Optional[str] = None) -> list[TestCase]:
     tests = []
-
-    for agent_dir in sorted(test_dir.iterdir()):
-        if not agent_dir.is_dir() or agent_dir.name.startswith("."):
+    for d in sorted(test_dir.iterdir()):
+        if not d.is_dir() or d.name.startswith(".") or (agent and d.name != agent):
             continue
-
-        if agent_filter and agent_dir.name != agent_filter:
-            continue
-
-        for test_file in sorted(agent_dir.glob("test-*.md")):
-            test_name = test_file.stem.replace("test-", "")
-
-            if test_filter and test_name != test_filter:
+        for f in sorted(d.glob("test-*.md")):
+            if test and f.stem.replace("test-", "") != test:
                 continue
-
             try:
-                test_case = parse_test_case(test_file)
-                tests.append(test_case)
+                tests.append(parse_test_case(f))
             except Exception as e:
-                print(f"Warning: Failed to parse {test_file}: {e}", file=sys.stderr)
-
+                print(f"Warning: {f}: {e}", file=sys.stderr)
     return tests
 
 
-def find_model_cli(model: str = "claude") -> Optional[str]:
-    import shutil
-    import os
-    
+def find_cli(provider: str) -> Optional[str]:
+    if shutil.which(provider):
+        return provider
     home = Path.home()
-    
-    if model == "claude":
-        if shutil.which("claude"):
-            return "claude"
-        claude_paths = [
-            home / ".claude" / "local" / "claude",
-            home / ".local" / "bin" / "claude",
-            Path("/usr/local/bin/claude"),
-        ]
-        for path in claude_paths:
-            if path.exists() and os.access(path, os.X_OK):
-                return str(path)
-    
-    elif model == "gemini":
-        if shutil.which("gemini"):
-            return "gemini"
-        gemini_paths = [
-            Path("/usr/local/bin/gemini"),
-            home / ".local" / "bin" / "gemini",
-        ]
-        for path in gemini_paths:
-            if path.exists() and os.access(path, os.X_OK):
-                return str(path)
-    
+    paths = {
+        "claude": [".claude/local/claude", ".local/bin/claude", "/usr/local/bin/claude"],
+        "gemini": ["/usr/local/bin/gemini", ".local/bin/gemini"],
+        "codex": [".codex/bin/codex", ".local/bin/codex", "/usr/local/bin/codex"],
+    }
+    for p in paths.get(provider, []):
+        path = home / p if not p.startswith("/") else Path(p)
+        if path.exists() and os.access(path, os.X_OK):
+            return str(path)
     return None
 
 
-def build_cli_command(model: str, cli_path: str, prompt: str) -> list[str]:
-    if model == "claude":
-        return [cli_path, "--print", "-p", prompt]
-    elif model == "gemini":
-        return [cli_path, "-p", prompt]
-    return [cli_path, prompt]
-
-
-def load_agent_methodology(agent_name: str) -> str:
-    evals_dir = Path(__file__).parent.parent
-    agents_dir = evals_dir.parent / "agents"
-    agent_file = agents_dir / f"{agent_name}.md"
+def run_cli(model: str, prompt: str, timeout: int = 300, cwd: Optional[str] = None) -> tuple[bool, str, str]:
+    provider, version = (model.split(":", 1) + [None])[:2]
+    provider = provider.lower()
     
-    if agent_file.exists():
-        content = agent_file.read_text()
-        if "---" in content:
-            parts = content.split("---", 2)
-            if len(parts) >= 3:
-                return parts[2].strip()
-        return content
-    return ""
+    if not (cli := find_cli(provider)):
+        return False, "", f"{model} CLI not found"
+    
+    config = CLI_CONFIG.get(provider, {"base": [], "tools": [], "prompt_style": "flag"})
+    cmd = [cli, *config["base"]]
+    if version:
+        cmd += ["--model", version]
+    cmd += config["tools"]
+    
+    stdin_input = None
+    if config["prompt_style"] == "positional":
+        stdin_input = prompt
+    else:
+        cmd += ["-p", prompt]
+    
+    try:
+        r = subprocess.run(cmd, input=stdin_input, capture_output=True, text=True, timeout=timeout, cwd=cwd)
+        return (r.returncode == 0, r.stdout, r.stderr or f"Exit {r.returncode}")
+    except subprocess.TimeoutExpired:
+        return False, "", f"Timeout {timeout}s"
+    except Exception as e:
+        return False, "", str(e)
 
 
 def execute_agent(agent_name: str, prompt: str, timeout: int = 300, model: str = "claude") -> AgentResult:
-    import time
-    import tempfile
     start = time.time()
-
-    methodology = load_agent_methodology(agent_name)
+    methodology = strip_frontmatter(load_file(EVALS_DIR.parent / "agents" / f"{agent_name}.md"))
+    tmpl = "agent_prompt" if methodology else "agent_prompt_fallback"
+    full_prompt = load_template(tmpl).format(agent_name=agent_name, methodology=methodology, prompt=prompt)
     
-    if methodology:
-        full_prompt = f"""You are the {agent_name} agent.
-
-## Your Methodology and Output Format
-{methodology}
-
-## Task to Execute
-{prompt}
-
-Follow your methodology above and produce output in the specified format."""
-    else:
-        full_prompt = f"""You are the {agent_name} agent from the co-researcher plugin.
-
-Execute this task using your expertise:
-
-{prompt}
-
-Provide a complete, thorough response following your agent's methodology and output format."""
-
-    cli_path = find_model_cli(model)
-    if not cli_path:
-        return AgentResult(
-            success=False,
-            output="",
-            duration_seconds=0,
-            error=f"{model} CLI not found. Install it first.",
-        )
-
-    try:
-        cmd = build_cli_command(model, cli_path, full_prompt)
-        with tempfile.TemporaryDirectory() as tmpdir:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                cwd=tmpdir,
-            )
-
-        duration = time.time() - start
-
-        if result.returncode != 0:
-            return AgentResult(
-                success=False,
-                output="",
-                duration_seconds=duration,
-                error=result.stderr or f"Exit code: {result.returncode}",
-            )
-
-        return AgentResult(
-            success=True,
-            output=result.stdout,
-            duration_seconds=duration,
-        )
-
-    except subprocess.TimeoutExpired:
-        return AgentResult(
-            success=False,
-            output="",
-            duration_seconds=timeout,
-            error=f"Timeout after {timeout} seconds",
-        )
-    except FileNotFoundError:
-        return AgentResult(
-            success=False,
-            output="",
-            duration_seconds=0,
-            error=f"{model} CLI not found. Make sure it's installed and in PATH.",
-        )
-    except Exception as e:
-        return AgentResult(
-            success=False,
-            output="",
-            duration_seconds=time.time() - start,
-            error=str(e),
-        )
+    with tempfile.TemporaryDirectory() as tmp:
+        ok, out, err = run_cli(model, full_prompt, timeout, tmp)
+    return AgentResult(ok, out, time.time() - start, err or None)
 
 
-def evaluate_output(test_case: TestCase, agent_output: str, timeout: int = 300, model: str = "claude") -> EvaluationReport:
-    import time
-
-    report = EvaluationReport(
-        test_case=test_case,
-        agent_result=AgentResult(success=True, output=agent_output, duration_seconds=0),
+def evaluate_output(tc: TestCase, output: str, timeout: int = 300, model: str = "claude") -> EvaluationReport:
+    rpt = EvaluationReport(tc, AgentResult(True, output, 0))
+    
+    rubrics = "\n".join(f"\n--- {f.stem} ---\n{f.read_text()}" for f in (tc.file_path.parent.parent / "rubrics").glob("*.md")) if tc.file_path else ""
+    
+    prompt = load_template("judge_prompt").format(
+        agent=tc.agent, task_prompt=tc.task_prompt,
+        must_include="\n".join(f"- {i}" for i in tc.must_include),
+        should_include="\n".join(f"- {i}" for i in tc.should_include),
+        should_not_include="\n".join(f"- {i}" for i in tc.should_not_include),
+        rubric_weights=tc.rubric_weights, rubrics_text=rubrics,
+        agent_output=output, passing_threshold=tc.passing_threshold,
     )
-
-    rubrics_text = ""
-    evals_dir = test_case.file_path.parent.parent if test_case.file_path else Path("evals")
-    rubrics_dir = evals_dir / "rubrics"
-
-    if rubrics_dir.exists():
-        for rubric_file in rubrics_dir.glob("*.md"):
-            rubrics_text += f"\n\n--- {rubric_file.stem} ---\n"
-            rubrics_text += rubric_file.read_text()
-
-    judge_prompt = f"""You are an impartial evaluation judge. Score this agent output against the test case criteria.
-
-## Test Case
-**Agent**: {test_case.agent}
-**Task**: {test_case.task_prompt}
-
-**Must Include Behaviors**:
-{chr(10).join(f"- {item}" for item in test_case.must_include)}
-
-**Should Include Behaviors**:
-{chr(10).join(f"- {item}" for item in test_case.should_include)}
-
-**Should NOT Include**:
-{chr(10).join(f"- {item}" for item in test_case.should_not_include)}
-
-**Rubric Weights**: {test_case.rubric_weights}
-
-## Rubrics Reference
-{rubrics_text}
-
-## Agent Output to Evaluate
-{agent_output}
-
-## Your Task
-Score the output on three dimensions (0-100 each):
-
-1. **Research Quality**: Source credibility, comprehensiveness, accuracy, citation quality
-2. **Reasoning Quality**: Logical coherence, bias detection, methodology critique, alternatives
-3. **Output Structure**: Organization, completeness, clarity, visual communication
-
-For each dimension, provide:
-- Score (0-100)
-- Brief justification
-
-Then provide:
-- Which "Must Include" behaviors were MET
-- Which "Must Include" behaviors were MISSED
-- Overall weighted score
-- PASS/FAIL determination (threshold: {test_case.passing_threshold})
-
-Format your response EXACTLY as:
-```
-RESEARCH_QUALITY: [score]
-REASONING_QUALITY: [score]
-OUTPUT_STRUCTURE: [score]
-MUST_INCLUDE_MET: [comma-separated list or "none"]
-MUST_INCLUDE_MISSED: [comma-separated list or "none"]
-OVERALL_SCORE: [weighted score]
-RESULT: [PASS or FAIL]
-```
-
-Then provide detailed justification."""
-
-    cli_path = find_model_cli(model)
-    if not cli_path:
-        report.judge_output = f"{model} CLI not found"
-        return report
-
-    try:
-        cmd = build_cli_command(model, cli_path, judge_prompt)
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-
-        if result.returncode != 0:
-            report.judge_output = f"Judge error: {result.stderr}"
-            return report
-
-        judge_output = result.stdout
-        report.judge_output = judge_output
-
-        rq_match = re.search(r"RESEARCH_QUALITY:\s*(\d+)", judge_output)
-        if rq_match:
-            report.research_quality = int(rq_match.group(1))
-
-        reas_match = re.search(r"REASONING_QUALITY:\s*(\d+)", judge_output)
-        if reas_match:
-            report.reasoning_quality = int(reas_match.group(1))
-
-        os_match = re.search(r"OUTPUT_STRUCTURE:\s*(\d+)", judge_output)
-        if os_match:
-            report.output_structure = int(os_match.group(1))
-
-        overall_match = re.search(r"OVERALL_SCORE:\s*([\d.]+)", judge_output)
-        if overall_match:
-            report.overall_score = float(overall_match.group(1))
-        else:
-            weights = test_case.rubric_weights
-            rq_w = weights.get("research_quality", 33)
-            reas_w = weights.get("reasoning_quality", 34)
-            os_w = weights.get("output_structure", 33)
-            report.overall_score = (
-                report.research_quality * rq_w +
-                report.reasoning_quality * reas_w +
-                report.output_structure * os_w
-            ) / 100
-
-        met_match = re.search(r"MUST_INCLUDE_MET:\s*(.+?)(?=\n|$)", judge_output)
-        if met_match and met_match.group(1).strip().lower() != "none":
-            report.must_include_met = [x.strip() for x in met_match.group(1).split(",") if x.strip()]
-
-        missed_match = re.search(r"MUST_INCLUDE_MISSED:\s*(.+?)(?=\n|$)", judge_output)
-        if missed_match and missed_match.group(1).strip().lower() != "none":
-            report.must_include_missed = [x.strip() for x in missed_match.group(1).split(",") if x.strip()]
-
-        result_match = re.search(r"RESULT:\s*(PASS|FAIL)", judge_output, re.IGNORECASE)
-        if result_match:
-            report.passed = result_match.group(1).upper() == "PASS"
-        else:
-            report.passed = report.overall_score >= test_case.passing_threshold
-
-    except subprocess.TimeoutExpired:
-        report.judge_output = f"Judge timeout after {timeout} seconds"
-    except FileNotFoundError:
-        report.judge_output = "claude CLI not found"
-    except Exception as e:
-        report.judge_output = f"Judge error: {e}"
-
-    return report
+    
+    ok, out, err = run_cli(model, prompt, timeout)
+    if not ok:
+        rpt.judge_output = f"Judge error: {err}"
+        return rpt
+    
+    rpt.judge_output = out
+    rpt.research_quality = rx_int(r"RESEARCH_QUALITY:\s*(\d+)", out)
+    rpt.reasoning_quality = rx_int(r"REASONING_QUALITY:\s*(\d+)", out)
+    rpt.output_structure = rx_int(r"OUTPUT_STRUCTURE:\s*(\d+)", out)
+    
+    if m := re.search(r"OVERALL_SCORE:\s*([\d.]+)", out):
+        rpt.overall_score = float(m.group(1))
+    else:
+        w = tc.rubric_weights
+        rpt.overall_score = (rpt.research_quality * w.get("research_quality", 33) + rpt.reasoning_quality * w.get("reasoning_quality", 34) + rpt.output_structure * w.get("output_structure", 33)) / 100
+    
+    rpt.must_include_met = rx_list(r"MUST_INCLUDE_MET:\s*(.+?)(?=\n|$)", out)
+    rpt.must_include_missed = rx_list(r"MUST_INCLUDE_MISSED:\s*(.+?)(?=\n|$)", out)
+    rpt.passed = m.group(1).upper() == "PASS" if (m := re.search(r"RESULT:\s*(PASS|FAIL)", out, re.I)) else rpt.overall_score >= tc.passing_threshold
+    return rpt
 
 
-def generate_report(report: EvaluationReport, output_dir: Path, model: str = "claude") -> Path:
-    agent_dir = output_dir / report.test_case.agent
-    agent_dir.mkdir(parents=True, exist_ok=True)
+def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude") -> Path:
+    tc, ar, w = rpt.test_case, rpt.agent_result, rpt.test_case.rubric_weights
+    name = tc.file_path.stem if tc.file_path else tc.name
+    path = out_dir / tc.agent / f"{name}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    
+    path.write_text(f"""# Evaluation Report: {tc.name}
 
-    test_name = report.test_case.file_path.stem if report.test_case.file_path else report.test_case.name
-    report_path = agent_dir / f"{test_name}.md"
-
-    status = "PASS ✓" if report.passed else "FAIL ✗"
-    if not report.agent_result.success:
-        status = "ERROR ⚠"
-
-    content = f"""# Evaluation Report: {report.test_case.name}
-
-**Date**: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-**Model**: {model}
-**Agent**: {report.test_case.agent}
-**Test**: {test_name}
-**Difficulty**: {report.test_case.difficulty}
-**Status**: {status}
+**Date**: {datetime.now():%Y-%m-%d %H:%M:%S}  **Model**: {model}  **Agent**: {tc.agent}
+**Test**: {name}  **Difficulty**: {tc.difficulty}  **Status**: {"ERROR ⚠" if not ar.success else "PASS ✓" if rpt.passed else "FAIL ✗"}
 
 ## Scores
-
 | Dimension | Score | Weight |
 |-----------|-------|--------|
-| Research Quality | {report.research_quality}/100 | {report.test_case.rubric_weights.get("research_quality", 33)}% |
-| Reasoning Quality | {report.reasoning_quality}/100 | {report.test_case.rubric_weights.get("reasoning_quality", 34)}% |
-| Output Structure | {report.output_structure}/100 | {report.test_case.rubric_weights.get("output_structure", 33)}% |
-| **Overall** | **{report.overall_score:.1f}/100** | |
+| Research | {rpt.research_quality}/100 | {w.get("research_quality", 33)}% |
+| Reasoning | {rpt.reasoning_quality}/100 | {w.get("reasoning_quality", 34)}% |
+| Structure | {rpt.output_structure}/100 | {w.get("output_structure", 33)}% |
+| **Overall** | **{rpt.overall_score:.1f}/100** | |
 
-## Must-Include Behaviors
+## Must-Include
+**Met**: {", ".join(rpt.must_include_met) or "None"}  **Missed**: {", ".join(rpt.must_include_missed) or "None"}
 
-**Met**: {", ".join(report.must_include_met) if report.must_include_met else "None identified"}
+## Execution
+**Duration**: {ar.duration_seconds:.1f}s  **Success**: {"Yes" if ar.success else "No"}{f"  **Error**: {ar.error}" if ar.error else ""}
 
-**Missed**: {", ".join(report.must_include_missed) if report.must_include_missed else "None"}
-
-## Agent Execution
-
-**Duration**: {report.agent_result.duration_seconds:.1f}s
-**Success**: {"Yes" if report.agent_result.success else "No"}
-{f"**Error**: {report.agent_result.error}" if report.agent_result.error else ""}
-
-## Agent Output
-
+## Output
 ```
-{report.agent_result.output[:5000]}{"..." if len(report.agent_result.output) > 5000 else ""}
+{ar.output}
 ```
 
-## Judge Evaluation
-
-{report.judge_output}
-"""
-
-    report_path.write_text(content)
-    return report_path
+## Judge
+{rpt.judge_output}
+""")
+    return path
 
 
-def generate_summary(reports: list[EvaluationReport], output_dir: Path) -> Path:
-    index_path = output_dir / "index.md"
-
-    total = len(reports)
-    passed = sum(1 for r in reports if r.passed and r.agent_result.success)
-    failed = sum(1 for r in reports if not r.passed and r.agent_result.success)
-    errors = sum(1 for r in reports if not r.agent_result.success)
-    avg_score = sum(r.overall_score for r in reports if r.agent_result.success) / max(1, total - errors)
-
-    agents = {}
+def generate_summary(reports: list[EvaluationReport], out_dir: Path) -> Path:
+    n = len(reports)
+    ok = sum(r.passed and r.agent_result.success for r in reports)
+    fail = sum(not r.passed and r.agent_result.success for r in reports)
+    err = sum(not r.agent_result.success for r in reports)
+    avg = sum(r.overall_score for r in reports if r.agent_result.success) / max(1, n - err)
+    
+    agents: dict = {}
     for r in reports:
-        if r.test_case.agent not in agents:
-            agents[r.test_case.agent] = {"tests": 0, "passed": 0, "failed": 0, "errors": 0, "scores": []}
-        agents[r.test_case.agent]["tests"] += 1
-        if not r.agent_result.success:
-            agents[r.test_case.agent]["errors"] += 1
-        elif r.passed:
-            agents[r.test_case.agent]["passed"] += 1
-            agents[r.test_case.agent]["scores"].append(r.overall_score)
-        else:
-            agents[r.test_case.agent]["failed"] += 1
-            agents[r.test_case.agent]["scores"].append(r.overall_score)
+        a = agents.setdefault(r.test_case.agent, {"n": 0, "ok": 0, "fail": 0, "err": 0, "scores": []})
+        a["n"] += 1
+        a["err" if not r.agent_result.success else "ok" if r.passed else "fail"] += 1
+        if r.agent_result.success:
+            a["scores"].append(r.overall_score)
+    
+    path = out_dir / "index.md"
+    path.write_text(f"""# Evaluation Report
+**Date**: {datetime.now():%Y-%m-%d %H:%M:%S}  **Tests**: {n}
 
-    content = f"""# Co-Researcher Evaluation Report
+| Status | Count | % |
+|--------|-------|---|
+| PASS | {ok} | {ok/n*100:.0f}% |
+| FAIL | {fail} | {fail/n*100:.0f}% |
+| ERROR | {err} | {err/n*100:.0f}% |
 
-**Date**: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-**Total Tests**: {total}
+**Avg**: {avg:.0f}/100
 
-## Overview
-
-| Status | Count | Percentage |
-|--------|-------|------------|
-| PASS | {passed} | {passed/total*100:.1f}% |
-| FAIL | {failed} | {failed/total*100:.1f}% |
-| ERROR | {errors} | {errors/total*100:.1f}% |
-
-**Average Score**: {avg_score:.1f}/100
-
-## Per-Agent Results
-
-| Agent | Tests | Passed | Failed | Errors | Avg Score |
-|-------|-------|--------|--------|--------|-----------|
-"""
-
-    for agent, stats in sorted(agents.items()):
-        avg = sum(stats["scores"]) / len(stats["scores"]) if stats["scores"] else 0
-        content += f"| {agent} | {stats['tests']} | {stats['passed']} | {stats['failed']} | {stats['errors']} | {avg:.0f} |\n"
-
-    content += """
-## Test Results
-
+## Agents
+| Agent | Tests | Pass | Fail | Err | Avg |
+|-------|-------|------|------|-----|-----|
+{"".join(f"| {a} | {s['n']} | {s['ok']} | {s['fail']} | {s['err']} | {sum(s['scores'])/len(s['scores']) if s['scores'] else 0:.0f} |" + chr(10) for a, s in sorted(agents.items()))}
+## Results
 | Agent | Test | Score | Status |
 |-------|------|-------|--------|
-"""
-
-    for r in reports:
-        test_name = r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name
-        if not r.agent_result.success:
-            status = "ERROR"
-            score = "-"
-        else:
-            status = "PASS" if r.passed else "FAIL"
-            score = f"{r.overall_score:.0f}"
-        content += f"| {r.test_case.agent} | {test_name} | {score} | {status} |\n"
-
-    content += """
-## Detailed Reports
-
-"""
-    for r in reports:
-        test_name = r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name
-        content += f"- [{r.test_case.agent}/{test_name}]({r.test_case.agent}/{test_name}.md)\n"
-
-    index_path.write_text(content)
-    return index_path
+{"".join(f"| {r.test_case.agent} | {r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name} | {'-' if not r.agent_result.success else f'{r.overall_score:.0f}'} | {'ERR' if not r.agent_result.success else 'PASS' if r.passed else 'FAIL'} |" + chr(10) for r in reports)}
+## Details
+{"".join(f"- [{r.test_case.agent}/{r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name}]({r.test_case.agent}/{r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name}.md)" + chr(10) for r in reports)}
+""")
+    return path

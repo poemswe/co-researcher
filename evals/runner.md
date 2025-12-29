@@ -1,102 +1,87 @@
----
-description: Run evaluation suite for co-researcher agents
----
-
-# /eval - Evaluation Runner
+# Evaluation Framework
 
 Run evaluation tests against co-researcher agents to assess quality and performance.
 
-## Usage
+## Quick Start
 
-```
-/eval [agent] [test]
-```
-
-### Examples
-```
-/eval all                           # Run all tests for all agents
-/eval literature-reviewer           # Run all tests for literature-reviewer
-/eval critical-analyzer fallacy     # Run specific test
+```bash
+cd evals
+python run_eval.py list                    # List all tests
+python run_eval.py all                     # Run all tests
+python run_eval.py all --model gemini      # Run with Gemini
 ```
 
-## Available Tests
+## CLI Usage
 
-### literature-reviewer
-| Test | Difficulty | Focus |
-|------|------------|-------|
-| basic-search | Easy | Search strategy and source retrieval |
-| gap-analysis | Medium | Research gap identification |
-| citation-chain | Hard | Citation tracing and influence mapping |
+```bash
+python run_eval.py [args] [-m MODEL] [-v]
 
-### critical-analyzer
-| Test | Difficulty | Focus |
-|------|------------|-------|
-| fallacy-detection | Medium | Identifying logical fallacies |
-| bias-identification | Hard | Research and cognitive bias detection |
-| methodology-critique | Medium | Evaluating research methods |
+# Examples
+python run_eval.py list                              # List available tests
+python run_eval.py all                     # Run all with Claude
+python run_eval.py all --model gemini      # Run with Gemini
+python run_eval.py all --model codex       # Run with Codex
+python run_eval.py all --model gemini:2.5-pro        # Run with Gemini 2.5 Pro
+python run_eval.py critical-analyzer fallacy-detection  # Run specific test
+python run_eval.py literature-reviewer -v            # Verbose output
+```
 
-### hypothesis-explorer
-| Test | Difficulty | Focus |
-|------|------------|-------|
-| hypothesis-formulation | Medium | Creating testable hypotheses |
-| variable-mapping | Hard | Identifying variables and confounds |
+## Model Options
 
-### quant-analyst
-| Test | Difficulty | Focus |
-|------|------------|-------|
-| stat-method-selection | Medium | Choosing statistical tests |
-| effect-size-interpretation | Medium | Understanding practical significance |
+| Model | Version Examples |
+|-------|------------------|
+| `claude` | `claude`, `claude:sonnet`, `claude:opus` |
+| `gemini` | `gemini`, `gemini:2.5-pro`, `gemini:flash` |
 
-### qual-researcher
-| Test | Difficulty | Focus |
-|------|------------|-------|
-| thematic-analysis | Medium | Identifying themes in text data |
-| coding-strategy | Medium | Developing coding schemes |
+## Available Tests (20 total)
 
-### lateral-thinker
-| Test | Difficulty | Focus |
-|------|------------|-------|
-| analogy-finding | Hard | Cross-domain analogy discovery |
-| first-principles | Hard | Fundamental decomposition |
+| Agent | Test | Difficulty |
+|-------|------|------------|
+| **critical-analyzer** | bias-identification | Hard |
+| | contradictory-evidence | Hard |
+| | fallacy-detection | Medium |
+| | methodology-critique | Medium |
+| **hypothesis-explorer** | hypothesis-formulation | Medium |
+| | unfalsifiable-claim | Hard |
+| | variable-mapping | Hard |
+| **lateral-thinker** | analogy-finding | Hard |
+| | constraint-satisfaction | Hard |
+| | first-principles | Hard |
+| **literature-reviewer** | basic-search | Easy |
+| | citation-chain | Hard |
+| | gap-analysis | Medium |
+| | hallucination-detection | Hard |
+| **qual-researcher** | coding-strategy | Medium |
+| | leading-questions | Hard |
+| | thematic-analysis | Medium |
+| **quant-analyst** | effect-size-interpretation | Medium |
+| | simpson-paradox | Hard |
+| | stat-method-selection | Medium |
 
-## Evaluation Process
+## Scoring
 
-1. **Load Test Case**: Read test prompt and expected behaviors
-2. **Execute Agent**: Run agent with test prompt
-3. **Apply Rubrics**: Use LLM-judge with appropriate rubrics
-4. **Generate Report**: Produce scored evaluation report
+| Dimension | Weight | What it measures |
+|-----------|--------|------------------|
+| Research Quality | 25-50% | Sources, accuracy, citations |
+| Reasoning Quality | 25-55% | Logic, bias detection, methodology |
+| Output Structure | 20-33% | Organization, clarity |
 
-## Rubrics Applied
-
-| Dimension | Max Score | Description |
-|-----------|-----------|-------------|
-| Research Quality | 100 | Source credibility, comprehensiveness, accuracy, citations |
-| Reasoning Quality | 100 | Logic, bias detection, methodology critique, alternatives |
-| Output Structure | 100 | Organization, completeness, clarity, visual elements |
-
-## Passing Criteria
-
-- **Overall**: ≥ 70/100 weighted average
-- **Primary dimension**: Must meet test-specific threshold
-- **Critical items**: Must include all "Must Include" behaviors
+**Passing**: ≥70/100 overall (Hard tests: ≥80)
 
 ## Output
 
-Evaluation produces:
-1. Score breakdown by dimension
-2. Pass/fail determination
-3. Strengths and weaknesses
-4. Improvement recommendations
+Results saved to `evals/results/`:
+- `results/index.md` — Summary report
+- `results/<agent>/<test>.md` — Individual test reports
 
-## Batch Evaluation
+## Structure
 
-To evaluate all agents:
 ```
-/eval all
+evals/
+├── run_eval.py          # CLI entry point
+├── lib/core.py          # Core logic
+├── prompts/             # Prompt templates
+├── rubrics/             # Scoring rubrics
+├── test-cases/          # Test definitions
+└── results/             # Generated reports
 ```
-
-This generates a summary report with:
-- Per-agent scores
-- Per-test scores
-- Overall plugin quality assessment
-- Comparative analysis across agents

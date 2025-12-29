@@ -41,7 +41,7 @@ def list_tests():
 def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude"):
     print(f"\n🧪 Running: {agent}/{test} (model: {model})")
     
-    tests = discover_tests(TEST_CASES_DIR, agent_filter=agent, test_filter=test)
+    tests = discover_tests(TEST_CASES_DIR, agent=agent, test=test)
     
     if not tests:
         print(f"   ❌ Test not found: {agent}/{test}")
@@ -77,7 +77,7 @@ def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude"
 def run_agent_tests(agent: str, verbose: bool = False, model: str = "claude"):
     print(f"\n🔬 Running all tests for: {agent} (model: {model})")
     
-    tests = discover_tests(TEST_CASES_DIR, agent_filter=agent)
+    tests = discover_tests(TEST_CASES_DIR, agent=agent)
     
     if not tests:
         print(f"   ❌ No tests found for agent: {agent}")
@@ -144,11 +144,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python run_eval.py list                              List all available tests
-  python run_eval.py all                               Run all tests with Claude
-  python run_eval.py all --model gemini                Run all tests with Gemini
-  python run_eval.py literature-reviewer basic-search  Run specific test
-  python run_eval.py all --verbose                     Run with verbose output
+  python run_eval.py list                                List all available tests
+  python run_eval.py all                                 Run all tests with Claude (default)
+  python run_eval.py all --model claude:sonnet           Run with Claude Sonnet
+  python run_eval.py all --model gemini:2.5-pro          Run with Gemini 2.5 Pro
+  python run_eval.py all --model gemini:flash            Run with Gemini Flash
+  python run_eval.py literature-reviewer basic-search    Run specific test
         """
     )
     
@@ -166,9 +167,8 @@ Examples:
     
     parser.add_argument(
         "-m", "--model",
-        choices=["claude", "gemini"],
         default="claude",
-        help="Model to use for evaluation (default: claude)"
+        help="Model to use (default: claude). Format: provider or provider:version. Examples: claude, claude:sonnet, claude:opus, gemini, gemini:2.5-pro, gemini:flash"
     )
     
     args = parser.parse_args()
