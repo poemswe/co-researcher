@@ -50,9 +50,15 @@ def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude"
         
     test_case = tests[0]
     print(f"   📝 {test_case.name} ({test_case.difficulty})")
+    
+    # Use per-test timeout if specified, otherwise use default
+    timeout = test_case.timeout or 600
+    if test_case.timeout:
+        print(f"   ⏱️  Custom timeout: {timeout}s")
+    
     print(f"   🔄 Executing agent...")
     
-    agent_result = execute_agent(test_case.agent, test_case.task_prompt, model=model)
+    agent_result = execute_agent(test_case.agent, test_case.task_prompt, timeout=timeout, model=model)
     
     if not agent_result.success:
         print(f"   ❌ Agent execution failed: {agent_result.error}")

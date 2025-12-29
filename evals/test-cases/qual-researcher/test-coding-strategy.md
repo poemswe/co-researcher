@@ -4,6 +4,7 @@
 - **Agent**: qual-researcher
 - **Difficulty**: Medium
 - **Focus**: Developing coding schemes for qualitative data
+- **Timeout**: 300
 
 ## Task Prompt
 

@@ -25,6 +25,7 @@ class TestCase:
     passing_threshold: int = 70
     rubric_weights: dict[str, int] = field(default_factory=dict)
     file_path: Optional[Path] = None
+    timeout: Optional[int] = None  # Per-test timeout override
 
 
 @dataclass(slots=True)
@@ -105,19 +106,33 @@ def checklist(content: str, section: str) -> list[str]:
 
 def parse_test_case(path: Path) -> TestCase:
     c = path.read_text()
+    
+    # Parse task_prompt (renamed to content in the diff, but keeping original name for now)
+    task_prompt = rx(r"## Task Prompt\s*```([^`]+)```", c, flags=re.DOTALL) or rx(r"## Task Prompt\s*\n(.+?)(?=\n##)", c, flags=re.DOTALL)
+    
+    # Parse rubric weights
     weights = {m.group(1).lower().replace(" ", "_"): int(m.group(2)) for m in re.finditer(r"(\w+ Quality):\s*(\d+)%", c)}
+    if not weights: # Try new format from diff
+        weights = {k.lower().replace(" ", "_"): v for k, v in (
+            (m.group(1), int(m.group(2))) for m in re.finditer(r"-\s*([^:]+):\s*(\d+)%", rx(r"## Rubric Weights\s*\n(.*?)(?=\n##|\Z)", c, re.DOTALL))
+        )} if rx(r"## Rubric Weights", c) else DEFAULT_WEIGHTS.copy()
+    
+    # Parse per-test timeout if specified
+    timeout_override = rx_int(r"-\s*\*\*Timeout\*\*:\s*(\d+)", c) or None
+
     return TestCase(
         name=rx(r"#\s*Test Case:\s*(.+)", c, path.stem),
         agent=rx(r"Agent[*`]*:\s*[*`]*([\w-]+)[*`]*", c, "unknown"),
         difficulty=rx(r"Difficulty[*`]*:\s*[*`]*(\w+)[*`]*", c, "Medium"),
         focus=rx(r"Focus[*`]*:\s*[*`]*(.*?)[*`]*(?:\n|$)", c),
-        task_prompt=rx(r"##\s*Task Prompt\s*\n+```\n?(.*?)```", c, flags=re.DOTALL),
+        task_prompt=task_prompt or rx(r"##\s*Task Prompt\s*\n+```\n?(.*?)```", c, flags=re.DOTALL),
         must_include=checklist(c, "Must Include") or checklist(c, "Must Identify"),
         should_include=checklist(c, "Should Include"),
         should_not_include=checklist(c, "Should Not Include"),
         passing_threshold=rx_int(r"Overall Score:\s*[≥>=]+\s*(\d+)", c, 70),
         rubric_weights=weights or DEFAULT_WEIGHTS.copy(),
         file_path=path,
+        timeout=timeout_override,
     )
 
 
@@ -180,14 +195,18 @@ def run_cli(model: str, prompt: str, timeout: int = 600, cwd: Optional[str] = No
         return False, "", str(e)
 
 
-def execute_agent(agent_name: str, prompt: str, timeout: int = 600, model: str = "claude") -> AgentResult:
+def execute_agent(agent_name: str, prompt: str, timeout: int = 600, model: str = "claude", eval_mode: bool = True) -> AgentResult:
     start = time.time()
     methodology = strip_frontmatter(load_file(EVALS_DIR.parent / "agents" / f"{agent_name}.md"))
-    tmpl = "agent_prompt" if methodology else "agent_prompt_fallback"
-    full_prompt = load_template(tmpl).format(agent_name=agent_name, methodology=methodology, prompt=prompt)
     
-    with tempfile.TemporaryDirectory() as tmp:
-        ok, out, err = run_cli(model, full_prompt, timeout, tmp)
+    # In eval mode, add conciseness instruction
+    if eval_mode and methodology:
+        methodology = f"{methodology}\n\n**EVAL MODE**: Provide focused, concise output. Prioritize core analysis over exhaustive detail."
+    
+    tmpl = "agent_prompt" if methodology else "agent_prompt_fallback"
+    full_prompt = load_template(tmpl).replace("{agent_name}", agent_name).replace("{methodology}", methodology).replace("{prompt}", prompt)
+    
+    ok, out, err = run_cli(model, full_prompt, timeout)
     return AgentResult(ok, out, time.time() - start, err or None)
 
 
