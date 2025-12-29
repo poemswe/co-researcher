@@ -38,8 +38,9 @@ def list_tests():
     print(f"Total: {total} tests across {len(agents)} agents\n")
 
 
-def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude"):
-    print(f"\n🧪 Running: {agent}/{test} (model: {model})")
+def run_test(agent: str, test: str, verbose: bool = False, model: str = "claude", index: int = 1, total: int = 1):
+    progress = f"[{index}/{total}] " if total > 1 else ""
+    print(f"\n{progress}🧪 Running: {agent}/{test} (model: {model})")
     
     tests = discover_tests(TEST_CASES_DIR, agent=agent, test=test)
     
@@ -86,9 +87,9 @@ def run_agent_tests(agent: str, verbose: bool = False, model: str = "claude"):
     print(f"   Found {len(tests)} test(s)")
     
     reports = []
-    for test_case in tests:
+    for i, test_case in enumerate(tests, 1):
         test_name = test_case.file_path.stem.replace("test-", "") if test_case.file_path else test_case.name
-        report = run_test(agent, test_name, verbose, model)
+        report = run_test(agent, test_name, verbose, model, index=i, total=len(tests))
         if report:
             reports.append(report)
     
@@ -103,8 +104,9 @@ def run_all_tests(verbose: bool = False, model: str = "claude"):
     
     reports = []
     current_agent = None
+    total_tests = len(tests)
     
-    for test_case in tests:
+    for i, test_case in enumerate(tests, 1):
         if test_case.agent != current_agent:
             current_agent = test_case.agent
             print(f"\n{'='*50}")
@@ -112,7 +114,7 @@ def run_all_tests(verbose: bool = False, model: str = "claude"):
             print(f"{'='*50}")
         
         test_name = test_case.file_path.stem.replace("test-", "") if test_case.file_path else test_case.name
-        report = run_test(test_case.agent, test_name, verbose, model)
+        report = run_test(test_case.agent, test_name, verbose, model, index=i, total=total_tests)
         if report:
             reports.append(report)
     

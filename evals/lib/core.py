@@ -47,6 +47,7 @@ class EvaluationReport:
     judge_output: str = ""
     must_include_met: list[str] = field(default_factory=list)
     must_include_missed: list[str] = field(default_factory=list)
+    report_path: Optional[Path] = None
 
 
 EVALS_DIR = Path(__file__).parent.parent
@@ -229,8 +230,13 @@ def evaluate_output(tc: TestCase, output: str, timeout: int = 300, model: str = 
 def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude") -> Path:
     tc, ar, w = rpt.test_case, rpt.agent_result, rpt.test_case.rubric_weights
     name = tc.file_path.stem if tc.file_path else tc.name
-    path = out_dir / tc.agent / f"{name}.md"
+    # provider only for filename
+    model_name = model.split(":")[0].lower()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    path = out_dir / tc.agent / f"{name}_{model_name}_{timestamp}.md"
     path.parent.mkdir(parents=True, exist_ok=True)
+    rpt.report_path = path
     
     path.write_text(f"""# Evaluation Report: {tc.name}
 
@@ -298,6 +304,6 @@ def generate_summary(reports: list[EvaluationReport], out_dir: Path) -> Path:
 |-------|------|-------|--------|
 {"".join(f"| {r.test_case.agent} | {r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name} | {'-' if not r.agent_result.success else f'{r.overall_score:.0f}'} | {'ERR' if not r.agent_result.success else 'PASS' if r.passed else 'FAIL'} |" + chr(10) for r in reports)}
 ## Details
-{"".join(f"- [{r.test_case.agent}/{r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name}]({r.test_case.agent}/{r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name}.md)" + chr(10) for r in reports)}
+{"".join(f"- [{r.test_case.agent}/{r.test_case.file_path.stem if r.test_case.file_path else r.test_case.name}]({r.report_path.relative_to(out_dir)})" + chr(10) for r in reports if r.report_path)}
 """)
     return path
