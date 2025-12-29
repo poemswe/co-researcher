@@ -26,6 +26,7 @@ class TestCase:
     rubric_weights: dict[str, int] = field(default_factory=dict)
     file_path: Optional[Path] = None
     timeout: Optional[int] = None  # Per-test timeout override
+    rubric_profile: Optional[dict] = None  # Rubric profile from test case metadata
 
 
 @dataclass(slots=True)
@@ -119,6 +120,15 @@ def parse_test_case(path: Path) -> TestCase:
     
     # Parse per-test timeout if specified
     timeout_override = rx_int(r"-\s*\*\*Timeout\*\*:\s*(\d+)", c) or None
+    
+    # Parse rubric profile if specified
+    rubric_profile = None
+    if rubric_section := rx(r"## Rubric Profile\s*\n(.*?)(?=\n##|\Z)", c, flags=re.DOTALL):
+        rubric_profile = {}
+        for line in rubric_section.split('\n'):
+            if m := re.match(r'-\s*\*\*([^*]+)\*\*:\s*([\w-]+)\s*\((\d+)%\)', line):
+                tier, rubric_name, weight = m.groups()
+                rubric_profile[tier.lower()] = {"rubric": rubric_name, "weight": int(weight)}
 
     return TestCase(
         name=rx(r"#\s*Test Case:\s*(.+)", c, path.stem),
@@ -133,6 +143,7 @@ def parse_test_case(path: Path) -> TestCase:
         rubric_weights=weights or DEFAULT_WEIGHTS.copy(),
         file_path=path,
         timeout=timeout_override,
+        rubric_profile=rubric_profile,
     )
 
 
@@ -213,32 +224,92 @@ def execute_agent(agent_name: str, prompt: str, timeout: int = 600, model: str =
 def evaluate_output(tc: TestCase, output: str, timeout: int = 600, model: str = "claude") -> EvaluationReport:
     rpt = EvaluationReport(tc, AgentResult(True, output, 0))
     
-    rubrics = "\n".join(f"\n--- {f.stem} ---\n{f.read_text()}" for f in (tc.file_path.parent.parent / "rubrics").glob("*.md")) if tc.file_path else ""
+    rubrics_dir = EVALS_DIR / "rubrics"
     
+    # Build rubric dimensions and score format based on rubric profile
+    if tc.rubric_profile:
+        # Load only specified rubrics
+        rubric_texts = []
+        rubric_dimensions = []
+        score_format_lines = []
+        score_keys = []
+        
+        for tier, spec in sorted(tc.rubric_profile.items()):
+            rubric_name = spec["rubric"]
+            weight = spec["weight"]
+            
+            # Load rubric content
+            rubric_file = rubrics_dir / f"{rubric_name}.md"
+            if rubric_file.exists():
+                rubric_texts.append(f"\n--- {rubric_name} ({weight}%) ---\n{rubric_file.read_text()}")
+            
+            # Format rubric name for output
+            rubric_display = rubric_name.replace("-", " ").title()
+            rubric_key = rubric_name.replace("-", "_").upper()
+            
+            rubric_dimensions.append(f"{tier.capitalize()}) **{rubric_display}** ({weight}%)")
+            score_format_lines.append(f"{rubric_key}: [score]")
+            score_keys.append((rubric_key, rubric_name, weight))
+        
+        rubrics_text = "\n".join(rubric_texts)
+        rubric_dimensions_text = "\n".join(rubric_dimensions)
+        score_format = "\n".join(score_format_lines)
+    else:
+        # Fallback to legacy 3-rubric system
+        rubrics_text = "\n".join(f"\n--- {f.stem} ---\n{f.read_text()}" for f in rubrics_dir.glob("*.md"))
+        rubric_dimensions_text = """1. **Research Quality**: Source credibility, comprehensiveness, accuracy, citation quality
+2. **Reasoning Quality**: Logical coherence, bias detection, methodology critique, alternatives
+3. **Output Structure**: Organization, completeness, clarity, visual communication"""
+        score_format = """RESEARCH_QUALITY: [score]
+REASONING_QUALITY: [score]
+OUTPUT_STRUCTURE: [score]"""
+        score_keys = [
+            ("RESEARCH_QUALITY", "research_quality", tc.rubric_weights.get("research_quality", 33)),
+            ("REASONING_QUALITY", "reasoning_quality", tc.rubric_weights.get("reasoning_quality", 34)),
+            ("OUTPUT_STRUCTURE", "output_structure", tc.rubric_weights.get("output_structure", 33)),
+        ]
+    
+    # Build judge prompt
     prompt = load_template("judge_prompt").format(
         agent=tc.agent, task_prompt=tc.task_prompt,
-        must_include="\n".join(f"- {i}" for i in tc.must_include),
-        should_include="\n".join(f"- {i}" for i in tc.should_include),
-        should_not_include="\n".join(f"- {i}" for i in tc.should_not_include),
-        rubric_weights=tc.rubric_weights, rubrics_text=rubrics,
-        agent_output=output, passing_threshold=tc.passing_threshold,
+        must_include="\n".join(f"- {i}" for i in tc.must_include) if tc.must_include else "None",
+        should_include="\n".join(f"- {i}" for i in tc.should_include) if tc.should_include else "None",
+        should_not_include="\n".join(f"- {i}" for i in tc.should_not_include) if tc.should_not_include else "None",
+        rubric_weights=tc.rubric_weights, 
+        rubrics_text=rubrics_text,
+        rubric_dimensions=rubric_dimensions_text,
+        score_format=score_format,
+        agent_output=output, 
+        passing_threshold=tc.passing_threshold,
     )
     
+    # Call judge
     ok, out, err = run_cli(model, prompt, timeout)
     if not ok:
         rpt.judge_output = f"Judge error: {err}"
         return rpt
     
     rpt.judge_output = out
-    rpt.research_quality = rx_int(r"RESEARCH_QUALITY[*`]*\s*[:=]\s*(\d+)", out)
-    rpt.reasoning_quality = rx_int(r"REASONING_QUALITY[*`]*\s*[:=]\s*(\d+)", out)
-    rpt.output_structure = rx_int(r"OUTPUT_STRUCTURE[*`]*\s*[:=]\s*(\d+)", out)
     
+    # Parse scores dynamically based on rubric profile
+    scores = {}
+    for key, name, weight in score_keys:
+        score = rx_int(rf"{key}[*`]*\s*[:=]\s*(\d+)", out)
+        scores[name] = score
+    
+    # Map to legacy fields for backward compatibility
+    rpt.research_quality = scores.get("research_quality", scores.get("research-quality", 0))
+    rpt.reasoning_quality = scores.get("reasoning_quality", scores.get("reasoning-quality", 0))
+    rpt.output_structure = scores.get("output_structure", scores.get("output-structure", 0))
+    
+    # Calculate overall score
     if m := re.search(r"OVERALL_SCORE[*`]*\s*[:=]\s*([\d.]+)", out):
         rpt.overall_score = float(m.group(1))
     else:
-        w = tc.rubric_weights
-        rpt.overall_score = (rpt.research_quality * w.get("research_quality", 33) + rpt.reasoning_quality * w.get("reasoning_quality", 34) + rpt.output_structure * w.get("output_structure", 33)) / 100
+        # Weighted average using rubric profile weights
+        total_score = sum(scores.get(name, 0) * weight for _, name, weight in score_keys)
+        total_weight = sum(weight for _, _, weight in score_keys)
+        rpt.overall_score = total_score / total_weight if total_weight > 0 else 0
     
     rpt.must_include_met = rx_list(r"MUST_INCLUDE_MET:\s*(.+?)(?=\n|$)", out)
     rpt.must_include_missed = rx_list(r"MUST_INCLUDE_MISSED:\s*(.+?)(?=\n|$)", out)

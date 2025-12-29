@@ -52,11 +52,9 @@ You are an impartial evaluator assessing the quality of research agent outputs. 
 
 ## Your Task
 
-Score the output on three dimensions (0-100 each):
+Score the output using the following rubrics (as specified by the test case):
 
-1. **Research Quality**: Source credibility, comprehensiveness, accuracy, citation quality
-2. **Reasoning Quality**: Logical coherence, bias detection, methodology critique, alternatives
-3. **Output Structure**: Organization, completeness, clarity, visual communication
+{rubric_dimensions}
 
 For each dimension, provide:
 - Score (0-100)
@@ -64,7 +62,7 @@ For each dimension, provide:
 
 Then provide:
 - Which "Must Include" behaviors were MET
-- Which "Must Include" behaviors were MISSED
+- Which "Must Include" behaviors were MISSED  
 - Overall weighted score
 - PASS/FAIL determination (threshold: {passing_threshold})
 
@@ -72,9 +70,7 @@ Then provide:
 
 Format your response EXACTLY as:
 ```
-RESEARCH_QUALITY: [score]
-REASONING_QUALITY: [score]
-OUTPUT_STRUCTURE: [score]
+{score_format}
 MUST_INCLUDE_MET: [comma-separated list or "none"]
 MUST_INCLUDE_MISSED: [comma-separated list or "none"]
 OVERALL_SCORE: [weighted score]
