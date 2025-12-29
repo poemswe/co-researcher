@@ -1,0 +1,34 @@
+{
+  "name": "co-researcher-marketplace",
+  "owner": {
+    "name": "poemswe",
+    "email": "poepoemyintswe@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "co-researcher",
+      "source": "./",
+      "description": "PhD-level research capabilities: literature review, multi-source investigation, critical analysis, hypothesis-driven exploration, quantitative/qualitative methods, and lateral thinking",
+      "version": "1.0.0",
+      "author": {
+        "name": "poemswe"
+      },
+      "license": "MIT",
+      "keywords": [
+        "research",
+        "literature-review",
+        "critical-analysis",
+        "hypothesis",
+        "academic",
+        "investigation",
+        "evaluation",
+        "testing",
+        "agents",
+        "skills",
+        "commands"
+      ],
+      "homepage": "https://github.com/poemswe/co-researcher",
+      "repository": "https://github.com/poemswe/co-researcher"
+    }
+  ]
+}
