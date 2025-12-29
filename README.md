@@ -7,10 +7,11 @@ A PhD-level research capabilities plugin for Claude Code that provides specializ
 - **8 Specialized Research Agents** - Expert agents for different research approaches
 - **7 Research Skills** - Focused skill modules for specific research tasks
 - **6 Research Commands** - Quick-access commands for common research operations
-- **22 Test Cases** - Comprehensive evaluation suite for agents with automated scoring
+- **22 Test Cases** - Comprehensive evaluation suite with automated scoring
 - **Python Eval Framework** - CLI-based testing with multi-model support (Claude, Gemini, Codex)
 - **Multi-Platform Support** - Works with Claude Code, Gemini CLI, and OpenAI Codex CLI
 - **Academic Rigor** - PhD-level methodologies for research tasks
+- **Universal Distribution** - Simple "Repository-as-a-Plugin" model
 
 ## Agents
 
@@ -198,7 +199,7 @@ co-researcher/
 │   ├── lib/core.py      # Core evaluation logic
 │   ├── prompts/         # Judge and agent prompt templates
 │   ├── rubrics/         # Research, reasoning, structure rubrics
-│   └── test-cases/      # 20 tests across 6 agents
+│   └── test-cases/      # 22 tests across 8 agents
 └── .claude-plugin/      # Plugin manifest
 ```
 
@@ -243,10 +244,14 @@ co-researcher/
 ```bash
 cd evals
 python run_eval.py all --model gemini
-# → Runs all 20 tests across 6 agents
-# → Multi-model support (Claude, Gemini)
+# → Runs all 22 tests across 8 agents
+# → Multi-model support (Claude, Gemini, Codex)
 # → Generates reports in results/
 ```
+
+## Publishing & Distribution
+
+For detailed instructions on how to publish this suite for all three platforms, see the [Publishing Guide](PUBLISHING.md).
 
 ## Features in Detail
 
