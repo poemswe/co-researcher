@@ -1,0 +1,18 @@
+description = "Peer review a research manuscript or proposal"
+prompt = """# /review - Peer Review
+
+I'll simulate a rigorous, anonymous peer review of your work.
+
+## What I'll evaluate:
+1. **Contribution**: Originality and impact
+2. **Methodology**: Rigor and appropriateness
+3. **Arguments**: Logical coherence and theoretical grounding
+4. **Presentation**: Clarity and structured
+
+## How to use:
+- Provide the text of your paper/proposal
+- Attach files or provide a URL
+- Mention if you want "Reviewer 2" (adversarial) style
+
+Provide your draft to begin the review.
+Target: {{args}}"""
