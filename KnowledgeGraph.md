@@ -24,6 +24,7 @@
 ### Evaluation Framework
 - **Multi-Model Support**: Integrated testing for Claude, Gemini, and Codex.
 - **22-Test Suite**: Comprehensive validation of PhD-level rigor.
+- **Standardized Schema**: All test cases use a unified Markdown schema (Task Prompt code blocks, checklist-based expected behaviors) for reliable LLM-as-judge parsing.
 
 ## Workflows
 - **Discovery**: Agents are discovered by platform-specific manifests at the repository level.
