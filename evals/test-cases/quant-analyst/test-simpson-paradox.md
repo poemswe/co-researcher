@@ -5,6 +5,10 @@
 - **Difficulty**: Hard
 - **Focus**: Statistical paradox recognition and correct interpretation
 
+## Rubric Profile
+- **Primary**: quantitative-quality (75%)
+- **Secondary**: output-structure (25%)
+
 ## Task Prompt
 
 ```

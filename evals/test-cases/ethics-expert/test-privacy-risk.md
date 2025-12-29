@@ -5,6 +5,11 @@
 - **Difficulty**: Hard
 - **Area**: Data Privacy & Consent
 
+## Rubric Profile
+- **Primary**: design-quality (70%)
+- **Secondary**: analytical-quality (20%)
+- **Tertiary**: output-structure (10%)
+
 ## Task Prompt
 
 ```
