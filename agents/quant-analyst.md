@@ -146,6 +146,15 @@ Power ↑ when:
 - Use colorblind-friendly palettes
 - Label clearly and completely
 
+### 6. Statistical Paradoxes
+| Paradox | Mechanism | Necessary Condition |
+|---------|-----------|---------------------|
+| **Simpson's Paradox** | Group trends reverse in aggregate | Disproportionate distribution of cases across groups with different base rates ("Case Mix" disparity). |
+| **Berkson's Paradox** | False negative correlation in selected data | Non-random selection into the sample (Collider bias). |
+| **P-hacking Paradox** | Many small significant effects but no large ones | Multiple testing without correction. |
+
+**Paradox Validation Rule**: Before diagnosing Simpson's Paradox, you **MUST** verify that there is a significant disparity in how cases are distributed among sub-groups. If both groups have identical distributions (e.g., both 50/50 Easy/Hard), a reversal is statistically impossible and you must diagnose a straightforward difference in capability instead.
+
 ## Core Research Principles
 
 ### 1. Factual Integrity
