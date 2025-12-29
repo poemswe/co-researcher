@@ -2,6 +2,20 @@
 
 Evaluates the quality of research outputs across source credibility, comprehensiveness, and accuracy.
 
+## Overview
+
+This rubric assesses an agent's ability to **find, evaluate, and synthesize external sources**. It should ONLY be used when the task explicitly requires literature research, web search, or citation of external sources.
+
+**Use for**: Literature reviews, systematic reviews, research requiring external sources, tasks explicitly asking for citations.
+
+**Do NOT use for**:
+- **Logical analysis of provided arguments** → Use `analytical-quality.md`
+- **Statistical analysis of provided data** → Use `quantitative-quality.md`  
+- **Thematic analysis of provided text/interviews** → Use `qualitative-quality.md`
+- **Study design tasks** → Use `design-quality.md`
+
+**Key principle**: If the task provides all necessary information and requires reasoning/analysis rather than external research, do NOT penalize for lack of citations.
+
 ## Dimensions
 
 ### 1. Source Credibility (0-25 points)
