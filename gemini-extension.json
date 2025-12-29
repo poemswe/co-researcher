@@ -1,0 +1,12 @@
+{
+    "name": "co-researcher",
+    "version": "1.2.0",
+    "description": "PhD-level co-researcher suite for systematic reviews, critical analysis, and academic writing.",
+    "author": "Aletheia Marketplace",
+    "license": "MIT",
+    "repository": "https://github.com/aletheia/co-researcher",
+    "commands": {
+        "directory": "commands"
+    },
+    "context": "GEMINI.md"
+}

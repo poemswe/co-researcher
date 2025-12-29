@@ -18,10 +18,14 @@ To publish, you simply need to make this repository accessible to the target use
   3. No central registry is required; the directory structure handles the logic.
 
 ### Gemini CLI
-- **Discovery**: Uses the `GEMINI.md` file at the root for project context and the `.gemini/commands/` directory for slash commands.
+- **Discovery**: Uses the `gemini-extension.json` manifest and the `commands/` directory.
 - **How to Publish**:
-  1. Ensure `GEMINI.md` contains accurate descriptions of all 8 agents.
-  2. When a user runs `gemini` inside this project directory, it will automatically index the PhD agents and enable commands like `/research` or `/review`.
+  1. Ensure `gemini-extension.json` is in the root.
+  2. Users can install directly via Git:
+     ```bash
+     gemini extensions install https://github.com/your-username/co-researcher
+     ```
+  3. Commands like `/research` and `/review` will be available globally.
 
 ### OpenAI Codex CLI
 - **Discovery**: Uses `AGENTS.md` at the root for agent behavior mapping and the `.codex/skills/` directory for repository-wide skills.

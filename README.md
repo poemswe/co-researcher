@@ -188,11 +188,11 @@ python run_eval.py critical-analyzer       # Test one agent
 co-researcher/
 ├── agents/              # 8 specialized research agents
 ├── skills/              # 7 focused research skill modules
-├── commands/            # 6 quick-access research commands
+├── commands/            # Unified hub for Claude (.md) and Gemini (.toml) commands
 ├── hooks/               # Credibility assessment hook
 ├── AGENTS.md            # Codex CLI agent manifest
 ├── GEMINI.md            # Gemini CLI agent manifest
-├── .gemini/commands/    # Gemini CLI native slash commands
+├── gemini-extension.json # Gemini CLI official extension manifest
 ├── .codex/skills/       # Codex CLI native repository skills
 ├── evals/               # Python evaluation framework
 │   ├── run_eval.py      # CLI entry point
