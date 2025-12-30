@@ -1,4 +1,4 @@
-# Co-Researcher PhD Suite (v1.0.0)
+# Co-Researcher (v1.0.0)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, and **OpenAI Codex**.
 
@@ -34,7 +34,7 @@ Verify agent performance with parallel execution and task-specific rubrics:
 
 ```bash
 cd evals
-python run_eval.py all -j 4 --model "codex:gpt-5.2-codex high"
+python run_eval.py all -j 4 --model "codex:gpt-5.2 high"
 ```
 
 - **Parallel Runner**: Support for `-j` (jobs) for high-speed multi-model testing.
