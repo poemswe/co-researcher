@@ -28,6 +28,13 @@
 - **Parallel Testing**: Thread-safe execution runner (`run_eval.py`).
 - **Extended Model Support**: Targeting specific versions and reasoning levels (e.g., `--model "codex:gpt-5.2 high"`).
 - **Adversarial Judging**: Judge-prompt hardening with anti-gaming measures and peer-review simulation.
+- **Benchmark Tracking**: `--benchmark` flag saves scores to `benchmark_history.json` with trend analysis.
+
+### Prompt Engineering (v1.0.0)
+- **Anthropic Best Practices**: XML tags for section delineation (`<principles>`, `<competencies>`, `<protocol>`).
+- **52% Size Reduction**: Condensed from 1458 to 695 total lines across 8 agents.
+- **PreToolUse Hook**: Credibility pre-filter runs before web fetch, not after.
+- **Versioning**: All agents start at v1.0.0 in YAML frontmatter.
 
 ## Workflows
 - **Discovery**: Agents are discovered by platform-specific manifests at the repository level.
