@@ -4,7 +4,7 @@ import sys
 import json
 import concurrent.futures
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from lib.core import (
@@ -136,7 +136,7 @@ def save_benchmark(reports, model: str):
     avg_score = sum(scores) / len(scores) if scores else 0
     
     entry = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "model": model,
         "tests_run": len(reports),
         "tests_passed": sum(1 for r in reports if r and r.passed),
@@ -146,9 +146,10 @@ def save_benchmark(reports, model: str):
     
     for r in reports:
         if r:
-            if r.agent not in entry["scores_by_agent"]:
-                entry["scores_by_agent"][r.agent] = []
-            entry["scores_by_agent"][r.agent].append(r.overall_score)
+            agent_name = r.agent
+            if agent_name not in entry["scores_by_agent"]:
+                entry["scores_by_agent"][agent_name] = []
+            entry["scores_by_agent"][agent_name].append(r.overall_score)
     
     history.append(entry)
     BENCHMARK_FILE.write_text(json.dumps(history, indent=2))

@@ -3,7 +3,11 @@ import re
 import subprocess
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
 from functools import cache
 from pathlib import Path
 
@@ -11,8 +15,8 @@ EVALS_DIR = Path(__file__).parent.parent
 CLI_CONFIG = {
     "claude": {"base": ["--print", "--verbose"], "tools": ["--tools", "WebSearch,WebFetch,Read"]},
     "gemini": {"base": [], "tools": ["--yolo"], "stdin": True},
-    "codex": {"base": ["exec", "--full-auto"], "tools": [], "stdin": True},
-    "gpt": {"base": ["exec", "--full-auto"], "tools": [], "stdin": True},
+    "codex": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
+    "gpt": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
 }
 
 
@@ -46,6 +50,10 @@ class EvaluationReport:
     must_include_missed: list[str] = field(default_factory=list)
     judge_output: str = ""
     report_path: Path | None = None
+
+    @property
+    def agent(self) -> str:
+        return self.test_case.agent
 
 
 @cache
@@ -162,15 +170,19 @@ def execute_agent(agent: str, prompt: str, timeout: int = 600, model: str = "cla
     else:
         methodology = agent_file.read_text()
     
-    if methodology.count("---") >= 2:
-        methodology = methodology.split("---", 2)[2].strip()
-    
+    tools = []
     if methodology:
+        # Extract tools from frontmatter
+        if m := re.search(r"tools:\s*\n((?:\s*-\s*\w+\s*\n)+)", agent_file.read_text()):
+            tools = [t.strip("- ").strip() for t in m.group(1).split("\n") if t.strip()]
+        
         methodology += "\n\n**EVAL MODE**: Provide focused, concise output."
     
     full_prompt = load_template("agent_prompt" if methodology else "agent_prompt_fallback")
     full_prompt = full_prompt.replace("{agent_name}", agent)
+    full_prompt = full_prompt.replace("{provider}", model.split(":")[0])
     full_prompt = full_prompt.replace("{methodology}", methodology)
+    full_prompt = full_prompt.replace("{tools}", ", ".join(tools) if tools else "None")
     full_prompt = full_prompt.replace("{prompt}", prompt)
     
     success, output, error = run_cli(model, full_prompt, timeout)
@@ -245,7 +257,7 @@ def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> Evaluat
 def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude") -> Path:
     tc, ar = rpt.test_case, rpt.agent_result
     model_slug = model.split(":")[0].lower()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     
     filename = f"{model_slug}_{tc.agent}_{tc.name.lower().replace(' ', '-')}.md"
     
@@ -328,7 +340,7 @@ def generate_summary(out_dir: Path) -> Path:
     
     content = f"""# Evaluation Summary
 
-**Date**: {datetime.now():%Y-%m-%d %H:%M:%S}  
+**Date**: {datetime.now(UTC):%Y-%m-%d %H:%M:%S}  
 **Tests**: {n}  
 **Pass Rate**: {ok}/{n} ({ok/n*100 if n > 0 else 0:.0f}%)  
 **Average Score**: {avg:.1f}/100
