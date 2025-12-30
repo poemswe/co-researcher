@@ -50,6 +50,11 @@ class EvaluationReport:
     must_include_missed: list[str] = field(default_factory=list)
     judge_output: str = ""
     report_path: Path | None = None
+    
+    # v2.0 fields for granular transparency
+    rubric_breakdown: dict = field(default_factory=dict)
+    agent_output: str = ""
+    execution_metadata: dict = field(default_factory=dict)
 
     @property
     def agent(self) -> str:
@@ -228,6 +233,13 @@ def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> Evaluat
     if prompt.startswith("---"):
         prompt = re.sub(r"^---.*?---\n", "", prompt, flags=re.DOTALL)
 
+    # v2.0: Populate agent output and metadata BEFORE judge (so it's captured even if judge fails)
+    rpt.agent_output = output
+    rpt.execution_metadata = {
+        "duration_seconds": rpt.agent_result.duration,
+        "source": "automated_run"
+    }
+
     success, judge_out, error = run_cli(model, prompt, 600)
     if not success:
         rpt.judge_output = f"Judge error: {error}"
@@ -250,6 +262,16 @@ def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> Evaluat
     
     result = rx(r"RESULT:\s*(PASS|FAIL)", judge_out)
     rpt.passed = result.upper() == "PASS" if result else rpt.overall_score >= 70
+    
+    # v2.0: Extract rubric breakdown with reasoning
+    for key, name, weight in score_keys:
+        score = rpt.scores.get(name, 0)
+        reasoning = rx(rf"{key}_REASONING:\s*(.+?)(?=\n\n|\n[A-Z_]+:|$)", judge_out)
+        rpt.rubric_breakdown[name] = {
+            "weight": weight,
+            "score": score,
+            "reasoning": reasoning or f"Score: {score}/100"
+        }
     
     return rpt
 

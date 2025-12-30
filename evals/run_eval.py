@@ -19,7 +19,6 @@ from lib.core import (
 EVALS_DIR = Path(__file__).parent
 TEST_CASES_DIR = EVALS_DIR / "test-cases"
 RESULTS_DIR = EVALS_DIR / "results"
-BENCHMARK_FILE = EVALS_DIR / "benchmark_history.json"
 PRINT_LOCK = threading.Lock()
 
 
@@ -127,40 +126,161 @@ def list_tests():
             print()
 
 
-def save_benchmark(reports, model: str):
-    history = []
-    if BENCHMARK_FILE.exists():
-        history = json.loads(BENCHMARK_FILE.read_text())
+def generate_run_id() -> str:
+    """Generate unique run ID: run_YYYYMMDD_HHMMSS"""
+    return datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S")
+
+
+def extract_model_version(model: str) -> str:
+    """Extract detailed model version"""
+    version_map = {
+        "claude": "claude-3.5-sonnet",
+        "codex": "gpt-5.2-xhigh",
+        "gemini": "gemini-3-flash-preview"
+    }
+    # Handle versioned models like "codex:gpt-5.2 xhigh"
+    if ":" in model:
+        return model.split(":", 1)[1].strip()
+    return version_map.get(model, model)
+
+
+def extract_difficulty(test_path: Path) -> str:
+    """Extract difficulty from test file"""
+    import re
+    if test_path and test_path.exists():
+        content = test_path.read_text()
+        if match := re.search(r"difficulty:\s*(\w+)", content, re.IGNORECASE):
+            return match.group(1).capitalize()
+    return "Medium"
+
+
+def extract_justification(judge_output: str) -> str:
+    """Extract overall justification from judge output"""
+    import re
+    if match := re.search(r"OVERALL_JUSTIFICATION:\s*(.+?)(?=\n\n|\n[A-Z_]+:|$)", judge_output, re.DOTALL):
+        return match.group(1).strip()
+    # Fallback: use first paragraph
+    lines = judge_output.strip().split("\n\n")
+    return lines[0] if lines else ""
+
+
+def save_benchmark_v2(reports, model: str, run_id: str):
+    """Save to both overview and detail files (v2.0 schema)"""
+    detail_dir = EVALS_DIR / "test_results_detail"
+    detail_dir.mkdir(exist_ok=True)
+    
+    # 1. Create detail file
+    detail_file = detail_dir / f"{run_id}.json"
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    
+    detail_data = {
+        "run_id": run_id,
+        "timestamp": timestamp,
+        "model": model,
+        "model_version": extract_model_version(model),
+        "test_results": []
+    }
+    
+    for rpt in reports:
+        if not rpt:
+            continue
+        
+        test_id = f"{model.split(':')[0]}_{rpt.test_case.agent}_{rpt.test_case.name.lower().replace(' ', '-')}_{run_id.split('_')[-2]}"
+        
+        test_result = {
+            "id": test_id,
+            "agent": rpt.test_case.agent,
+            "test_case": rpt.test_case.name.lower().replace(" ", "-"),
+            "test_name": rpt.test_case.name,
+            "difficulty": extract_difficulty(rpt.test_case.file_path),
+            "score": round(rpt.overall_score, 1),
+            "passed": rpt.passed,
+            "threshold": 70,
+            "rubrics": {
+                name: {"weight": data["weight"], "score": data["score"]}
+                for name, data in rpt.rubric_breakdown.items()
+            },
+            "agent_output": rpt.agent_output,
+            "judge_output": {
+                "evaluation": extract_justification(rpt.judge_output),
+                "rubric_breakdown": rpt.rubric_breakdown,
+                "must_include_analysis": {
+                    "met": rpt.must_include_met,
+                    "missed": rpt.must_include_missed,
+                    "details": f"Covered {len(rpt.must_include_met)}/{len(rpt.must_include_met) + len(rpt.must_include_missed)} required elements"
+                },
+                "overall_justification": extract_justification(rpt.judge_output)
+            },
+            "execution_metadata": rpt.execution_metadata
+        }
+        detail_data["test_results"].append(test_result)
+    
+    detail_file.write_text(json.dumps(detail_data, indent=2))
+    
+    # 2. Update overview file
+    overview_file = EVALS_DIR / "benchmark_overview.json"
+    overview = {"schema_version": "2.0", "runs": [], "summary_stats": {}}
+    
+    if overview_file.exists():
+        overview = json.loads(overview_file.read_text())
     
     scores = [r.overall_score for r in reports if r]
     avg_score = sum(scores) / len(scores) if scores else 0
+    passed_count = sum(1 for r in reports if r and r.passed)
+    total_count = len([r for r in reports if r])
     
-    entry = {
-        "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    run_entry = {
+        "run_id": run_id,
+        "timestamp": timestamp,
         "model": model,
-        "tests_run": len(reports),
-        "tests_passed": sum(1 for r in reports if r and r.passed),
+        "model_version": detail_data["model_version"],
+        "tests_run": total_count,
+        "tests_passed": passed_count,
         "average_score": round(avg_score, 1),
-        "scores_by_agent": {}
+        "scores_by_agent": {},
+        "pass_rate": round((passed_count / total_count * 100), 1) if total_count > 0 else 0,
+        "detail_file": f"test_results_detail/{run_id}.json"
     }
     
     for r in reports:
         if r:
-            agent_name = r.agent
-            if agent_name not in entry["scores_by_agent"]:
-                entry["scores_by_agent"][agent_name] = []
-            entry["scores_by_agent"][agent_name].append(r.overall_score)
+            agent_name = r.test_case.agent
+            if agent_name not in run_entry["scores_by_agent"]:
+                run_entry["scores_by_agent"][agent_name] = []
+            run_entry["scores_by_agent"][agent_name].append(round(r.overall_score, 1))
     
-    history.append(entry)
-    BENCHMARK_FILE.write_text(json.dumps(history, indent=2))
-    print(f"\nBenchmark saved: {BENCHMARK_FILE.name} ({len(history)} entries)")
-    print(f"Arena Dashboard: file://{EVALS_DIR.absolute()}/arena.html")
+    overview["runs"].append(run_entry)
     
-    if len(history) > 1:
-        prev = history[-2]
-        delta = entry["average_score"] - prev["average_score"]
+    # Update summary stats
+    all_models = sorted(set(run["model"] for run in overview["runs"]))
+    all_agents = set()
+    for run in overview["runs"]:
+        all_agents.update(run["scores_by_agent"].keys())
+    
+    total_passed = sum(run["tests_passed"] for run in overview["runs"])
+    total_run = sum(run["tests_run"] for run in overview["runs"])
+    
+    overview["summary_stats"] = {
+        "total_runs": len(overview["runs"]),
+        "models": all_models,
+        "agents": sorted(list(all_agents)),
+        "overall_pass_rate": round((total_passed / total_run * 100), 1) if total_run > 0 else 0
+    }
+    
+    overview_file.write_text(json.dumps(overview, indent=2))
+    
+    # Print summary
+    print(f"\n✅ Benchmark saved (v2.0)")
+    print(f"   Detail: {detail_file.name}")
+    print(f"   Overview: {overview_file.name} ({len(overview['runs'])} runs)")
+    print(f"   Arena Dashboard: file://{EVALS_DIR.absolute()}/arena.html")
+    
+    # Trend
+    if len(overview["runs"]) > 1:
+        prev = overview["runs"][-2]
+        delta = run_entry["average_score"] - prev["average_score"]
         trend = "↑" if delta > 0 else "↓" if delta < 0 else "→"
-        print(f"Score trend: {prev['average_score']:.1f} {trend} {entry['average_score']:.1f} ({delta:+.1f})")
+        print(f"   Score trend: {prev['average_score']:.1f} {trend} {run_entry['average_score']:.1f} ({delta:+.1f})")
 
 
 def main():
@@ -200,13 +320,15 @@ def main():
     if command == "list":
         list_tests()
     elif command == "all":
+        run_id = generate_run_id()
         reports = run_all_tests(args.model, args.verbose, args.jobs)
         if reports and not args.no_benchmark:
-            save_benchmark(reports, args.model)
+            save_benchmark_v2(reports, args.model, run_id)
     elif len(args.args) == 1:
+        run_id = generate_run_id()
         reports = run_agent_tests(command, args.model, args.verbose, args.jobs)
         if reports and not args.no_benchmark:
-            save_benchmark(reports, args.model)
+            save_benchmark_v2(reports, args.model, run_id)
     elif len(args.args) == 2:
         run_test(args.args[0], args.args[1], args.model, args.verbose)
     else:
