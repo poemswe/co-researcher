@@ -8,7 +8,6 @@ Run evaluation tests against co-researcher agents to assess quality and performa
 python run_eval.py list           # List all available tests
 python run_eval.py all            # Run all tests (default model: claude)
 python run_eval.py all -j 4       # Run with 4 parallel jobs
-python run_eval.py all --benchmark  # Track scores in benchmark_history.json
 python run_eval.py literature-reviewer  # Run all tests for an agent
 python run_eval.py literature-reviewer zero-results  # Run specific test
 ```
@@ -78,10 +77,36 @@ The framework uses specialized rubrics based on the agent's task domain:
 
 **Passing**: ≥70/100 overall (Hard tests: ≥80)
 
+## Results & Benchmarking
+
+### Test Results
+
 Results saved to `evals/results/`:
 - `results/latest/index.md` — Persistent summary (auto-rebuilds)
 - `results/latest/*.md` — Individual markdown reports
 - `results/history/` — Timestamped archives
+
+### Benchmark v2.0 (Automatic)
+
+Every test run automatically generates benchmark data using a two-file architecture:
+
+**`benchmark_overview.json`** (~900B):
+- Lightweight run metadata and summary statistics
+- Fast dashboard loading (10-50x faster than v1.0)
+- Located at `evals/benchmark_overview.json`
+
+**`test_results_detail/{run_id}.json`** (~500KB per run):
+- Full test details with agent outputs and judge evaluations
+- Rubric-by-rubric scoring breakdowns with reasoning
+- Must-include analysis and execution metadata
+- Located at `evals/test_results_detail/run_{timestamp}.json`
+
+**View Dashboard**:
+```bash
+open evals/arena.html
+```
+
+Features model leaderboards, capability matrices, and star-based performance ratings (⭐⭐⭐/⭐⭐/⭐/❌).
 
 ## Structure
 
@@ -92,5 +117,7 @@ evals/
 ├── prompts/             # Prompt templates
 ├── rubrics/             # Scoring rubrics
 ├── test-cases/          # Test definitions
-└── results/             # Generated reports
+├── results/             # Generated reports
+├── benchmark_overview.json      # Dashboard data (v2.0)
+└── test_results_detail/         # Detailed results (v2.0)
 ```
