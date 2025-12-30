@@ -89,9 +89,12 @@ def parse_test_case(path: Path) -> TestCase:
         must_include = [m.group(1).strip() for line in section.split('\n') 
                        if (m := re.search(r'-\s*\[.\]\s*(.+)', line))]
     
+    # Use filename as authoritative source for test name
+    name = path.stem.replace("test-", "").replace("-", " ").title()
+
     return TestCase(
-        name=rx(r"# Test Case:\s*(.+)", content, path.stem),
-        agent=rx(r"Agent\*\*:\s*([\\w-]+)", content),
+        name=name,
+        agent=rx(r"\*\*Agent\*\*:\s*([\w-]+)", content),
         task_prompt=task_prompt,
         rubric_profile=rubric_profile,
         must_include=must_include,
@@ -190,7 +193,11 @@ def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> Evaluat
         agent_output=output,
         passing_threshold=70,
     )
-    
+
+    # Strip YAML frontmatter if present
+    if prompt.startswith("---"):
+        prompt = re.sub(r"^---.*?---\n", "", prompt, flags=re.DOTALL)
+
     success, judge_out, error = run_cli(model, prompt, 600)
     if not success:
         rpt.judge_output = f"Judge error: {error}"
@@ -241,7 +248,7 @@ def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude")
 
 **Agent**: {tc.agent}  
 **Model**: {model}  
-**Status**: {"PASS ✅" if rpt.passed else "FAIL ❌"}  
+**Status**: {"PASS" if rpt.passed else "FAIL"}  
 **Duration**: {ar.duration:.1f}s
 
 ## Scores
@@ -281,7 +288,7 @@ def generate_summary(reports: list[EvaluationReport], out_dir: Path, model: str 
     
     results_table = "\n".join(
         f"| {r.test_case.agent} | {r.test_case.name} | "
-        f"{'✅ PASS' if r.passed else '❌ FAIL'} | {r.overall_score:.0f} | "
+        f"{'PASS' if r.passed else 'FAIL'} | {r.overall_score:.0f} | "
         f"[{r.report_path.name}]({r.report_path.name}) |"
         for r in reports if r.report_path
     )
