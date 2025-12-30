@@ -37,6 +37,8 @@ Reference agents from `agents/` directory:
 - `agents/lateral-thinker.md`
 - `agents/qual-researcher.md`
 - `agents/quant-analyst.md`
+- `agents/peer-reviewer.md`
+- `agents/ethics-expert.md`
 
 ## Evaluation
 

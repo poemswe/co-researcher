@@ -1,24 +1,36 @@
-description = "Start a new research project with scope definition, question formulation, and methodology planning"
-prompt = """# /research - Start Research Project
+description = "Start a research project with intelligent agent orchestration"
+prompt = """# /research - Intelligent Research Orchestration
 
-I'll help you launch a systematic research project. Let's define the scope and approach.
+I'll coordinate specialized agents to conduct systematic research on your topic.
 
 ## Research Topic
 Topic: {{args}}
 
-## What I'll do:
-1. Help refine your research question
-2. Identify appropriate methodology (literature review, investigation, hypothesis testing)
-3. Create a research plan with clear phases
-4. Deploy specialized agents as needed
+## 🤖 Orchestration Mode
 
-## Research Types I Support:
-| Type | Best For |
-|------|----------|
-| Literature Review | Understanding existing knowledge |
-| Investigation | Fact-finding, verification |
-| Hypothesis Testing | Scientific inquiry |
-| Synthesis | Integrating multiple sources |
-| Critical Analysis | Evaluating claims/arguments |
+I'll analyze your query and build an execution plan using specialized agents.
 
-Let's start. Provide your research topic or question if you haven't already."""
+**Agent Registry**:
+- `literature-reviewer`: Academic source search, citation chains
+- `critical-analyzer`: Fallacy detection, bias identification
+- `hypothesis-explorer`: Hypothesis formulation, variable mapping
+- `lateral-thinker`: Cross-domain analogies, creative thinking
+- `qual-researcher`: Thematic analysis, coding strategies
+- `quant-analyst`: Statistical methods, effect sizes
+- `peer-reviewer`: Manuscript evaluation
+- `ethics-expert`: IRB compliance, privacy risks
+
+**Orchestration Process**:
+1. **Classify Query**: Determine research type
+2. **Select Agents**: Choose optimal agent sequence
+3. **Generate Plan**: Build execution DAG
+4. **Present Plan**: Show workflow to user
+5. **Execute**: Run agents sequentially
+6. **Synthesize**: Integrate outputs
+
+I'm analyzing your research topic to determine the optimal workflow...
+
+**Proposed Plan**:
+[I will generate this based on your query]
+
+Proceed? (yes/no/modify)"""

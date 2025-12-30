@@ -30,12 +30,19 @@
 - **Adversarial Judging**: Judge-prompt hardening with anti-gaming measures and peer-review simulation.
 - **Benchmark Tracking**: `--benchmark` flag (now automatic) saves scores to `benchmark_history.json` with trend analysis.
 - **Arena of Agents Dashboard**: A "Battle Royale" themed HTML/JS visualization (`arena.html`) for score trends and leaderboards.
+- **Provider-Specific Tool-Enablement**: Targeted CLI flags for web tools (e.g., `--search` and `--enable web_search_request` for Codex) to ensure platform parity.
 
 ### Prompt Engineering (v1.0.0)
 - **Anthropic Best Practices**: XML tags for section delineation (`<principles>`, `<competencies>`, `<protocol>`).
 - **52% Size Reduction**: Condensed from 1458 to 695 total lines across 8 agents.
 - **PreToolUse Hook**: Credibility pre-filter runs before web fetch, not after.
 - **Versioning**: All agents start at v1.0.0 in YAML frontmatter.
+
+### Research Orchestration Engine
+- **Intelligent Coordinator**: Injected into `/research` to automate multi-agent workflows.
+- **Modes**: Interactive (default), Auto (`--auto`), Plan-Only (`--plan-only`), Manual (`--manual`).
+- **Templates**: Predefined DAGs for common scenarios (`quick`, `rigorous`, `comprehensive`).
+- **Adaptive Planning**: Dynamic agent selection based on query classification.
 
 ## Workflows
 - **Discovery**: Agents are discovered by platform-specific manifests at the repository level.
