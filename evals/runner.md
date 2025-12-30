@@ -7,7 +7,8 @@ Run evaluation tests against co-researcher agents to assess quality and performa
 ```bash
 python run_eval.py list                    # List all tests
 python run_eval.py all -j 4                # Run all in parallel (4 jobs)
-python run_eval.py all --model "codex:gpt-5.2-code high"
+python run_eval.py all --model "codex:gpt-5.2 xhigh" # Run all with GPT-5.2 xhigh
+python run_eval.py all -j 4 --model "codex:gpt-5.2 xhigh" # Run all in parallel (4 jobs) with GPT-5.2 xhigh
 ```
 
 ## CLI Usage
@@ -19,7 +20,7 @@ python run_eval.py [args] [-m MODEL] [-j JOBS] [-v]
 python run_eval.py list                              # List available tests
 python run_eval.py all -j 8                # Run all tests with 8 jobs
 python run_eval.py critical-analyzer -j 4            # Run all analyst tests
-python run_eval.py all --model "codex:gpt-5.2-codex high" # Use GPT-5.2 with high reasoning
+python run_eval.py all --model "codex:gpt-5.2 high" # Use GPT-5.2 with high reasoning
 python run_eval.py critical-analyzer fallacy-detection  # Run specific test
 python run_eval.py literature-reviewer -v            # Verbose output
 ```
@@ -29,7 +30,7 @@ python run_eval.py literature-reviewer -v            # Verbose output
 | Provider | Syntax | Example |
 |----------|--------|---------|
 | `claude` | `claude[:version]` | `claude:sonnet`, `claude:opus` |
-| `gemini` | `gemini[:version]` | `gemini:2.5-pro` |
+| `gemini` | `gemini[:version]` | `gemini:gemini-3-flash-preview` |
 | `codex`  | `codex[:version [extra]]` | `codex:gpt-5.2-codex high` |
 
 > [!TIP]

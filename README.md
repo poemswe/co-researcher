@@ -30,15 +30,17 @@ The suite includes 8 PhD-level agents, each governed by **Systemic Honesty** pri
 
 ## 🧪 Evaluation Framework
 
-Verify agent performance using the multi-model Python CLI:
+Verify agent performance with parallel execution and task-specific rubrics:
 
 ```bash
 cd evals
-python run_eval.py all --model claude
-# → Runs 22 tests across 8 agents with progress tracking [i/22]
-# → Supports: claude, gemini, codex
-# → Results saved with timestamps: results/{agent}/{test}_{model}_{time}.md
+python run_eval.py all -j 4 --model "codex:gpt-5.2-codex high"
 ```
+
+- **Parallel Runner**: Support for `-j` (jobs) for high-speed multi-model testing.
+- **Dynamic Rubrics**: 6 specialized rubrics (analytical, quantitative, etc.) matched to agent skills.
+- **Extended Targeting**: Support for specific versions and reasoning levels via `provider:version extra`.
+- **Persistent Indexing**: Rebuildable `latest/index.md` summary that preserves result history.
 
 ## 🏗️ Architecture
 
