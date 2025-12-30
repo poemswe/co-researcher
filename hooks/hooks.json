@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "A web search or fetch was just performed. Briefly assess the credibility of sources retrieved:\n\n1. Check source authority (domain reputation, author credentials)\n2. Flag potentially unreliable sources (known misinformation sites, anonymous blogs, promotional content)\n3. Note if claims are extraordinary and need extra verification\n4. Rate overall source quality: High/Medium/Low\n\nBe concise - just a quick credibility note, not a full analysis."
+            "prompt": "After web search/fetch, perform MANDATORY credibility triage:\n\nREJECT if:\n- Known misinformation domain or non-identifiable author/institution\n- Commercial/promotional content posing as research\n\nFLAG if:\n- Preprint without peer review or blog/opinion piece\n- Single-source claim\n\nACCEPT if:\n- Peer-reviewed journal or institutional publication\n- Primary source document\n\nOutput format: [ACCEPT/FLAG/REJECT] - [domain] - [reason]"
           }
         ]
       }

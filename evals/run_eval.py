@@ -130,9 +130,27 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("-m", "--model", default="claude", help="Model (default: claude)")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Parallel jobs (default: 1)")
+    parser.add_argument("--check-prompts", action="store_true", help="Validate all agent prompt files exist")
     
     args = parser.parse_args()
     
+    if args.check_prompts:
+        agents = [d.name for d in TEST_CASES_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")]
+        missing = []
+        for agent in sorted(agents):
+            agent_file = EVALS_DIR.parent / "agents" / f"{agent}.md"
+            if not agent_file.exists():
+                missing.append(agent)
+                print(f"MISSING: {agent_file}")
+            else:
+                print(f"OK: {agent_file}")
+        if missing:
+            print(f"\nFound {len(missing)} missing agent files.")
+            sys.exit(1)
+        else:
+            print("\nAll agent prompt files identified.")
+        return
+
     if not args.args:
         parser.print_help()
         return

@@ -156,7 +156,11 @@ def execute_agent(agent: str, prompt: str, timeout: int = 600, model: str = "cla
     start = time.time()
     
     agent_file = EVALS_DIR.parent / "agents" / f"{agent}.md"
-    methodology = agent_file.read_text() if agent_file.exists() else ""
+    if not agent_file.exists():
+        print(f"WARNING: No agent file for {agent}, using fallback prompt")
+        methodology = ""
+    else:
+        methodology = agent_file.read_text()
     
     if methodology.count("---") >= 2:
         methodology = methodology.split("---", 2)[2].strip()

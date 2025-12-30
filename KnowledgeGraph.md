@@ -18,14 +18,16 @@
 - **OpenAI Codex**: Manifested via `AGENTS.md` and `.codex/skills/`.
 
 ### Truthfulness & Honesty
-- **Systemic Honesty**: Core Research Principles are embedded directly into agent definitions (v3.0).
+- **Systemic Honesty**: Core Research Principles are centrally modularized in templates for consistency (v3.1).
 - **Hallucination Detection**: Explicit evaluation against fabricated sources and research gaps.
+- **Credibility Triage**: Structured pre-output hooks for source validation (ACCEPT/FLAG/REJECT).
 
 ### Evaluation Framework
 - **Dynamic Rubric System**: 6 task-specific rubrics mapped to agent capabilities.
 - **Persistent Indexing**: Rebuildable `index.md` that scans all existing reports in `results/latest/`.
 - **Parallel Testing**: Thread-safe execution runner (`run_eval.py`).
-- **Extended Model Support**: Targeting specific versions and reasoning levels (e.g., `--model "codex:gpt-5.2-code high"`).
+- **Extended Model Support**: Targeting specific versions and reasoning levels (e.g., `--model "codex:gpt-5.2 high"`).
+- **Adversarial Judging**: Judge-prompt hardening with anti-gaming measures and peer-review simulation.
 
 ## Workflows
 - **Discovery**: Agents are discovered by platform-specific manifests at the repository level.
