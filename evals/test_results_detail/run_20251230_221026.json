@@ -1,0 +1,1246 @@
+{
+  "run_id": "run_20251230_221026",
+  "timestamp": "2025-12-30T22:18:44.981642Z",
+  "model": "codex:gpt-5.2 xhigh",
+  "model_version": "gpt-5.2 xhigh",
+  "test_results": [
+    {
+      "id": "codex_critical-analyzer_methodology-critique_20251230",
+      "agent": "critical-analyzer",
+      "test_case": "methodology-critique",
+      "test_name": "Methodology Critique",
+      "difficulty": "Medium",
+      "score": 87.8,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 75,
+          "score": 87
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 90
+        }
+      },
+      "agent_output": "### Critical Analysis: Effect of Classical Music on Plant Growth\n**Central Claim**: Exposure to classical music (Mozart, 8 hours/day) causally increases plant growth (~15% over 30 days).\n\n**Evidence Assessment**:  \n- Described study | Single small experiment (n=20) | Very low quality (no reported randomization/blinding/variance/statistics) | Weakly suggestive but **does not justify a causal conclusion**.\n\n**Logical Issues**:  \n- **Causal overreach**: The result (15% difference) is presented as proof that \u201cclassical music helps plants grow,\u201d but the design as described does not rule out alternative causes (confounding) or chance.  \n- **Underspecified outcome**: \u201cGrowth\u201d is ambiguous (height? biomass? leaf area?). Different measures can move in different directions, enabling post hoc interpretation.  \n- **Inference without uncertainty**: No dispersion (SD/SE), confidence intervals, or hypothesis test\u2014so the reader cannot judge whether 15% exceeds plausible random variation.\n\n**Identified Biases**:  \n- **Selection bias / baseline imbalance (internal validity)**: Without explicit random assignment and baseline measurements, groups may differ initially (size/health/age/genetics).  \n- **Experimenter expectancy / measurement bias**: If measurers knew which plants heard Mozart, they could (even unintentionally) measure/handle differently; plant care could drift by condition.  \n- **Mono-operation bias (construct validity)**: \u201cClassical music\u201d is operationalized as one composer, one schedule, one volume/setup; even if an effect exists, the construct is not well-sampled.  \n- **Confounding by co-interventions**: Playing music typically introduces other systematic differences:  \n  - speaker heat, airflow, vibration, electromagnetic fields, light reflections/shadowing  \n  - different room placement (microclimates: temperature gradients, humidity, drafts)  \n  - sound pressure level itself (not \u201cclassical\u201d) vs \u201csilence\u201d (ambient noise not characterized)\n\n**Alternative Explanations**:  \n- **Microenvironment differences** (light/temperature/humidity/airflow) between group locations produce growth differences independent of sound/music.  \n- **Vibration or airflow effects** from speakers mechanically stimulate plants or alter transpiration, unrelated to \u201cclassical\u201d content.  \n- **Differential care/handling** (watering timing, pruning, rotation) correlated with condition due to unblinded procedures.  \n- **Random variation** with small samples, especially if growth is noisy and not pre-specified or replicated.\n\n**Overall Strength**: **Very Weak** (GRADE: very low certainty). The observed difference could be real, but the described methodology does not support the stated causal/general conclusion.\n\n**Key Concerns**:  \n- No stated **randomization**, **baseline comparability**, or **blinding**.  \n- No control of major growth determinants (light, water, soil, pot size, nutrients, temperature, pests) or **position effects** (need rotation/blocking).  \n- No reporting of **variance**, **statistical test**, **attrition**, or handling of outliers.  \n- Poor construct coverage: cannot distinguish **music genre/composition** effects from **sound/vibration/speaker** effects; cannot generalize beyond this exact setup.\n\n**Checkpoint**:  \n- Investigate specific concerns deeper (e.g., confound control, statistics, construct definition)?  \n- Additional claims to analyze (e.g., \u201cMozart specifically\u201d vs \u201csound in general\u201d)?  \n- Search for counter-evidence or higher-quality replications?\n",
+      "judge_output": {
+        "evaluation": "```\nANALYTICAL_QUALITY: 87\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: small sample size (n=20; implies n=10/group), lack of randomization details, no control for other variables (light/water/temperature), potential confounds (speaker heat, vibration), overgeneralization (Mozart \u2192 all classical music)\nMUST_INCLUDE_MISSED: single measurement point\nOVERALL_SCORE: 87.75\nRESULT: PASS\n```",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 75,
+            "score": 87,
+            "reasoning": "Score: 87/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 90,
+            "reasoning": "Score: 90/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "small sample size (n=20; implies n=10/group)",
+            "lack of randomization details",
+            "no control for other variables (light/water/temperature)",
+            "potential confounds (speaker heat",
+            "vibration)",
+            "overgeneralization (Mozart \u2192 all classical music)"
+          ],
+          "missed": [
+            "single measurement point"
+          ],
+          "details": "Covered 6/7 required elements"
+        },
+        "overall_justification": "```\nANALYTICAL_QUALITY: 87\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: small sample size (n=20; implies n=10/group), lack of randomization details, no control for other variables (light/water/temperature), potential confounds (speaker heat, vibration), overgeneralization (Mozart \u2192 all classical music)\nMUST_INCLUDE_MISSED: single measurement point\nOVERALL_SCORE: 87.75\nRESULT: PASS\n```"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_critical-analyzer_fallacy-detection_20251230",
+      "agent": "critical-analyzer",
+      "test_case": "fallacy-detection",
+      "test_name": "Fallacy Detection",
+      "difficulty": "Medium",
+      "score": 87.0,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 75,
+          "score": 86
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 90
+        }
+      },
+      "agent_output": "### Critical Analysis: Ice Cream Consumption Causes Drowning (and Should Be Banned Near Beaches)\n**Central Claim**: Because ice cream consumption and drowning deaths are positively correlated across countries, ice cream consumption causes drowning; therefore, banning ice cream sales near beaches will save lives, and opponents of the ban don\u2019t care about public safety.\n\n**Evidence Assessment**:  \n- \u201cStudies show\u2026\u201d | Unspecified (likely observational/ecological correlation) | Low\u2013Very Low for causal inference | **Does not support causation** without design details (controls, temporality, mechanisms).  \n- \u201cHigher ice cream consumption \u2192 higher drowning deaths\u201d | Country-level association (ecological) | Low | **Supports correlation only**, vulnerable to confounding and ecological fallacy.  \n- \u201cBan near beaches to save lives\u201d | Policy extrapolation | Very Low | **Not supported** absent evidence that beach-proximate ice cream sales increase drowning risk.\n\n**Logical Issues**:  \n- **Correlation \u21d2 causation (cum hoc ergo propter hoc)**: An association alone doesn\u2019t establish a causal effect.  \n- **Confounding / omitted variable problem**: A plausible common cause (e.g., hot weather/seasonality, coastal recreation rates, tourism) can increase both ice cream consumption and drowning risk.  \n- **Ecological fallacy**: Country-level patterns don\u2019t justify individual-level causation (people who eat ice cream aren\u2019t shown to be the ones drowning).  \n- **Non sequitur / policy leap**: Even if a causal link existed, \u201cban sales near beaches\u201d assumes the mechanism is beach-adjacent purchasing, which isn\u2019t established.  \n- **Ad hominem / motive fallacy toward opponents**: \u201cAnyone who opposes\u2026 doesn\u2019t care about public safety\u201d attacks character/motives rather than addressing evidence or tradeoffs.  \n- **Genetic fallacy risk (re: Dr. Smith)**: Pointing out potential industry bias is relevant for weighting testimony, but it doesn\u2019t by itself falsify his claim; the argument uses \u201cbias\u201d as a substitute for evidence.\n\n**Identified Biases**:  \n- **Confirmation bias**: Selectively interpreting a correlation as proof while ignoring standard causal alternatives (confounding, reverse causation, measurement issues).  \n- **Fundamental attribution error / outgroup bias**: Attributing opposition to moral deficiency (\u201cdoesn\u2019t care\u201d) rather than legitimate disagreement about evidence, costs, or rights.  \n- **Conflict-of-interest framing (valid concern, misused)**: Industry affiliation can reduce credibility, but it should trigger demand for independent evidence, not serve as decisive refutation on its own.\n\n**Alternative Explanations**:  \n- **Seasonality/temperature confound**: Warmer periods increase swimming/exposure to water (raising drowning risk) and also increase ice cream consumption.  \n- **Exposure confound**: Countries with more coastline, swimming participation, tourism, or water recreation may have more drownings and also more ice cream sales for unrelated reasons.  \n- **Reporting/measurement differences**: Cross-country drowning statistics and consumption metrics can vary in accuracy and definitions, producing spurious correlations.\n\n**Overall Strength**: **Very Weak** (as a causal and policy argument).\n\n**Key Concerns**:  \n- The argument does not establish causality (no demonstrated temporality, mechanism, or confound control).  \n- It overgeneralizes from ecological correlation to individual causation and then to a specific policy.  \n- It relies on moralized rhetoric and ad hominem claims instead of addressing evidence quality and alternative explanations.  \n- It inconsistently handles bias: dismisses an industry-linked expert without providing stronger independent evidence.\n\n**Checkpoint**: Investigate specific concerns deeper? Additional claims to analyze? Search for counter-evidence or propose a minimally credible study design to test causality?\n",
+      "judge_output": {
+        "evaluation": "ANALYTICAL_QUALITY: 86  \nOUTPUT_STRUCTURE: 90  \nMUST_INCLUDE_MET: correlation/causation fallacy, ad hominem (Dr. Smith dismissal based on affiliation), confounding variable (summer heat/seasonality)  \nMUST_INCLUDE_MISSED: false dichotomy  \nOVERALL_SCORE: 87  \nRESULT: PASS  ",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 75,
+            "score": 86,
+            "reasoning": "Score: 86/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 90,
+            "reasoning": "Score: 90/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "correlation/causation fallacy",
+            "ad hominem (Dr. Smith dismissal based on affiliation)",
+            "confounding variable (summer heat/seasonality)"
+          ],
+          "missed": [
+            "false dichotomy"
+          ],
+          "details": "Covered 3/4 required elements"
+        },
+        "overall_justification": "ANALYTICAL_QUALITY: 86  \nOUTPUT_STRUCTURE: 90  \nMUST_INCLUDE_MET: correlation/causation fallacy, ad hominem (Dr. Smith dismissal based on affiliation), confounding variable (summer heat/seasonality)  \nMUST_INCLUDE_MISSED: false dichotomy  \nOVERALL_SCORE: 87  \nRESULT: PASS  "
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_critical-analyzer_bias-identification_20251230",
+      "agent": "critical-analyzer",
+      "test_case": "bias-identification",
+      "test_name": "Bias Identification",
+      "difficulty": "Medium",
+      "score": 91.5,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 75,
+          "score": 92
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 90
+        }
+      },
+      "agent_output": "### Critical Analysis: Company-funded trial claiming \u201cnew drug reduces anxiety by 40%\u201d\n**Central Claim**: The company\u2019s new drug reduces anxiety by ~40% versus placebo over 4 weeks.\n\n**Evidence Assessment**:  \n- Study description | Small placebo-controlled trial (non-blinded) | Overall **low/very low certainty** | Partially supports efficacy claim, but high risk of bias and limited generalizability.\n\n**Logical Issues**:  \n- **Causal overreach**: Given lack of blinding, selective exclusions, and post hoc registration, attributing the full \u201c40% reduction\u201d to the drug is not well-justified.  \n- **Ambiguity/possible spin**: \u201c40%\u201d is underspecified (relative vs absolute change; which scale/timepoint), enabling selective framing.\n\n**Identified Biases** (potential sources of systematic error):\n- **Selection bias / sampling bias**: Participants are **company employees**, not a target clinical population; likely non-representative and systematically different (health status, incentives, workplace norms).  \n- **Healthy-worker effect**: Employed individuals tend to be healthier than general populations, potentially inflating apparent benefit or tolerability.  \n- **Volunteer/self-selection bias**: Employees who opt in may differ (motivation, symptom severity, expectations, loyalty).  \n- **Coercion/undue influence (employment power dynamics)**: Even \u201cvoluntary\u201d participation may be influenced by perceived career/social consequences, affecting who enrolls and how they respond.  \n- **Expectation (placebo/nocebo) effects due to unblinding**: Participants **knew** assignment, creating systematic differences in reported outcomes and side-effect reporting.  \n- **Performance bias**: Knowing assignment can change behavior (sleep, therapy seeking, substance use, workload coping), differentially by group.  \n- **Detection/measurement (information) bias**: Primary outcome is **self-reported anxiety**; with unblinding and employer context, responses are vulnerable to:  \n  - **Demand characteristics** (responding in ways perceived as desired)  \n  - **Social desirability bias** (underreporting anxiety or overreporting improvement)  \n  - **Evaluation apprehension** (fear of being judged by employer-linked study)  \n- **Observer/assessment bias (if any staff interacted with participants)**: Unblinded participants (and potentially unblinded staff) can influence how measures are administered or interpreted.  \n- **Attrition bias (differential dropout)**: 3 participants with side effects dropped out; if related to treatment, dropout is informative and can bias both efficacy and safety estimates.  \n- **Exclusion/analysis bias (per-protocol bias)**: Dropped participants were **excluded from analysis** (violates/weakens intention-to-treat), typically inflating apparent benefit and underestimating harms.  \n- **Adverse-event\u2013related informative censoring**: Removing those who experience side effects systematically removes likely \u201ctreatment failures\u201d or those with worsened well-being.  \n- **Selective reporting / outcome reporting bias**: **Registration after data collection** raises risk of outcome switching, selective timepoints, selective subscales, and omission of unfavorable endpoints.  \n- **HARKing (hypothesizing after results are known)**: Post hoc registration is consistent with tailoring hypotheses/analyses to observed patterns.  \n- **P-hacking / analytic flexibility bias**: Small samples + multiple analytic choices (covariates, exclusions, scale scoring) increase risk of chance findings presented as confirmatory.  \n- **Funding bias**: Company-funded research is at higher risk of design/analysis/reporting choices favoring the sponsor\u2019s product.  \n- **Financial conflict of interest (COI) / allegiance bias**: Lead author holding **company stock** creates direct incentive to overstate benefit/understate harms.  \n- **Publication bias (at the ecosystem level)**: Positive sponsor trials are more likely to be written up/submitted/published than null findings, inflating perceived efficacy in the literature.  \n- **Contamination/spillover risk (workplace setting)**: Employees may discuss experiences, potentially influencing expectations, reporting, and adherence differentially.  \n- **Temporal/insufficient follow-up bias**: **4 weeks** may capture short-term mood fluctuation or novelty effects while missing longer-term efficacy, relapse, and delayed adverse effects.  \n- **Regression to the mean** (especially if enrolled during high-symptom periods): Apparent improvement may partly reflect natural fluctuation rather than treatment effect.  \n- **Baseline imbalance risk (small n)**: With 50 participants, randomization may not balance key prognostic factors; without transparent reporting/adjustment, estimates can be biased.\n\n**Alternative Explanations**:  \n- Reported improvement largely reflects **expectancy/placebo effects** amplified by non-blinding and sponsor context.  \n- Apparent efficacy is inflated by **excluding side-effect dropouts** (informative attrition) and analytic flexibility enabled by **post hoc registration**.  \n- Changes reflect **natural symptom variation/regression to the mean** over a short window rather than a drug-specific effect.\n\n**Overall Strength**: **Very Weak** (high risk of bias + limited external validity + post hoc registration undermining confirmatory inference).\n\n**Key Concerns**:  \n- Non-blinded design with self-report outcomes (high susceptibility to expectancy and reporting biases).  \n- Informative dropout excluded from analysis (attrition + per-protocol bias; harms likely underestimated).  \n- Sponsor funding + author stock ownership (COI/funding/allegiance bias).  \n- Registration after data collection (selective reporting/HARKing/p-hacking risk).  \n\n**Checkpoint**: Investigate deeper into (1) how \u201c40%\u201d was computed, (2) randomization/allocation concealment details, (3) whether an intention-to-treat analysis was reported, or (4) evidence of outcome switching vs the registry entry?\n",
+      "judge_output": {
+        "evaluation": "```\nANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Funding bias (company-funded), Conflict of interest (author holds stock), Selection bias (employees as participants), Attrition bias (excluding dropouts with side effects), Detection bias (no blinding), HARKing/publication bias (post-registration)\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91.5\nRESULT: PASS\n```",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 75,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 90,
+            "reasoning": "Score: 90/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Funding bias (company-funded)",
+            "Conflict of interest (author holds stock)",
+            "Selection bias (employees as participants)",
+            "Attrition bias (excluding dropouts with side effects)",
+            "Detection bias (no blinding)",
+            "HARKing/publication bias (post-registration)"
+          ],
+          "missed": [],
+          "details": "Covered 6/6 required elements"
+        },
+        "overall_justification": "```\nANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Funding bias (company-funded), Conflict of interest (author holds stock), Selection bias (employees as participants), Attrition bias (excluding dropouts with side effects), Detection bias (no blinding), HARKing/publication bias (post-registration)\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91.5\nRESULT: PASS\n```"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_critical-analyzer_contradictory-evidence_20251230",
+      "agent": "critical-analyzer",
+      "test_case": "contradictory-evidence",
+      "test_name": "Contradictory Evidence",
+      "difficulty": "Medium",
+      "score": 91.5,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 75,
+          "score": 92
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 90
+        }
+      },
+      "agent_output": "### Critical Analysis: Conflicting Studies on Social Media and Teen Mental Health\n**Central Claim**: We should decide which conclusion is more credible\u2014(A) \u201csocial media improves teen mental health\u201d vs (B) \u201csocial media use causes harm\u201d\u2014and explain why results conflict.\n\n**Evidence Assessment**:\n- Study A (Johnson et al., 2024) | Longitudinal observational (n=500) | **Lower causal certainty** (confounding + self-report + correlation) | Supports **association** (r=0.45) with *self-reported well-being*, but **does not justify \u201cimproves\u201d**\n- Study B (Smith et al., 2024) | RCT (n=10,000) | **Higher causal certainty** in principle (randomization) | If well-executed, supports **causal effect** on *clinical depression scores* (d = -0.80), but magnitude/implementation details are critical and currently unknown\n\n**Logical Issues**:\n- Study A: **Correlation \u2192 causation leap** (\u201cr=0.45\u201d \u2192 \u201cimproves mental health\u201d) is a classic inference error; even longitudinal observational designs can\u2019t rule out residual confounding, reverse causality, or common-cause explanations.\n- Study B: The causal wording is *more* justified given randomization, but \u201csocial media use causes harm\u201d can still be **overgeneralization** unless the intervention matches real-world use (dose, platform type, content, context) and effects are consistent across subgroups.\n\n**Identified Biases**:\n- Study A:\n  - **Selection/confounding**: teens with stronger offline support, higher SES, or better baseline mental health may both use social media more and report higher well-being.\n  - **Reverse causality**: better well-being may lead to more social engagement online (not the reverse).\n  - **Measurement/construct bias**: \u201cself-reported well-being\u201d is not equivalent to clinical mental health outcomes; response styles and social desirability can bias results.\n  - **Time-varying confounding**: prior mental health affects later use, which affects later well-being\u2014standard regression can mis-handle this without appropriate causal methods.\n- Study B:\n  - **Performance/expectancy effects**: blinding is difficult; knowing assignment could affect mood reporting or help-seeking.\n  - **Compliance/contamination**: teens may not adhere; control group may still use social media; treatment may vary in actual exposure.\n  - **Intervention realism**: an RCT can estimate the effect of a *specific manipulation* (e.g., forced increase, restriction, particular platform/feed), not \u201csocial media\u201d in general.\n  - **Outcome sensitivity**: large effects (d=-0.80) are plausible but unusually big for broad behavioral exposures; could reflect strong manipulation, short-term effects, specific high-risk subgroup concentration, or analytic choices.\n\n**Alternative Explanations** (that can make both findings \u201ctrue\u201d under different conditions):\n- **Different constructs**: \u201cwell-being\u201d can increase (connectedness, entertainment) while **depression symptoms** worsen (sleep disruption, rumination, social comparison). They are correlated but not identical outcomes.\n- **Nonlinear/heterogeneous effects**: moderate use may benefit some teens, while heavy/passive use harms others; averaging can flip the sign depending on sample composition.\n- **Context and content**: active messaging with friends vs passive scrolling; supportive communities vs toxic comparison/cyberbullying content\u2014effects differ dramatically.\n- **Baseline risk moderation**: teens with prior depression/anxiety may be more negatively affected; if Study B includes more high-risk participants or targets them, effect size shifts.\n- **Measurement window**: short-term boosts in affect/social support vs longer-term depressive symptom trajectories; timing of measurement can reverse conclusions.\n- **Statistical/control differences**: Study A\u2019s r=0.45 may reflect unadjusted or insufficiently adjusted association; Study B\u2019s d may reflect an intention-to-treat vs per-protocol estimate\u2014each answers a different causal question.\n\n**Overall Strength**: **Moderate (leans toward Study B for causality), but incomplete without methods**.\n\n**Key Concerns**:\n- The *core* discrepancy is not surprising: **observational correlation in self-report well-being** can diverge from **causal effects on clinical depression**, especially with heterogeneous, nonlinear, and context-dependent mechanisms.\n- If forced to \u201ctrust one\u201d on causal impact: **Study B (RCT) is generally more trustworthy** for causality, *conditional on* adequate compliance handling, realistic manipulation, low attrition, pre-registered outcomes, and clinically meaningful measurement.\n- Study A\u2019s conclusion is the most methodologically overstated: its design supports \u201cassociated with higher reported well-being,\u201d not \u201cimproves mental health.\u201d\n",
+      "judge_output": {
+        "evaluation": "ANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: methodology difference (correlational vs experimental/RCT), sample size disparity (500 vs 10,000), effect size interpretation (r=0.45 vs d=-0.80), explains why RCT provides stronger causal evidence, self-report vs clinical measures difference\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91.5\nRESULT: PASS",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 75,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 90,
+            "reasoning": "Score: 90/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "methodology difference (correlational vs experimental/RCT)",
+            "sample size disparity (500 vs 10",
+            "000)",
+            "effect size interpretation (r=0.45 vs d=-0.80)",
+            "explains why RCT provides stronger causal evidence",
+            "self-report vs clinical measures difference"
+          ],
+          "missed": [],
+          "details": "Covered 6/6 required elements"
+        },
+        "overall_justification": "ANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: methodology difference (correlational vs experimental/RCT), sample size disparity (500 vs 10,000), effect size interpretation (r=0.45 vs d=-0.80), explains why RCT provides stronger causal evidence, self-report vs clinical measures difference\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91.5\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_ethics-expert_privacy-risk_20251230",
+      "agent": "ethics-expert",
+      "test_case": "privacy-risk",
+      "test_name": "Privacy Risk",
+      "difficulty": "Medium",
+      "score": 81.4,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "design-quality": {
+          "weight": 70,
+          "score": 78
+        },
+        "analytical-quality": {
+          "weight": 20,
+          "score": 88
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 92
+        }
+      },
+      "agent_output": "### Ethics Evaluation: Mental Health Trends in Anonymous Online Support Groups\n**Study Summary**: Covertly scrape all messages from three private Discord \u201cDepression Support\u201d servers for 6 months, run AI sentiment analysis, and attempt to re-identify users by matching usernames to public profiles on other platforms to correlate support-group sentiment with \u201creal-world\u201d career outcomes\u2014without informing participants to avoid behavior change.\n\n**Ethical Framework**: Belmont Report (Respect for Persons, Beneficence, Justice); U.S. Common Rule (45 CFR 46) human-subjects research considerations; privacy/confidentiality standards for sensitive mental-health data; platform/community norms and potential Terms-of-Service constraints; if any EU/UK residents are involved, GDPR special-category data (health/mental health).\n\n**Risk Assessment**: **Significant (greater than minimal risk)**.\n- **Nonconsensual surveillance in a private space**: Private Discord servers create a strong expectation of contextual privacy; \u201chidden\u201d scraping increases perceived and actual intrusion risk.\n- **Re-identification / doxxing risk**: Linking usernames across platforms to \u201cpublic profiles\u201d is a deliberate de-anonymization pipeline; even partial matches can cause serious harm if wrong or leaked.\n- **Sensitive data about mental health**: Chronic depression content is highly sensitive; exposure could lead to stigma, discrimination (employment, social), relationship harm, and potential psychological distress.\n- **Group/community harm**: Discovery can undermine trust in support groups, reduce help-seeking, and chill speech for a broader population beyond the dataset.\n- **Algorithmic inference risks**: Sentiment analysis can misclassify, and \u201ccareer success/failure\u201d proxies can be biased; erroneous inferences about individuals increase harm potential.\n- **Deception without consent**: The stated rationale (Hawthorne effect) does not ethically justify bypassing consent when risks are substantial and the population is potentially vulnerable.\n- **Legal/contractual exposure (research + institution)**: Depending on how access is obtained and automated collection is conducted, there is non-trivial risk of violating platform rules and possibly \u201cunauthorized access\u201d statutes; this also elevates institutional risk.\n\n**Compliance Status**:\n- **Likely IRB: Full Board review** (high probability), not exempt: involves systematically collecting human communications from a private setting, handling sensitive mental-health information, and intentionally creating identifiable profiles by cross-platform linkage.\n- **Waiver/alteration of consent**: Unlikely to be approvable as described because the study is not minimal risk and includes de-anonymization; even if a waiver were considered, strong justification and risk minimization would be required, and this design increases risk.\n- **If GDPR applies**: High likelihood of triggering special-category processing requirements (mental health), demanding a valid lawful basis and strong safeguards; covert scraping and re-identification make compliance unlikely as described.\n\n**Recommendations** (actionable changes required for ethical viability):\n- **Stop covert scraping of private support groups**; do not collect without explicit permission and participant-informed consent.\n- **Eliminate cross-platform re-identification** as a default: do not link usernames to external profiles; if linkage is scientifically indispensable, require explicit opt-in consent and provide clear risk disclosure.\n- **Redesign to minimize risk**: use opt-in recruitment (e.g., via moderators), collect only the minimum needed data, analyze at aggregate/cohort level, and avoid any individual-level \u201ccareer outcome\u201d claims.\n- **Create a robust data protection plan**: encryption at rest/in transit, strict access controls, separation of identifiers, short retention, secure deletion, and documented incident response.\n- **Add participant protections**: clear consent language, right to withdraw, and a distress-risk protocol (including guidance on handling self-harm content and reporting limits).\n- **Bias/validity safeguards**: pre-register analysis, validate sentiment methods for this context, avoid stigmatizing labels, and avoid speculative \u201csuccess/failure\u201d measures that can encode socioeconomic bias.\n- **Engage community governance**: collaborate with server moderators and consider community review/oversight to reduce exploitation and improve justice/respect.\n\n**Outstanding Questions** (limits on certainty without more details):\n- Where are participants likely located (U.S./EU/other), and are minors plausibly present?\n- How would access be obtained (researcher membership, admin cooperation, compromised account, bot invitation), and what exact data fields are captured (user IDs, timestamps, attachments)?\n- What specific \u201ccareer success/failure\u201d signals are intended, and how will misidentification and downstream harms be prevented?\n\nAny specific ethical concern you want stress-tested (e.g., consent waiver viability, de-identification strategy, or community-harm mitigation)? Need jurisdiction-specific guidance (U.S. Common Rule vs GDPR)? Should I draft consent and recruitment language suitable for an IRB submission?\n",
+      "judge_output": {
+        "evaluation": "DESIGN_QUALITY: 78\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Lack of informed consent, De-anonymization risk, Vulnerable population, IRB requirement\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 81.4\nRESULT: PASS",
+        "rubric_breakdown": {
+          "design-quality": {
+            "weight": 70,
+            "score": 78,
+            "reasoning": "Score: 78/100"
+          },
+          "analytical-quality": {
+            "weight": 20,
+            "score": 88,
+            "reasoning": "Score: 88/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Lack of informed consent",
+            "De-anonymization risk",
+            "Vulnerable population",
+            "IRB requirement"
+          ],
+          "missed": [],
+          "details": "Covered 4/4 required elements"
+        },
+        "overall_justification": "DESIGN_QUALITY: 78\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Lack of informed consent, De-anonymization risk, Vulnerable population, IRB requirement\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 81.4\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_hypothesis-explorer_unfalsifiable-claim_20251230",
+      "agent": "hypothesis-explorer",
+      "test_case": "unfalsifiable-claim",
+      "test_name": "Unfalsifiable Claim",
+      "difficulty": "Medium",
+      "score": 78.8,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "design-quality": {
+          "weight": 60,
+          "score": 72
+        },
+        "analytical-quality": {
+          "weight": 30,
+          "score": 88
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 92
+        }
+      },
+      "agent_output": "### Hypothesis Development: Belief-Contingent \u201cHomeopathy\u201d vs Placebo\n**Research Question**: Does a homeopathic remedy produce clinical benefit beyond placebo, and is any effect moderated by patient belief/expectancy?\n\n**Hypothesis**:  \nH\u2080: Homeopathic remedy produces no benefit beyond placebo, regardless of belief/expectancy.  \nH\u2081: Any observed benefit is fully attributable to placebo mechanisms and is moderated by belief/expectancy (i.e., higher expectancy \u2192 larger improvement, with no remedy-specific effect).\n\n**Variable Mapping**:  \n- IV: Treatment assignment (homeopathic remedy vs indistinguishable placebo)  \n- DV: Pre-registered clinical outcome (e.g., pain score, symptom severity, functional measure)  \n- Moderators: Baseline belief in homeopathy; experimentally manipulated expectancy (high vs low)  \n- Mediators: Expectancy, attention, conditioning, anxiety reduction, treatment credibility  \n- Confounds: Regression to the mean, natural history, concurrent treatments, demand characteristics, unblinding, selective outcome reporting, differential adherence\n\n**Testable Predictions**:  \n- If H\u2081 true: (a) Main effect of expectancy on outcomes; (b) minimal/no main effect of remedy beyond placebo; (c) any \u201ctreatment\u201d differences disappear after controlling for expectancy and blinding integrity.  \n- If H\u2080 true: no differences by remedy assignment and no systematic expectancy-related improvement beyond noise/spontaneous change.\n\n**Falsifiability Check**: **Fail (as stated)**.  \nThe claim \u201cany negative trial proves insufficient faith\u201d is a *self-sealing* (immunized) hypothesis: it blocks disconfirmation by redefining failure as evidence of a hidden moderator post hoc. \u201cGenuinely believes\u201d is also left undefined, enabling moving goalposts (no pre-specified measurement, threshold, or disconfirming pattern).\n\n**Recommended Design**: **Randomized, double-blind, placebo-controlled factorial design**.  \n- 2\u00d72: Remedy vs placebo \u00d7 High-expectancy vs low-expectancy (expectancy manipulated via standardized information), with baseline belief measured.  \n- Pre-register: primary outcome, timepoint, exclusion rules, blinding checks, and a specific interaction test (belief/expectancy \u00d7 assignment).  \n- Include both subjective and more objective outcomes when feasible; measure adherence and co-interventions.\n\n**Outstanding Questions**:  \n- What clinical condition and outcome(s) are claimed to improve, over what timeframe, and with what minimally important effect size?  \n- What operational definition of \u201cbelief/faith\u201d (scale, cutoff, timing) is acceptable *before* seeing results?  \n- What result would the proponent agree would *disconfirm* the claim?\n\n---\n\n### Evaluation: Logical/Methodological Problems (why the original is not scientifically valid)\n- **Unfalsifiable / immunized against refutation**: negative results are reinterpreted as \u201cinsufficient faith,\u201d so no observation can count against it.  \n- **Post hoc rescue / moving thresholds**: \u201csufficient faith\u201d is undefined and can be adjusted after outcomes are known.  \n- **Ambiguous construct**: \u201cgenuine belief\u201d is not operationalized (no reliable measurement plan).  \n- **Confounding mechanism**: If belief drives improvement, the effect is indistinguishable from placebo/context effects unless expectancy is measured/manipulated and remedy-specific effects are separately tested.  \n- **Incompatible with standard inference**: It denies the evidential value of controlled trials by asserting they can only fail due to participant defect, not hypothesis error.\n\n---\n\n### Modifications to Make It Testable (one workable rewrite)\n- Specify: condition, dosage regimen, timeframe, primary endpoint, and **a belief/expectancy metric** (validated scale or pre-defined questionnaire) with a **pre-registered cutoff** for \u201chigh belief.\u201d  \n- Commit to a **disconfirming outcome** such as:  \n  - \u201cAmong participants meeting pre-registered \u2018high belief\u2019 criteria, the remedy will outperform placebo by \u2265X on the primary outcome at week Y; if not observed, the hypothesis is rejected.\u201d  \n- Add a **blinding/expectancy manipulation** so \u201cbelief\u201d is not a retroactive explanation.\n\n---\n\n### Three Alternative, Falsifiable Hypotheses About Placebo Effects\n1. **Expectancy-specific effect**: Increasing treatment expectancy (via standardized positive framing) will improve **self-reported** symptom severity, but will produce smaller or no changes in **objective** physiological/behavioral measures, relative to neutral framing.  \n2. **Conditioning amplifies placebo**: Participants with prior conditioning (pairing a cue with an active analgesic in a learning phase) will show larger placebo analgesia in a test phase than participants receiving expectancy manipulation alone.  \n3. **Clinician-context mediation**: Greater clinician warmth/time will increase symptom improvement versus minimal-interaction care, and this effect will be statistically mediated by measured trust/therapeutic alliance (with pre-registered mediation criteria).\n\n",
+      "judge_output": {
+        "evaluation": "DESIGN_QUALITY: 72\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Identifies the unfalsifiability problem explicitly, Names or describes the No True Scotsman fallacy, Explains why \"belief\" as escape clause prevents testing, Does NOT validate the claim as scientifically sound, Proposes genuinely falsifiable alternatives\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 78.8\nRESULT: PASS",
+        "rubric_breakdown": {
+          "design-quality": {
+            "weight": 60,
+            "score": 72,
+            "reasoning": "Score: 72/100"
+          },
+          "analytical-quality": {
+            "weight": 30,
+            "score": 88,
+            "reasoning": "Score: 88/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identifies the unfalsifiability problem explicitly",
+            "Names or describes the No True Scotsman fallacy",
+            "Explains why \"belief\" as escape clause prevents testing",
+            "Does NOT validate the claim as scientifically sound",
+            "Proposes genuinely falsifiable alternatives"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "DESIGN_QUALITY: 72\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Identifies the unfalsifiability problem explicitly, Names or describes the No True Scotsman fallacy, Explains why \"belief\" as escape clause prevents testing, Does NOT validate the claim as scientifically sound, Proposes genuinely falsifiable alternatives\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 78.8\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_hypothesis-explorer_variable-mapping_20251230",
+      "agent": "hypothesis-explorer",
+      "test_case": "variable-mapping",
+      "test_name": "Variable Mapping",
+      "difficulty": "Medium",
+      "score": 78.0,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "design-quality": {
+          "weight": 60,
+          "score": 72
+        },
+        "analytical-quality": {
+          "weight": 30,
+          "score": 85
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 92
+        }
+      },
+      "agent_output": "### Hypothesis Development: Video Game Play and Academic Performance in Children\n**Research Question**: Among children, is greater video game play associated with lower academic performance (and if so, is that relationship plausibly causal rather than confounded)?\n\n**Hypothesis**: H\u2080: Children\u2019s amount of video game play is not associated with academic performance (or any observed association is fully explained by other variables). | H\u2081: Greater video game play is associated with lower academic performance (net of plausible confounds).\n\n**Variable Mapping**:  \n- **IV (Exposure)**: Video game play  \n  - Core operationalizations: hours/day or week; weekdays vs weekends; session timing (evening/late night); platform (console/PC/mobile); online vs offline; single-player vs multiplayer; genre (action/FPS, sports, RPG, strategy, sandbox, educational); competitive/esports participation; \u201cproblematic gaming\u201d/addictive symptoms; violent vs non-violent content; social context (solo vs with friends/family); multitasking during play (gaming + phone/TV).  \n- **DV (Outcome)**: Academic performance  \n  - Core operationalizations: GPA/grades; standardized test scores; teacher evaluations; homework completion rates; attendance/tardiness; classroom behavior/engagement; grade retention; learning growth over time (value-added).  \n- **Candidate mediators (mechanisms: IV \u2192 mediator \u2192 DV)**:  \n  - **Time displacement**: reduced time on homework/reading/studying; reduced participation in enrichment (clubs, tutoring).  \n  - **Sleep pathway**: later bedtime, shorter duration, poorer sleep quality \u2192 reduced attention/working memory/executive function at school.  \n  - **Self-regulation/executive function**: gaming reinforces immediate rewards \u2192 reduced persistence on long tasks (plausible, not guaranteed).  \n  - **Attention/behavior**: changes in in-class attention, impulsivity, classroom conduct.  \n  - **Motivation/utility tradeoff**: decreased academic motivation if gaming becomes primary reward source (heterogeneous).  \n  - **Stress/affect**: gaming used for coping; mood changes could affect schoolwork.  \n  - **Cognitive skill channels (could be positive or negative)**: some genres plausibly relate to visuospatial skills/problem-solving; these could counteract or mask negative pathways.  \n- **Moderators (effect heterogeneity: changes IV\u2192DV strength/direction)**:  \n  - Age/developmental stage; baseline academic standing; gender (as a moderator and a selection factor); baseline self-control/executive function; ADHD symptoms; learning disabilities; mental health; family structure; parental monitoring/rules; co-play/parent involvement; school workload/academic rigor; game genre/content; timing of play (late-night vs daytime); social environment (peer norms); presence of problematic gaming; access to alternative leisure options (sports/arts).  \n- **Controls (design/analysis choices to hold constant)**:  \n  - Baseline prior achievement; baseline time use; baseline sleep; baseline mental health/behavior; school fixed effects/teacher fixed effects when possible; seasonality (exam periods vs not).\n\n**Potential Confounds (alternative explanations for an observed IV\u2013DV relationship)**:  \n1. **Socioeconomic status (SES)**: family income, parental education, neighborhood resources, housing stability; also determines access to tutoring, quiet study space, device availability, and supervision.  \n2. **Parenting/household environment**: parental involvement in schooling, monitoring and rule-setting, parent work schedules, family stress, household chaos, number of siblings, family conflict.  \n3. **Baseline academic ability and prior achievement**: children struggling academically may be more likely to increase gaming (reverse causality) and also continue to have lower performance.  \n4. **Child temperament and self-regulation**: impulsivity, conscientiousness, delay discounting; these can drive both higher gaming and lower grades independent of gaming effects.  \n5. **Neurodevelopmental conditions**: ADHD and related attentional/executive challenges can increase attraction to gaming and independently reduce academic performance.  \n6. **Mental health**: depression/anxiety, social withdrawal, stress; may increase gaming as coping while also harming school outcomes.  \n7. **Sleep problems unrelated to gaming**: insomnia, irregular schedules, sleep disorders; can both reduce academics and increase late-night screen use.  \n8. **Peer group and social context**: friends who game heavily may also share norms less aligned with academics; peer influence affects both gaming time and school engagement.  \n9. **School quality and academic demands**: resource differences, teacher quality, class size, grading practices; school environment influences both academic outcomes and after-school time structure.  \n10. **Extracurricular load/opportunity cost**: children with fewer structured activities may game more and also have fewer academic supports; alternatively, high-achieving children may have less free time to game (selection).  \n11. **General screen time/media environment**: gaming is correlated with other media use (social media, streaming), which may be the true driver (or vice versa); isolating \u201cgaming-specific\u201d effects is non-trivial.  \n12. **Physical health and activity**: sedentary behavior, obesity, chronic illness; can affect energy/attendance and correlate with indoor leisure choices like gaming.  \n13. **Access/technology factors**: broadband/device availability, private bedroom, parental tech literacy; correlate with both gaming opportunities and school support.  \n14. **Measurement confounds**: shared-method bias (self-reported gaming and self-reported grades), differential reporting by parents/children, teacher grading subjectivity, and unobserved curriculum differences.\n\n**Testable Predictions**:  \n- **If H\u2081 true (net negative association, plausibly causal)**: After controlling for baseline achievement and stable child/family factors, increases in gaming time\u2014especially late-night play and/or problematic gaming\u2014predict subsequent declines in grades/test scores, mediated partly by reduced homework/study time and/or worse sleep/attendance.  \n- **If H\u2080 true (no causal effect; confounding/reverse causality)**: The raw negative correlation substantially attenuates (or disappears) after adjusting for prior achievement, self-regulation/ADHD symptoms, SES, parenting/monitoring, and time-use/sleep; within-child changes in gaming do not reliably precede within-child declines in academic outcomes.\n\n**Falsifiability Check**: **Pass** \u2014 Both IV and DV can be operationalized and measured; the hypothesis is refutable with longitudinal designs (e.g., showing no within-child effect or showing temporal ordering inconsistent with causality). Key limitation: strong causal claims are difficult without designs that address time-varying confounding and reverse causality.\n\n**Recommended Design**:  \n- **Primary**: Longitudinal panel study with repeated measures (time use + objective game logs if possible), baseline academic history, and rich covariates; analyze with within-child (fixed-effects) models and cross-lagged/lagged outcome models to test temporal ordering.  \n- **Stronger causal leverage** (if feasible): quasi-experiments (e.g., exogenous changes in access/time constraints, policy/school schedule shifts, natural experiments) or randomized interventions that reduce late-night gaming or set time limits (measuring compliance), focusing on mediators (sleep/homework) and academic outcomes.\n\n**Outstanding Questions**:  \n- Best operational definition of \u201cvideo game play\u201d for your claim (total hours vs problematic gaming vs late-night gaming vs specific genres).  \n- Which academic outcome is most valid in your context (standardized tests vs grades vs growth).  \n- Minimum confound set you can credibly measure (especially baseline achievement, ADHD/self-regulation, SES, parenting/monitoring, sleep, and time-use).\n",
+      "judge_output": {
+        "evaluation": "DESIGN_QUALITY: 72\nANALYTICAL_QUALITY: 85\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Independent variable: Video game playing (operationalized), Dependent variable: Academic performance (operationalized), At least 5 potential confounding variables, Mediating variables, Moderating variables\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 78\nRESULT: PASS",
+        "rubric_breakdown": {
+          "design-quality": {
+            "weight": 60,
+            "score": 72,
+            "reasoning": "Score: 72/100"
+          },
+          "analytical-quality": {
+            "weight": 30,
+            "score": 85,
+            "reasoning": "Score: 85/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Independent variable: Video game playing (operationalized)",
+            "Dependent variable: Academic performance (operationalized)",
+            "At least 5 potential confounding variables",
+            "Mediating variables",
+            "Moderating variables"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "DESIGN_QUALITY: 72\nANALYTICAL_QUALITY: 85\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Independent variable: Video game playing (operationalized), Dependent variable: Academic performance (operationalized), At least 5 potential confounding variables, Mediating variables, Moderating variables\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 78\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_hypothesis-explorer_hypothesis-formulation_20251230",
+      "agent": "hypothesis-explorer",
+      "test_case": "hypothesis-formulation",
+      "test_name": "Hypothesis Formulation",
+      "difficulty": "Medium",
+      "score": 83.4,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "design-quality": {
+          "weight": 60,
+          "score": 80
+        },
+        "analytical-quality": {
+          "weight": 30,
+          "score": 88
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 90
+        }
+      },
+      "agent_output": "### Hypothesis Development: Work Location \u2192 Productivity (Team Knowledge Work)\n**Research Question**: Does working from home (WFH) vs office causally change individual productivity (quantity *and* quality of work)?\n**Hypothesis**: H\u2080: Mean productivity does not differ by location. | H\u2081: Mean productivity differs by location (directional variant: WFH > office for individual output).\n**Variable Mapping**: IV = work location (WFH/office/hybrid-day); DV = productivity (pre-registered metrics such as cycle time, tasks closed, PR throughput, defect/rework rate, peer-reviewed quality); Moderators = role type, seniority, task interdependence; Mediators = interruptions, meeting load, focus time; Confounds = self-selection into location, workload/project phase, manager, time-of-week/seasonality, tool access.\n**Testable Predictions**: If H\u2081 true, within the same person, productivity metrics shift systematically with assigned location (with CIs excluding ~0 effect); if H\u2080 true, within-person differences are noise-level after controlling for time trends/workload.\n**Falsifiability Check**: Pass if \u201cproductivity\u201d is operationalized in advance and compared within-person (or with strong quasi-experimental identification); fail if only anecdotal/self-report without objective/behavioral measures.\n**Recommended Design**: Randomized within-person crossover (counterbalanced WFH/office blocks; washout if needed) with mixed-effects models; secondary: quasi-experimental diff-in-diff around a policy change.\n**Outstanding Questions**: What are role-appropriate productivity/quality metrics; minimum study duration to average over project-phase volatility; whether team-level dependencies contaminate individual assignment (interference).\n\n---\n\n### Hypothesis Development: Person\u2013Environment Fit (Preference Alignment)\n**Research Question**: Is productivity highest when a person works in their *preferred* location (fit), rather than one location being universally better?\n**Hypothesis**: H\u2080: Preference does not moderate the location\u2192productivity effect. | H\u2081: Preference moderates the effect; productivity is higher when assigned location matches preference.\n**Variable Mapping**: IV = assigned location; DV = productivity; Moderator = stated preference strength (and reasons: focus, collaboration, home constraints); Mediators = motivation, perceived autonomy, stress/fatigue; Confounds = preference correlated with job type/home setup/commute.\n**Testable Predictions**: If H\u2081 true, an interaction appears: (WFH\u2212office) effect is positive for WFH-preferrers and negative (or smaller) for office-preferrers; if H\u2080 true, interaction ~0.\n**Falsifiability Check**: Pass if preference measured *before* assignment and tested as an interaction; fail if preference collected after outcomes (post-hoc rationalization risk).\n**Recommended Design**: Randomized schedule plus pre-measured preference; analyze IV\u00d7preference interaction with person random effects; optionally include an \u201caccommodation\u201d arm (choice) to estimate value of autonomy vs location.\n**Outstanding Questions**: How to quantify preference strength; whether \u201cchoice\u201d itself is a distinct treatment (autonomy) that must be separated from physical location.\n\n---\n\n### Hypothesis Development: Task Interdependence (Collaboration-Heavy vs Deep-Work)\n**Research Question**: Does the effect of location depend on whether work is collaboration-heavy vs deep-work-heavy?\n**Hypothesis**: H\u2080: Task interdependence does not moderate location\u2192productivity. | H\u2081: For collaboration-heavy work, office/hybrid improves throughput/quality; for deep-work-heavy work, WFH improves throughput/quality.\n**Variable Mapping**: IV = location; DV = productivity split by task type (e.g., coordination latency, handoff delays, rework; vs deep-work completion rate); Moderator = task interdependence (pre-labeled from ticket metadata or independent coding); Mediators = synchronous access, interruption frequency, context switching; Confounds = non-random task assignment, deadlines.\n**Testable Predictions**: If H\u2081 true, location effects flip (or differ materially) by task category; if H\u2080 true, estimated effects are similar across categories.\n**Falsifiability Check**: Pass if task type is operationalized reliably and measured pre-outcome; fail if task type is assigned based on perceived performance (reverse causality).\n**Recommended Design**: Crossover design with stratification by task type/week and fixed-effects for project; or quasi-experimental with rich task-level controls and pre-trend checks.\n**Outstanding Questions**: How to label task interdependence without bias; what constitutes \u201ccoordination productivity\u201d vs \u201coutput productivity\u201d for your team.\n\n---\n\n### Hypothesis Development: Mechanism Probe (Interruptions / Meetings as Mediators)\n**Research Question**: Are any location effects explained by interruptions and meeting load (mechanism), rather than location per se?\n**Hypothesis**: H\u2080: After accounting for interruptions/meeting load, location has no remaining association with productivity. | H\u2081: (a) Location changes interruptions/meetings, which mediate productivity; and/or (b) location retains a direct effect beyond these mediators.\n**Variable Mapping**: IV = location; DV = productivity; Mediators = meeting hours, number of context switches, uninterrupted focus blocks; Moderators = manager norms, team meeting culture; Confounds = deadline weeks inflate both meetings and output.\n**Testable Predictions**: If mediation holds, (location\u2192interruptions/meetings) and (interruptions/meetings\u2192productivity) are non-trivial and indirect effects are detectable; if H\u2080 true, indirect/direct paths are ~0 given design.\n**Falsifiability Check**: Pass if mediators are measured objectively and temporally ordered; fail if mediators are self-reported retrospectively.\n**Recommended Design**: Randomized crossover + time-stamped behavioral logs (calendar, focus blocks, message volume) with mediation analysis treated as exploratory unless powered/pre-registered.\n**Outstanding Questions**: Which telemetry is acceptable/ethical and minimally invasive; whether meeting load is a team-level variable requiring cluster-aware analysis.\n\n**Checkpoint**: Want hypotheses narrowed to (1) a single primary causal question and (2) 1\u20132 moderators (preference, task interdependence) so the study is realistically powered, or should I generate alternative hypotheses (e.g., hybrid \u201csweet spot,\u201d commute fatigue, or retention/engagement outcomes)?\n",
+      "judge_output": {
+        "evaluation": "```\nDESIGN_QUALITY: 80\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Null hypothesis (H\u2080) clearly stated, Alternative hypothesis (H\u2081) clearly stated, Variables identified (IV, DV), Operationalization of \"productivity\", Specific, testable predictions\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 83.4\nRESULT: PASS\n```",
+        "rubric_breakdown": {
+          "design-quality": {
+            "weight": 60,
+            "score": 80,
+            "reasoning": "Score: 80/100"
+          },
+          "analytical-quality": {
+            "weight": 30,
+            "score": 88,
+            "reasoning": "Score: 88/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 90,
+            "reasoning": "Score: 90/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Null hypothesis (H\u2080) clearly stated",
+            "Alternative hypothesis (H\u2081) clearly stated",
+            "Variables identified (IV",
+            "DV)",
+            "Operationalization of \"productivity\"",
+            "Specific",
+            "testable predictions"
+          ],
+          "missed": [],
+          "details": "Covered 7/7 required elements"
+        },
+        "overall_justification": "```\nDESIGN_QUALITY: 80\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Null hypothesis (H\u2080) clearly stated, Alternative hypothesis (H\u2081) clearly stated, Variables identified (IV, DV), Operationalization of \"productivity\", Specific, testable predictions\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 83.4\nRESULT: PASS\n```"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_lateral-thinker_constraint-satisfaction_20251230",
+      "agent": "lateral-thinker",
+      "test_case": "constraint-satisfaction",
+      "test_name": "Constraint Satisfaction",
+      "difficulty": "Medium",
+      "score": 92.8,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 70,
+          "score": 91
+        },
+        "output-structure": {
+          "weight": 30,
+          "score": 97
+        }
+      },
+      "agent_output": "### Lateral Analysis: 8 Balls, 1 Heavy, 2 Weighings\n\n**Reframings**: Find heavy ball \u2192 Build a 2-step decision tree with \u22658 leaves \u2192 Encode 8 identities into 2 ternary outcomes (L/R/=)\n\n**Assumption Challenge**:\n| Assumption | Why might be wrong | If wrong... |\n|---|---|---|\n| Balance has only 2 outcomes | It has 3 (left heavy / right heavy / balance) | You can \u201cbranch\u201d 3 ways per weighing |\n| You must weigh 4 vs 4 | That wastes the \u201cunused\u201d balls as a control group | Use a 3\u20133\u20132 split to isolate faster |\n\n**Cross-Domain Analogies**:  \n- **Computer science (decision trees / trits)**: Each weighing returns 1 of 3 symbols; 2 weighings give 3\u00b2=9 codes. *Mapping*: assign each ball to a distinct 2-trit \u201csignature\u201d via the weighing design. *Caveat*: only works because we know \u201cheavier\u201d (not lighter/unknown).  \n- **Medical diagnosis (screening then confirmatory test)**: First test localizes to a cohort; second test pinpoints within cohort.\n\n**First Principles**: Fundamental truths \u2192 Novel approach  \n- Truths: (1) A balance outcome is ternary. (2) \u201cHeavy\u201d direction is informative. (3) Need identify 1 of 8.  \n- Approach: Use the first weighing to reduce candidates to at most 3 (or 2), then finish with a direct comparison.\n\n**Inversion Insight**: Failure mode to avoid  \n- Don\u2019t design a first weighing that can leave 4 candidates (you can\u2019t resolve 4 in one remaining weighing).\n\n**Novel Hypotheses** (here: candidate strategies)  \n- **3\u20133\u20132 split** is optimal-feeling because it matches the 3-outcome nature of the scale: unbalanced \u21d2 heavy is in the heavier 3; balanced \u21d2 heavy is in the leftover 2.\n\n**Recommended Direction**: Use the 3\u20133\u20132 decision tree below.\n\n---\n\n## 1) Complete algorithm (2 weighings)\n\nLabel balls: **A B C D E F G H**.\n\n**Weighing 1 (W1):** weigh **A+B+C** vs **D+E+F**.\n\n- **If W1 balances (=):** heavy ball is among **G, H**.  \n  **Weighing 2 (W2):** weigh **G** vs **H**. Heavier one is the heavy ball.\n\n- **If W1 left heavier (L>R):** heavy ball is among **A, B, C**.  \n  **W2:** weigh **A** vs **B**.  \n  - If A>B: heavy is **A**  \n  - If B>A: heavy is **B**  \n  - If A=B: heavy is **C**\n\n- **If W1 right heavier (R>L):** heavy ball is among **D, E, F**.  \n  **W2:** weigh **D** vs **E**.  \n  - If D>E: heavy is **D**  \n  - If E>D: heavy is **E**  \n  - If D=E: heavy is **F**\n\n---\n\n## 2) Show it works for ALL possible cases (exhaustive)\n\nOutcome notation: W1 \u2208 {L>R, =, R>L}; W2 depends on branch.\n\n| Heavy ball | W1: ABC vs DEF | W2 | Identified as |\n|---|---|---|---|\n| A | L>R | A>B | A |\n| B | L>R | B>A | B |\n| C | L>R | A=B | C |\n| D | R>L | D>E | D |\n| E | R>L | E>D | E |\n| F | R>L | D=E | F |\n| G | = | G>H | G |\n| H | = | H>G | H |\n\nThis table covers all 8 possibilities and maps each to a unique (W1, W2) path.\n\n---\n\n## 3) Prove that 2 weighings are sufficient\n\n**Information bound (sufficiency in principle):**  \nA balance weighing has **3** possible outcomes. With **2** weighings, the maximum distinct outcome sequences is **3\u00b2 = 9**. Since **9 \u2265 8**, two weighings can (in principle) distinguish which of 8 balls is heavy.\n\n**Constructive sufficiency (this specific algorithm works):**  \nThe algorithm above is a valid decision tree with **8 leaves**, one per ball. After W1:\n- Either you have **2 candidates** (G/H) and W2 resolves them, or\n- You have **3 candidates** (A/B/C or D/E/F) and W2 resolves them by a 1-vs-1 comparison plus the \u201celse\u201d case.\n\nTherefore **2 weighings are sufficient**, and the procedure identifies the heavy ball in all cases.\n\n",
+      "judge_output": {
+        "evaluation": "ANALYTICAL_QUALITY: 91\nOUTPUT_STRUCTURE: 97\nMUST_INCLUDE_MET: Correct algorithm: divide into groups of 3, 3, and 2, First weighing: compare two groups of 3, Handles all 3 first-weighing outcomes (left heavy, right heavy, balanced), Second weighing correctly identifies among remaining candidates, Proves solution works in exactly 2 weighings\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.8\nRESULT: PASS",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 70,
+            "score": 91,
+            "reasoning": "Score: 91/100"
+          },
+          "output-structure": {
+            "weight": 30,
+            "score": 97,
+            "reasoning": "Score: 97/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Correct algorithm: divide into groups of 3",
+            "3",
+            "and 2",
+            "First weighing: compare two groups of 3",
+            "Handles all 3 first-weighing outcomes (left heavy",
+            "right heavy",
+            "balanced)",
+            "Second weighing correctly identifies among remaining candidates",
+            "Proves solution works in exactly 2 weighings"
+          ],
+          "missed": [],
+          "details": "Covered 9/9 required elements"
+        },
+        "overall_justification": "ANALYTICAL_QUALITY: 91\nOUTPUT_STRUCTURE: 97\nMUST_INCLUDE_MET: Correct algorithm: divide into groups of 3, 3, and 2, First weighing: compare two groups of 3, Handles all 3 first-weighing outcomes (left heavy, right heavy, balanced), Second weighing correctly identifies among remaining candidates, Proves solution works in exactly 2 weighings\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.8\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_lateral-thinker_first-principles_20251230",
+      "agent": "lateral-thinker",
+      "test_case": "first-principles",
+      "test_name": "First Principles",
+      "difficulty": "Medium",
+      "score": 90.1,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 70,
+          "score": 88
+        },
+        "output-structure": {
+          "weight": 30,
+          "score": 95
+        }
+      },
+      "agent_output": "### Lateral Analysis: \u201cYou need a college degree to get a good job\u201d\n\n**Reframings**:  \nOriginal \u2192 \u201cA degree is required for good jobs.\u201d \u2192 \u201cEmployers need *reliable evidence* you can create value with low risk.\u201d \u2192 \u201cA degree is one (imperfect) solution to *information asymmetry* in hiring.\u201d\n\n**Assumption Challenge**:\n| Assumption | Why might be wrong | If wrong... |\n|---|---|---|\n| \u201cGood job\u201d is a single category | \u201cGood\u201d bundles pay, stability, meaning, flexibility, growth, safety; these trade off | A degree may matter for some \u201cgood\u201d dimensions (credentialed stability) but not others (high pay via sales/entrepreneurship) |\n| Degrees primarily represent skills | Degrees also act as a signal (persistence, conformity to norms, social capital) and a screening device | Non-degree paths can substitute if they generate *credible signals* and *verifiable competence* |\n| Employers require degrees because work is complex | Many roles are learnable on-the-job; degree requirements often reduce hiring search costs and legal/organizational risk | The \u201crequirement\u201d may be about process constraints, not true job necessity |\n| The degree causes better outcomes | Observed success may reflect selection effects (who enrolls/finishes), networks, geography, and family resources | Targeting the *causal mechanisms* (skills, networks, signaling) can replicate benefits without the credential |\n| No degree = no proof of competence | Portfolios, audits, paid trials, apprenticeships, certs, and references can be stronger evidence for specific work | Hiring can become more skill-based and less credential-based if evidence pipelines exist |\n| A single pathway should fit most people | People differ in learning style, finances, time constraints, and risk tolerance | Multiple pathways can be optimal; insisting on one creates avoidable exclusion and debt burden |\n\n**Cross-Domain Analogies**:\n- **Economics (markets / adverse selection)**: Hiring is a \u201clemons\u201d problem\u2014employers can\u2019t directly observe productivity. *Mapping*: degrees reduce uncertainty at scale. *Caveat*: signals can be gamed; and \u201csafe\u201d signals can exclude high-potential nontraditional candidates.\n- **Medicine (diagnostics)**: A degree is like a broad screening test: easy to administer, not perfectly specific. *Mapping*: it catches many qualified people but also misses qualified non-degree candidates (false negatives) and includes some weak fits (false positives). *Caveat*: unlike biology, \u201ctests\u201d here reshape behavior (people get degrees just to pass the screen).\n- **Computer science (lossy compression)**: A resume compresses a person into a few bits; a degree is a convenient feature. *Mapping*: employers optimize for decision speed under bandwidth limits. *Caveat*: better feature engineering (work samples) can outperform the shortcut but costs more upfront.\n\n**First Principles**:  \nFundamental truths \u2192 Novel approach  \n1) **A \u201cgood job\u201d exists when you can repeatedly create value for someone who can pay, under constraints (time, trust, coordination).** \u2192 Focus on building *demonstrable value creation* (projects, revenue impact, shipped work), not seat time.  \n2) **Hiring is a risk-management decision under uncertainty.** \u2192 Replace the degree with *higher-signal evidence*: paid trials, apprenticeships, structured work-sample tests, audited portfolios, and strong references.  \n3) **Organizations use proxies because evaluating true ability is costly.** \u2192 Make evaluation cheaper: standardized skill assessments, role-specific rubrics, and credential alternatives tied to measurable outputs.  \n4) **Many roles are regulated or liability-sensitive.** \u2192 Accept that some fields genuinely require formal credentials; target non-licensed routes (or stackable credentials) where regulation isn\u2019t the binding constraint.  \n5) **Networks and trust accelerate opportunity.** \u2192 Replicate the network function of college via cohorts, mentorship marketplaces, open-source communities, internships, and industry associations.\n\n**Inversion Insight**:  \nHow to guarantee failure without a degree: rely on *uncorroborated self-claims* (\u201cI\u2019m smart/hardworking\u201d) and avoid producing externally verifiable work. The avoidable failure mode is \u201cno credible signal.\u201d\n\n**Novel Hypotheses**:\n- **H1 (Signal Substitution)**: In roles where output can be sampled, work-sample tests + short paid trials predict job performance better than degree filters. **Basis**: degrees are coarse proxies; direct evidence should dominate when measurable. **Test**: compare performance/retention between degree-screened hires vs skill-assessed hires in the same role.  \n- **H2 (Process Constraint)**: Degree requirements persist most in firms with high applicant volume and weak evaluation capacity. **Basis**: proxies scale; nuanced assessment doesn\u2019t. **Test**: correlate degree requirements with applicant volume per opening and presence of structured assessments.  \n- **H3 (Network Mechanism)**: A large share of the \u201cdegree advantage\u201d is mediated by network access rather than coursework. **Basis**: referrals, internships, and signaling. **Test**: compare outcomes for non-degree candidates given equivalent referral strength and internship experience.  \n- **H4 (Credentialed vs Non-Credentialed Split)**: \u201cDegree needed\u201d is true in credentialed professions but overstated in many skill-measurable digital and operational roles. **Basis**: regulation vs measurable output. **Test**: map degree requirements against licensing/liability and measurability of work outputs.\n\n**Recommended Direction**:  \nTreat \u201cdegree\u201d as one possible *evidence bundle* (skills + signal + network). If you want to challenge the assumption, target the bundle directly: build verifiable competence (portfolio/work samples), create trust signals (references, certs, paid trials), and engineer network access (communities, apprenticeships)\u2014and accept that regulated professions remain exceptions.\n\nWhich directions feel most promising to you: signal-substitution (portfolio/trials), network replication, or identifying which \u201cgood job\u201d dimensions you care about most?\n",
+      "judge_output": {
+        "evaluation": "ANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 95\nMUST_INCLUDE_MET: Identification of the core assumption, Decomposition into fundamental components, Distinction between real constraints and assumed ones, Reconstruction of alternatives from fundamentals, Evidence/reasoning for each step\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 90.1\nRESULT: PASS",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 70,
+            "score": 88,
+            "reasoning": "Score: 88/100"
+          },
+          "output-structure": {
+            "weight": 30,
+            "score": 95,
+            "reasoning": "Score: 95/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identification of the core assumption",
+            "Decomposition into fundamental components",
+            "Distinction between real constraints and assumed ones",
+            "Reconstruction of alternatives from fundamentals",
+            "Evidence/reasoning for each step"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "ANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 95\nMUST_INCLUDE_MET: Identification of the core assumption, Decomposition into fundamental components, Distinction between real constraints and assumed ones, Reconstruction of alternatives from fundamentals, Evidence/reasoning for each step\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 90.1\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_lateral-thinker_analogy-finding_20251230",
+      "agent": "lateral-thinker",
+      "test_case": "analogy-finding",
+      "test_name": "Analogy Finding",
+      "difficulty": "Medium",
+      "score": 86.4,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 70,
+          "score": 84
+        },
+        "output-structure": {
+          "weight": 30,
+          "score": 92
+        }
+      },
+      "agent_output": "### Lateral Analysis: Reducing Subscription Churn via Cross-Domain Analogies\n\n**Reframings**: Reduce churn \u2192 Prevent \u201cdropout\u201d from a regimen \u2192 Increase system \u201cresilience to shocks\u201d that trigger exit\n\n**Assumption Challenge**:\n| Assumption | Why might be wrong | If wrong... |\n|---|---|---|\n| Churn is mainly price/value | Many cancellations are context shifts (time, life events), not dissatisfaction | Build \u201cpause/return\u201d and \u201cre-entry\u201d paths, not just discounts |\n| Better onboarding fixes retention | Onboarding solves week 1; churn may be driven by later \u201cfriction spikes\u201d | Focus on ongoing adherence + periodic \u201ccheckups\u201d |\n| Users decide rationally | Much retention is habit/identity/social attachment | Design routines, commitments, and identity reinforcement (ethically) |\n| One retention tactic fits all | Churn causes are heterogeneous | Segment by \u201cfailure mode\u201d (friction, boredom, overwhelm, irrelevance) |\n\n**Cross-Domain Analogies**:\n- **Medicine (medication adherence)**: Retention as adherence. Mapping: simplify \u201cdosage\u201d (reduce steps), manage \u201cside effects\u201d (support burden, confusing UX), add adherence aids (timely reminders, refill-like prompts), and clinician-style follow-ups after missed \u201cdoses\u201d (usage lapses). Caveat: reminders without perceived benefit become noise.\n- **Preventive care (dentistry/primary care)**: Shift from emergency fixes to scheduled \u201ccheckups.\u201d Mapping: periodic value reviews, health-score dashboards, proactive tune-ups before frustration accumulates. Caveat: must feel helpful, not upsell-y.\n- **Aviation safety (checklists + near-miss reporting)**: Treat churn precursors as \u201cnear-misses.\u201d Mapping: build a checklist of leading indicators (drop in usage, repeated errors, unresolved tickets), create lightweight \u201cincident reviews,\u201d and standard interventions. Caveat: over-automation can miss nuance; allow human judgment for high-risk accounts.\n- **Manufacturing (predictive maintenance)**: Prevent breakdown by servicing just-in-time. Mapping: churn prediction triggers micro-interventions (feature coaching, performance fixes, targeted support) before the \u201cmachine stops.\u201d Caveat: false positives can annoy; interventions must be minimal and reversible.\n- **Education (spaced repetition)**: Retention via timed reactivation. Mapping: deliver \u201cvalue refreshers\u201d at expanding intervals (quick wins, new use-cases) to prevent forgetting and skill decay. Caveat: content must match the user\u2019s current goals, not generic tips.\n- **Ecology (keystone species / mutualism)**: Some interactions disproportionately stabilize the ecosystem. Mapping: identify \u201ckeystone moments\u201d (first success, collaboration, automation setup, saved artifact) that make the service self-reinforcing; invest heavily there. Caveat: keystone events differ by segment.\n- **Physics (phase transitions / hysteresis)**: Systems flip states when crossing a threshold. Mapping: find thresholds (response time, error rate, perceived clutter, time-to-value) where users abruptly switch to \u201ccancel\u201d; add hysteresis by increasing switching costs in pro-user ways (portable history, personalized setups) and reducing shocks. Caveat: avoid dark patterns; keep user autonomy.\n- **Relationship counseling (repair after rupture)**: Retention as relationship maintenance + repair attempts. Mapping: detect \u201cruptures\u201d (bad experience, failed outcome), respond with acknowledgment + concrete repair, and rebuild trust via follow-through. Caveat: scripted empathy backfires; authenticity matters.\n- **Public health (inoculation theory / pre-bunking)**: Build resistance to predictable future doubts. Mapping: set expectations early (\u201cyou may hit X obstacle in week 3\u2014here\u2019s the fix\u201d), normalize lapses, provide coping plans. Caveat: too much warning can prime negativity if not paired with clear solutions.\n\n**First Principles**: People stay when (1) continuing requires low effort, (2) value is reliably experienced *in their context*, (3) stopping feels like losing progress/identity/support, and (4) recovery from lapses is easy \u2192 Novel approach: design for *lapse recovery* and *shock absorption* as much as for acquisition/onboarding.\n\n**Inversion Insight**: Guarantee churn by letting small frictions accumulate silently until a single \u201clast straw\u201d event\u2014so instrument for friction accumulation and intervene *before* the last straw.\n\n**Novel Hypotheses**:\n- **Hypothesis**: A large share of churn is \u201ccontext churn\u201d (life/time changes) rather than product dissatisfaction. **Basis**: behavior often destabilizes at routine disruptions. **Test**: add cancellation survey items for context shifts; A/B \u201cpause + re-entry plan + reminders at chosen time\u201d vs discount.\n- **Hypothesis**: Churn is driven by crossing a small set of thresholds (support latency, error frequency, setup complexity). **Basis**: phase-transition-like exits after accumulating strain. **Test**: identify threshold inflection points in logs; run targeted fixes and measure churn elasticity around each threshold.\n- **Hypothesis**: \u201cNear-miss\u201d interventions (after a missed usage streak or repeated failed action) outperform generic lifecycle messaging. **Basis**: adherence/predictive-maintenance framing. **Test**: trigger minimal, specific interventions tied to the failure event; compare to standard nurture emails.\n- **Hypothesis**: Creating one \u201ckeystone investment\u201d (saved work, automation, personalized configuration, social tie) sharply reduces churn. **Basis**: ecosystem stabilization via mutualism. **Test**: optimize onboarding/ongoing flows to reach that investment; measure downstream retention.\n\n**Recommended Direction**: Treat churn like (1) adherence + relapse recovery and (2) predictive maintenance: map top churn \u201cfailure modes,\u201d define leading indicators/thresholds, and run event-triggered micro-interventions plus pause/re-entry paths that absorb life-shock churn without relying on discounts.\n",
+      "judge_output": {
+        "evaluation": "ANALYTICAL_QUALITY: 84\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: At least 3 cross-domain analogies, Clear mapping from source to target domain, Actionable insights from each analogy, Acknowledgment of where analogies break down\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 86.4\nRESULT: PASS",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 70,
+            "score": 84,
+            "reasoning": "Score: 84/100"
+          },
+          "output-structure": {
+            "weight": 30,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "At least 3 cross-domain analogies",
+            "Clear mapping from source to target domain",
+            "Actionable insights from each analogy",
+            "Acknowledgment of where analogies break down"
+          ],
+          "missed": [],
+          "details": "Covered 4/4 required elements"
+        },
+        "overall_justification": "ANALYTICAL_QUALITY: 84\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: At least 3 cross-domain analogies, Clear mapping from source to target domain, Actionable insights from each analogy, Acknowledgment of where analogies break down\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 86.4\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_peer-reviewer_manuscript-critique_20251230",
+      "agent": "peer-reviewer",
+      "test_case": "manuscript-critique",
+      "test_name": "Manuscript Critique",
+      "difficulty": "Medium",
+      "score": 85.4,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 50,
+          "score": 92
+        },
+        "research-quality": {
+          "weight": 30,
+          "score": 70
+        },
+        "output-structure": {
+          "weight": 20,
+          "score": 92
+        }
+      },
+      "agent_output": "### Peer Review: The Impact of Morning Coffee on Long-Term Cognitive Decline\n\n**Summary**: The manuscript claims that daily coffee consumption (3+ cups) is associated with \u201c80% less cognitive decline\u201d over 50 years, based on a brief survey of retired professors\u2019 current coffee habits and retrospective self-assessments of memory from 50 years ago.\n\n**Recommendation**: Reject\n\n**Major Issues**:\n1. **Design cannot support the central claim (no longitudinal data, no objective outcome, no baseline).** The study does not measure cognitive decline over time; it compares present-day coffee intake with retrospective perceptions of past memory. This cannot estimate \u201c50-year cognitive decline,\u201d and it cannot support causal language (\u201cimpact\u201d).\n2. **Severe bias and non-representative sampling (n=25, convenience sample, restricted population).** Retired professors from one department are an extreme selection on education, SES, occupation, and health access\u2014factors strongly related to cognition and potentially to coffee habits\u2014making generalization implausible and confounding likely.\n3. **Outcome measure is invalid for the research question (50-year recall of \u201cperceived memory strength\u201d).** Asking participants to recall and rate memory from 50 years ago introduces overwhelming recall bias and reconstruction effects; perceived memory is not equivalent to cognitive performance, and the \u201cchange\u201d is not anchored to any validated instrument.\n4. **No control/comparator and no confound adjustment.** The rationale that a control group is unnecessary because the effect is \u201cobvious\u201d is not scientifically acceptable. Coffee intake correlates with sleep, stress, depression, cardiovascular risk, smoking, alcohol, physical activity, medications, and comorbidities\u2014any of which could explain associations without implying protection from decline.\n5. **Effect size claim (\u201c80% less decline\u201d) is not credible given the measures and likely analytic degrees of freedom.** With the stated design, the metric for \u201c80%\u201d is undefined (percent of what?), and such a large effect would require exceptionally rigorous measurement and analysis to be believable; here it is more consistent with measurement artifact and selection/confounding.\n\n**Minor Issues**:\n- **Exposure definition is underspecified** (cup size, caffeine content, brewing method, decaf vs. caffeinated, duration of habit, lifetime consumption vs. current intake).\n- **Temporal mismatch**: \u201ccurrent coffee habits\u201d cannot stand in for 50-year exposure without evidence of stability and measurement of history.\n- **Reporting gaps**: no details on survey instrument, missing data handling, blinding (if any), or statistical methods.\n- **Ethics/consent**: no mention of IRB/consent procedures, which is required even for minimal-risk surveys in most academic contexts.\n\n**Strengths**:\n- Addresses a societally relevant question (dietary factors and cognitive aging).\n- The manuscript is succinct and has a clearly stated hypothesis, which could motivate a properly designed study.\n\n**Questions for Authors**:\n1. How exactly is \u201ccognitive decline\u201d operationalized, and what is the denominator for the \u201c80% less\u201d estimate?\n2. What validated cognitive or functional measures were used (if none, why), and how do you justify retrospective self-ratings as a proxy for 50-year change?\n3. What statistical model was used, and which confounders were measured and adjusted for (education, smoking, sleep, depression, vascular risk, medications, etc.)?\n4. Do you have any data on lifetime coffee consumption trajectories (not just current intake) to support a 50-year exposure claim?\n\n",
+      "judge_output": {
+        "evaluation": "ANALYTICAL_QUALITY: 92\nRESEARCH_QUALITY: 70\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Identify Selection Bias, Identify Recall Bias, Identify Lack of Control, Assign low scores for Methodology and Rigor\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 85.4\nRESULT: PASS",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 50,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          },
+          "research-quality": {
+            "weight": 30,
+            "score": 70,
+            "reasoning": "Score: 70/100"
+          },
+          "output-structure": {
+            "weight": 20,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identify Selection Bias",
+            "Identify Recall Bias",
+            "Identify Lack of Control",
+            "Assign low scores for Methodology and Rigor"
+          ],
+          "missed": [],
+          "details": "Covered 4/4 required elements"
+        },
+        "overall_justification": "ANALYTICAL_QUALITY: 92\nRESEARCH_QUALITY: 70\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Identify Selection Bias, Identify Recall Bias, Identify Lack of Control, Assign low scores for Methodology and Rigor\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 85.4\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_quant-analyst_effect-size-interpretation_20251230",
+      "agent": "quant-analyst",
+      "test_case": "effect-size-interpretation",
+      "test_name": "Effect Size Interpretation",
+      "difficulty": "Medium",
+      "score": 92.2,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "quantitative-quality": {
+          "weight": 75,
+          "score": 93
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 90
+        }
+      },
+      "agent_output": "### Statistical Analysis: Training Intervention Effectiveness\n**Design Summary**: Two independent groups (Treatment n=500, Control n=500). Outcome is continuous (0\u2013100). Reported mean difference = 2.3 points; 95% CI = [1.8, 2.8].\n\n**Assumption Checks**:  \n- Independence | Not assessable from summary | Requires design details (randomization/clustered delivery).  \n- Normality / equal variances | Not assessable | With n=500/group, inference is typically robust; still check in the full analysis.\n\n**Analysis**: Likely an independent-samples t-test. The CI implies a very small SE (margin 0.5 \u2192 SE \u2248 0.5/1.96 \u2248 0.255), so the test statistic is large (t \u2248 2.3/0.255 \u2248 9), hence p is far smaller than 0.001. This supports \u201cthe average effect is > 0,\u201d not \u201cthe effect is large.\u201d\n\n**Effect Size**: Cohen\u2019s d = 0.15 \u2192 **small** by conventional benchmarks. A 2.3-point gain on a 100-point scale is modest; the CI indicates it\u2019s **precisely estimated** as small (likely between ~1.8 and 2.8 points), not that it\u2019s \u201chighly effective.\u201d\n\n**Power Assessment**: With 500 per group, the study is highly powered to detect small effects; thus **statistical significance is expected even for trivial-to-small improvements**. Low p-values here mainly reflect large N and low SE, not practical impact.\n\n**Interpretation**: The correct conclusion is: **the training has a statistically reliable but small average effect** (about +2 points out of 100). Calling it \u201chighly effective\u201d based solely on p < 0.001 is an overinterpretation; \u201chighly significant\u201d \u2260 \u201chighly effective.\u201d\n\n**Limitations**: Practical significance cannot be judged without context (e.g., pre-specified minimal meaningful improvement/MCID, costs, time burden, downstream outcomes, subgroup heterogeneity, and whether observations are truly independent).\n\n**Checkpoint**: Want a robustness framing (e.g., translate d=0.15 into \u201cprobability of superiority\u201d / overlap) or a cost-effectiveness threshold example to decide whether +2.3 points is meaningful?\n",
+      "judge_output": {
+        "evaluation": "QUANTITATIVE_QUALITY: 93\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: distinction between statistical and practical significance, interpretation of Cohen's d = 0.15 as small effect, note that large sample inflates statistical significance, assessment of whether 2.3 points matters practically, critique of \"highly effective\" conclusion\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.25\nRESULT: PASS",
+        "rubric_breakdown": {
+          "quantitative-quality": {
+            "weight": 75,
+            "score": 93,
+            "reasoning": "Score: 93/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 90,
+            "reasoning": "Score: 90/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "distinction between statistical and practical significance",
+            "interpretation of Cohen's d = 0.15 as small effect",
+            "note that large sample inflates statistical significance",
+            "assessment of whether 2.3 points matters practically",
+            "critique of \"highly effective\" conclusion"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "QUANTITATIVE_QUALITY: 93\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: distinction between statistical and practical significance, interpretation of Cohen's d = 0.15 as small effect, note that large sample inflates statistical significance, assessment of whether 2.3 points matters practically, critique of \"highly effective\" conclusion\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.25\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_qual-researcher_thematic-analysis_20251230",
+      "agent": "qual-researcher",
+      "test_case": "thematic-analysis",
+      "test_name": "Thematic Analysis",
+      "difficulty": "Medium",
+      "score": 76.2,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "qualitative-quality": {
+          "weight": 75,
+          "score": 71
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 92
+        }
+      },
+      "agent_output": "### Qualitative Analysis: Employee Interview Excerpts on Remote Work\n**Methodology**: Inductive reflexive thematic analysis (semantic-level coding) because the dataset is small (5 brief excerpts) and aims to surface participants\u2019 own meaning-making rather than test a pre-specified framework.  \n**Coding Summary**: 14 initial codes \u2192 5 themes\n\n**Themes**:\n\n1) **Flexibility, Autonomy, and Schedule Control**\n- **Definition**: Remote work is valued for enabling personal agency over time and daily rhythms (family logistics, self-managed scheduling).\n- **Key quotes**:  \n  - P1: \u201cI love the flexibility\u2026 pick up my kids from school\u201d  \n  - P3: \u201cthe autonomy is worth it\u201d  \n  - P4: \u201cI have more control over my schedule\u201d\n- **Frequency**: 3/5 (P1, P3, P4)\n\n2) **Perceived Productivity Gains Through Reduced Friction**\n- **Definition**: Participants link remote work to improved output and energy, often via removal of commute and fewer in-office interruptions.\n- **Key quotes**:  \n  - P2: \u201cMy productivity has skyrocketed\u2026 No more commute\u201d  \n  - P5: \u201cI\u2019m delivering better work than ever\u201d\n- **Frequency**: 2/5 (P2, P5)\n\n3) **Loss of Informal Social Connection and Emerging Isolation**\n- **Definition**: Reduced spontaneous interaction is experienced as a relational cost; isolation appears especially salient over extended work periods/projects.\n- **Key quotes**:  \n  - P1: \u201cI miss the random chats\u2026 by the coffee machine\u201d  \n  - P2: \u201cI do feel isolated sometimes, especially during long projects\u201d\n- **Frequency**: 2/5 (P1, P2)\n\n4) **Wellbeing Strain From Remote Work Intensification (Blurred Boundaries + Video Fatigue)**\n- **Definition**: Remote work can extend work into personal time and create meeting-related exhaustion, suggesting a different (not necessarily lower) burden than in-person work.\n- **Key quotes**:  \n  - P3: \u201cboundary\u2026 has blurred\u2026 checking email at 10pm\u201d  \n  - P4: \u201cVideo calls are exhausting\u2026 Back-to-back Zoom meetings drain me\u201d\n- **Frequency**: 2/5 (P3, P4)\n\n5) **Visibility and Career Progression Anxiety Despite Strong Performance**\n- **Definition**: Concern that remote work reduces recognition/advancement (\u201cout of sight\u201d) even when individuals perceive their performance as improved.\n- **Key quotes**:  \n  - P5: \u201cI worry about my career progression. Out of sight, out of mind?\u2026 delivering better work\u201d\n- **Frequency**: 1/5 (P5)\n\n**Relationships**:\n- Autonomy/flexibility appears to *enable* productivity (Themes 1\u20132) but may also *increase* boundary blurring (Theme 4) when self-management lacks protective norms.\n- Reduced in-person contact (Theme 3) plausibly compounds both wellbeing strain (Theme 4) and fears about visibility (Theme 5), though this linkage is suggestive given limited data.\n\n**Interpretation**:\n- Across excerpts, remote work is constructed as a trade-off: employees emphasize meaningful gains (agency and perceived performance) while naming relational, wellbeing, and career-development risks. The data suggest remote work \u201cworks\u201d for many primarily because of control over time, but that control is fragile\u2014without supportive structures it can slide into overwork, social disconnection, and uncertainty about advancement.\n\n**Limitations**:\n- Very small sample (n=5) and extremely short excerpts; theme frequencies are descriptive, not evidence of prevalence beyond this set.\n- No contextual data (role, tenure, caregiving status, team norms), limiting interpretive depth and transferability.\n- No opportunity to probe contradictions or conduct member-checking; findings should be treated as provisional patterns rather than saturated themes.\n",
+      "judge_output": {
+        "evaluation": "QUALITATIVE_QUALITY: 71\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: At least 3 distinct themes identified, Supporting quotes for each theme, Theme definitions, Pattern across participants noted\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.25\nRESULT: PASS",
+        "rubric_breakdown": {
+          "qualitative-quality": {
+            "weight": 75,
+            "score": 71,
+            "reasoning": "Score: 71/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "At least 3 distinct themes identified",
+            "Supporting quotes for each theme",
+            "Theme definitions",
+            "Pattern across participants noted"
+          ],
+          "missed": [],
+          "details": "Covered 4/4 required elements"
+        },
+        "overall_justification": "QUALITATIVE_QUALITY: 71\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: At least 3 distinct themes identified, Supporting quotes for each theme, Theme definitions, Pattern across participants noted\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.25\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_qual-researcher_leading-questions_20251230",
+      "agent": "qual-researcher",
+      "test_case": "leading-questions",
+      "test_name": "Leading Questions",
+      "difficulty": "Medium",
+      "score": 76.2,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "qualitative-quality": {
+          "weight": 75,
+          "score": 72
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 89
+        }
+      },
+      "agent_output": "### Qualitative Analysis: Interview Protocol Review (\u201cPublic Attitudes Toward Climate Change\u201d)\n**Methodology**: Qualitative instrument critique using thematic analysis of question wording (inductive coding of bias/construct validity threats), aligned with semi-structured interviewing standards (focus: neutrality, construct coverage, ethical risk).\n\n**Coding Summary**: 12 issue-codes \u2192 5 cross-cutting themes (bias, construct clarity, emotional loading, attribution/blame framing, action-pressure framing).\n\n**Themes**\n1. **Leading/Presumptive Framing (High; Q1, Q2, Q4, Q5)**\n   - **Definition**: Questions embed a \u201ccorrect\u201d stance (severity, urgency, collapse, blame), making disagreement socially costly.\n   - **Key quotes**: \u201cDon\u2019t you agree\u2026\u201d, \u201cenvironmental collapse\u201d, \u201cMany scientists say we have less than 10 years\u2026\u201d, \u201cWho do you blame\u2026\u201d\n   - **Impact**: Likely inflates expressed concern and moralized responses; suppresses ambivalence/skepticism.\n\n2. **Emotionally Loaded & Potentially Distressing Content (High; Q2, Q4)**\n   - **Definition**: Evokes fear/guilt via children, collapse, countdown framing.\n   - **Key quotes**: \u201cfuture of your children\u201d, \u201cenvironmental collapse\u201d, \u201cless than 10 years\u201d\n   - **Impact**: May shift interview from attitudes to affect induction; raises ethical concerns (distress) and reactivity.\n\n3. **Normative/Moral Pressure & Social Desirability (High; Q1, Q3, Q5)**\n   - **Definition**: Implies a moral obligation to agree and \u201csacrifice,\u201d positioning refusal as irresponsible.\n   - **Key quotes**: \u201cmost pressing issue\u201d, \u201cWhat sacrifices\u2026 willing to make\u2026\u201d, \u201cWho do you blame\u2026\u201d\n   - **Impact**: Encourages virtue-signaling; reduces validity of self-reported willingness/behavior.\n\n4. **Construct Ambiguity & Double-Barreled Targets (Moderate; Q2, Q3)**\n   - **Definition**: Unclear constructs (worry vs perceived risk vs likelihood; \u201csacrifices\u201d could mean money, lifestyle, voting).\n   - **Key quotes**: \u201cHow worried\u2026 due to environmental collapse?\u201d, \u201cWhat sacrifices\u2026\u201d\n   - **Impact**: Responses become hard to compare; participants answer different questions.\n\n5. **Attribution/Blame Orientation Narrows Attitude Space (Moderate; Q5)**\n   - **Definition**: Frames the topic as fault allocation rather than beliefs, uncertainty, trust, efficacy, policy preferences.\n   - **Key quotes**: \u201cWho do you blame\u2026\u201d\n   - **Impact**: Skews toward polarization and moral judgment; may miss key attitude dimensions (e.g., uncertainty, trust in institutions).\n\n**Relationships**\n- Leading framing + moral pressure likely amplifies social desirability, which then contaminates \u201cworry\u201d and \u201csacrifice\u201d responses (emotion induction \u2192 performative commitment). Blame framing can further polarize responses and reduce openness to nuance.\n\n**Interpretation**\n- As written, the protocol appears more likely to *produce agreement and emotionally intensified narratives* than to *measure the diversity of public attitudes* (including uncertainty, mixed feelings, low salience, competing priorities, or skepticism). The resulting data would be at elevated risk of interviewer-demand effects and reduced credibility/confirmability.\n\n**Recommendations for Improvement**\n- **Rewrite for neutrality (remove embedded claims)**:\n  - Replace Q1 with: \u201cHow important is climate change to you compared to other issues? What makes you say that?\u201d\n  - Replace Q2 with: \u201cWhen you think about climate change, what\u2014if anything\u2014concerns you? Are there aspects you feel less concerned about?\u201d\n  - Replace Q4 with: \u201cPeople hear different timelines and levels of urgency. What messages have you heard, and how do they affect how you think or feel?\u201d\n  - Replace Q5 with: \u201cWhat do you think are the main causes of climate change and environmental problems? Who or what has the most ability to influence outcomes?\u201d\n- **Separate constructs and add probes**:\n  - Distinguish *belief in occurrence*, *human causation*, *perceived personal/local risk*, *salience*, *efficacy*, *trust in sources*, *policy support*, *behavioral constraints*.\n  - For action: \u201cWhat actions, if any, have you taken?\u201d then \u201cWhat actions feel feasible or infeasible, and why?\u201d\n- **Balance and allow disconfirmation**:\n  - Include permission for low concern: \u201cSome people are very concerned; others are less concerned or unsure. Where do you see yourself?\u201d\n- **Sequence to reduce priming**:\n  - Start broad (general issues, information sources), then climate change beliefs, then emotions, then behaviors/policy\u2014avoid starting with a forced-agreement item.\n- **Ethics and interviewer guidance**:\n  - Add a brief distress protocol (offer break/skip, resource info if needed), and interviewer training to avoid affirming/arguing.\n- **Quality controls**:\n  - Pilot test for comprehension and emotional impact; keep an audit trail of revisions; consider reflexive memoing about interviewer stance.\n\n**Limitations**\n- This evaluation is based only on the five listed questions (no context on study aims, sampling, setting, interviewer training, or whether the protocol is meant to be provocational). Recommendations are therefore probabilistic and oriented to maximizing validity/credibility in typical attitude interviews.\n",
+      "judge_output": {
+        "evaluation": "QUALITATIVE_QUALITY: 72\nOUTPUT_STRUCTURE: 89\nMUST_INCLUDE_MET: Identifies leading question bias in Q1 (\"Don't you agree...\"), Notes presupposition of concern in Q2 (\"environmental collapse\"), Flags loaded language throughout, Provides neutral reformulations of at least 3 questions, Critiques lack of opposing viewpoint exploration\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.25\nRESULT: PASS",
+        "rubric_breakdown": {
+          "qualitative-quality": {
+            "weight": 75,
+            "score": 72,
+            "reasoning": "Score: 72/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 89,
+            "reasoning": "Score: 89/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identifies leading question bias in Q1 (\"Don't you agree...\")",
+            "Notes presupposition of concern in Q2 (\"environmental collapse\")",
+            "Flags loaded language throughout",
+            "Provides neutral reformulations of at least 3 questions",
+            "Critiques lack of opposing viewpoint exploration"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "QUALITATIVE_QUALITY: 72\nOUTPUT_STRUCTURE: 89\nMUST_INCLUDE_MET: Identifies leading question bias in Q1 (\"Don't you agree...\"), Notes presupposition of concern in Q2 (\"environmental collapse\"), Flags loaded language throughout, Provides neutral reformulations of at least 3 questions, Critiques lack of opposing viewpoint exploration\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.25\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_qual-researcher_coding-strategy_20251230",
+      "agent": "qual-researcher",
+      "test_case": "coding-strategy",
+      "test_name": "Coding Strategy",
+      "difficulty": "Medium",
+      "score": 84.5,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "qualitative-quality": {
+          "weight": 75,
+          "score": 82
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 92
+        }
+      },
+      "agent_output": "### Qualitative Analysis: App Store Dissatisfaction Reviews (n=50)\n**Methodology**: Hybrid thematic analysis (deductive + inductive). Start with a pragmatic, user-frustration\u2013oriented deductive scaffold (reliability, usability, monetization, trust, support), then refine/extend codes inductively from the review language during a pilot pass. This balances comparability (across apps/versions) with sensitivity to emergent, app-specific complaints.\n\n**Coding Summary**: Proposed starter set: ~28 codes \u2192 expected 6\u20138 themes (final counts depend on what appears in your 50 reviews).\n\n---\n\n## Coding Strategy (Execution-Ready)\n1. **Unit of analysis**: Code at the *meaning-unit* level (a clause/sentence expressing a single complaint or consequence). Allow **multiple codes per review**.\n2. **Two-pass workflow**  \n   - **Pass 1 (Pilot, ~10 reviews)**: Apply codes broadly; write brief memos on \u201cwhat frustration is *about*\u201d and \u201cwhat it *does* to the user.\u201d Add/merge/split codes.  \n   - **Pass 2 (Full set, 50 reviews)**: Apply the revised codebook consistently; track version and decision rules (audit trail).\n3. **Code both \u201cproblem\u201d and \u201cimpact\u201d**: Many reviews contain (a) a failure and (b) a consequence (e.g., \u201ccrashes\u201d \u2192 \u201ccan\u2019t complete task\u201d). Capture both; impacts often become higher-level themes.\n4. **Track *attribution and targets***: Note whether blame is assigned to the app, update, developer, device, OS, payment system, or user error (helps interpret trust and responsibility).\n5. **Handle time and change explicitly**: Code \u201cworked before\u201d / \u201cafter update\u201d separately\u2014update regressions are qualitatively distinct from chronic issues.\n6. **Quality controls (lightweight, high rigor)**  \n   - Maintain a **codebook with inclusion/exclusion rules** and a running **decision log**.  \n   - Do **negative-case checks** (reviews that don\u2019t fit dominant patterns).  \n   - If multiple coders: double-code ~10\u201320% and reconcile via discussion (focus on concept clarity, not just agreement).\n\n---\n\n## Initial Codebook (Starter Codes)\nUse as a first iteration; refine after the pilot. Each code includes *Definition* + *Include/Exclude* to reduce ambiguity.\n\n### A. Reliability & Technical Functioning\n1. **Crash/Freeze**: App closes, hangs, becomes unresponsive.  \n   - Include: \u201cwon\u2019t open,\u201d \u201cfreezes on launch.\u201d Exclude: slow-but-works (use *Performance Lag*).\n2. **Performance Lag**: Slowness, stutter, long load times.  \n3. **Core Feature Broken**: Primary advertised function fails (not edge-case).  \n4. **Bug/Error Message**: Specific errors, glitches, incorrect states.  \n5. **Connectivity/Sync Failure**: Won\u2019t sync, server errors, offline issues, cross-device mismatch.  \n6. **Data Loss**: Lost files, progress, messages, settings.  \n7. **Battery/Heat/Resource Drain**: Excessive battery, overheating, storage bloat.  \n8. **Compatibility/Device-Specific**: Fails on certain OS versions/devices, tablet/phone differences.\n\n### B. Task Friction & UX\n9. **Navigation/Flow Confusion**: Hard to find features; poor information architecture.  \n10. **UI Clutter/Visual Discomfort**: Overcrowded screens, poor readability.  \n11. **Interaction Friction**: Too many taps, awkward controls, non-intuitive gestures.  \n12. **Onboarding/Setup Difficulty**: Confusing start, permissions, tutorials, initial configuration.  \n13. **Accessibility Barrier**: Font size, contrast, screen reader, motor/cognitive accessibility issues.  \n14. **Localization/Language Problem**: Bad translations, language mismatch, regional formatting issues.\n\n### C. Account, Identity, and Access\n15. **Login/Authentication Failure**: Can\u2019t sign in, 2FA issues, verification loops.  \n16. **Account Lockout/Recovery Failure**: Password reset doesn\u2019t work, locked out, cannot regain access.  \n17. **Permission/Entitlement Confusion**: \u201cSays I don\u2019t have access,\u201d mismatch between plan and features.\n\n### D. Monetization, Value, and Fairness\n18. **Paywall Surprise**: Expected free feature is locked; unclear what\u2019s paid.  \n19. **Pricing/Value Dissatisfaction**: Too expensive for benefits; poor value comparison.  \n20. **Subscription Trap/Dark Pattern**: Hard to cancel, coercive upsells, misleading trial messaging.  \n21. **Billing/Charge Dispute**: Unexpected charges, double charges, refund problems.  \n22. **Ads Intrusiveness**: Too many ads, disruptive, deceptive ad placements.  \n23. **Feature Gating/Degradation**: Previously free feature removed or worsened to push payment.\n\n### E. Trust, Privacy, and Integrity\n24. **Privacy Concern**: Data collection worries, permissions feel excessive, tracking allegations.  \n25. **Security Concern**: Hacking fears, unsafe account, suspicious activity.  \n26. **Misrepresentation**: App doesn\u2019t match description/screenshots; \u201cscam,\u201d \u201cbait-and-switch.\u201d  \n27. **Reliability of Developer/Intent**: Explicit distrust (\u201cgreedy,\u201d \u201cdon\u2019t care,\u201d \u201ccash grab\u201d) when tied to repeated patterns.\n\n### F. Updates, Change, and Control\n28. **Update Regression**: \u201cUsed to work\u201d / broke after update; forced redesign complaints.  \n29. **Unwanted UI/Feature Change**: Redesign disliked even if functional; loss of control.  \n30. **Bug Fix Lag/Churn**: Repeated updates don\u2019t fix; issues persist across versions.\n\n### G. Support & Resolution Pathways\n31. **Customer Support Unresponsive**: No reply, canned responses, long delays.  \n32. **Support Ineffective**: Responds but doesn\u2019t solve; blame-shifting.  \n33. **Workarounds Required**: Users describe hacks to make it usable (signals severity and coping).\n\n### H. Consequences & Affective Expression (Code alongside root cause)\n34. **Task Failure/Blocked Goal**: \u201cCan\u2019t do X,\u201d prevents completion of intended task.  \n35. **Time/Financial Cost**: Wasted time, lost money, missed deadlines/opportunities.  \n36. **Emotional Intensity**: Anger, disappointment, betrayal, sarcasm; code *strength* (low/med/high) if useful.  \n37. **Exit/Threat/Uninstall**: Uninstalled, switching apps, \u201cnever again,\u201d warning others.\n\n---\n\n## Themes (Expected Clusters; Populate After Coding)\n**Theme 1: Reliability Breakdown Undermines Core Use**  \n- Definition: Failures (crashes/bugs/sync/data loss) that block primary tasks and trigger abandonment.  \n- Key quotes: Not available here (require your review text).  \n- Frequency: To be computed during coding.\n\n**Theme 2: Monetization Perceived as Unfair or Deceptive**  \n- Definition: Paywalls, subscriptions, ads, and billing framed as exploitative or misrepresented.  \n- Key quotes: Not available here.  \n- Frequency: To be computed.\n\n**Theme 3: Loss of Control Through Updates and Account Access**  \n- Definition: Regressions, unwanted changes, and login/account issues that remove user agency.  \n- Key quotes: Not available here.  \n- Frequency: To be computed.\n\n**Theme 4: Trust Erosion and Developer Legitimacy**  \n- Definition: Privacy/security fears and \u201cscam/bait\u201d narratives that generalize beyond a single bug.  \n- Key quotes: Not available here.  \n- Frequency: To be computed.\n\n**Theme 5: Support as the \u201cSecond Failure\u201d**  \n- Definition: Support unresponsiveness or ineffectiveness intensifies frustration and drives churn.  \n- Key quotes: Not available here.  \n- Frequency: To be computed.\n\n---\n\n## Relationships (How Codes Connect)\n- **Technical failures \u2192 Task blocked \u2192 Emotional intensity \u2192 Exit/uninstall** (common escalation pathway).  \n- **Update regression** often co-occurs with **unwanted change**, and amplifies **developer distrust**.  \n- **Billing/ads/paywalls** link strongly to **misrepresentation** and **subscription trap** narratives.  \n- **Support failures** function as a moderator: they convert \u201cannoyance\u201d into \u201cbetrayal/distrust.\u201d\n\n---\n\n## Interpretation (What This Means in Context)\nThis codebook is designed to distinguish (a) *what broke*, (b) *what users were trying to accomplish*, (c) *what it cost them*, and (d) *how they interpreted developer intent*. That separation supports higher-quality themes than treating \u201cfrustration\u201d as a single bucket and enables actionable insights (engineering vs. UX vs. policy/monetization vs. support).\n\n---\n\n## Limitations\n- No review text provided here, so **no quotes, frequencies, or saturation claims** can be made.  \n- App category (finance/health/games/social), user segment, and platform differences can shift what \u201ccore feature\u201d means; expect to **specialize** codes during the pilot (e.g., add domain-specific subcodes).  \n- App store reviews are brief, often emotionally loaded, and can reflect **selection bias** toward extremes; treat findings as patterns in *expressed dissatisfaction*, not a full user experience census.\n\n---\n\n**Checkpoint (next step after your pilot pass)**: If you paste ~10\u201315 representative reviews (anonymized), I can refine the codebook with (1) tighter decision rules, (2) app-specific subcodes, and (3) a finalized theme structure grounded in your actual language.\n",
+      "judge_output": {
+        "evaluation": "QUALITATIVE_QUALITY: 82\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Coding strategy recommendation (open, axial, or combined), Initial code categories, Code definitions, Coding process steps, Example applications\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 84.5\nRESULT: PASS",
+        "rubric_breakdown": {
+          "qualitative-quality": {
+            "weight": 75,
+            "score": 82,
+            "reasoning": "Score: 82/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Coding strategy recommendation (open",
+            "axial",
+            "or combined)",
+            "Initial code categories",
+            "Code definitions",
+            "Coding process steps",
+            "Example applications"
+          ],
+          "missed": [],
+          "details": "Covered 7/7 required elements"
+        },
+        "overall_justification": "QUALITATIVE_QUALITY: 82\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Coding strategy recommendation (open, axial, or combined), Initial code categories, Code definitions, Coding process steps, Example applications\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 84.5\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_quant-analyst_stat-method-selection_20251230",
+      "agent": "quant-analyst",
+      "test_case": "stat-method-selection",
+      "test_name": "Stat Method Selection",
+      "difficulty": "Medium",
+      "score": 91.2,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "quantitative-quality": {
+          "weight": 75,
+          "score": 90
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 95
+        }
+      },
+      "agent_output": "### Statistical Analysis: Difference in Average Test Scores (Control vs Treatment; n=30/group)\n**Design Summary**: Continuous outcome (test score), 2 independent groups, total N=60.  \n**Assumption Checks**: Normality (Q-Q/Shapiro) | unknown (need data) | if violated use Mann\u2013Whitney or permutation test; Variance equality (Levene) | unknown | if unequal use Welch; Independence | design-dependent | ensure random assignment/no clustering.  \n**Analysis**: **Independent-samples t-test (Welch\u2019s t-test by default)**; report *t*, df, *p*, CI for mean difference.  \n**Effect Size**: **Cohen\u2019s d** (or Hedges\u2019 g) with 95% CI; interpret via context (rules of thumb: 0.2/0.5/0.8).  \n**Power Assessment**: With **30/group**, typically reasonable for **moderate-to-large** effects; likely underpowered for small effects\u2014confirm via an a priori power analysis.  \n**Interpretation**: Tests whether mean scores differ between groups beyond sampling variability.  \n**Limitations**: Sensitive to outliers/non-normality; if multiple outcomes/tests, adjust for multiplicity.\n\n### Statistical Analysis: Association Between Hours Studied and Exam Grades\n**Design Summary**: Two continuous variables (hours, grade), observational relationship.  \n**Assumption Checks**: Linearity (scatter/residuals) | unknown | if non-linear consider transformations/splines; Normality of residuals | unknown | consider robust/bootstrapped CI; Homoscedasticity | unknown | use robust SE if needed; Outliers/influence (Cook\u2019s D) | unknown | robust regression / sensitivity analysis.  \n**Analysis**: **Simple linear regression** (grade ~ hours) (equivalently Pearson correlation test if only association is needed); report slope, SE, *t*, *p*, CI.  \n**Effect Size**: **R\u00b2** (variance explained) and/or **Pearson r** with CI.  \n**Power Assessment**: Depends strongly on expected effect (r) and N; small correlations require large samples\u2014run power for correlation/regression.  \n**Interpretation**: Estimates expected grade change per additional study hour (and uncertainty).  \n**Limitations**: Correlation \u2260 causation; confounding likely (prior ability, course difficulty).\n\n### Statistical Analysis: Customer Satisfaction Across 4 Product Versions\n**Design Summary**: Continuous satisfaction score, 4 independent groups (versions).  \n**Assumption Checks**: Normality within groups | unknown | if violated consider Kruskal\u2013Wallis/permutation; Homogeneity (Levene/Brown\u2013Forsythe) | unknown | use Welch ANOVA if unequal; Independence | design-dependent | ensure no repeated ratings.  \n**Analysis**: **One-way ANOVA** (use **Welch ANOVA** if variances differ); if significant, do planned contrasts or post-hoc tests (e.g., Tukey; Games\u2013Howell after Welch).  \n**Effect Size**: **\u03b7\u00b2 or \u03c9\u00b2** (prefer \u03c9\u00b2) with CI if available.  \n**Power Assessment**: Depends on group sizes and expected between-version differences; power drops quickly if groups are small/unequal\u2014run ANOVA power on a minimally important effect.  \n**Interpretation**: Tests whether at least one version\u2019s mean satisfaction differs from the others.  \n**Limitations**: Multiple comparisons in post-hoc testing; consider ordinal models if satisfaction is Likert with few categories.\n\n### Statistical Analysis: Gender Distribution Difference Between Two Departments\n**Design Summary**: Categorical gender \u00d7 categorical department (2\u00d72 contingency table).  \n**Assumption Checks**: Expected cell counts (rule-of-thumb: mostly \u22655) | unknown | if small use Fisher\u2019s exact; Independence | design-dependent | ensure each person counted once.  \n**Analysis**: **Chi-square test of independence** (2\u00d72); if sparse counts, **Fisher\u2019s exact test**.  \n**Effect Size**: **\u03c6 (phi)** (same as Cram\u00e9r\u2019s V for 2\u00d72) with CI if possible; optionally report risk difference/odds ratio with CI.  \n**Power Assessment**: Power depends on total N and how imbalanced the proportions are; small differences require large N.  \n**Interpretation**: Evaluates whether department membership is associated with gender distribution.  \n**Limitations**: Category definitions/measurement error; if more than 2 gender categories, use larger contingency table \u03c7\u00b2.\n\n### Statistical Analysis: Predicting House Prices from Square Footage, Bedrooms, Location\n**Design Summary**: Continuous outcome (price); multiple predictors: continuous (sq ft), count (bedrooms), categorical (location).  \n**Assumption Checks**: Linearity/additivity | unknown | consider interactions/splines; Residual normality/homoscedasticity | unknown | robust SE or transform price (often log); Multicollinearity (VIF) | unknown | address via feature engineering/regularization; Influential points | unknown | diagnostics/robust methods.  \n**Analysis**: **Multiple linear regression** with location encoded (dummy/one-hot); if many locations or hierarchical structure, consider **mixed-effects model** (random intercepts by area).  \n**Effect Size**: **R\u00b2/adjusted R\u00b2**, partial **standardized \u03b2**, and out-of-sample metrics (RMSE via cross-validation) if prediction-focused.  \n**Power Assessment**: Depends on expected R\u00b2, number of predictors, and model complexity; avoid overfitting\u2014use CV and ensure enough cases per parameter (rule-of-thumb only, not a guarantee).  \n**Interpretation**: Estimates each predictor\u2019s association with price conditional on others; for prediction, emphasize out-of-sample performance.  \n**Limitations**: Omitted-variable bias (e.g., neighborhood quality), non-stationarity, spatial autocorrelation; consider spatial models if residuals are spatially clustered.\n\nRun additional analyses (e.g., nonparametric/robust alternatives), check robustness, or explore moderators/mediators?\n",
+      "judge_output": {
+        "evaluation": "QUANTITATIVE_QUALITY: 90  \nOUTPUT_STRUCTURE: 95  \nMUST_INCLUDE_MET: Scenario 1 (independent-samples t-test / Mann\u2013Whitney), Scenario 2 (Pearson correlation), Scenario 3 (one-way ANOVA / Kruskal\u2013Wallis), Scenario 4 (chi-square test / Fisher\u2019s exact), Scenario 5 (multiple linear regression)  \nMUST_INCLUDE_MISSED: none  \nOVERALL_SCORE: 91.25  \nRESULT: PASS  ",
+        "rubric_breakdown": {
+          "quantitative-quality": {
+            "weight": 75,
+            "score": 90,
+            "reasoning": "Score: 90/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 95,
+            "reasoning": "Score: 95/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Scenario 1 (independent-samples t-test / Mann\u2013Whitney)",
+            "Scenario 2 (Pearson correlation)",
+            "Scenario 3 (one-way ANOVA / Kruskal\u2013Wallis)",
+            "Scenario 4 (chi-square test / Fisher\u2019s exact)",
+            "Scenario 5 (multiple linear regression)"
+          ],
+          "missed": [
+            "none"
+          ],
+          "details": "Covered 5/6 required elements"
+        },
+        "overall_justification": "QUANTITATIVE_QUALITY: 90  \nOUTPUT_STRUCTURE: 95  \nMUST_INCLUDE_MET: Scenario 1 (independent-samples t-test / Mann\u2013Whitney), Scenario 2 (Pearson correlation), Scenario 3 (one-way ANOVA / Kruskal\u2013Wallis), Scenario 4 (chi-square test / Fisher\u2019s exact), Scenario 5 (multiple linear regression)  \nMUST_INCLUDE_MISSED: none  \nOVERALL_SCORE: 91.25  \nRESULT: PASS  "
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_quant-analyst_simpson-paradox_20251230",
+      "agent": "quant-analyst",
+      "test_case": "simpson-paradox",
+      "test_name": "Simpson Paradox",
+      "difficulty": "Medium",
+      "score": 92.5,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "quantitative-quality": {
+          "weight": 75,
+          "score": 92
+        },
+        "output-structure": {
+          "weight": 25,
+          "score": 94
+        }
+      },
+      "agent_output": "### Statistical Analysis: Which hospital is better for surgery (overall vs by surgery type)?\n**Design Summary**: Binary outcome (success/failure). Two independent groups (Hospital A vs B). Stratified by surgery type (Easy vs Hard). Ns: Overall A=1000, B=1000; Easy A=800, B=200; Hard A=200, B=800.\n\n**Assumption Checks**: Test | Result | Action  \n- Independence / comparable case-mix | Not guaranteed (observational; clear case-mix imbalance) | Prefer stratified comparisons + standardization  \n- Large-sample normal approx for proportions | Mostly OK, but Easy at B has only 4 failures (196/200) \u2192 borderline | Use exact methods (e.g., Fisher/exact CI) as robustness check for Easy stratum  \n- Correct model | Binomial reasonable for \u201csuccess per surgery\u201d | Report risk differences + odds ratios; avoid causal claims\n\n**Analysis** (two-proportion comparisons; z/\u03c7\u00b2 approximation):\n- **Routine (Easy)**: A 95.0% (760/800) vs B 98.0% (196/200)  \n  - Estimated z \u2248 -1.85, two-sided p \u2248 0.064 (borderline; exact test may differ slightly given low failures at B)\n- **Complex (Hard)**: A 70.0% (140/200) vs B 81.75% (654/800)  \n  - Estimated z \u2248 -3.67, two-sided p \u2248 0.00024 (strong evidence B higher)\n- **Overall (unstratified)**: A 90.0% (900/1000) vs B 85.0% (850/1000)  \n  - Estimated z \u2248 3.38, two-sided p \u2248 0.0007 (strong evidence A higher *in the observed mix*)\n\n**Effect Size**:\n- **Routine (Easy)**: Risk difference (B\u2212A) = +3.0 percentage points; Odds ratio \u2248 2.58 (B higher odds of success)  \n- **Complex (Hard)**: Risk difference (B\u2212A) = +11.75 percentage points; Odds ratio \u2248 1.92 (B higher odds of success)  \n- **Overall (observed mix)**: Risk difference (B\u2212A) = \u22125.0 percentage points; Odds ratio \u2248 0.63 (B lower odds of success)\n\n**Power Assessment**:\n- Hard-surgery comparison is well-powered (large n, sizable difference).  \n- Easy-surgery comparison is less stable because Hospital B has only 200 easy cases and very few failures; the +3pp difference is modest and is near typical significance thresholds under large-sample approximations.\n\n**Interpretation**:\n1. **Routine surgery**: Recommend **Hospital B**, because its easy-case success rate is higher (98% vs 95%), though the statistical certainty is only moderate given B\u2019s smaller easy-case sample and very low failure count.  \n2. **Complex surgery**: Recommend **Hospital B**, with strong evidence of higher success (81.75% vs 70%).  \n3. **Overall**: If you must pick based only on the *observed overall rates*, **Hospital A** looks better (90% vs 85%). However, this overall comparison is **confounded by case mix** and is not the right basis for an individual recommendation without knowing surgery type (and severity).\n\n**Paradox / Counterintuitive Finding (Simpson\u2019s Paradox)**:\n- Each stratum favors **Hospital B** (better for both Easy and Hard), yet the overall rate favors **Hospital A**.  \n- Reason: **Case-mix imbalance**. Hospital A performs many more easy surgeries (800/1000), while Hospital B performs many more hard surgeries (800/1000). Since hard surgeries have lower success rates overall, Hospital B\u2019s overall average is \u201cpulled down\u201d despite being better within each category.  \n- A quick standardization illustrates this: if both hospitals had the same 50/50 mix of Easy/Hard, A would be 0.5\u00b70.95 + 0.5\u00b70.70 = **82.5%**, while B would be 0.5\u00b70.98 + 0.5\u00b70.8175 = **~89.9%** \u2192 **B better** under a common mix.\n\n**Limitations**:\n- Observational comparison; \u201cbetter\u201d could reflect differences in patient risk, referral patterns, definitions of \u201csuccess,\u201d surgeon mix, and perioperative care.  \n- Only two coarse strata; residual confounding likely within \u201cHard\u201d and \u201cEasy.\u201d  \n- For decision-making, the relevant estimand is conditional on patient characteristics, not the unadjusted overall rate.\n\n**Checkpoint**:\n- Run robustness checks with exact tests / exact CIs (especially Easy at Hospital B)?  \n- Standardize to the *patient\u2019s* likely surgery-type distribution (and ideally risk-score strata) rather than 50/50?  \n- Explore whether \u201cHard\u201d cases differ in severity between hospitals (risk adjustment / logistic regression)?\n",
+      "judge_output": {
+        "evaluation": "QUANTITATIVE_QUALITY: 92\nOUTPUT_STRUCTURE: 94\nMUST_INCLUDE_MET: Identifies Simpson\u2019s Paradox, Correctly notes Hospital B is better for BOTH surgery types, Explains the aggregate reversal mechanism, Notes the confounding by surgery type distribution, Recommends Hospital B for both routine and complex\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.5\nRESULT: PASS",
+        "rubric_breakdown": {
+          "quantitative-quality": {
+            "weight": 75,
+            "score": 92,
+            "reasoning": "Score: 92/100"
+          },
+          "output-structure": {
+            "weight": 25,
+            "score": 94,
+            "reasoning": "Score: 94/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identifies Simpson\u2019s Paradox",
+            "Correctly notes Hospital B is better for BOTH surgery types",
+            "Explains the aggregate reversal mechanism",
+            "Notes the confounding by surgery type distribution",
+            "Recommends Hospital B for both routine and complex"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "QUANTITATIVE_QUALITY: 92\nOUTPUT_STRUCTURE: 94\nMUST_INCLUDE_MET: Identifies Simpson\u2019s Paradox, Correctly notes Hospital B is better for BOTH surgery types, Explains the aggregate reversal mechanism, Notes the confounding by surgery type distribution, Recommends Hospital B for both routine and complex\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.5\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_literature-reviewer_gap-analysis_20251230",
+      "agent": "literature-reviewer",
+      "test_case": "gap-analysis",
+      "test_name": "Gap Analysis",
+      "difficulty": "Medium",
+      "score": 83.4,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "research-quality": {
+          "weight": 70,
+          "score": 84
+        },
+        "analytical-quality": {
+          "weight": 20,
+          "score": 80
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 86
+        }
+      },
+      "agent_output": "### Literature Review: AI-assisted medical diagnosis\n**Research Question**: What has been empirically studied about AI systems that assist (or autonomously perform parts of) medical diagnosis, and what are the main evidence gaps blocking safe, generalizable clinical use?\n\n**Search Strategy**: Web search targeted to (1) systematic reviews/meta-analyses of diagnostic accuracy and \u201cAI vs clinician\u201d comparisons, (2) prospective/pivotal clinical evaluations of diagnostic AI, (3) reporting/risk-of-bias guidance specific to AI diagnostic/prediction studies, and (4) emerging evaluations of LLM-based diagnostic support. Key query families included: (\u201cdeep learning\u201d AND \u201cdiagnostic accuracy\u201d AND \u201csystematic review\u201d AND imaging), (\u201cAI versus clinicians\u201d AND BMJ), (CONSORT-AI OR SPIRIT-AI OR TRIPOD+AI OR PROBAST+AI OR STARD-AI), and (\u201clarge language model\u201d OR ChatGPT OR GPT AND \u201cdifferential diagnosis\u201d AND \u201csystematic review/meta-analysis\u201d). ([bmj.com](https://www.bmj.com/content/368/bmj.m689?utm_source=openai))\n\n**Sources Identified** (core set synthesized; not exhaustive):\n- Systematic reviews/meta-analyses (diagnostic accuracy; AI vs clinicians; GPT in radiology): 5 ([nature.com](https://www.nature.com/articles/s41746-021-00438-z))\n- Reporting / appraisal guidance (trial reporting; prediction-model reporting; risk-of-bias; diagnostic-accuracy reporting): 5 ([bmj.com](https://www.bmj.com/content/370/bmj.m3164?utm_source=openai))\n- Landmark prospective evaluations / pivotal studies: 2 ([nature.com](https://www.nature.com/articles/s41586-019-1799-6?utm_source=openai))\n- LLM diagnostic-support primary studies (examples across settings/specialties): 3 ([link.springer.com](https://link.springer.com/article/10.1007/s00296-023-05464-6?utm_source=openai))\n\n**Thematic Synthesis**:\n1. **Imaging-centric AI dominates the evidence base; accuracy can be high, but estimates are fragile**\n   - Broad evidence syntheses in medical imaging report high pooled/typical diagnostic performance for deep learning in several domains, but emphasize substantial heterogeneity, limited prospective data, limited external validation, and frequent methodological/reporting weaknesses that can inflate apparent accuracy. ([nature.com](https://www.nature.com/articles/s41746-021-00438-z))\n   - \u201cAI vs clinician\u201d comparisons in imaging exist, but systematic reviews highlight that direct, fair comparisons (same sample; out-of-sample external validation) are relatively uncommon versus the volume of retrospective development papers. ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/33323251/?utm_source=openai))\n\n2. **Prospective clinical evaluation exists (notably in screening), but is still comparatively sparse versus development studies**\n   - A pivotal prospective trial demonstrated feasibility of autonomous AI for diabetic retinopathy detection in primary care workflows (a rare example of a regulated, prospectively evaluated diagnostic pathway). ([nature.com](https://www.nature.com/articles/s41746-018-0040-6?utm_source=openai))\n   - Large-scale evaluations for screening mammography show strong retrospective/curated-dataset performance and cross-country testing, but they also catalyzed debates about reproducibility/transparency and what constitutes sufficient evidence for deployment. ([nature.com](https://www.nature.com/articles/s41586-019-1799-6?utm_source=openai))\n   - Systematic appraisal of \u201cAI vs clinicians\u201d imaging studies concludes that randomized trials were few relative to claims of superiority/non-inferiority, and reporting is often incomplete. ([bmj.com](https://www.bmj.com/content/368/bmj.m689?utm_source=openai))\n\n3. **Non-imaging \u201cdiagnosis/prediction\u201d from EHR-like data shows recurring methodological problems (generalizable lesson)**\n   - In fast-moving diagnostic/prognostic modeling (illustrated clearly during COVID-19), living systematic review evidence found most prediction models at high risk of bias (e.g., sample size, flawed evaluation, missing calibration), implying that real-world performance is often worse than reported. ([bmj.com](https://www.bmj.com/content/369/bmj.m1328?utm_source=openai))\n   - These issues map directly onto broader AI-assisted diagnosis tasks using routine-care data (dataset shift, missingness, label noise, proxy outcomes, and optimistic internal validation). ([bmj.com](https://www.bmj.com/content/369/bmj.m1328?utm_source=openai))\n\n4. **Standards and appraisal tools for AI studies have matured (2020\u20132025), but adoption and key disclosures lag**\n   - CONSORT-AI and SPIRIT-AI define minimum reporting for AI intervention trials (e.g., versioning, integration into workflow, error analysis, access). ([bmj.com](https://www.bmj.com/content/370/bmj.m3164?utm_source=openai))\n   - TRIPOD+AI updates prediction-model reporting for regression/ML; PROBAST+AI updates risk-of-bias/applicability assessment for regression/AI prediction models. ([bmj.com](https://www.bmj.com/content/385/bmj-2023-078378?utm_source=openai))\n   - STARD-AI (2025) extends diagnostic-accuracy reporting to AI, explicitly positioning itself as applicable across modalities, including LLM diagnostic-accuracy evaluations when framed as diagnostic classification/differential diagnosis accuracy. ([nature.com](https://www.nature.com/articles/s41591-025-03953-8?utm_source=openai))\n   - Post-guideline evidence suggests many AI RCTs still under-report items like algorithm version and accessibility even when overall checklist concordance is relatively high. ([nature.com](https://www.nature.com/articles/s41467-024-45355-3?utm_source=openai))\n\n5. **LLM-based diagnostic assistance is an emerging subfield with rapidly evolving but uneven evidence quality**\n   - Specialty and setting-specific studies report mixed diagnostic accuracy for LLMs compared with clinicians, with performance varying by task framing, information provided, and case difficulty/atypicality; reliability and hallucinations remain salient concerns in some evaluations. ([link.springer.com](https://link.springer.com/article/10.1007/s00296-023-05464-6?utm_source=openai))\n   - A 2025 radiology-focused systematic review/meta-analysis reports performance differences by model generation and by text vs visual inputs, but (as with earlier imaging AI literature) results depend heavily on dataset selection, reporting, and evaluation design. ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/41229708/?utm_source=openai))\n\n**Research Gaps** (high-confidence gaps repeatedly implied by reviews/guidelines; phrased as actionable directions):\n1. **Prospective, patient-outcome-focused evidence**: Too few trials measure downstream clinical outcomes, harms, and workflow effects (not just diagnostic accuracy on static datasets). ([bmj.com](https://www.bmj.com/content/368/bmj.m689?utm_source=openai))\n2. **Transportability & external validation at scale**: More multi-site, multi-vendor, demographically diverse validations are needed; performance under dataset shift and over time (model drift) is under-characterized. ([nature.com](https://www.nature.com/articles/s41746-021-00438-z))\n3. **Bias, subgroup performance, and equity**: Routine, sufficiently powered subgroup analyses and bias-mitigation evaluations are still not standard, especially in primary care and underrepresented populations/settings. ([nature.com](https://www.nature.com/articles/s41591-025-03953-8?utm_source=openai))\n4. **Calibration, uncertainty, and decision-thresholding**: Many studies still prioritize headline discrimination metrics over calibration, uncertainty quantification, and clinically grounded threshold/utility analyses. ([bmj.com](https://www.bmj.com/content/369/bmj.m1328?utm_source=openai))\n5. **Reproducibility and transparency (data/code/model versioning)**: Persistent under-reporting of algorithm version, training/validation details, and access restrictions limits independent verification and safe re-use. ([nature.com](https://www.nature.com/articles/s41467-024-45355-3?utm_source=openai))\n6. **Human factors and sociotechnical safety**: More evidence is needed on how clinicians actually use AI outputs (automation bias, alert fatigue, overreliance, deskilling), and on safety guardrails (including error/failure-mode monitoring). ([bmj.com](https://www.bmj.com/content/370/bmj.m3164?utm_source=openai))\n7. **LLM-specific clinical evaluation**: Standardized, clinically realistic benchmarks (longitudinal context, missing data, adversarial prompts, atypical presentations) plus reporting aligned with STARD-AI/TRIPOD+AI/CONSORT-AI are still emerging. ([nature.com](https://www.nature.com/articles/s41591-025-03953-8?utm_source=openai))\n\n**Key References** (high-credibility anchors; DOI/URL provided):\n- Nagendran M, et al. *BMJ* (2020). \u201cArtificial intelligence versus clinicians\u2026\u201d doi:10.1136/bmj.m689 `https://doi.org/10.1136/bmj.m689`. ([bmj.com](https://www.bmj.com/content/368/bmj.m689?utm_source=openai))  \n- Liu X, et al. *The Lancet Digital Health* (2019). \u201cA comparison of deep learning performance against health-care professionals\u2026\u201d doi:10.1016/S2589-7500(19)30123-2 `https://doi.org/10.1016/S2589-7500(19)30123-2`. ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/33323251/?utm_source=openai))  \n- Aggarwal R, et al. *npj Digital Medicine* (2021). \u201cDiagnostic accuracy of deep learning in medical imaging\u2026\u201d doi:10.1038/s41746-021-00438-z `https://doi.org/10.1038/s41746-021-00438-z`. ([nature.com](https://www.nature.com/articles/s41746-021-00438-z))  \n- Abr\u00e0moff MD, et al. *npj Digital Medicine* (2018). \u201cPivotal trial of an autonomous AI-based diagnostic system for detection of diabetic retinopathy\u2026\u201d doi:10.1038/s41746-018-0040-6 `https://doi.org/10.1038/s41746-018-0040-6`. ([nature.com](https://www.nature.com/articles/s41746-018-0040-6?utm_source=openai))  \n- McKinney SM, et al. *Nature* (2020). \u201cInternational evaluation of an AI system for breast cancer screening.\u201d doi:10.1038/s41586-019-1799-6 `https://doi.org/10.1038/s41586-019-1799-6`. ([nature.com](https://www.nature.com/articles/s41586-019-1799-6?utm_source=openai))  \n- Cruz Rivera S, et al. *BMJ* (2020). CONSORT-AI extension. doi:10.1136/bmj.m3164 `https://doi.org/10.1136/bmj.m3164`. ([bmj.com](https://www.bmj.com/content/370/bmj.m3164?utm_source=openai))  \n- Cruz Rivera S, et al. *BMJ* (2020). SPIRIT-AI extension. doi:10.1136/bmj.m3210 `https://doi.org/10.1136/bmj.m3210`. ([bmj.com](https://www.bmj.com/content/370/bmj.m3210?utm_source=openai))  \n- Collins GS, et al. *BMJ* (2024). TRIPOD+AI statement. doi:10.1136/bmj-2023-078378 `https://doi.org/10.1136/bmj-2023-078378`. ([bmj.com](https://www.bmj.com/content/385/bmj-2023-078378?utm_source=openai))  \n- Moons KGM, et al. *BMJ* (2025). PROBAST+AI. doi:10.1136/bmj-2024-082505 `https://doi.org/10.1136/bmj-2024-082505`. ([bmj.com](https://www.bmj.com/content/388/bmj-2024-082505.abstract?utm_source=openai))  \n- Sounderajah V, et al. *Nature Medicine* (2025). STARD-AI. doi:10.1038/s41591-025-03953-8 `https://doi.org/10.1038/s41591-025-03953-8`. ([nature.com](https://www.nature.com/articles/s41591-025-03953-8?utm_source=openai))\n",
+      "judge_output": {
+        "evaluation": "RESEARCH_QUALITY: 84\nANALYTICAL_QUALITY: 80\nOUTPUT_STRUCTURE: 86\nMUST_INCLUDE_MET: Identifies at least 3 distinct research gaps, Provides evidence for why each gap exists, Synthesizes findings across sources, Distinguishes well-studied from under-studied areas, Maps the research landscape\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 83.4\nRESULT: PASS",
+        "rubric_breakdown": {
+          "research-quality": {
+            "weight": 70,
+            "score": 84,
+            "reasoning": "Score: 84/100"
+          },
+          "analytical-quality": {
+            "weight": 20,
+            "score": 80,
+            "reasoning": "Score: 80/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 86,
+            "reasoning": "Score: 86/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identifies at least 3 distinct research gaps",
+            "Provides evidence for why each gap exists",
+            "Synthesizes findings across sources",
+            "Distinguishes well-studied from under-studied areas",
+            "Maps the research landscape"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "RESEARCH_QUALITY: 84\nANALYTICAL_QUALITY: 80\nOUTPUT_STRUCTURE: 86\nMUST_INCLUDE_MET: Identifies at least 3 distinct research gaps, Provides evidence for why each gap exists, Synthesizes findings across sources, Distinguishes well-studied from under-studied areas, Maps the research landscape\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 83.4\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_literature-reviewer_hallucination-detection_20251230",
+      "agent": "literature-reviewer",
+      "test_case": "hallucination-detection",
+      "test_name": "Hallucination Detection",
+      "difficulty": "Medium",
+      "score": 55.0,
+      "passed": false,
+      "threshold": 70,
+      "rubrics": {
+        "research-quality": {
+          "weight": 70,
+          "score": 45
+        },
+        "analytical-quality": {
+          "weight": 20,
+          "score": 75
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 85
+        }
+      },
+      "agent_output": "### Literature Review: Quantum Entanglement Effects on Plant Photosynthesis (Nature/Science, 2020\u20132024)\n**Research Question**: What peer-reviewed studies in *Nature*/*Science* family journals (2020\u20132024) test whether *quantum entanglement* affects *plant photosynthesis*?\n\n**Search Strategy**: Targeted searches on nature.com and science.org with date bounds (2020\u20132024) using combinations of: (\u201cquantum entanglement\u201d OR entanglement) AND (photosynthesis OR photosystem OR \u201clight-harvesting\u201d) AND (plant OR \u201cphotosystem II\u201d OR chlorophyll), plus related terms (radical pair, 2DES, coherence, polariton, cavity). ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))\n\n**Sources Identified**:\n- **Eligible (meets all constraints: entanglement + plant photosynthesis + Nature/Science family + 2020\u20132024): 0**. Across Nature/Science-family hits in 2020\u20132024, I did not find peer-reviewed studies explicitly testing *entanglement* as a causal/functional mechanism in *plant* photosynthesis. ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))\n- **Closest related (Nature family, 2022\u20132024; quantum effects in photosynthetic complexes/antennas, but not \u201centanglement effects on plant photosynthesis\u201d): 5** (below). ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))\n\n**Thematic Synthesis**:\n- 2020\u20132024 *Nature* portfolio work most directly adjacent to the query focuses on **quantum-light interactions**, **polaritonic strong coupling**, **exciton\u2013vibrational coherence**, and **photonic simulation of environment-assisted transport** in *photosynthetic* (often non-plant) model systems\u2014rather than demonstrating entanglement-driven functional advantages in *plants*. ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))\n\n**Research Gaps**:\n- **Direct entanglement claims are largely absent in 2020\u20132024 Nature/Science-family plant-photosynthesis primary research**, creating a concrete \u201cevidence gap\u201d for the exact question as posed (especially regarding *in vivo* plant photosystems and functional readouts). ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))\n\n**Key References (Closest Related Studies; Nature family, 2022\u20132024 \u2014 not plant-entanglement-specific)**:\n\n1) **Wu, F., Finkelstein-Shapiro, D., Wang, M., Rosenkampff, I., Yartsev, A., Pascher, T., Nguyen-Phan, T.C., Cogdell, R., B\u00f6rjesson, K., Pullerits, T. (2022). \u201cOptical cavity-mediated exciton dynamics in photosynthetic light harvesting 2 complexes.\u201d *Nature Communications*, 13, 6864. DOI: 10.1038/s41467-022-34613-x.** ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))  \n- **Key findings**: Strong exciton\u2013photon coupling (polaritons) in LH2 microcavities; pump\u2013probe data indicate a **prolonged excited-state lifetime** vs. bare excitons; interpreted with an exciton-reservoir/dark-state picture. ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))  \n- **Methodology**: Fabry\u2013P\u00e9rot cavity fabrication with LH2 in polymer matrix; angle-resolved spectra + coupled-oscillator modeling; **femtosecond pump\u2013probe spectroscopy** with kinetic modeling. ([nature.com](https://www.nature.com/articles/s41467-022-34613-x))  \n\n2) **Li, Q., Orcutt, K., Cook, R.L., Sabines-Chesterking, J., Tong, A.L., Schlau-Cohen, G.S., Zhang, X., Fleming, G.R., Whaley, K.B. (2023). \u201cSingle-photon absorption and emission from a natural photosynthetic complex.\u201d *Nature*, 619, 300\u2013304. DOI: 10.1038/s41586-023-06121-5.** ([nature.com](https://www.nature.com/articles/s41586-023-06121-5))  \n- **Key findings**: Demonstrates (via correlations) that **single-photon excitation** of LH2 can drive subsequent energy transfer and single-photon fluorescence emission under ambient conditions. ([nature.com](https://www.nature.com/articles/s41586-023-06121-5))  \n- **Methodology**: **Heralded single-photon source** + coincidence counting/time-correlation functions (photon-counting quantum light spectroscopy); LH2 complexes in solution. ([nature.com](https://www.nature.com/articles/s41586-023-06121-5))  \n\n3) **Zhu, R., Li, W., Zhen, Z., Zou, J., Liao, G., Wang, J., Wang, Z., Chen, H., Qin, S., Weng, Y. (2024). \u201cQuantum phase synchronization via exciton-vibrational energy dissipation sustains long-lived coherence in photosynthetic antennas.\u201d *Nature Communications*, 15, 3171. DOI: 10.1038/s41467-024-47560-6.** ([nature.com](https://www.nature.com/articles/s41467-024-47560-6))  \n- **Key findings**: Reports longer-lived **exciton\u2013vibrational coherence** in an allophycocyanin trimer vs isolated pigments; attributes persistence to a **phase-synchronization** mechanism involving selective dissipation of antisymmetric modes. ([nature.com](https://www.nature.com/articles/s41467-024-47560-6))  \n- **Methodology**: **Two-dimensional electronic spectroscopy (2DES)** on purified antenna complexes and subunits; analysis of coherence signatures and vibrational-mode behavior. ([nature.com](https://www.nature.com/articles/s41467-024-47560-6))  \n\n4) **Tang, H., Shang, X.-W., Shi, Z.-Y., He, T.-S., Feng, Z., Wang, T.-Y., Shi, R., Wang, H.-M., Tan, X., Xu, X.-Y., Wang, Y., Gao, J., Kim, M.S., Jin, X.-M. (2024). \u201cSimulating photosynthetic energy transport on a photonic network.\u201d *npj Quantum Information*, 10, 29. DOI: 10.1038/s41534-024-00824-x.** ([nature.com](https://www.nature.com/articles/s41534-024-00824-x))  \n- **Key findings**: Photonic emulator maps a seven-site FMO coupling profile; introduces colored-noise dephasing to mimic environment; reports an **optimal transport efficiency** at certain dephasing strengths (environment-assisted transport). ([nature.com](https://www.nature.com/articles/s41534-024-00824-x))  \n- **Methodology**: Integrated **3D waveguide array** with characterized couplings; stochastic dynamical modulation to implement site energies/dephasing; fabricated via femtosecond laser direct writing. ([nature.com](https://www.nature.com/articles/s41534-024-00824-x))  \n\n5) **Ennist, N.M., Wang, S., Kennedy, M.A., Curti, M., Sutherland, G.A., Vasilev, C., Redler, R.L., \u2026 Hunter, C.N., Baker, D. (2024). \u201cDe novo design of proteins housing excitonically coupled chlorophyll special pairs.\u201d *Nature Chemical Biology*, 20, 906\u2013915. DOI: 10.1038/s41589-024-01626-0.** ([nature.com](https://www.nature.com/articles/s41589-024-01626-0))  \n- **Key findings**: Computationally designed C2-symmetric proteins bind chlorophyll dimers; crystallography confirms geometries (including native-like \u201cspecial pair\u201d orientation); spectroscopy supports **excitonic coupling**; FLIM demonstrates energy transfer; cryo-EM validates a designed multi-chlorophyll nanocage architecture. ([nature.com](https://www.nature.com/articles/s41589-024-01626-0))  \n- **Methodology**: Computational protein design (Rosetta-based); expression/purification; **X-ray crystallography**, spectroscopy (absorbance/fluorescence/CD), **FLIM**, and **cryo-EM**. ([nature.com](https://www.nature.com/articles/s41589-024-01626-0))\n",
+      "judge_output": {
+        "evaluation": "```\nRESEARCH_QUALITY: 45\nANALYTICAL_QUALITY: 75\nOUTPUT_STRUCTURE: 85\nMUST_INCLUDE_MET: Acknowledges this is an extremely niche/non-existent research area, Does NOT fabricate paper titles/authors/DOIs, Suggests related legitimate research areas instead, Distinguishes between what exists and what doesn't, Shows uncertainty when sources aren't found\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 55.0\nRESULT: FAIL\n```",
+        "rubric_breakdown": {
+          "research-quality": {
+            "weight": 70,
+            "score": 45,
+            "reasoning": "Score: 45/100"
+          },
+          "analytical-quality": {
+            "weight": 20,
+            "score": 75,
+            "reasoning": "Score: 75/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 85,
+            "reasoning": "Score: 85/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Acknowledges this is an extremely niche/non-existent research area",
+            "Does NOT fabricate paper titles/authors/DOIs",
+            "Suggests related legitimate research areas instead",
+            "Distinguishes between what exists and what doesn't",
+            "Shows uncertainty when sources aren't found"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "```\nRESEARCH_QUALITY: 45\nANALYTICAL_QUALITY: 75\nOUTPUT_STRUCTURE: 85\nMUST_INCLUDE_MET: Acknowledges this is an extremely niche/non-existent research area, Does NOT fabricate paper titles/authors/DOIs, Suggests related legitimate research areas instead, Distinguishes between what exists and what doesn't, Shows uncertainty when sources aren't found\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 55.0\nRESULT: FAIL\n```"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_literature-reviewer_citation-chain_20251230",
+      "agent": "literature-reviewer",
+      "test_case": "citation-chain",
+      "test_name": "Citation Chain",
+      "difficulty": "Medium",
+      "score": 76.1,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "research-quality": {
+          "weight": 70,
+          "score": 74
+        },
+        "analytical-quality": {
+          "weight": 20,
+          "score": 78
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 87
+        }
+      },
+      "agent_output": "### Literature Review: Citation Chain of \u201cAttention Is All You Need\u201d (Vaswani et al., 2017)\n**Research Question**: What foundational works did the Transformer paper build upon, and what influential later papers built on it\u2014i.e., how does it fit into the evolution of Transformer architectures in NLP?\n\n**Search Strategy**: Target paper metadata and full text via arXiv + NeurIPS proceedings; backward citation extraction from the paper\u2019s reference list; forward influence traced by querying arXiv for landmark \u201cTransformer/Transformers\u201d NLP papers (pretraining, long-context, efficiency, scaling). Note: direct Semantic Scholar API access for automated \u201ctop citing papers\u201d was blocked (403), so forward citations are a curated set of widely recognized follow-ons rather than an exhaustive ranked list. ([arxiv.org](https://arxiv.org/abs/1706.03762))\n\n**Sources Identified**:\n- Primary focal paper: 1 (Transformer). ([arxiv.org](https://arxiv.org/abs/1706.03762))\n- Backward chain (foundational/precursor works explicitly cited by Vaswani et al.): dozens; highlighted ~10 most structurally relevant (seq2seq, attention, optimization/regularization, subwording, alternative non-recurrent seq2seq). ([ar5iv.org](https://ar5iv.org/pdf/1706.03762))\n- Forward chain (selected high-impact Transformer-based NLP descendants): 12 (representative, non-exhaustive). ([arxiv.org](https://arxiv.org/abs/1810.04805?utm_source=openai))\n\n**Thematic Synthesis**:\n\n1) **Backward citation chain (what Transformer built on)**\n- **Seq2seq encoder\u2013decoder (RNN era)**: core framing for \u201csequence transduction\u201d came from RNN encoder\u2013decoder formulations and seq2seq training setups. ([arxiv.org](https://arxiv.org/abs/1406.1078?utm_source=openai))\n- **Attention in NMT (alignment as soft selection)**: additive attention and attention-based NMT established attention as the bridge between encoder and decoder; Vaswani et al. position Transformer as removing recurrence/convolution while keeping/expanding attention. ([arxiv.org](https://arxiv.org/abs/1409.0473?utm_source=openai))\n- **Self-attention (intra-attention) as a known primitive**: the paper notes self-attention was used in tasks like sentence representations/reading comprehension, but claims novelty in using *only* self-attention for transduction (no sequence-aligned RNN/conv), framed as \u201cto the best of our knowledge\u201d. ([ar5iv.org](https://ar5iv.org/pdf/1706.03762))\n- **Training/architecture \u201cenablers\u201d (not unique to Transformers but adopted)**: residual connections + layer normalization + Adam appear as key stabilizers in the Transformer stack described by Vaswani et al. ([arxiv.org](https://arxiv.org/abs/1512.03385?utm_source=openai))\n- **Practical NMT pipeline components**: subword units (BPE/wordpiece-style tokenization) and strong NMT baselines (e.g., GNMT) are part of the immediate context in which Transformer was evaluated. ([arxiv.org](https://arxiv.org/abs/1508.07909?utm_source=openai))\n\n2) **The Transformer contribution (the \u201chinge\u201d paper)**\n- Vaswani et al. introduce the Transformer as an encoder\u2013decoder architecture \u201cbased solely on attention mechanisms,\u201d explicitly contrasting it with recurrent/convolutional seq2seq systems and motivating gains in parallelism and path length for long-range dependencies. ([arxiv.org](https://arxiv.org/abs/1706.03762))\n\n3) **Forward citation chain (what built on Transformer) \u2014 representative branches**\n- **Contextual pretraining with Transformer encoders**: BERT establishes the \u201cpretrain then fine-tune\u201d paradigm using Transformer-based encoders for broad NLP transfer. ([arxiv.org](https://arxiv.org/abs/1810.04805?utm_source=openai))\n- **Autoregressive Transformers and scaling**: GPT\u20113 (autoregressive Transformer LM) is a prominent example of scaling Transformer LMs to improve few-shot/task-agnostic behavior. ([arxiv.org](https://arxiv.org/abs/2005.14165?utm_source=openai))\n- **Long-context / recurrence / positional innovations**: Transformer\u2011XL extends vanilla Transformers for longer dependencies via segment-level recurrence and modified positional handling; XLNet explicitly builds on Transformer\u2011XL ideas while altering the pretraining objective. ([arxiv.org](https://arxiv.org/abs/1901.02860?utm_source=openai))\n- **Seq2seq pretraining (encoder\u2013decoder Transformers for generation)**: BART and T5 both use Transformer encoder\u2013decoder setups with pretraining objectives that enable strong generation + understanding transfer. ([arxiv.org](https://arxiv.org/abs/1910.13461?utm_source=openai))\n- **Efficiency and long documents (reducing quadratic attention costs)**: Reformer, Longformer, BigBird, and Linformer each modify attention to scale better with sequence length (hashing, sparse patterns, low-rank projections). ([arxiv.org](https://arxiv.org/abs/2001.04451?utm_source=openai))\n- **Sparse scaling / Mixture-of-Experts within Transformer frameworks**: Switch Transformers scale parameter counts via sparsely activated expert layers while keeping compute manageable. ([arxiv.org](https://arxiv.org/abs/2101.03961?utm_source=openai))\n\n**Citation-chain map (high-level)**\n- RNN encoder\u2013decoder + seq2seq (Cho 2014; Sutskever 2014) \u2192 attention for NMT (Bahdanau 2014; Luong 2015) + training/optimization primitives (Adam; residuals; layer norm) \u2192 **Transformer** (Vaswani 2017) \u2192 (i) encoder pretraining (BERT \u2192 RoBERTa/ALBERT/ELECTRA), (ii) autoregressive LMs and scaling (GPT\u20113), (iii) long-context variants (Transformer\u2011XL \u2192 XLNet), (iv) seq2seq pretraining (BART, T5), (v) efficient/long-document attention (Longformer/Reformer/BigBird/Linformer), (vi) sparse/MoE scaling (Switch). ([ar5iv.org](https://ar5iv.org/pdf/1706.03762))\n\n**Research Gaps** (as surfaced by this citation chain)\n- **Mechanistic/theoretical understanding**: the empirical success and scaling behavior of Transformers outpaces crisp theory; many follow-on papers focus on engineering tradeoffs (sparsity/approximation) rather than unified explanations. (Inference from the strong \u201cefficiency/long-context\u201d branch.) ([arxiv.org](https://arxiv.org/abs/2004.05150?utm_source=openai))\n- **Long-context robustness**: multiple incompatible solutions (sparse, low-rank, recurrence) suggest no settled best approach across tasks/regimes. ([arxiv.org](https://arxiv.org/abs/1901.02860?utm_source=openai))\n- **Compute-efficient scaling**: MoE/sparse scaling improves throughput but introduces routing/optimization complexity, motivating continued work on stability and efficiency. ([arxiv.org](https://arxiv.org/abs/2101.03961?utm_source=openai))\n\n**Key References** (primary sources; DOI/URL)\n- Vaswani, A., et al. (2017). *Attention Is All You Need*. arXiv:1706.03762. DOI `https://doi.org/10.48550/arXiv.1706.03762`. ([arxiv.org](https://arxiv.org/abs/1706.03762))\n- Bahdanau, D., Cho, K., & Bengio, Y. (2014). *Neural Machine Translation by Jointly Learning to Align and Translate*. arXiv:1409.0473. DOI `https://doi.org/10.48550/arXiv.1409.0473`. ([arxiv.org](https://arxiv.org/abs/1409.0473?utm_source=openai))\n- Cho, K., et al. (2014). *Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation*. arXiv:1406.1078. DOI `https://doi.org/10.48550/arXiv.1406.1078`. ([arxiv.org](https://arxiv.org/abs/1406.1078?utm_source=openai))\n- Sutskever, I., Vinyals, O., & Le, Q. V. (2014). *Sequence to Sequence Learning with Neural Networks*. arXiv:1409.3215. DOI `https://doi.org/10.48550/arXiv.1409.3215`. ([arxiv.org](https://arxiv.org/abs/1409.3215?utm_source=openai))\n- Luong, M.-T., Pham, H., & Manning, C. D. (2015). *Effective Approaches to Attention-based Neural Machine Translation*. arXiv:1508.04025. DOI `https://doi.org/10.48550/arXiv.1508.04025`. ([arxiv.org](https://arxiv.org/abs/1508.04025?utm_source=openai))\n- Ba, J. L., Kiros, J. R., & Hinton, G. E. (2016). *Layer Normalization*. arXiv:1607.06450. DOI `https://doi.org/10.48550/arXiv.1607.06450`. ([arxiv.org](https://arxiv.org/abs/1607.06450?utm_source=openai))\n- He, K., et al. (2015/2016). *Deep Residual Learning for Image Recognition*. arXiv:1512.03385. DOI `https://doi.org/10.48550/arXiv.1512.03385`. ([arxiv.org](https://arxiv.org/abs/1512.03385?utm_source=openai))\n- Devlin, J., et al. (2018). *BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding*. arXiv:1810.04805. DOI `https://doi.org/10.48550/arXiv.1810.04805`. ([arxiv.org](https://arxiv.org/abs/1810.04805?utm_source=openai))\n- Dai, Z., et al. (2019). *Transformer-XL: Attentive Language Models Beyond a Fixed-Length Context*. arXiv:1901.02860. DOI `https://doi.org/10.48550/arXiv.1901.02860`. ([arxiv.org](https://arxiv.org/abs/1901.02860?utm_source=openai))\n- Lewis, M., et al. (2019). *BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and Comprehension*. arXiv:1910.13461. DOI `https://doi.org/10.48550/arXiv.1910.13461`. ([arxiv.org](https://arxiv.org/abs/1910.13461?utm_source=openai))\n- Raffel, C., et al. (2019). *Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer*. arXiv:1910.10683. DOI `https://doi.org/10.48550/arXiv.1910.10683`. ([arxiv.org](https://arxiv.org/abs/1910.10683?utm_source=openai))\n- Brown, T. B., et al. (2020). *Language Models are Few-Shot Learners*. arXiv:2005.14165. DOI `https://doi.org/10.48550/arXiv.2005.14165`. ([arxiv.org](https://arxiv.org/abs/2005.14165?utm_source=openai))\n",
+      "judge_output": {
+        "evaluation": "RESEARCH_QUALITY: 74\nANALYTICAL_QUALITY: 78\nOUTPUT_STRUCTURE: 87\nMUST_INCLUDE_MET: Identifies papers citing the target (forward citations), Identifies papers cited by the target (backward citations), Maps influence/evolution of ideas, Distinguishes foundational vs. derivative works, Shows how field evolved before and after\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.1\nRESULT: PASS",
+        "rubric_breakdown": {
+          "research-quality": {
+            "weight": 70,
+            "score": 74,
+            "reasoning": "Score: 74/100"
+          },
+          "analytical-quality": {
+            "weight": 20,
+            "score": 78,
+            "reasoning": "Score: 78/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 87,
+            "reasoning": "Score: 87/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identifies papers citing the target (forward citations)",
+            "Identifies papers cited by the target (backward citations)",
+            "Maps influence/evolution of ideas",
+            "Distinguishes foundational vs. derivative works",
+            "Shows how field evolved before and after"
+          ],
+          "missed": [],
+          "details": "Covered 5/5 required elements"
+        },
+        "overall_justification": "RESEARCH_QUALITY: 74\nANALYTICAL_QUALITY: 78\nOUTPUT_STRUCTURE: 87\nMUST_INCLUDE_MET: Identifies papers citing the target (forward citations), Identifies papers cited by the target (backward citations), Maps influence/evolution of ideas, Distinguishes foundational vs. derivative works, Shows how field evolved before and after\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.1\nRESULT: PASS"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "codex_literature-reviewer_basic-search_20251230",
+      "agent": "literature-reviewer",
+      "test_case": "basic-search",
+      "test_name": "Basic Search",
+      "difficulty": "Medium",
+      "score": 68.6,
+      "passed": false,
+      "threshold": 70,
+      "rubrics": {
+        "research-quality": {
+          "weight": 70,
+          "score": 64
+        },
+        "analytical-quality": {
+          "weight": 20,
+          "score": 77
+        },
+        "output-structure": {
+          "weight": 10,
+          "score": 84
+        }
+      },
+      "agent_output": "### Literature Review: Impact of Remote Work on Employee Productivity (2020\u20132025)\n\n**Research Question**: What does empirical research (primarily 2020\u20132025) conclude about how remote work (fully remote and hybrid) affects employee productivity and related performance outcomes?\n\n**Search Strategy**: Targeted search for 2020\u20132025 empirical studies and reviews using queries combining synonyms of remote work with productivity outcomes (e.g., (\u201cworking from home\u201d OR telework OR remote work OR hybrid work) AND (productivity OR performance OR output OR \u201cperformance ratings\u201d OR innovation)), prioritizing: (i) randomized/field experiments, (ii) firm administrative/behavioral data studies, (iii) nationally representative surveys with clear identification, and (iv) systematic reviews; sources included Nature Portfolio, MIT Press/REST, PubMed/PMC, and NBER. ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/36619046/))\n\n**Sources Identified** (included in synthesis):\n- Peer-reviewed empirical (7): RCT/field experiments (2), firm administrative/behavioral data (3), population survey analyses (1), firm innovation/idea-quality archival study (1). ([nature.com](https://www.nature.com/articles/s41586-024-07500-2))  \n- Systematic review (1). ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/36619046/))  \n- High-circulation economics working papers used for context/triangulation (3). ([nber.org](https://www.nber.org/papers/w28731?utm_source=openai))  \n\n**Thematic Synthesis**:\n\n1) **Average productivity effects depend strongly on \u201cmode\u201d (hybrid vs fully remote) and measurement**\n- **Hybrid work (common \u201c2-ish days WFH\u201d)**: Two randomized/field experiments find **no detectable penalty in performance ratings/grades** while improving employee outcomes (job satisfaction; lower quitting). ([nature.com](https://www.nature.com/articles/s41586-024-07500-2))  \n- **Fully remote / firm-wide remote shifts**: Evidence is more mixed. Studies using internal digital exhaust show collaboration networks can become more siloed/static under firm-wide remote work\u2014mechanisms plausibly linked to longer-run productivity/innovation even if short-run output is stable. ([nature.com](https://www.nature.com/articles/s41562-021-01196-4))  \n- **Self-reported productivity** often rises with WFH in surveys, but results are sensitive to lockdown context and selection into WFH (e.g., childcare constraints). ([pmc.ncbi.nlm.nih.gov](https://pmc.ncbi.nlm.nih.gov/articles/PMC9678226/?utm_source=openai))  \n\n2) **Mechanisms: time savings vs coordination/communication costs**\n- **Time savings** from reduced commuting can be partially reallocated to paid work (raising effective labor input even if measured \u201coutput per paid hour\u201d is unchanged). ([nber.org](https://www.nber.org/papers/w30866?utm_source=openai))  \n- **Coordination/communication costs** are a recurring explanation for productivity headwinds in fully remote settings: increases in meetings/coordination time, fewer/shallower cross-unit ties, and more asynchronous patterns. ([econpapers.repec.org](https://econpapers.repec.org/RePEc%3Aucp%3Ajpemic%3Adoi%3A10.1086/721803?utm_source=openai))  \n\n3) **Heterogeneity: who benefits (or loses) from remote work**\n- Outcomes differ by **role (manager vs non-manager), task type, project size/complexity, and home constraints**. For example, a developer case study finds WFH effects vary across productivity metrics and project characteristics (with some negative results for large projects), and a UK study finds weaker associations for parents during lockdown months. ([pmc.ncbi.nlm.nih.gov](https://pmc.ncbi.nlm.nih.gov/articles/PMC8933171/?utm_source=openai))  \n- Preferences/voluntariness matter: synthesis work suggests better outcomes when telework is voluntary and aligned to job design and worker characteristics. ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/36619046/))  \n\n4) **Productivity vs innovation/knowledge creation may diverge**\n- Evidence consistent with \u201croutine execution holds up better than novel recombination\u201d: a large archival study of an IT services firm finds idea *quantity* may hold steady under WFH while **idea quality declines**, and hybrid can reduce idea submission rates\u2014especially when teams are poorly coordinated on *when* they co-locate. ([nature.com](https://www.nature.com/articles/s41598-024-67122-6))  \n- Separate experimental work (not workplace-specific) supports the possibility that virtual interaction can impair creative idea generation relative to in-person interaction. ([nature.com](https://www.nature.com/articles/s41586-022-04643-y?utm_source=openai))  \n\n**Research Gaps** (most consistently noted/implicated by the evidence above):\n- **Long-run causal evidence** (multi-year) on productivity and especially innovation, mentoring, and skill formation under sustained remote/hybrid regimes (beyond pandemic transition periods). ([nature.com](https://www.nature.com/articles/s41562-021-01196-4))  \n- **Better productivity measurement** for knowledge work (moving beyond self-reports and coarse performance ratings to validated output/quality metrics across occupations). ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/36619046/))  \n- **Design questions for hybrid**: optimal coordination of co-presence (team-level scheduling, manager co-attendance) and how those interact with performance/innovation. ([nature.com](https://www.nature.com/articles/s41598-024-67122-6))  \n- **Generalizability beyond tech/white-collar** and beyond high-income contexts; many stronger designs concentrate in knowledge-work settings. ([nature.com](https://www.nature.com/articles/s41586-024-07500-2))  \n\n**Key References** (DOI or stable identifier):\n- Bloom, N., Han, R., & Liang, J. (2024). *Hybrid working from home improves retention without damaging performance.* **Nature**. DOI: `10.1038/s41586-024-07500-2`. ([nature.com](https://www.nature.com/articles/s41586-024-07500-2))  \n- Choudhury, P., Khanna, T., Makridis, C. A., & Schirmann, K. (2023/2025). *Is Hybrid Work the Best of Both Worlds? Evidence from a Field Experiment.* **Review of Economics and Statistics (forthcoming/in press)**. DOI: `10.1162/rest_a_01428`. ([eprints.lse.ac.uk](https://eprints.lse.ac.uk/128764/1/ChoudhuryKhannaMakridisSchirman_-_Hybrid_WFH_no_appendix.pdf))  \n- Yang, L., Holtz, D., Jaffe, S., et al. (2022). *The effects of remote work on collaboration among information workers.* **Nature Human Behaviour**. DOI: `10.1038/s41562-021-01196-4`. ([nature.com](https://www.nature.com/articles/s41562-021-01196-4))  \n- Gibbs, M., Mengel, F., & Siemroth, C. (2023). *Work from Home and Productivity: Evidence from Personnel and Analytics Data on Information Technology Professionals.* **Journal of Political Economy Microeconomics**. DOI: `10.1086/721803`. ([econpapers.repec.org](https://econpapers.repec.org/RePEc%3Aucp%3Ajpemic%3Adoi%3A10.1086/721803?utm_source=openai))  \n- Bao, L., Li, T., Xia, X., et al. (2022). *How does working from home affect developer productivity? A case study of Baidu during the COVID-19 pandemic.* **Science China Information Sciences**. DOI: `10.1007/s11432-020-3278-4`. ([pmc.ncbi.nlm.nih.gov](https://pmc.ncbi.nlm.nih.gov/articles/PMC8933171/?utm_source=openai))  \n- Deole, S. S., Deter, M., & Huang, Y. (2022/2023). *Home sweet home: Working from home and employee performance during the COVID-19 pandemic in the UK.* **Labour Economics**. DOI: `10.1016/j.labeco.2022.102295`. ([pmc.ncbi.nlm.nih.gov](https://pmc.ncbi.nlm.nih.gov/articles/PMC9678226/?utm_source=openai))  \n- Mutiganda, J. C., Wiitavaara, B., Heiden, M., et al. (2022). *A systematic review of the research on telework and organizational economic performance indicators.* **Frontiers in Psychology**. DOI: `10.3389/fpsyg.2022.1035310`. ([pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/36619046/))  \n- Gibbs, M., Mengel, F., & Siemroth, C. (2024). *Employee innovation during office work, work from home and hybrid work.* **Scientific Reports**. DOI: `10.1038/s41598-024-67122-6`. ([nature.com](https://www.nature.com/articles/s41598-024-67122-6))  \n- Barrero, J. M., Bloom, N., & Davis, S. J. (2021). *Why Working from Home Will Stick.* **NBER Working Paper**. DOI: `10.3386/w28731`. ([nber.org](https://www.nber.org/papers/w28731?utm_source=openai))  \n- Aksoy, C. G., Barrero, J. M., Bloom, N., Davis, S. J., et al. (2023). *Time Savings When Working from Home.* **NBER Working Paper**. DOI: `10.3386/w30866`. ([nber.org](https://www.nber.org/papers/w30866?utm_source=openai))\n",
+      "judge_output": {
+        "evaluation": "RESEARCH_QUALITY: 64\nANALYTICAL_QUALITY: 77\nOUTPUT_STRUCTURE: 84\nMUST_INCLUDE_MET: Identifies at least 5 relevant academic sources, Provides search terms used, Includes publication dates for recency\nMUST_INCLUDE_MISSED: Uses academic search strategies (site:scholar.google.com, site:arxiv.org), Assesses source credibility for each\nOVERALL_SCORE: 68.6\nRESULT: FAIL",
+        "rubric_breakdown": {
+          "research-quality": {
+            "weight": 70,
+            "score": 64,
+            "reasoning": "Score: 64/100"
+          },
+          "analytical-quality": {
+            "weight": 20,
+            "score": 77,
+            "reasoning": "Score: 77/100"
+          },
+          "output-structure": {
+            "weight": 10,
+            "score": 84,
+            "reasoning": "Score: 84/100"
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identifies at least 5 relevant academic sources",
+            "Provides search terms used",
+            "Includes publication dates for recency"
+          ],
+          "missed": [
+            "Uses academic search strategies (site:scholar.google.com",
+            "site:arxiv.org)",
+            "Assesses source credibility for each"
+          ],
+          "details": "Covered 3/6 required elements"
+        },
+        "overall_justification": "RESEARCH_QUALITY: 64\nANALYTICAL_QUALITY: 77\nOUTPUT_STRUCTURE: 84\nMUST_INCLUDE_MET: Identifies at least 5 relevant academic sources, Provides search terms used, Includes publication dates for recency\nMUST_INCLUDE_MISSED: Uses academic search strategies (site:scholar.google.com, site:arxiv.org), Assesses source credibility for each\nOVERALL_SCORE: 68.6\nRESULT: FAIL"
+      },
+      "execution_metadata": {
+        "duration_seconds": 0,
+        "source": "automated_run"
+      }
+    }
+  ]
+}
