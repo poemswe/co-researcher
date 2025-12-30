@@ -28,9 +28,13 @@
 - **Parallel Testing**: Thread-safe execution runner (`run_eval.py`).
 - **Extended Model Support**: Targeting specific versions and reasoning levels (e.g., `--model "codex:gpt-5.2 high"`).
 - **Adversarial Judging**: Judge-prompt hardening with anti-gaming measures and peer-review simulation.
-- **Benchmark Tracking**: `--benchmark` flag (now automatic) saves scores to `benchmark_history.json` with trend analysis.
-- **Arena of Agents Dashboard**: A "Battle Royale" themed HTML/JS visualization (`arena.html`) for score trends and leaderboards.
+- **Benchmark Tracking v2.0**: Two-file architecture for scalability:
+  - `benchmark_overview.json`: Lightweight dashboard data (~900B) with run metadata and summary stats
+  - `test_results_detail/{run_id}.json`: Full test details (~500KB per run) with agent outputs, judge evaluations, and rubric breakdowns
+  - Enables fast dashboard load while preserving full transparency for deep analysis
+- **Arena of Agents Dashboard**: A "Battle Royale" themed HTML/JS visualization (`arena.html`) for score trends and leaderboards, now optimized for v2.0 schema.
 - **Provider-Specific Tool-Enablement**: Targeted CLI flags for web tools (e.g., `--search` and `--enable web_search_request` for Codex) to ensure platform parity.
+- **Stdin Prompt Handling**: Proper `-` argument passing for Codex exec mode to enable programmatic evaluation.
 
 ### Prompt Engineering (v1.0.0)
 - **Anthropic Best Practices**: XML tags for section delineation (`<principles>`, `<competencies>`, `<protocol>`).
