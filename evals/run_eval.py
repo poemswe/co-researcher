@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import sys
+import concurrent.futures
+import threading
 from pathlib import Path
 
 from lib.core import (
@@ -15,100 +17,98 @@ from lib.core import (
 EVALS_DIR = Path(__file__).parent
 TEST_CASES_DIR = EVALS_DIR / "test-cases"
 RESULTS_DIR = EVALS_DIR / "results"
+PRINT_LOCK = threading.Lock()
 
 
 def run_test(agent: str, test: str, model: str, verbose: bool = False):
     test_file = TEST_CASES_DIR / agent / f"test-{test}.md"
     if not test_file.exists():
-        print(f"❌ Test not found: {agent}/{test}")
+        with PRINT_LOCK:
+            print(f"Test not found: {agent}/{test}")
         return None
     
-    tc = parse_test_case(test_file)
-    
-    print(f"📝 {tc.name}")
-    print(f"🔄 Executing agent...")
-    
-    result = execute_agent(tc.agent, tc.task_prompt, tc.timeout, model)
-    
-    if not result.success:
-        print(f"❌ Agent failed: {result.error}")
+    return _execute_single_test(parse_test_case(test_file), model, verbose)
+
+
+def _execute_single_test(tc, model: str, verbose: bool):
+    try:
+        with PRINT_LOCK:
+            print(f"[{tc.agent}] {tc.name} started...")
+
+        result = execute_agent(tc.agent, tc.task_prompt, tc.timeout, model)
+        
+        if not result.success:
+            with PRINT_LOCK:
+                print(f"[{tc.agent}] {tc.name} failed: {result.error}")
+            return None
+        
+        report = evaluate_output(tc, result.output, model)
+        report_path = generate_report(report, RESULTS_DIR, model)
+        
+        status = "PASS" if report.passed else "FAIL"
+        
+        with PRINT_LOCK:
+            print(f"\n{status} [{tc.agent}] {tc.name}")
+            print(f"   Score: {report.overall_score:.0f}/100")
+            print(f"   Time: {result.duration:.1f}s")
+            score_str = ", ".join(f"{name}: {score}" for name, score in report.scores.items())
+            print(f"   Scores: {score_str}")
+            print(f"   Report: {report_path.relative_to(RESULTS_DIR)}")
+            if verbose:
+                 print(f"   Output: {result.output[:100]}...")
+
+        return report
+    except Exception as e:
+        import traceback
+        with PRINT_LOCK:
+            print(f"[{tc.agent}] {tc.name} EXCEPTION: {e}")
+            traceback.print_exc()
         return None
-    
-    print(f"✅ Agent completed in {result.duration:.1f}s")
-    
-    if verbose:
-        print(f"📄 Output: {result.output[:200]}...")
-    
-    print(f"🔍 Evaluating...")
-    report = evaluate_output(tc, result.output, model)
-    
-    report_path = generate_report(report, RESULTS_DIR, model)
-    
-    status = "PASS ✅" if report.passed else "FAIL ❌"
-    print(f"{status} Score: {report.overall_score:.0f}/100")
-    
-    score_str = ", ".join(f"{name}: {score}" for name, score in report.scores.items())
-    print(f"   {score_str}")
-    print(f"📁 Report: {report_path.relative_to(RESULTS_DIR)}")
-    
-    return report
 
 
-def run_agent_tests(agent: str, model: str, verbose: bool = False):
+def run_agent_tests(agent: str, model: str, verbose: bool = False, jobs: int = 1):
     agent_dir = TEST_CASES_DIR / agent
     if not agent_dir.exists():
-        print(f"❌ Agent not found: {agent}")
+        print(f"Agent not found: {agent}")
         return []
     
-    test_files = sorted(agent_dir.glob("test-*.md"))
-    reports = []
-    
-    for i, test_file in enumerate(test_files, 1):
-        test_name = test_file.stem.replace("test-", "")
-        print(f"\n[{i}/{len(test_files)}] 🧪 {agent}/{test_name} (model: {model})")
+    tests = []
+    for test_file in sorted(agent_dir.glob("test-*.md")):
+        tests.append(parse_test_case(test_file))
         
-        if report := run_test(agent, test_name, model, verbose):
-            reports.append(report)
+    return _run_tests_parallel(tests, model, verbose, jobs)
+
+
+def run_all_tests(model: str, verbose: bool = False, jobs: int = 1):
+    tests = discover_tests(TEST_CASES_DIR)
+    print(f"Starting {len(tests)} tests with {jobs} parallel jobs...")
+    
+    reports = _run_tests_parallel(tests, model, verbose, jobs)
+    
+    if reports:
+        summary_path = generate_summary(reports, RESULTS_DIR, model)
+        print(f"\nSummary: {summary_path.relative_to(RESULTS_DIR)}")
     
     return reports
 
 
-def run_all_tests(model: str, verbose: bool = False):
-    tests = discover_tests(TEST_CASES_DIR)
+def _run_tests_parallel(tests, model, verbose, jobs):
     reports = []
-    
-    for i, tc in enumerate(tests, 1):
-        test_name = tc.name.lower().replace(" ", "-")
-        print(f"\n[{i}/{len(tests)}] 🧪 {tc.agent}/{test_name} (model: {model})")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
+        futures = [executor.submit(_execute_single_test, tc, model, verbose) for tc in tests]
         
-        result = execute_agent(tc.agent, tc.task_prompt, tc.timeout, model)
-        if not result.success:
-            print(f"❌ Failed: {result.error}")
-            continue
-        
-        print(f"✅ Completed in {result.duration:.1f}s")
-        
-        report = evaluate_output(tc, result.output, model)
-        status = "PASS ✅" if report.passed else "FAIL ❌"
-        print(f"{status} {report.overall_score:.0f}/100")
-        
-        generate_report(report, RESULTS_DIR, model)
-        reports.append(report)
-    
-    if reports:
-        summary_path = generate_summary(reports, RESULTS_DIR, model)
-        print(f"\n📊 Summary: {summary_path.relative_to(RESULTS_DIR)}")
-    
+        for future in concurrent.futures.as_completed(futures):
+            if report := future.result():
+                reports.append(report)
+                
     return reports
 
 
 def list_tests():
-    print("\n📋 Available Tests\n")
-    
+    print("\nAvailable Tests\n")
     for agent_dir in sorted(TEST_CASES_DIR.iterdir()):
         if not agent_dir.is_dir() or agent_dir.name.startswith("."):
             continue
-        
         tests = [f.stem.replace("test-", "") for f in sorted(agent_dir.glob("test-*.md"))]
         if tests:
             print(f"  {agent_dir.name}")
@@ -119,10 +119,10 @@ def list_tests():
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
-    
     parser.add_argument("args", nargs="*", help="[list|all|agent|agent test]")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("-m", "--model", default="claude", help="Model (default: claude)")
+    parser.add_argument("-j", "--jobs", type=int, default=1, help="Parallel jobs (default: 1)")
     
     args = parser.parse_args()
     
@@ -135,14 +135,13 @@ def main():
     if command == "list":
         list_tests()
     elif command == "all":
-        run_all_tests(args.model, args.verbose)
+        run_all_tests(args.model, args.verbose, args.jobs)
     elif len(args.args) == 1:
-        run_agent_tests(command, args.model, args.verbose)
+        run_agent_tests(command, args.model, args.verbose, args.jobs)
     elif len(args.args) == 2:
         run_test(args.args[0], args.args[1], args.model, args.verbose)
     else:
-        print(f"❌ Unknown command: {' '.join(args.args)}")
-        parser.print_help()
+        print(f"Unknown command: {' '.join(args.args)}")
         sys.exit(1)
 
 
