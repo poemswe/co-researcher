@@ -5,35 +5,37 @@ Run evaluation tests against co-researcher agents to assess quality and performa
 ## Quick Start
 
 ```bash
-cd evals
 python run_eval.py list                    # List all tests
-python run_eval.py all                     # Run all tests
-python run_eval.py all --model gemini      # Run with Gemini
+python run_eval.py all -j 4                # Run all in parallel (4 jobs)
+python run_eval.py all --model "codex:gpt-5.2-code high"
 ```
 
 ## CLI Usage
 
 ```bash
-python run_eval.py [args] [-m MODEL] [-v]
+python run_eval.py [args] [-m MODEL] [-j JOBS] [-v]
 
 # Examples
 python run_eval.py list                              # List available tests
-python run_eval.py all                     # Run all with Claude
-python run_eval.py all --model gemini      # Run with Gemini
-python run_eval.py all --model codex       # Run with Codex
-python run_eval.py all --model gemini:2.5-pro        # Run with Gemini 2.5 Pro
+python run_eval.py all -j 8                # Run all tests with 8 jobs
+python run_eval.py critical-analyzer -j 4            # Run all analyst tests
+python run_eval.py all --model "codex:gpt-5.2-codex high" # Use GPT-5.2 with high reasoning
 python run_eval.py critical-analyzer fallacy-detection  # Run specific test
 python run_eval.py literature-reviewer -v            # Verbose output
 ```
 
 ## Model Options
 
-| Model | Version Examples |
-|-------|------------------|
-| `claude` | `claude`, `claude:sonnet`, `claude:opus` |
-| `gemini` | `gemini`, `gemini:2.5-pro`, `gemini:flash` |
+| Provider | Syntax | Example |
+|----------|--------|---------|
+| `claude` | `claude[:version]` | `claude:sonnet`, `claude:opus` |
+| `gemini` | `gemini[:version]` | `gemini:2.5-pro` |
+| `codex`  | `codex[:version [extra]]` | `codex:gpt-5.2-codex high` |
 
-## Available Tests (20 total)
+> [!TIP]
+> Use quotes for model strings with spaces: `--model "codex:gpt-5.2-codex high"`
+
+## Available Tests (22 total)
 
 | Agent | Test | Difficulty |
 |-------|------|------------|
@@ -58,21 +60,25 @@ python run_eval.py literature-reviewer -v            # Verbose output
 | | simpson-paradox | Hard |
 | | stat-method-selection | Medium |
 
-## Scoring
+## Scoring (Task-Specific)
 
-| Dimension | Weight | What it measures |
-|-----------|--------|------------------|
-| Research Quality | 25-50% | Sources, accuracy, citations |
-| Reasoning Quality | 25-55% | Logic, bias detection, methodology |
-| Output Structure | 20-33% | Organization, clarity |
+The framework uses specialized rubrics based on the agent's task domain:
+
+| Rubric | Agents | Key Focus |
+|--------|--------|-----------|
+| `analytical-quality` | Critical Analyzer, Lateral Thinker | Logical rigor, fallacy detection |
+| `quantitative-quality` | Quantitative Analyst | Statistical accuracy, method choice |
+| `qualitative-quality` | Qualitative Researcher | Coding strategy, thematic depth |
+| `design-quality` | Hypothesis Explorer, Ethics Expert | Feasibility, ethics, variables |
+| `research-quality` | Literature Reviewer, Peer Reviewer | Citation chain, gap analysis |
+| `output-structure` | All | Organization, clarity (Fixed 25%) |
 
 **Passing**: ≥70/100 overall (Hard tests: ≥80)
 
-## Output
-
 Results saved to `evals/results/`:
-- `results/index.md` — Summary report
-- `results/<agent>/<test>.md` — Individual test reports
+- `results/latest/index.md` — Persistent summary (auto-rebuilds)
+- `results/latest/*.md` — Individual markdown reports
+- `results/history/` — Timestamped archives
 
 ## Structure
 

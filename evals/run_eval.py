@@ -27,7 +27,11 @@ def run_test(agent: str, test: str, model: str, verbose: bool = False):
             print(f"Test not found: {agent}/{test}")
         return None
     
-    return _execute_single_test(parse_test_case(test_file), model, verbose)
+    tc = parse_test_case(test_file)
+    report = _execute_single_test(tc, model, verbose)
+    if report:
+        generate_summary(RESULTS_DIR)
+    return report
 
 
 def _execute_single_test(tc, model: str, verbose: bool):
@@ -76,7 +80,10 @@ def run_agent_tests(agent: str, model: str, verbose: bool = False, jobs: int = 1
     for test_file in sorted(agent_dir.glob("test-*.md")):
         tests.append(parse_test_case(test_file))
         
-    return _run_tests_parallel(tests, model, verbose, jobs)
+    reports = _run_tests_parallel(tests, model, verbose, jobs)
+    if reports:
+        generate_summary(RESULTS_DIR)
+    return reports
 
 
 def run_all_tests(model: str, verbose: bool = False, jobs: int = 1):
@@ -86,7 +93,7 @@ def run_all_tests(model: str, verbose: bool = False, jobs: int = 1):
     reports = _run_tests_parallel(tests, model, verbose, jobs)
     
     if reports:
-        summary_path = generate_summary(reports, RESULTS_DIR, model)
+        summary_path = generate_summary(RESULTS_DIR)
         print(f"\nSummary: {summary_path.relative_to(RESULTS_DIR)}")
     
     return reports

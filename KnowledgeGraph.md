@@ -22,10 +22,10 @@
 - **Hallucination Detection**: Explicit evaluation against fabricated sources and research gaps.
 
 ### Evaluation Framework
-- **Dynamic Rubric System**: 6 task-specific rubrics mapped to agent capabilities (analytical, quantitative, qualitative, design, research, structure).
-- **Parallel Testing**: Thread-safe evaluation runner (`run_eval.py`) supporting concurrent agent execution.
-- **Multi-Model Support**: Standardized testing and benchmarking for Claude, Gemini, and Codex.
-- **PhD-Level Rigor**: 22-test suite for PhD-level research and analysis.
+- **Dynamic Rubric System**: 6 task-specific rubrics mapped to agent capabilities.
+- **Persistent Indexing**: Rebuildable `index.md` that scans all existing reports in `results/latest/`.
+- **Parallel Testing**: Thread-safe execution runner (`run_eval.py`).
+- **Extended Model Support**: Targeting specific versions and reasoning levels (e.g., `--model "codex:gpt-5.2-code high"`).
 
 ## Workflows
 - **Discovery**: Agents are discovered by platform-specific manifests at the repository level.

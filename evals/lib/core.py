@@ -12,6 +12,7 @@ CLI_CONFIG = {
     "claude": {"base": ["--print", "--verbose"], "tools": ["--tools", "WebSearch,WebFetch,Read"]},
     "gemini": {"base": [], "tools": ["--yolo"], "stdin": True},
     "codex": {"base": ["exec", "--full-auto"], "tools": [], "stdin": True},
+    "gpt": {"base": ["exec", "--full-auto"], "tools": [], "stdin": True},
 }
 
 
@@ -107,22 +108,34 @@ def find_cli(provider: str) -> Path | None:
     paths = {
         "claude": ["/usr/local/bin/claude", os.path.expanduser("~/.claude/local/claude")],
         "gemini": ["/usr/local/bin/gemini", os.path.expanduser("~/.gemini/bin/gemini")],
-        "codex": ["/usr/local/bin/codex", os.path.expanduser("~/.codex/bin/codex")],
+        "codex": ["/usr/local/bin/codex", os.path.expanduser("~ ~/.codex/bin/codex")],
+        "gpt": ["/usr/local/bin/codex", os.path.expanduser("~/.codex/bin/codex")],
     }
     return next((Path(p) for p in paths.get(provider, []) if Path(p).exists()), None)
 
 
 def run_cli(model: str, prompt: str, timeout: int = 600) -> tuple[bool, str, str]:
-    provider = model.split(":")[0].lower()
-    version = model.split(":")[1] if ":" in model else None
+    parts = model.split(":")
+    provider = parts[0].lower()
+    model_str = parts[1] if len(parts) > 1 else None
+    
+    # Support "gpt-5.2-code high" or "gpt-5.2-code:high"
+    version = model_str
+    extra = parts[2] if len(parts) > 2 else None
+    if not extra and version and " " in version:
+        version, extra = version.rsplit(" ", 1)
     
     if not (cli := find_cli(provider)):
         return False, "", f"{provider} CLI not found"
     
     config = CLI_CONFIG[provider]
     cmd = [str(cli), *config["base"]]
+    
     if version:
         cmd += ["--model", version]
+    if extra and provider == "codex":
+        cmd += ["-c", f"reasoning=\"{extra}\""]
+        
     cmd += config["tools"]
     
     stdin_input = prompt if config.get("stdin") else None
@@ -278,36 +291,51 @@ def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude")
     return latest_path
 
 
-def generate_summary(reports: list[EvaluationReport], out_dir: Path, model: str = "claude") -> Path:
-    n = len(reports)
-    ok = sum(r.passed for r in reports)
-    fail = n - ok
-    avg = sum(r.overall_score for r in reports) / n if n > 0 else 0
+def generate_summary(out_dir: Path) -> Path:
+    latest_dir = out_dir / "latest"
+    reports_data = []
     
-    path = out_dir / "latest" / "index.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
+    for file in latest_dir.glob("*.md"):
+        if file.name == "index.md":
+            continue
+            
+        content = file.read_text()
+        reports_data.append({
+            "agent": rx(r"\*\*Agent\*\*:\s*([^\n]+)", content),
+            "name": rx(r"# Evaluation Report:\s*([^\n]+)", content),
+            "status": rx(r"\*\*Status\*\*:\s*(PASS|FAIL)", content),
+            "score": rx(r"Overall.*?(\d+(?:\.\d+)?)/100", content) or "0",
+            "model": rx(r"\*\*Model\*\*:\s*([^\n]+)", content).strip(),
+            "file": file.name
+        })
+    
+    reports_data.sort(key=lambda x: (x["model"], x["agent"], x["name"]))
+    
+    n = len(reports_data)
+    ok = sum(1 for r in reports_data if r["status"] == "PASS")
+    avg = sum(float(r["score"]) for r in reports_data if r["score"]) / n if n > 0 else 0
     
     results_table = "\n".join(
-        f"| {r.test_case.agent} | {r.test_case.name} | "
-        f"{'PASS' if r.passed else 'FAIL'} | {r.overall_score:.0f} | "
-        f"[{r.report_path.name}]({r.report_path.name}) |"
-        for r in reports if r.report_path
+        f"| {r['model']} | {r['agent']} | {r['name']} | "
+        f"{'PASS' if r['status'] == 'PASS' else 'FAIL'} | {float(r['score']):.0f} | "
+        f"[{r['file']}]({r['file']}) |"
+        for r in reports_data
     )
     
     content = f"""# Evaluation Summary
 
 **Date**: {datetime.now():%Y-%m-%d %H:%M:%S}  
-**Model**: {model}  
 **Tests**: {n}  
-**Pass Rate**: {ok}/{n} ({ok/n*100:.0f}%)  
+**Pass Rate**: {ok}/{n} ({ok/n*100 if n > 0 else 0:.0f}%)  
 **Average Score**: {avg:.1f}/100
 
 ## Results
-| Agent | Test | Status | Score | Report |
-|-------|------|--------|-------|--------|
+| Model | Agent | Test | Status | Score | Report |
+|-------|-------|------|--------|-------|--------|
 {results_table}
 """
     
+    path = latest_dir / "index.md"
     path.write_text(content)
     return path
 
