@@ -1284,11 +1284,12 @@
     <div class="upload-modal" id="uploadModal">
         <div class="modal-content">
             <div class="modal-title">Welcome to Co-Researcher Benchmark</div>
-            <div class="modal-desc">Upload your benchmark_history.json file to visualize your research agent performance
+            <div class="modal-desc">Upload your benchmark_overview.json file to visualize your research agent
+                performance
                 across models and test cases.</div>
             <button class="btn-primary" onclick="document.getElementById('fileInput').click()">📁 Upload File</button>
             <input type="file" id="fileInput" style="display: none" accept=".json" onchange="handleFileUpload(event)">
-            <div class="modal-hint">💡 Or drag and drop benchmark_history.json onto the page</div>
+            <div class="modal-hint">💡 Or drag and drop benchmark_overview.json onto the page</div>
         </div>
     </div>
 
@@ -1359,16 +1360,16 @@
 
     <script>
         // Configuration
-        const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/poemswe/co-researcher/main/evals/benchmark_history.json';
-        let globalHistory = [];
+        const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/poemswe/co-researcher/main/evals/benchmark_overview.json';
+        let globalOverview = null;
 
         async function loadData() {
             try {
                 let response = await fetch(GITHUB_RAW_URL);
-                if (!response.ok) response = await fetch('benchmark_history.json');
+                if (!response.ok) response = await fetch('benchmark_overview.json');
                 if (!response.ok) throw new Error('Fetch failed');
-                globalHistory = await response.json();
-                renderDashboard(globalHistory);
+                globalOverview = await response.json();
+                renderDashboard(globalOverview);
             } catch (error) {
                 console.log('Data not found, showing upload modal');
                 document.getElementById('uploadModal').classList.add('active');
@@ -1381,8 +1382,8 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
-                    globalHistory = JSON.parse(e.target.result);
-                    renderDashboard(globalHistory);
+                    globalOverview = JSON.parse(e.target.result);
+                    renderDashboard(globalOverview);
                     document.getElementById('uploadModal').classList.remove('active');
                 } catch (err) {
                     alert('Invalid JSON file');
@@ -1391,12 +1392,13 @@
             reader.readAsText(file);
         }
 
-        function updateHeroMetrics(history, model) {
-            const latest = history.filter(h => h.model === model).pop() || history[history.length - 1];
-            const totalTests = 22;
-            const overallAvg = latest.average_score;
-            const passCount = latest.tests_passed || 0;
-            const modelCount = new Set(history.map(h => h.model)).size;
+        function updateHeroMetrics(overview, model) {
+            const runs = overview.runs || [];
+            const latest = runs.filter(r => r.model === model).pop() || runs[runs.length - 1];
+            const totalTests = latest?.tests_run || 22;
+            const overallAvg = latest?.average_score || 0;
+            const passCount = latest?.tests_passed || 0;
+            const modelCount = overview.summary_stats?.models?.length || 0;
 
             document.getElementById('heroMetricsGrid').innerHTML = `
                 <div class="metric-card">
@@ -1465,21 +1467,22 @@
 
 
 
-        function renderDashboard(history) {
-            if (!history || history.length === 0) return;
+        function renderDashboard(overview) {
+            if (!overview || !overview.runs || overview.runs.length === 0) return;
 
-            const latest = history[history.length - 1];
+            const runs = overview.runs;
+            const latest = runs[runs.length - 1];
 
             document.getElementById('dashboard').classList.add('active');
 
             // 1. Hero Metrics (Default to latest)
-            updateHeroMetrics(history, latest.model);
+            updateHeroMetrics(overview, latest.model);
 
             // 2. Model Comparison (Quick Win 4: Leaderboard)
             const models = {};
-            history.forEach(h => {
-                if (!models[h.model] || models[h.model].score < h.average_score) {
-                    models[h.model] = { score: h.average_score, passed: h.tests_passed || 20 };
+            runs.forEach(run => {
+                if (!models[run.model] || models[run.model].score < run.average_score) {
+                    models[run.model] = { score: run.average_score, passed: run.tests_passed || 20 };
                 }
             });
             const sortedModels = Object.entries(models)
@@ -1498,7 +1501,7 @@
                 const deltaClass = delta > 0 ? 'positive' : '';
                 return `
                             <div class="leaderboard-item rank-${rank + 1}" 
-                                 onmouseover="updateHeroMetrics(window.globalHistory, '${model}')"
+                                 onmouseover="updateHeroMetrics(window.globalOverview, '${model}')"
                                  style="cursor: pointer;">
                                 <div class="leaderboard-medal">${medals[rank] || '📊'}</div>
                                 <div class="leaderboard-details">
