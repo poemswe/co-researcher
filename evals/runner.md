@@ -5,10 +5,12 @@ Run evaluation tests against co-researcher agents to assess quality and performa
 ## Quick Start
 
 ```bash
-python run_eval.py list                    # List all tests
-python run_eval.py all -j 4                # Run all in parallel (4 jobs)
-python run_eval.py all --model "codex:gpt-5.2 xhigh" # Run all with GPT-5.2 xhigh
-python run_eval.py all -j 4 --model "codex:gpt-5.2 xhigh" # Run all in parallel (4 jobs) with GPT-5.2 xhigh
+python run_eval.py list           # List all available tests
+python run_eval.py all            # Run all tests (default model: claude)
+python run_eval.py all -j 4       # Run with 4 parallel jobs
+python run_eval.py all --benchmark  # Track scores in benchmark_history.json
+python run_eval.py literature-reviewer  # Run all tests for an agent
+python run_eval.py literature-reviewer zero-results  # Run specific test
 ```
 
 ## CLI Usage

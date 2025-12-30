@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import sys
+import json
 import concurrent.futures
 import threading
+from datetime import datetime
 from pathlib import Path
 
 from lib.core import (
@@ -17,6 +19,7 @@ from lib.core import (
 EVALS_DIR = Path(__file__).parent
 TEST_CASES_DIR = EVALS_DIR / "test-cases"
 RESULTS_DIR = EVALS_DIR / "results"
+BENCHMARK_FILE = EVALS_DIR / "benchmark_history.json"
 PRINT_LOCK = threading.Lock()
 
 
@@ -124,6 +127,40 @@ def list_tests():
             print()
 
 
+def save_benchmark(reports, model: str):
+    history = []
+    if BENCHMARK_FILE.exists():
+        history = json.loads(BENCHMARK_FILE.read_text())
+    
+    scores = [r.overall_score for r in reports if r]
+    avg_score = sum(scores) / len(scores) if scores else 0
+    
+    entry = {
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "model": model,
+        "tests_run": len(reports),
+        "tests_passed": sum(1 for r in reports if r and r.passed),
+        "average_score": round(avg_score, 1),
+        "scores_by_agent": {}
+    }
+    
+    for r in reports:
+        if r:
+            if r.agent not in entry["scores_by_agent"]:
+                entry["scores_by_agent"][r.agent] = []
+            entry["scores_by_agent"][r.agent].append(r.overall_score)
+    
+    history.append(entry)
+    BENCHMARK_FILE.write_text(json.dumps(history, indent=2))
+    print(f"\nBenchmark saved: {BENCHMARK_FILE.name} ({len(history)} entries)")
+    
+    if len(history) > 1:
+        prev = history[-2]
+        delta = entry["average_score"] - prev["average_score"]
+        trend = "↑" if delta > 0 else "↓" if delta < 0 else "→"
+        print(f"Score trend: {prev['average_score']:.1f} {trend} {entry['average_score']:.1f} ({delta:+.1f})")
+
+
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("args", nargs="*", help="[list|all|agent|agent test]")
@@ -131,6 +168,7 @@ def main():
     parser.add_argument("-m", "--model", default="claude", help="Model (default: claude)")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Parallel jobs (default: 1)")
     parser.add_argument("--check-prompts", action="store_true", help="Validate all agent prompt files exist")
+    parser.add_argument("--benchmark", action="store_true", help="Track scores in benchmark_history.json")
     
     args = parser.parse_args()
     
@@ -160,9 +198,13 @@ def main():
     if command == "list":
         list_tests()
     elif command == "all":
-        run_all_tests(args.model, args.verbose, args.jobs)
+        reports = run_all_tests(args.model, args.verbose, args.jobs)
+        if args.benchmark and reports:
+            save_benchmark(reports, args.model)
     elif len(args.args) == 1:
-        run_agent_tests(command, args.model, args.verbose, args.jobs)
+        reports = run_agent_tests(command, args.model, args.verbose, args.jobs)
+        if args.benchmark and reports:
+            save_benchmark(reports, args.model)
     elif len(args.args) == 2:
         run_test(args.args[0], args.args[1], args.model, args.verbose)
     else:
