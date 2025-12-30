@@ -152,7 +152,10 @@ def run_cli(model: str, prompt: str, timeout: int = 600) -> tuple[bool, str, str
     cmd += config["tools"]
     
     stdin_input = prompt if config.get("stdin") else None
-    if not stdin_input:
+    if stdin_input:
+        # For CLIs that read from stdin (e.g., Codex exec), pass '-' to signal stdin mode
+        cmd += ["-"]
+    else:
         cmd += ["-p", prompt]
     
     try:
