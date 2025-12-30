@@ -153,6 +153,7 @@ def save_benchmark(reports, model: str):
     history.append(entry)
     BENCHMARK_FILE.write_text(json.dumps(history, indent=2))
     print(f"\nBenchmark saved: {BENCHMARK_FILE.name} ({len(history)} entries)")
+    print(f"Arena Dashboard: file://{EVALS_DIR.absolute()}/arena.html")
     
     if len(history) > 1:
         prev = history[-2]
@@ -168,7 +169,7 @@ def main():
     parser.add_argument("-m", "--model", default="claude", help="Model (default: claude)")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Parallel jobs (default: 1)")
     parser.add_argument("--check-prompts", action="store_true", help="Validate all agent prompt files exist")
-    parser.add_argument("--benchmark", action="store_true", help="Track scores in benchmark_history.json")
+    parser.add_argument("--no-benchmark", action="store_true", help="Skip saving to benchmark_history.json")
     
     args = parser.parse_args()
     
@@ -199,11 +200,11 @@ def main():
         list_tests()
     elif command == "all":
         reports = run_all_tests(args.model, args.verbose, args.jobs)
-        if args.benchmark and reports:
+        if reports and not args.no_benchmark:
             save_benchmark(reports, args.model)
     elif len(args.args) == 1:
         reports = run_agent_tests(command, args.model, args.verbose, args.jobs)
-        if args.benchmark and reports:
+        if reports and not args.no_benchmark:
             save_benchmark(reports, args.model)
     elif len(args.args) == 2:
         run_test(args.args[0], args.args[1], args.model, args.verbose)

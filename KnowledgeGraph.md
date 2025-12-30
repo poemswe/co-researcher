@@ -28,7 +28,8 @@
 - **Parallel Testing**: Thread-safe execution runner (`run_eval.py`).
 - **Extended Model Support**: Targeting specific versions and reasoning levels (e.g., `--model "codex:gpt-5.2 high"`).
 - **Adversarial Judging**: Judge-prompt hardening with anti-gaming measures and peer-review simulation.
-- **Benchmark Tracking**: `--benchmark` flag saves scores to `benchmark_history.json` with trend analysis.
+- **Benchmark Tracking**: `--benchmark` flag (now automatic) saves scores to `benchmark_history.json` with trend analysis.
+- **Arena of Agents Dashboard**: A "Battle Royale" themed HTML/JS visualization (`arena.html`) for score trends and leaderboards.
 
 ### Prompt Engineering (v1.0.0)
 - **Anthropic Best Practices**: XML tags for section delineation (`<principles>`, `<competencies>`, `<protocol>`).

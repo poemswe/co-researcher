@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Festival Arena of Friends ✨</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;700&family=Quicksand:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #fef5f9;
+            --bg-surface: #fff9fc;
+            --bg-card: #fffbfd;
+            --accent-pink: #ff6b9d;
+            --accent-cyan: #00d4ff;
+            --accent-yellow: #ffd93d;
+            --accent-purple: #c69fff;
+            --text-high: #4a3f5f;
+            --text-mid: #7a6f8f;
+            --text-low: #a5a0b5;
+            --border-subtle: rgba(255, 107, 157, 0.1);
+            --border-glow: rgba(255, 107, 157, 0.2);
+            --font-main: 'Quicksand', sans-serif;
+            --font-heading: 'Fredoka', sans-serif;
+            --radius-sharp: 16px;
+            --radius-md: 20px;
+            --shadow-soft: 0 8px 24px rgba(255, 107, 157, 0.15);
+            --shadow-glow: 0 0 30px rgba(198, 159, 255, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fef5f9 0%, #f5e6f9 50%, #e6f3ff 100%);
+            color: var(--text-high);
+            font-family: var(--font-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .layout-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation / Rankings */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .header-block {
+            padding: 1rem 0;
+        }
+
+        .brand {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: var(--accent-pink);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-dot {
+            width: 28px;
+            height: 28px;
+            background: no-repeat center;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%23ff6b9d"/><circle cx="35" cy="35" r="12" fill="%23fff"/><circle cx="35" cy="35" r="8" fill="%234a3f5f"/><circle cx="70" cy="40" r="12" fill="%23fff"/><circle cx="70" cy="40" r="8" fill="%234a3f5f"/><path d="M 40 60 Q 50 70 60 60" fill="none" stroke="%23ff6b9d" stroke-width="3" stroke-linecap="round"/></svg>');
+            background-size: 100%;
+            filter: drop-shadow(0 2px 8px rgba(255, 107, 157, 0.3));
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-low);
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .pilot-card {
+            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(198, 159, 255, 0.1) 100%);
+            border: 2px solid var(--border-subtle);
+            padding: 1.2rem;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .pilot-card:hover {
+            border-color: var(--accent-pink);
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(198, 159, 255, 0.15) 100%);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .pilot-rank {
+            font-family: var(--font-heading);
+            font-weight: 900;
+            font-size: 1.2rem;
+            color: var(--text-low);
+            width: 24px;
+        }
+
+        .pilot-info {
+            flex: 1;
+        }
+
+        .pilot-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pilot-stats {
+            font-size: 0.75rem;
+            color: var(--text-low);
+        }
+
+        .pilot-score {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Hero Banner */
+        .champion-hero {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.15) 0%, rgba(198, 159, 255, 0.2) 100%);
+            border: 2px solid var(--accent-pink);
+            border-radius: var(--radius-md);
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .champion-hero::before {
+            content: "🎉✨🎊";
+            position: absolute;
+            right: 3rem;
+            top: 1rem;
+            font-size: 2.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .champion-hero::after {
+            content: "FESTIVAL CHAMPION";
+            position: absolute;
+            right: 2rem;
+            bottom: 1rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent-pink);
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .hero-title {
+            color: var(--accent-pink);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-name {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 0.9;
+            color: var(--accent-pink);
+        }
+
+        .hero-metrics {
+            display: flex;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        .metric-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-value {
+            font-family: var(--font-heading);
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-mid);
+            letter-spacing: 0.5px;
+            margin-top: 0.5rem;
+        }
+
+        /* Analytics Grid */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .data-card {
+            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(198, 159, 255, 0.08) 100%);
+            border: 2px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+
+        .data-card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-family: var(--font-heading);
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--accent-pink);
+            letter-spacing: 0.5px;
+        }
+
+        /* Friend Stats */
+        .agent-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            background: transparent;
+            border: none;
+        }
+
+        .agent-stat-item {
+            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(255, 107, 157, 0.08) 100%);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            border: 2px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+
+        .agent-stat-item:hover {
+            border-color: var(--accent-cyan);
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.05) 0%, rgba(255, 107, 157, 0.12) 100%);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-4px);
+        }
+
+        .agent-stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .agent-stat-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-high);
+        }
+
+        .stat-value {
+            font-family: var(--font-heading);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .stat-trend {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 8px;
+        }
+
+        .trend-up {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .trend-down {
+            background: rgba(255, 107, 157, 0.15);
+            color: var(--accent-pink);
+        }
+
+        .stat-bar-container {
+            height: 8px;
+            background: rgba(255, 107, 157, 0.1);
+            width: 100%;
+            margin-top: 0.75rem;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan) 0%, var(--accent-purple) 100%);
+            transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 4px;
+        }
+
+        /* Festival Log */
+        .battle-log {
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+        }
+
+        .log-row {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .log-row:hover {
+            background: rgba(255, 107, 157, 0.05);
+        }
+
+        .log-time {
+            color: var(--text-low);
+            font-variant-numeric: tabular-nums;
+            width: 90px;
+            font-weight: 600;
+        }
+
+        .log-tag {
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 12px;
+            height: fit-content;
+        }
+
+        .tag-success {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--accent-cyan);
+        }
+
+        .tag-neutral {
+            background: rgba(198, 159, 255, 0.2);
+            color: var(--accent-purple);
+        }
+
+        /* Festival Uplink Overlay */
+        .uplink-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(254, 245, 249, 0.9), rgba(245, 230, 249, 0.9));
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(10px);
+        }
+
+        .uplink-modal {
+            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(198, 159, 255, 0.1) 100%);
+            border: 3px solid var(--accent-pink);
+            padding: 3rem;
+            text-align: center;
+            max-width: 500px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .uplink-title {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--accent-pink);
+        }
+
+        .uplink-desc {
+            color: var(--text-mid);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .btn-volt {
+            background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-purple) 100%);
+            color: white;
+            padding: 0.75rem 2.5rem;
+            border-radius: 12px;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 0.95rem;
+        }
+
+        .btn-volt:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 12px 30px rgba(255, 107, 157, 0.4);
+        }
+
+        .btn-volt:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .delay-2 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .delay-3 {
+            animation-delay: 0.3s;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="uplink-overlay" id="uplink-ui">
+        <div class="uplink-modal">
+            <div class="uplink-title">✨ Welcome! ✨</div>
+            <p class="uplink-desc">Upload your benchmark scores to see the Festival Leaderboard and celebrate your friends' victories!</p>
+            <button class="btn-volt" onclick="document.getElementById('file-input').click()">📤 Upload Scores</button>
+            <input type="file" id="file-input" style="display: none" accept=".json"
+                onchange="handleFile(this.files[0])">
+            <div
+                style="margin-top: 2rem; font-size: 0.85rem; color: var(--text-mid); letter-spacing: 0.5px;">
+                Or drag & drop benchmark_history.json to upload
+            </div>
+        </div>
+    </div>
+
+    <div class="layout-container" id="dashboard-root" style="display: none;">
+        <aside class="sidebar">
+            <div class="header-block">
+                <div class="brand">
+                    <div class="brand-dot"></div>
+                    Festival of Friends
+                </div>
+                <div id="cycle-tag"
+                    style="font-size: 0.75rem; color: var(--text-mid); margin-top: 0.5rem; letter-spacing: 0.5px;">✨ Festival Season --</div>
+            </div>
+
+            <div>
+                <span class="nav-label">🏆 Leaderboard</span>
+                <div class="leaderboard-list" id="leaderboard">
+                    <!-- Friends injected here -->
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section class="champion-hero animate-in">
+                <div class="hero-info">
+                    <div class="hero-title">🎉 Festival Champion 🎉</div>
+                    <div class="hero-name" id="hero-name">--</div>
+                    <div class="hero-metrics">
+                        <div class="metric-box">
+                            <span class="metric-value" id="hero-score">00.0</span>
+                            <span class="metric-label">Sparkle Points</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="metric-value" id="hero-model"
+                                style="font-size: 1.2rem; margin-top: 0.8rem; color: var(--text-mid);">--</span>
+                            <span class="metric-label">Version</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="analytics-grid">
+                <div class="data-card animate-in delay-1">
+                    <div class="card-header">
+                        <span class="card-title">📈 Sparkle Trend</span>
+                    </div>
+                    <div style="height: 350px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="data-card animate-in delay-2">
+                    <div class="card-header">
+                        <span class="card-title">✨ Friend Talents</span>
+                    </div>
+                    <div style="height: 350px;">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <section class="animate-in delay-3">
+                <span class="nav-label">👥 Friends' Achievements</span>
+                <div class="agent-stats-grid" id="agent-squads">
+                    <!-- Friend achievement cards injected here -->
+                </div>
+            </section>
+
+            <section class="data-card animate-in delay-3" style="border-top: 4px solid var(--accent-cyan);">
+                <div class="card-header">
+                    <span class="card-title">🎪 Festival Log</span>
+                </div>
+                <div class="battle-log" id="battle-log">
+                    <!-- Festival entries injected here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Configuration
+        const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/poepoe/co-researcher/main/evals/benchmark_history.json';
+
+        async function loadData() {
+            try {
+                // Try GitHub URL first
+                let response = await fetch(GITHUB_RAW_URL);
+                if (!response.ok) {
+                    // Fallback to local file
+                    response = await fetch('benchmark_history.json');
+                }
+                if (!response.ok) throw new Error('Fetch failed');
+                const data = await response.json();
+                renderDashboard(data);
+            } catch (error) {
+                console.log('Could not auto-load data, showing upload prompt');
+                document.getElementById('uplink-ui').style.display = 'flex';
+            }
+        }
+
+        // Handle Drag & Drop
+        document.body.ondragover = (e) => e.preventDefault();
+        document.body.ondrop = (e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); };
+
+        function handleFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    renderDashboard(data);
+                    document.getElementById('uplink-ui').style.display = 'none';
+                } catch (err) {
+                    alert('CRITICAL FAILURE: INVALID DATA FORMAT');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function renderDashboard(history) {
+            const root = document.getElementById('dashboard-root');
+            root.style.display = 'grid';
+
+            const latest = history[history.length - 1];
+            const prev = history.length > 1 ? history[history.length - 2] : null;
+
+            document.getElementById('cycle-tag').innerText = `✨ Festival Season ${history.length}`;
+
+            // 1. Champion Calculations
+            const agentScores = latest.scores_by_agent;
+            let top = { name: '', score: -1 };
+            for (const [name, scores] of Object.entries(agentScores)) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                if (avg > top.score) top = { name, score: avg };
+            }
+
+            document.getElementById('hero-name').innerText = top.name.replace('-', ' ').toUpperCase();
+            document.getElementById('hero-score').innerText = top.score.toFixed(1);
+            document.getElementById('hero-model').innerText = latest.model.toUpperCase();
+
+            // 2. Sidebar Standings
+            const board = document.getElementById('leaderboard');
+            const models = {};
+            history.forEach(h => { if (!models[h.model] || models[h.model] < h.average_score) models[h.model] = h.average_score });
+            const sorted = Object.entries(models).sort((a, b) => b[1] - a[1]);
+
+            board.innerHTML = sorted.map(([model, score], i) => `
+                <div class="pilot-card">
+                    <div class="pilot-rank">${['🥇', '🥈', '🥉'][i] || '✨'}</div>
+                    <div class="pilot-info">
+                        <div class="pilot-name">${model}</div>
+                        <div class="pilot-stats">Best Score: <span class="pilot-score">${score.toFixed(1)}</span></div>
+                    </div>
+                </div>
+            `).join('');
+
+            // 3. Squad Proficiency
+            const squads = document.getElementById('agent-squads');
+            squads.innerHTML = Object.entries(latest.scores_by_agent).map(([name, scores]) => {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                let trendHtml = '';
+                if (prev && prev.scores_by_agent[name]) {
+                    const pAvg = prev.scores_by_agent[name].reduce((a, b) => a + b, 0) / prev.scores_by_agent[name].length;
+                    const diff = avg - pAvg;
+                    if (diff > 0) trendHtml = `<span class="stat-trend trend-up">+${diff.toFixed(1)}</span>`;
+                    else if (diff < 0) trendHtml = `<span class="stat-trend trend-down">${diff.toFixed(1)}</span>`;
+                }
+
+                return `
+                    <div class="agent-stat-item">
+                        <div class="agent-stat-header">
+                            <span class="agent-stat-name">${name.replace('-', ' ')}</span>
+                            ${trendHtml}
+                        </div>
+                        <div class="stat-value">${avg.toFixed(1)}</div>
+                        <div class="stat-bar-container">
+                            <div class="stat-bar-fill" style="width: ${avg}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // 4. Festival Log
+            const log = document.getElementById('battle-log');
+            const revHistory = [...history].reverse();
+            log.innerHTML = revHistory.map(h => `
+                <div class="log-row">
+                    <span class="log-time">${new Date(h.timestamp).toLocaleTimeString()}</span>
+                    <span class="log-tag tag-success">✨ Festival</span>
+                    <span>${h.model.toUpperCase()} scored ${h.average_score.toFixed(1)} sparkle points!</span>
+                </div>
+            `).join('');
+
+            // 5. Charts Configuration
+            const ctxLine = document.getElementById('trendChart').getContext('2d');
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+
+            // Line Chart
+            const labels = history.map((_, i) => `C${i + 1}`);
+            const datasets = {};
+            history.forEach((run, i) => {
+                if (!datasets[run.model]) {
+                    datasets[run.model] = {
+                        label: run.model.toUpperCase(),
+                        data: new Array(history.length).fill(null),
+                        borderColor: run.model.includes('gemini') ? '#d4ff00' : '#00e5ff',
+                        borderWidth: 3,
+                        tension: 0.1,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff'
+                    };
+                }
+                datasets[run.model].data[i] = run.average_score;
+            });
+
+            new Chart(ctxLine, {
+                type: 'line',
+                data: { labels, datasets: Object.values(datasets) },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#63637a' }, min: 40, max: 100 },
+                        x: { grid: { display: false }, ticks: { color: '#63637a' } }
+                    }
+                }
+            });
+
+            // Radar Chart (Latest Run Competency)
+            const radarLabels = Object.keys(latest.scores_by_agent).map(l => l.toUpperCase().replace('-', ' '));
+            const radarData = Object.values(latest.scores_by_agent).map(s => s.reduce((a, b) => a + b, 0) / s.length);
+
+            new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: radarLabels,
+                    datasets: [{
+                        label: latest.model.toUpperCase(),
+                        data: radarData,
+                        backgroundColor: 'rgba(212, 255, 0, 0.1)',
+                        borderColor: '#d4ff00',
+                        pointBackgroundColor: '#d4ff00',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255,255,255,0.05)' },
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            pointLabels: { color: '#a0a0b8', font: { size: 10 } },
+                            ticks: { display: false },
+                            min: 0, max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,146 @@
+[
+  {
+    "timestamp": "2025-12-30T17:16:38.020729Z",
+    "model": "claude",
+    "tests_run": 22,
+    "tests_passed": 20,
+    "average_score": 81.3,
+    "scores_by_agent": {
+      "critical-analyzer": [
+        92,
+        98,
+        96,
+        93
+      ],
+      "ethics-expert": [
+        88
+      ],
+      "hypothesis-explorer": [
+        90,
+        90,
+        90
+      ],
+      "lateral-thinker": [
+        0,
+        0,
+        94
+      ],
+      "literature-reviewer": [
+        88,
+        87,
+        87,
+        84
+      ],
+      "peer-reviewer": [
+        73
+      ],
+      "qual-researcher": [
+        81,
+        87,
+        89
+      ],
+      "quant-analyst": [
+        86,
+        98,
+        97
+      ]
+    },
+    "source": "ingested_from_existing_results"
+  },
+  {
+    "timestamp": "2025-12-30T17:16:38.021267Z",
+    "model": "codex:gpt-5.2 high",
+    "tests_run": 22,
+    "tests_passed": 20,
+    "average_score": 82.2,
+    "scores_by_agent": {
+      "critical-analyzer": [
+        92,
+        90,
+        89,
+        90
+      ],
+      "ethics-expert": [
+        88
+      ],
+      "hypothesis-explorer": [
+        84,
+        86,
+        82
+      ],
+      "lateral-thinker": [
+        88,
+        94,
+        87
+      ],
+      "literature-reviewer": [
+        36,
+        78,
+        79,
+        53
+      ],
+      "peer-reviewer": [
+        88
+      ],
+      "qual-researcher": [
+        76,
+        72,
+        76
+      ],
+      "quant-analyst": [
+        93,
+        94,
+        94
+      ]
+    },
+    "source": "ingested_from_existing_results"
+  },
+  {
+    "timestamp": "2025-12-30T17:16:38.021281Z",
+    "model": "gemini",
+    "tests_run": 22,
+    "tests_passed": 21,
+    "average_score": 92.2,
+    "scores_by_agent": {
+      "critical-analyzer": [
+        96,
+        96,
+        96,
+        100
+      ],
+      "ethics-expert": [
+        97
+      ],
+      "hypothesis-explorer": [
+        89,
+        92,
+        81
+      ],
+      "lateral-thinker": [
+        96,
+        100,
+        98
+      ],
+      "literature-reviewer": [
+        74,
+        98,
+        60,
+        98
+      ],
+      "peer-reviewer": [
+        98
+      ],
+      "qual-researcher": [
+        80,
+        94,
+        86
+      ],
+      "quant-analyst": [
+        100,
+        100,
+        100
+      ]
+    },
+    "source": "ingested_from_existing_results"
+  }
+]
