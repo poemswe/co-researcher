@@ -22,9 +22,10 @@
 - **Hallucination Detection**: Explicit evaluation against fabricated sources and research gaps.
 
 ### Evaluation Framework
-- **Multi-Model Support**: Integrated testing for Claude, Gemini, and Codex.
-- **22-Test Suite**: Comprehensive validation of PhD-level rigor.
-- **Standardized Schema**: All test cases use a unified Markdown schema (Task Prompt code blocks, checklist-based expected behaviors) for reliable LLM-as-judge parsing.
+- **Dynamic Rubric System**: 6 task-specific rubrics mapped to agent capabilities (analytical, quantitative, qualitative, design, research, structure).
+- **Parallel Testing**: Thread-safe evaluation runner (`run_eval.py`) supporting concurrent agent execution.
+- **Multi-Model Support**: Standardized testing and benchmarking for Claude, Gemini, and Codex.
+- **PhD-Level Rigor**: 22-test suite for PhD-level research and analysis.
 
 ## Workflows
 - **Discovery**: Agents are discovered by platform-specific manifests at the repository level.
