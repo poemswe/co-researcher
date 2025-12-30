@@ -62,8 +62,3 @@ Evaluate this interpretation.
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Must identify practical vs statistical significance distinction
-
-## Rubric Weights
-- Research Quality: 30%
-- Reasoning Quality: 45%
-- Output Structure: 25%

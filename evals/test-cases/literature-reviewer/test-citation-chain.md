@@ -59,8 +59,3 @@ Map the citation chain to understand how this work fits into the field's evoluti
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Research Quality: ≥ 80/100 (high bar for accuracy)
-
-## Rubric Weights
-- Research Quality: 50%
-- Reasoning Quality: 25%
-- Output Structure: 25%

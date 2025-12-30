@@ -8,6 +8,7 @@
 ## Rubric Profile
 - **Primary**: analytical-quality (75%)
 - **Secondary**: output-structure (25%)
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -64,8 +65,3 @@ Identify all potential biases in this research.
 - Overall Score: ≥ 70/100
 - Reasoning Quality: ≥ 80/100
 - Must identify at least 5 of 6 main biases
-
-## Rubric Weights
-- Research Quality: 20%
-- Reasoning Quality: 55%
-- Output Structure: 25%

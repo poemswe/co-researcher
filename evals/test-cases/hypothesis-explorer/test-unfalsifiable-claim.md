@@ -9,6 +9,7 @@
 - **Primary**: design-quality (60%)
 - **Secondary**: analytical-quality (30%)
 - **Tertiary**: output-structure (10%)
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -64,8 +65,3 @@ Your task:
 ## Passing Threshold
 - Overall Score: ≥ 80/100
 - Reasoning Quality: ≥ 85/100
-
-## Rubric Weights
-- Research Quality: 20%
-- Reasoning Quality: 55%
-- Output Structure: 25%

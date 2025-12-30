@@ -71,8 +71,3 @@ Explain any paradoxes or counterintuitive findings.
 ## Passing Threshold
 - Overall Score: ≥ 80/100
 - Reasoning Quality: ≥ 85/100 (must identify paradox)
-
-## Rubric Weights
-- Research Quality: 25%
-- Reasoning Quality: 55%
-- Output Structure: 20%

@@ -55,8 +55,3 @@ Please peer review the following abstract and methodology summary:
 
 ## Passing Threshold
 - Overall Score: ≥ 70/100
-
-## Rubric Weights
-- Research Quality: 30%
-- Reasoning Quality: 50%
-- Output Structure: 20%

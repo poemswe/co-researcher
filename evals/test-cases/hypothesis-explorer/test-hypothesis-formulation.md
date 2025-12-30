@@ -60,8 +60,3 @@ Help me formulate testable hypotheses about work location and productivity.
 - Overall Score: ≥ 70/100
 - Reasoning Quality: ≥ 75/100
 - Must include valid H₀ and H₁
-
-## Rubric Weights
-- Research Quality: 30%
-- Reasoning Quality: 45%
-- Output Structure: 25%

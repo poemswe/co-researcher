@@ -58,8 +58,3 @@ Focus on research from the past 5 years.
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Research Quality: ≥ 75/100 (primary focus)
-
-## Rubric Weights
-- Research Quality: 50%
-- Reasoning Quality: 25%
-- Output Structure: 25%

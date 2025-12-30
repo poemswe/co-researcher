@@ -8,6 +8,7 @@
 ## Rubric Profile
 - **Primary**: qualitative-quality (75%)
 - **Secondary**: output-structure (25%)
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -78,8 +79,3 @@ Conduct a thematic analysis and present the findings.
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Must identify at least 3 valid themes
-
-## Rubric Weights
-- Research Quality: 35%
-- Reasoning Quality: 40%
-- Output Structure: 25%

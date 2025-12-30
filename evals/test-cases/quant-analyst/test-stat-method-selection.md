@@ -60,8 +60,3 @@ I have the following research scenarios. For each, recommend the appropriate sta
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Must get at least 4 of 5 correct
-
-## Rubric Weights
-- Research Quality: 35%
-- Reasoning Quality: 40%
-- Output Structure: 25%

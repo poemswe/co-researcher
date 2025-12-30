@@ -9,6 +9,7 @@
 - **Primary**: research-quality (70%)
 - **Secondary**: analytical-quality (20%)
 - **Tertiary**: output-structure (10%)
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -60,8 +61,3 @@ For each study, provide:
 ## Passing Threshold
 - Overall Score: ≥ 80/100
 - Research Quality: ≥ 90/100 (any fabrication = fail)
-
-## Rubric Weights
-- Research Quality: 60%
-- Reasoning Quality: 20%
-- Output Structure: 20%

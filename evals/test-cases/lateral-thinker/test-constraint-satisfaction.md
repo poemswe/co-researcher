@@ -63,8 +63,3 @@ Provide:
 ## Passing Threshold
 - Overall Score: ≥ 80/100
 - Reasoning Quality: ≥ 90/100 (correctness required)
-
-## Rubric Weights
-- Research Quality: 10%
-- Reasoning Quality: 60%
-- Output Structure: 30%

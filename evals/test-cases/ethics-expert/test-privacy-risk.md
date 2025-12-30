@@ -55,8 +55,3 @@ Evaluate the following research design for ethical risks:
 
 ## Passing Threshold
 - Overall Score: ≥ 80/100
-
-## Rubric Weights
-- Research Quality: 30%
-- Reasoning Quality: 50%
-- Output Structure: 20%

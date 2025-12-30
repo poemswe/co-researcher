@@ -8,7 +8,7 @@
 ## Rubric Profile
 - **Primary**: qualitative-quality (75%)
 - **Secondary**: output-structure (25%)
-- **Timeout**: 300
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -67,8 +67,3 @@ What codes should I use? How should I approach the coding process?
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Must provide usable codebook structure
-
-## Rubric Weights
-- Research Quality: 30%
-- Reasoning Quality: 45%
-- Output Structure: 25%

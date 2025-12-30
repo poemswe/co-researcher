@@ -66,8 +66,3 @@ to think about customer retention.
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Must provide at least 2 genuinely novel analogies
-
-## Rubric Weights
-- Research Quality: 25%
-- Reasoning Quality: 50%
-- Output Structure: 25%

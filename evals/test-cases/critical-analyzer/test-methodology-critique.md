@@ -63,8 +63,3 @@ Critique this methodology and assess the validity of the conclusion.
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Reasoning Quality: ≥ 75/100
-
-## Rubric Weights
-- Research Quality: 20%
-- Reasoning Quality: 55%
-- Output Structure: 25%

@@ -63,8 +63,3 @@ What are the fundamental truths here, and what might we be getting wrong?
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Must demonstrate actual first principles decomposition
-
-## Rubric Weights
-- Research Quality: 20%
-- Reasoning Quality: 55%
-- Output Structure: 25%

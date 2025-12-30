@@ -8,6 +8,7 @@
 ## Rubric Profile
 - **Primary**: qualitative-quality (75%)
 - **Secondary**: output-structure (25%)
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -63,8 +64,3 @@ Evaluate the methodological quality of this protocol and provide recommendations
 ## Passing Threshold
 - Overall Score: ≥ 80/100
 - Reasoning Quality: ≥ 80/100
-
-## Rubric Weights
-- Research Quality: 30%
-- Reasoning Quality: 45%
-- Output Structure: 25%

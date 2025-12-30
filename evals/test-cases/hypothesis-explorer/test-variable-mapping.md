@@ -9,6 +9,7 @@
 - **Primary**: design-quality (60%)
 - **Secondary**: analytical-quality (30%)
 - **Tertiary**: output-structure (10%)
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -69,8 +70,3 @@ including potential confounds that could explain any observed relationship.
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Must identify at least 5 confounds
-
-## Rubric Weights
-- Research Quality: 30%
-- Reasoning Quality: 45%
-- Output Structure: 25%

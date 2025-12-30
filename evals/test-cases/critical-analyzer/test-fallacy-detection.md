@@ -61,8 +61,3 @@ but he's obviously biased since he works for the ice cream industry."
 - Overall Score: ≥ 70/100
 - Reasoning Quality: ≥ 80/100
 - Must identify at least 3 of 4 main fallacies
-
-## Rubric Weights
-- Research Quality: 20%
-- Reasoning Quality: 55%
-- Output Structure: 25%

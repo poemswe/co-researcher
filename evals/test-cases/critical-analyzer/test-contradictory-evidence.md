@@ -8,6 +8,7 @@
 ## Rubric Profile
 - **Primary**: analytical-quality (75%)
 - **Secondary**: output-structure (25%)
+- **Timeout**: 900
 
 ## Task Prompt
 
@@ -69,8 +70,3 @@ Which study should we trust more? What explains the discrepancy in findings?
 ## Passing Threshold
 - Overall Score: ≥ 80/100
 - Reasoning Quality: ≥ 85/100 (primary focus)
-
-## Rubric Weights
-- Research Quality: 25%
-- Reasoning Quality: 50%
-- Output Structure: 25%

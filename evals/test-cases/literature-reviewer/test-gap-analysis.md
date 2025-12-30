@@ -58,8 +58,3 @@ I want to understand what's been studied and what areas need more research.
 ## Passing Threshold
 - Overall Score: ≥ 70/100
 - Both Research and Reasoning Quality: ≥ 70/100
-
-## Rubric Weights
-- Research Quality: 40%
-- Reasoning Quality: 35%
-- Output Structure: 25%
