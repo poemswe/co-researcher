@@ -18,7 +18,7 @@
 - **OpenAI Codex**: Manifested via `AGENTS.md` and `.codex/skills/`.
 
 ### Truthfulness & Honesty
-- **Systemic Honesty**: Core Research Principles are centrally modularized in templates for consistency (v3.1).
+- **Systemic Honesty**: Core Research Principles use ethics-first placement immediately after identity statement (v3.3).
 - **Hallucination Detection**: Explicit evaluation against fabricated sources and research gaps.
 - **Credibility Triage**: Structured pre-output hooks for source validation (ACCEPT/FLAG/REJECT).
 

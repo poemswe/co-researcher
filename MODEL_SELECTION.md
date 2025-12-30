@@ -4,7 +4,7 @@ This document outlines the rationale for selecting specific LLM models for diffe
 
 ## Rationale for Defaults
 
-### Primary Model: Claude 3.5 Sonnet
+### Primary Model: Claude 4.5 Sonnet
 - **Why**: Sonnet provides the best balance of reasoning speed, PhD-level accuracy, and tool-use reliability. It consistently outperforms most models on complex logical mapping and citation integrity.
 - **Usage**: Default for all research agents and the evaluation judge.
 
