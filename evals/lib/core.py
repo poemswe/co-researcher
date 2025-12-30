@@ -131,7 +131,8 @@ def run_cli(model: str, prompt: str, timeout: int = 600) -> tuple[bool, str, str
     
     try:
         result = subprocess.run(cmd, input=stdin_input, capture_output=True, text=True, timeout=timeout)
-        return result.returncode == 0, result.stdout, result.stderr or f"Exit {result.returncode}"
+        err = (result.stderr + "\n" + result.stdout).strip() if result.returncode != 0 else ""
+        return result.returncode == 0, result.stdout, err or f"Exit {result.returncode}"
     except subprocess.TimeoutExpired:
         return False, "", f"Timeout after {timeout}s"
     except Exception as e:
