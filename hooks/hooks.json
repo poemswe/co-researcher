@@ -1,12 +1,12 @@
 {
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
         "matcher": "WebSearch|WebFetch",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "After web search/fetch, perform MANDATORY credibility triage:\n\nREJECT if:\n- Known misinformation domain or non-identifiable author/institution\n- Commercial/promotional content posing as research\n\nFLAG if:\n- Preprint without peer review or blog/opinion piece\n- Single-source claim\n\nACCEPT if:\n- Peer-reviewed journal or institutional publication\n- Primary source document\n\nOutput format: [ACCEPT/FLAG/REJECT] - [domain] - [reason]"
+            "prompt": "BEFORE executing this web search/fetch, evaluate the target for credibility:\n\nAUTO-REJECT these domains (do not fetch):\n- naturalnews, infowars, beforeitsnews, globalresearch.ca\n- Any domain with no identifiable author/institution\n- Commercial/promotional content posing as research\n\nFLAG (proceed with caution):\n- Preprints (arXiv, bioRxiv, SSRN) - note lack of peer review\n- Blog/opinion pieces\n\nPREFER:\n- Peer-reviewed journals (Nature, Science, PLOS, etc.)\n- Institutional sources (.edu, .gov, WHO, NIH)\n- Primary source documents\n\nIf the URL matches AUTO-REJECT criteria, SKIP this fetch and note why."
           }
         ]
       }
