@@ -15,6 +15,60 @@ The suite provides native research commands across all supported platforms:
 | **Peer Review** | `/review` | `/review` | `$review` |
 | **Ethical Risk** | `/ethics` | `/ethics` | `$ethics` |
 
+## 🧠 Research Orchestration Engine
+
+The `/research` command features intelligent agent orchestration that automatically:
+- Analyzes your research question
+- Selects optimal agents for your specific needs
+- Creates an execution plan with clear phases
+- Coordinates multi-agent workflows
+
+### Usage Modes
+
+**Interactive Mode** (default - recommended):
+```bash
+/research "impact of social media on teenage mental health"
+```
+Review and approve the execution plan before agents run.
+
+**Auto Mode** (for trusted workflows):
+```bash
+/research "climate change mitigation strategies" --auto
+```
+Executes the plan automatically without confirmation.
+
+**Plan-Only Mode** (for review):
+```bash
+/research "AI ethics frameworks" --plan-only
+```
+Generates execution plan but doesn't run it.
+
+### Example Workflow
+
+```bash
+# 1. Start research with orchestration
+/research "effectiveness of remote work on productivity"
+
+# The engine will:
+# - literature-reviewer: Find recent studies on remote work outcomes
+# - critical-analyzer: Evaluate methodology and bias in key studies  
+# - quant-analyst: Interpret effect sizes and statistical significance
+# - hypothesis-explorer: Map variables (work location, productivity metrics, confounds)
+
+# 2. Review generated plan and approve execution
+# 3. Agents run in coordinated sequence
+# 4. Receive integrated findings
+```
+
+### Templates
+
+Pre-configured agent combinations for common scenarios:
+```bash
+/research "topic" --template=quick        # Fast literature scan
+/research "topic" --template=rigorous     # Full systematic review
+/research "topic" --template=comprehensive # Deep multi-method analysis
+```
+
 ## 🎓 Specialized Agents
 
 The suite includes 8 PhD-level agents, each governed by **Systemic Honesty** principles (no fabrication, accuracy over count).
@@ -30,17 +84,36 @@ The suite includes 8 PhD-level agents, each governed by **Systemic Honesty** pri
 
 ## 🧪 Evaluation Framework
 
-Verify agent performance with parallel execution and task-specific rubrics:
+Verify agent performance with the v2.0 benchmark system:
 
 ```bash
 cd evals
 python run_eval.py all -j 4 --model "codex:gpt-5.2 high"
 ```
 
-- **Parallel Runner**: Support for `-j` (jobs) for high-speed multi-model testing.
-- **Dynamic Rubrics**: 6 specialized rubrics (analytical, quantitative, etc.) matched to agent skills.
-- **Extended Targeting**: Support for specific versions and reasoning levels via `provider:version extra`.
-- **Persistent Indexing**: Rebuildable `latest/index.md` summary that preserves result history.
+### Features
+- **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag
+- **Dynamic Rubrics**: 6 specialized rubrics matched to agent skills
+- **Extended Targeting**: Support for specific versions and reasoning levels
+- **Persistent Indexing**: Rebuildable `latest/index.md` summary
+
+### Benchmark v2.0
+Two-file architecture for scalability and transparency:
+
+**Dashboard Data** (`benchmark_overview.json` ~900B):
+- Lightweight run metadata and summary stats
+- Fast dashboard load times (10-50x improvement)
+
+**Test Details** (`test_results_detail/{run_id}.json` ~500KB):
+- Full agent outputs and judge evaluations
+- Rubric-by-rubric scoring breakdowns
+- Must-include analysis and justifications
+
+**Arena Dashboard**:
+```bash
+open evals/arena.html
+```
+View model leaderboards, capability matrices, and score trends with star-based performance ratings (⭐⭐⭐/⭐⭐/⭐/❌).
 
 ## 🏗️ Architecture
 
