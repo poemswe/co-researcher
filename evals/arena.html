@@ -281,6 +281,10 @@
             background: var(--accent-rose);
         }
 
+        .section-heading.hide-underline::after {
+            display: none;
+        }
+
         .section-description {
             font-size: 0.875rem;
             color: var(--text-secondary);
@@ -1547,16 +1551,14 @@
             </div>
 
             <div class="radar-section-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h2 class="section-heading hide-underline" style="margin-bottom: 0;">Agent Capability Signature</h2>
+                    <select id="radarModelFilter" class="search-input"
+                        style="width: auto; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
+                        onchange="handleRadarModelChange()">
+                    </select>
+                </div>
                 <div class="chart-card-sidebar">
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.75rem;">
-                        <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary); font-weight: 600;">Agent
-                            Capability Signature</h3>
-                        <select id="radarModelFilter" class="search-input"
-                            style="width: auto; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
-                            onchange="handleRadarModelChange()">
-                        </select>
-                    </div>
                     <div style="flex: 1; position: relative;">
                         <canvas id="radarChart"></canvas>
                     </div>
@@ -1616,8 +1618,7 @@
 
         async function loadData() {
             try {
-                let response = await fetch(GITHUB_RAW_URL);
-                if (!response.ok) response = await fetch('benchmark_overview.json');
+                const response = await fetch(`${GITHUB_RAW_URL}?t=${new Date().getTime()}`);
                 if (!response.ok) throw new Error('Fetch failed');
                 globalOverview = await response.json();
                 renderDashboard(globalOverview);
@@ -1633,7 +1634,7 @@
             if (!run || !run.detail_file) return null;
 
             try {
-                const response = await fetch(run.detail_file);
+                const response = await fetch(`${run.detail_file}?t=${new Date().getTime()}`);
                 if (!response.ok) throw new Error('Detail fetch failed');
 
                 const detailData = await response.json();
