@@ -281,10 +281,6 @@
             background: var(--accent-rose);
         }
 
-        .section-heading.hide-underline::after {
-            display: none;
-        }
-
         .section-description {
             font-size: 0.875rem;
             color: var(--text-secondary);
@@ -1552,7 +1548,8 @@
 
             <div class="radar-section-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <h2 class="section-heading hide-underline" style="margin-bottom: 0;">Agent Capability Signature</h2>
+                    <h2 class="section-heading" style="margin-bottom: 0; white-space: nowrap;">Agent
+                        Capability Signature</h2>
                     <select id="radarModelFilter" class="search-input"
                         style="width: auto; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
                         onchange="handleRadarModelChange()">
