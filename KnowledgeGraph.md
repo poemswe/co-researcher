@@ -59,11 +59,15 @@ The system supports three CLI platforms through unified agent definitions:
 
 ### Arena Dashboard
 
-HTML/JS visualization featuring:
-- Model leaderboards with performance trends
-- Capability matrices with star-based ratings (⭐⭐⭐/⭐⭐/⭐/❌)
-- Agent performance breakdowns
-- Score evolution over time
+High-performance HTML/JS visualization platform:
+- **Editorial Design System**: High-contrast typography, solid colors, and interactive micro-animations
+- **Model Leaderboards**: Performance trends with medal-based ranking
+- **Capability Matrix**: Star-based capability mapping (⭐⭐⭐/⭐⭐/⭐/❌)
+- **Interactive Test Breakdown**:
+    - Detailed agent outputs with syntax highlighting and syntax-aware scrolling
+    - Dynamic "Must-include" checklist verification (Met/Missed)
+    - Overall judge justification and task-specific rubric profiling
+- **Fast Loading**: Optimized for 10-50x faster performance through v2 binary schema
 
 ## Research Orchestration Engine
 

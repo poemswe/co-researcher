@@ -1,6 +1,6 @@
 # Co-Researcher Agents
 
-PhD-level research capabilities for coding agents.
+PhD-level research capabilities for coding agents. Powered by the [Research Orchestration Engine](README.md#research-orchestration-engine).
 
 ## Available Agents
 
