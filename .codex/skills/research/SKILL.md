@@ -25,6 +25,7 @@ I'll analyze your query and build an execution plan using specialized agents.
 - `quant-analyst`: Statistical methods, effect sizes
 - `peer-reviewer`: Manuscript evaluation
 - `ethics-expert`: IRB compliance, privacy risks
+- `grant-writer`: Grant proposal development, funding strategy
 
 **Orchestration Process**:
 1. **Classify Query**: Determine research type
