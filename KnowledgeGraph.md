@@ -16,6 +16,7 @@ Eight domain-expert agents provide PhD-level research capabilities:
 - **Quantitative Analyst**: Statistical method selection and interpretation
 - **Peer Reviewer**: Academic manuscript and proposal evaluation
 - **Ethics Expert**: Research ethics, IRB compliance, and privacy risk assessment
+- **Grant Writer**: Grant proposal development, specific aims, and funding strategy
 
 ### Platform Integration
 

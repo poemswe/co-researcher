@@ -75,6 +75,7 @@ Based on query classification, select from:
 - `quant-analyst`: Statistical methods, power analysis
 - `peer-reviewer`: Manuscript evaluation, rigor assessment
 - `ethics-expert`: IRB compliance, privacy, bias detection
+- `grant-writer`: Grant proposal development, specific aims, funding strategy
 
 **STEP 3: Execution Plan Generation**
 Create a DAG of agent tasks with clear I/O.

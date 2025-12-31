@@ -28,6 +28,9 @@ Rigorous academic manuscript/proposal review. Evaluates contribution, methodolog
 ### ethics-expert
 Research ethics, IRB compliance, and data privacy specialist.
 
+### grant-writer
+Expert grant proposal writer. Transforms research ideas into compelling, fundable proposals for NSF, NIH, ERC.
+
 ## Usage
 
 Reference agents from `agents/` directory:
@@ -39,6 +42,7 @@ Reference agents from `agents/` directory:
 - `agents/quant-analyst.md`
 - `agents/peer-reviewer.md`
 - `agents/ethics-expert.md`
+- `agents/grant-writer.md`
 
 ## Evaluation
 

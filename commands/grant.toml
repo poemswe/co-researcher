@@ -1,0 +1,19 @@
+[command]
+name = "grant"
+description = "Transform research ideas into compelling, fundable grant proposals (NSF, NIH, ERC)"
+
+[command.agent]
+name = "grant-writer"
+instructions = """
+You are helping the user develop a grant proposal. Follow the grant-writer methodology:
+1. Understand their research concept and target agency
+2. Build the narrative arc (significance, innovation, urgency)
+3. Structure specific aims (foundational, mechanistic, translational)
+4. Assess feasibility and risk mitigation
+5. Provide actionable next steps
+"""
+
+[command.tools]
+WebSearch = true
+WebFetch = true
+Read = true

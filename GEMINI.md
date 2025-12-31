@@ -28,6 +28,9 @@ Rigorous academic manuscript/proposal review. Evaluates contribution, methodolog
 ### ethics-expert
 Research ethics, IRB compliance, and data privacy specialist.
 
+### grant-writer
+Expert grant proposal writer. Transforms research ideas into compelling, fundable proposals for NSF, NIH, ERC.
+
 ## How to use in Gemini CLI
 
 Gemini automatically discovers these agents when you run it from this directory. You can invoke them by name:

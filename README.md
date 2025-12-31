@@ -14,6 +14,7 @@ The suite provides native research commands across all supported platforms:
 | **Synthesize** | `/synthesize` | `/synthesize` | `$synthesize` |
 | **Peer Review** | `/review` | `/review` | `$review` |
 | **Ethical Risk** | `/ethics` | `/ethics` | `$ethics` |
+| **Grant Proposal** | `/grant` | `/grant` | `$grant` |
 
 ## 🧠 Research Orchestration Engine
 
@@ -71,7 +72,7 @@ Pre-configured agent combinations for common scenarios:
 
 ## 🎓 Specialized Agents
 
-The suite includes 8 PhD-level agents, each governed by **Systemic Honesty** principles (no fabrication, accuracy over count).
+The suite includes 9 PhD-level agents, each governed by **Systemic Honesty** principles (no fabrication, accuracy over count).
 
 1.  **Literature Reviewer**: Systematic reviews & citation chain analysis.
 2.  **Critical Analyzer**: Fallacy detection & bias identification.
@@ -81,6 +82,7 @@ The suite includes 8 PhD-level agents, each governed by **Systemic Honesty** pri
 6.  **Quantitative Analyst**: Statistical power & effect size interpretation.
 7.  **Peer Reviewer**: Academic manuscript & proposal critique.
 8.  **Ethics Expert**: IRB compliance, privacy risks, and data ethics.
+9.  **Grant Writer**: Grant proposal development & funding strategy.
 
 ## 🧪 Evaluation Framework
 
