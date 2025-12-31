@@ -1829,7 +1829,7 @@
                 const avg = agentScores.reduce((a, b) => a + b, 0) / agentScores.length;
 
                 // Filter test details for this agent
-                const agentDetails = details ? details.results.filter(r => r.test_case.agent === agent) : [];
+                const agentDetails = details && details.test_results ? details.test_results.filter(r => r.agent === agent) : [];
 
                 return `
                     <div class="accordion-item">
@@ -1845,7 +1845,7 @@
                         <div class="accordion-content">
                             ${agentScores.map((score, i) => {
                     const detail = agentDetails[i];
-                    const testInfo = detail ? detail.test_case : (testMetadata[agent] ? testMetadata[agent][i] : { name: `Test ${i + 1}`, difficulty: 'Medium' });
+                    const testInfo = detail ? { name: detail.test_name, difficulty: detail.difficulty, id: detail.test_case } : (testMetadata[agent] ? testMetadata[agent][i] : { name: `Test ${i + 1}`, difficulty: 'Medium' });
                     const passed = detail ? detail.passed : score >= 70;
 
                     return `
