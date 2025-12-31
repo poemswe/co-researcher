@@ -55,7 +55,7 @@
         "overall_justification": "```\nANALYTICAL_QUALITY: 87\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: small sample size (n=20; implies n=10/group), lack of randomization details, no control for other variables (light/water/temperature), potential confounds (speaker heat, vibration), overgeneralization (Mozart \u2192 all classical music)\nMUST_INCLUDE_MISSED: single measurement point\nOVERALL_SCORE: 87.75\nRESULT: PASS\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 20.1,
         "source": "automated_run"
       }
     },
@@ -107,7 +107,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 86  \nOUTPUT_STRUCTURE: 90  \nMUST_INCLUDE_MET: correlation/causation fallacy, ad hominem (Dr. Smith dismissal based on affiliation), confounding variable (summer heat/seasonality)  \nMUST_INCLUDE_MISSED: false dichotomy  \nOVERALL_SCORE: 87  \nRESULT: PASS  "
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 19.7,
         "source": "automated_run"
       }
     },
@@ -160,7 +160,7 @@
         "overall_justification": "```\nANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Funding bias (company-funded), Conflict of interest (author holds stock), Selection bias (employees as participants), Attrition bias (excluding dropouts with side effects), Detection bias (no blinding), HARKing/publication bias (post-registration)\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91.5\nRESULT: PASS\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 31.6,
         "source": "automated_run"
       }
     },
@@ -213,7 +213,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: methodology difference (correlational vs experimental/RCT), sample size disparity (500 vs 10,000), effect size interpretation (r=0.45 vs d=-0.80), explains why RCT provides stronger causal evidence, self-report vs clinical measures difference\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91.5\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 34.3,
         "source": "automated_run"
       }
     },
@@ -273,7 +273,7 @@
         "overall_justification": "DESIGN_QUALITY: 78\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Lack of informed consent, De-anonymization risk, Vulnerable population, IRB requirement\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 81.4\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 31.4,
         "source": "automated_run"
       }
     },
@@ -334,7 +334,7 @@
         "overall_justification": "DESIGN_QUALITY: 72\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Identifies the unfalsifiability problem explicitly, Names or describes the No True Scotsman fallacy, Explains why \"belief\" as escape clause prevents testing, Does NOT validate the claim as scientifically sound, Proposes genuinely falsifiable alternatives\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 78.8\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 34.5,
         "source": "automated_run"
       }
     },
@@ -395,7 +395,7 @@
         "overall_justification": "DESIGN_QUALITY: 72\nANALYTICAL_QUALITY: 85\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Independent variable: Video game playing (operationalized), Dependent variable: Academic performance (operationalized), At least 5 potential confounding variables, Mediating variables, Moderating variables\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 78\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 38.2,
         "source": "automated_run"
       }
     },
@@ -458,7 +458,7 @@
         "overall_justification": "```\nDESIGN_QUALITY: 80\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Null hypothesis (H\u2080) clearly stated, Alternative hypothesis (H\u2081) clearly stated, Variables identified (IV, DV), Operationalization of \"productivity\", Specific, testable predictions\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 83.4\nRESULT: PASS\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 48.0,
         "source": "automated_run"
       }
     },
@@ -514,7 +514,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 91\nOUTPUT_STRUCTURE: 97\nMUST_INCLUDE_MET: Correct algorithm: divide into groups of 3, 3, and 2, First weighing: compare two groups of 3, Handles all 3 first-weighing outcomes (left heavy, right heavy, balanced), Second weighing correctly identifies among remaining candidates, Proves solution works in exactly 2 weighings\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.8\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 27.3,
         "source": "automated_run"
       }
     },
@@ -566,7 +566,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 95\nMUST_INCLUDE_MET: Identification of the core assumption, Decomposition into fundamental components, Distinction between real constraints and assumed ones, Reconstruction of alternatives from fundamentals, Evidence/reasoning for each step\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 90.1\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 30.9,
         "source": "automated_run"
       }
     },
@@ -617,7 +617,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 84\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: At least 3 cross-domain analogies, Clear mapping from source to target domain, Actionable insights from each analogy, Acknowledgment of where analogies break down\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 86.4\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 42.0,
         "source": "automated_run"
       }
     },
@@ -677,7 +677,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 92\nRESEARCH_QUALITY: 70\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Identify Selection Bias, Identify Recall Bias, Identify Lack of Control, Assign low scores for Methodology and Rigor\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 85.4\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 19.1,
         "source": "automated_run"
       }
     },
@@ -729,7 +729,7 @@
         "overall_justification": "QUANTITATIVE_QUALITY: 93\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: distinction between statistical and practical significance, interpretation of Cohen's d = 0.15 as small effect, note that large sample inflates statistical significance, assessment of whether 2.3 points matters practically, critique of \"highly effective\" conclusion\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.25\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 19.0,
         "source": "automated_run"
       }
     },
@@ -780,7 +780,7 @@
         "overall_justification": "QUALITATIVE_QUALITY: 71\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: At least 3 distinct themes identified, Supporting quotes for each theme, Theme definitions, Pattern across participants noted\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.25\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 23.1,
         "source": "automated_run"
       }
     },
@@ -832,7 +832,7 @@
         "overall_justification": "QUALITATIVE_QUALITY: 72\nOUTPUT_STRUCTURE: 89\nMUST_INCLUDE_MET: Identifies leading question bias in Q1 (\"Don't you agree...\"), Notes presupposition of concern in Q2 (\"environmental collapse\"), Flags loaded language throughout, Provides neutral reformulations of at least 3 questions, Critiques lack of opposing viewpoint exploration\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.25\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 28.1,
         "source": "automated_run"
       }
     },
@@ -886,7 +886,7 @@
         "overall_justification": "QUALITATIVE_QUALITY: 82\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Coding strategy recommendation (open, axial, or combined), Initial code categories, Code definitions, Coding process steps, Example applications\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 84.5\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 49.5,
         "source": "automated_run"
       }
     },
@@ -940,7 +940,7 @@
         "overall_justification": "QUANTITATIVE_QUALITY: 90  \nOUTPUT_STRUCTURE: 95  \nMUST_INCLUDE_MET: Scenario 1 (independent-samples t-test / Mann\u2013Whitney), Scenario 2 (Pearson correlation), Scenario 3 (one-way ANOVA / Kruskal\u2013Wallis), Scenario 4 (chi-square test / Fisher\u2019s exact), Scenario 5 (multiple linear regression)  \nMUST_INCLUDE_MISSED: none  \nOVERALL_SCORE: 91.25  \nRESULT: PASS  "
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 31.5,
         "source": "automated_run"
       }
     },
@@ -992,7 +992,7 @@
         "overall_justification": "QUANTITATIVE_QUALITY: 92\nOUTPUT_STRUCTURE: 94\nMUST_INCLUDE_MET: Identifies Simpson\u2019s Paradox, Correctly notes Hospital B is better for BOTH surgery types, Explains the aggregate reversal mechanism, Notes the confounding by surgery type distribution, Recommends Hospital B for both routine and complex\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 92.5\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 40.7,
         "source": "automated_run"
       }
     },
@@ -1053,7 +1053,7 @@
         "overall_justification": "RESEARCH_QUALITY: 84\nANALYTICAL_QUALITY: 80\nOUTPUT_STRUCTURE: 86\nMUST_INCLUDE_MET: Identifies at least 3 distinct research gaps, Provides evidence for why each gap exists, Synthesizes findings across sources, Distinguishes well-studied from under-studied areas, Maps the research landscape\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 83.4\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 314.0,
         "source": "automated_run"
       }
     },
@@ -1114,7 +1114,7 @@
         "overall_justification": "```\nRESEARCH_QUALITY: 45\nANALYTICAL_QUALITY: 75\nOUTPUT_STRUCTURE: 85\nMUST_INCLUDE_MET: Acknowledges this is an extremely niche/non-existent research area, Does NOT fabricate paper titles/authors/DOIs, Suggests related legitimate research areas instead, Distinguishes between what exists and what doesn't, Shows uncertainty when sources aren't found\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 55.0\nRESULT: FAIL\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 326.0,
         "source": "automated_run"
       }
     },
@@ -1175,7 +1175,7 @@
         "overall_justification": "RESEARCH_QUALITY: 74\nANALYTICAL_QUALITY: 78\nOUTPUT_STRUCTURE: 87\nMUST_INCLUDE_MET: Identifies papers citing the target (forward citations), Identifies papers cited by the target (backward citations), Maps influence/evolution of ideas, Distinguishes foundational vs. derivative works, Shows how field evolved before and after\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 76.1\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 338.7,
         "source": "automated_run"
       }
     },
@@ -1238,7 +1238,7 @@
         "overall_justification": "RESEARCH_QUALITY: 64\nANALYTICAL_QUALITY: 77\nOUTPUT_STRUCTURE: 84\nMUST_INCLUDE_MET: Identifies at least 5 relevant academic sources, Provides search terms used, Includes publication dates for recency\nMUST_INCLUDE_MISSED: Uses academic search strategies (site:scholar.google.com, site:arxiv.org), Assesses source credibility for each\nOVERALL_SCORE: 68.6\nRESULT: FAIL"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 410.1,
         "source": "automated_run"
       }
     }

@@ -48,7 +48,7 @@ def _execute_single_test(tc, model: str, verbose: bool):
                 print(f"[{tc.agent}] {tc.name} failed: {result.error}")
             return None
         
-        report = evaluate_output(tc, result.output, model)
+        report = evaluate_output(tc, result, model)
         report_path = generate_report(report, RESULTS_DIR, model)
         
         status = "PASS" if report.passed else "FAIL"

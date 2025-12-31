@@ -51,7 +51,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 88\nMUST_INCLUDE_MET: Correlation/causation fallacy (ice cream \u2192 drowning), False dichotomy (ban or don't care about safety), Ad hominem (dismissing Dr. Smith based on affiliation), Confounding variable (summer heat causes both)\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 45.6,
         "source": "automated_run"
       }
     },
@@ -112,7 +112,7 @@
         "overall_justification": "DESIGN_QUALITY: 82\nANALYTICAL_QUALITY: 85\nOUTPUT_STRUCTURE: 91\nMUST_INCLUDE_MET: Independent variable operationalized, Dependent variable operationalized, At least 5 potential confounding variables, Mediating variables, Moderating variables\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 84\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 47.9,
         "source": "automated_run"
       }
     },
@@ -174,7 +174,7 @@
         "overall_justification": "I'll evaluate this agent output systematically against the rubrics provided."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 49.1,
         "source": "automated_run"
       }
     },
@@ -230,7 +230,7 @@
         "overall_justification": "Based on my review of the agent output and the rubrics, I will now provide the evaluation."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 52.6,
         "source": "automated_run"
       }
     },
@@ -290,7 +290,7 @@
         "overall_justification": "```\nDESIGN_QUALITY: 92\nANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Identify Lack of Informed Consent, Identify De-anonymization Risk, Identify Vulnerable Population, Determine IRB Requirement\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 91.0\nRESULT: PASS\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 48.1,
         "source": "automated_run"
       }
     },
@@ -352,7 +352,7 @@
         "overall_justification": "Based on my review of the agent output and the rubrics provided, I will now evaluate the hypothesis-explorer's response on work location and productivity."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 51.1,
         "source": "automated_run"
       }
     },
@@ -405,7 +405,7 @@
         "overall_justification": "Based on my review of the agent output and the rubrics provided, I will now execute the evaluation:"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 52.0,
         "source": "automated_run"
       }
     },
@@ -458,7 +458,7 @@
         "overall_justification": "This file is the benchmark dashboard HTML, not relevant to the evaluation task. Let me proceed with the evaluation as this is an execution task, not a planning task."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 49.3,
         "source": "automated_run"
       }
     },
@@ -510,7 +510,7 @@
         "overall_justification": "```\nANALYTICAL_QUALITY: 92\nOUTPUT_STRUCTURE: 95\nMUST_INCLUDE_MET: Correct algorithm: divide into groups of 3, 3, and 2; First weighing: compare two groups of 3; Handles all 3 first-weighing outcomes (left heavy, right heavy, balanced); Second weighing correctly identifies among remaining candidates; Proves solution works in exactly 2 weighings\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 93\nRESULT: PASS\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 35.8,
         "source": "automated_run"
       }
     },
@@ -570,7 +570,7 @@
         "overall_justification": "```\nANALYTICAL_QUALITY: 88\nRESEARCH_QUALITY: 72\nOUTPUT_STRUCTURE: 90\nMUST_INCLUDE_MET: Identify Selection Bias, Identify Recall Bias, Identify Lack of Control, Assign low scores for Methodology and Rigor\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 83.4\nRESULT: PASS\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 34.0,
         "source": "automated_run"
       }
     },
@@ -622,7 +622,7 @@
         "overall_justification": "ANALYTICAL_QUALITY: 88\nOUTPUT_STRUCTURE: 92\nMUST_INCLUDE_MET: Identification of the core assumption, Decomposition into fundamental components, Distinction between real constraints and assumed ones, Reconstruction of alternatives from fundamentals, Evidence/reasoning for each step\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 89\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 56.8,
         "source": "automated_run"
       }
     },
@@ -683,7 +683,7 @@
         "overall_justification": "```\nRESEARCH_QUALITY: 72\nANALYTICAL_QUALITY: 82\nOUTPUT_STRUCTURE: 85\nMUST_INCLUDE_MET: Acknowledges this is an extremely niche/non-existent research area, Does NOT fabricate paper titles authors or DOIs, Suggests related legitimate research areas instead, Distinguishes between what exists and what doesn't, Shows uncertainty when sources aren't found\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 75\nRESULT: PASS\n```"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 69.0,
         "source": "automated_run"
       }
     },
@@ -746,7 +746,7 @@
         "overall_justification": "RESEARCH_QUALITY: 58\nANALYTICAL_QUALITY: 72\nOUTPUT_STRUCTURE: 85\nMUST_INCLUDE_MET: Assesses source credibility for each, Provides search terms used, Includes publication dates for recency\nMUST_INCLUDE_MISSED: Uses academic search strategies (site:scholar.google.com, site:arxiv.org), Identifies at least 5 relevant academic sources\nOVERALL_SCORE: 62\nRESULT: FAIL"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 85.7,
         "source": "automated_run"
       }
     },
@@ -807,7 +807,7 @@
         "overall_justification": "I'll evaluate this agent output systematically against the rubrics provided."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 96.8,
         "source": "automated_run"
       }
     },
@@ -861,7 +861,7 @@
         "overall_justification": "Based on my review of the agent output and rubrics, I'll now provide the evaluation:"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 52.6,
         "source": "automated_run"
       }
     },
@@ -913,7 +913,7 @@
         "overall_justification": "I'll evaluate this agent output against the rubrics provided. Let me analyze the methodological critique of the interview protocol."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 40.3,
         "source": "automated_run"
       }
     },
@@ -964,7 +964,7 @@
         "overall_justification": "Based on my review of the rubrics and the agent output, I'll now provide my evaluation."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 36.0,
         "source": "automated_run"
       }
     },
@@ -1016,7 +1016,7 @@
         "overall_justification": "This file is not relevant to the evaluation task. I need to evaluate the agent's output directly as provided in the prompt. Let me execute the evaluation now."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 32.5,
         "source": "automated_run"
       }
     },
@@ -1068,7 +1068,7 @@
         "overall_justification": "Based on my review of the rubrics and the agent output, I can now provide a comprehensive evaluation."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 31.9,
         "source": "automated_run"
       }
     },
@@ -1119,7 +1119,7 @@
         "overall_justification": "This file is not relevant to my evaluation task. Let me proceed with evaluating the agent output according to the rubrics."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 204.6,
         "source": "automated_run"
       }
     },
@@ -1171,7 +1171,7 @@
         "overall_justification": "Based on my review of the agent output and the rubrics provided, I will now evaluate the statistical method selection response."
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 41.5,
         "source": "automated_run"
       }
     },
@@ -1232,7 +1232,7 @@
         "overall_justification": "RESEARCH_QUALITY: 82\nANALYTICAL_QUALITY: 78\nOUTPUT_STRUCTURE: 88\nMUST_INCLUDE_MET: Identifies at least 3 distinct research gaps, Provides evidence for why each gap exists, Synthesizes findings across sources, Distinguishes well-studied from under-studied areas, Maps the research landscape\nMUST_INCLUDE_MISSED: none\nOVERALL_SCORE: 81\nRESULT: PASS"
       },
       "execution_metadata": {
-        "duration_seconds": 0,
+        "duration_seconds": 240.9,
         "source": "automated_run"
       }
     }

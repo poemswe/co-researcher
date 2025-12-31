@@ -197,8 +197,8 @@ def execute_agent(agent: str, prompt: str, timeout: int = 600, model: str = "cla
     return AgentResult(success, output, time.time() - start, error if not success else None)
 
 
-def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> EvaluationReport:
-    rpt = EvaluationReport(tc, AgentResult(True, output, 0))
+def evaluate_output(tc: TestCase, agent_result: AgentResult, model: str = "claude") -> EvaluationReport:
+    rpt = EvaluationReport(tc, agent_result)
     
     rubrics_dir = EVALS_DIR / "rubrics"
     rubric_texts = []
@@ -229,16 +229,14 @@ def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> Evaluat
         rubric_dimensions="\n".join(dimensions),
         score_format="\n".join(f"{k}: [score]" for k, _, _ in score_keys),
         reasoning_format="\n".join(f"{k}_REASONING: [Brief justification]" for k, _, _ in score_keys),
-        agent_output=output,
+        agent_output=agent_result.output,
         passing_threshold=tc.passing_score if hasattr(tc, 'passing_score') else 70,
     )
 
-    # Strip YAML frontmatter if present
     if prompt.startswith("---"):
         prompt = re.sub(r"^---.*?---\n", "", prompt, flags=re.DOTALL)
 
-    # v2.0: Populate agent output and metadata BEFORE judge (so it's captured even if judge fails)
-    rpt.agent_output = output
+    rpt.agent_output = agent_result.output
     rpt.execution_metadata = {
         "duration_seconds": rpt.agent_result.duration,
         "source": "automated_run"
@@ -267,7 +265,6 @@ def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> Evaluat
     result = rx(r"RESULT:\s*(PASS|FAIL)", judge_out)
     rpt.passed = result.upper() == "PASS" if result else rpt.overall_score >= 70
     
-    # v2.0: Extract rubric breakdown with reasoning
     for key, name, weight in score_keys:
         score = rpt.scores.get(name, 0)
         reasoning = rx(rf"{key}_REASONING:\s*(.+?)(?=\n\n|\n[A-Z_]+:|$)", judge_out)

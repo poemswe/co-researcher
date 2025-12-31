@@ -1547,15 +1547,14 @@
             </div>
 
             <div class="radar-section-container">
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
-                    <h2 class="section-heading" style="margin-bottom: 0;">Agent Capability Signature</h2>
-                    <select id="radarModelFilter" class="search-input"
-                        style="width: auto; cursor: pointer; padding: 0.5rem 1rem; font-size: 0.875rem;"
-                        onchange="handleRadarModelChange()">
-                    </select>
-                </div>
+                <h2 class="section-heading">Agent Capability Signature</h2>
                 <div class="chart-card-sidebar">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                        <select id="radarModelFilter" class="search-input"
+                            style="width: auto; cursor: pointer; padding: 0.5rem 1rem; font-size: 0.75rem;"
+                            onchange="handleRadarModelChange()">
+                        </select>
+                    </div>
                     <div style="flex: 1; position: relative;">
                         <canvas id="radarChart"></canvas>
                     </div>
@@ -1868,8 +1867,9 @@
             const radarModelSelect = document.getElementById('radarModelFilter');
             const currentVal = modelSelect.value;
             const modelOptions = overview.summary_stats.models.map(m => `<option value="${m}" ${m === currentVal ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
+            const radarOptions = overview.summary_stats.models.map(m => `<option value="${m}" ${m === latest.model ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
             modelSelect.innerHTML = '<option value="">Select Model...</option>' + modelOptions;
-            radarModelSelect.innerHTML = modelOptions;
+            radarModelSelect.innerHTML = radarOptions;
 
             renderCharts(runs, latest);
 
