@@ -83,10 +83,16 @@ Then provide:
 Format your response EXACTLY as:
 ```
 {score_format}
+
+{reasoning_format}
+
 MUST_INCLUDE_MET: [comma-separated list or "none"]
 MUST_INCLUDE_MISSED: [comma-separated list or "none"]
+MUST_INCLUDE_ANALYSIS: [Analysis of why specific behaviors were met or missed]
+
 OVERALL_SCORE: [weighted score]
+OVERALL_JUSTIFICATION: [Comprehensive summary of performance across all rubrics]
 RESULT: [PASS or FAIL]
 ```
 
-Then provide detailed justification for each score.
+**Note**: Use the actual keys provided in the format blocks above. Provide specific evidence for each score.

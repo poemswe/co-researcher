@@ -228,8 +228,9 @@ def evaluate_output(tc: TestCase, output: str, model: str = "claude") -> Evaluat
         rubrics_text="\n".join(rubric_texts),
         rubric_dimensions="\n".join(dimensions),
         score_format="\n".join(f"{k}: [score]" for k, _, _ in score_keys),
+        reasoning_format="\n".join(f"{k}_REASONING: [Brief justification]" for k, _, _ in score_keys),
         agent_output=output,
-        passing_threshold=70,
+        passing_threshold=tc.passing_score if hasattr(tc, 'passing_score') else 70,
     )
 
     # Strip YAML frontmatter if present

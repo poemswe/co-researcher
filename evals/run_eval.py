@@ -330,7 +330,10 @@ def main():
         if reports and not args.no_benchmark:
             save_benchmark_v2(reports, args.model, run_id)
     elif len(args.args) == 2:
-        run_test(args.args[0], args.args[1], args.model, args.verbose)
+        run_id = generate_run_id()
+        report = run_test(args.args[0], args.args[1], args.model, args.verbose)
+        if report and not args.no_benchmark:
+            save_benchmark_v2([report], args.model, run_id)
     else:
         print(f"Unknown command: {' '.join(args.args)}")
         sys.exit(1)

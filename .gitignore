@@ -3,6 +3,14 @@ __pycache__/
 *.py[cod]
 *.pyo
 .Python
+.venv/
+.env
 
-# Eval results (regenerated on each run)
+# macOS
+.DS_Store
+
+# Eval results
 evals/results/
+# Note: we keep evals/benchmark_overview.json and evals/test_results_detail/ 
+# to allow the dashboard to work out-of-the-box.
+.claude/
