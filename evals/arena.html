@@ -324,22 +324,24 @@
             grid-template-columns: 2fr 1fr;
             gap: var(--spacing-lg);
             margin-bottom: var(--spacing-2xl);
-            align-items: start;
+            align-items: stretch;
         }
 
-        .matrix-section {
-            margin-bottom: 0;
+        .matrix-section-container,
+        .radar-section-container {
+            display: flex;
+            flex-direction: column;
             height: 100%;
         }
 
         .matrix-table {
-            height: 100%;
+            flex: 1;
             background: var(--bg-secondary);
             border: 2px solid var(--text-primary);
         }
 
         .chart-card-sidebar {
-            height: 100%;
+            flex: 1;
             background: var(--bg-secondary);
             border: 2px solid var(--text-primary);
             padding: var(--spacing-sm) var(--spacing-md);
@@ -801,8 +803,16 @@
                 font-size: 2.5rem;
             }
 
+            .hero-section {
+                grid-template-columns: 1fr;
+            }
+
             .hero-metrics {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .capabilities-section {
+                grid-template-columns: 1fr;
             }
 
             .charts-grid {
@@ -813,16 +823,6 @@
             .matrix-row {
                 grid-template-columns: 150px repeat(3, 1fr) 80px;
                 font-size: 0.75rem;
-            }
-        }
-
-        @media (max-width: 1024px) {
-            .hero-section {
-                grid-template-columns: 1fr;
-            }
-
-            .capabilities-section {
-                grid-template-columns: 1fr;
             }
         }
 
@@ -867,23 +867,6 @@
         .search-input:focus {
             box-shadow: 4px 4px 0 var(--accent-primary);
             transform: translate(-2px, -2px);
-        }
-
-        /* ============ Animations ============ */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .metric-card {
-            animation: fadeInUp 0.5s ease forwards;
         }
 
         /* ============ Animations ============ */
@@ -1062,87 +1045,148 @@
             border-color: var(--accent-success);
         }
 
-        /* ============ Rubric Profile ============ */
+        /* ============ Test Detail Styling (Editorial) ============ */
+        .overall-justification {
+            background: var(--bg-elevated);
+            border: 2px solid var(--accent-primary);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
+            line-height: 1.7;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .overall-justification::before {
+            content: 'JUDGE JUSTIFICATION';
+            position: absolute;
+            top: -10px;
+            left: 10px;
+            background: var(--accent-primary);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            letter-spacing: 0.1em;
+        }
+
         .rubric-profile {
             background: var(--bg-elevated);
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin: 0.75rem 0;
+            border: 1px solid var(--text-primary);
+            padding: 1.25rem;
+            margin: 1rem 0;
             font-size: 0.875rem;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.05);
         }
 
         .rubric-profile-title {
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
+            font-family: var(--font-heading);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
             text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.05em;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid var(--accent-rose);
+            display: inline-block;
+            padding-bottom: 2px;
         }
 
         .rubric-item {
             display: flex;
             justify-content: space-between;
-            padding: 0.35rem 0;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            align-items: center;
+            padding: 0.5rem 0;
             color: var(--text-primary);
-        }
-
-        .rubric-item:last-child {
-            border-bottom: none;
         }
 
         .rubric-name {
-            font-weight: 600;
-        }
-
-        .rubric-weight {
-            color: var(--text-tertiary);
             font-weight: 700;
-        }
-
-        /* ============ Must Include Checklist ============ */
-        .must-include {
-            background: var(--bg-elevated);
-            border-radius: 8px;
-            padding: 0.75rem;
-            margin: 0.75rem 0;
-        }
-
-        .must-include-title {
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .must-include-item {
-            display: flex;
-            align-items: center;
-            padding: 0.35rem 0;
-            font-size: 0.8rem;
+            font-size: 0.8125rem;
             color: var(--text-primary);
         }
 
-        .must-include-status {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border-radius: 3px;
-            background: var(--accent-success);
-            color: white;
-            text-align: center;
-            line-height: 18px;
-            font-size: 0.7rem;
-            font-weight: 900;
-            margin-right: 0.75rem;
-            flex-shrink: 0;
+        .rubric-score {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            color: var(--accent-primary);
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 8px;
+            font-size: 0.875rem;
         }
 
-        .must-include-item.missed .must-include-status {
-            background: var(--accent-danger);
+        .detail-reasoning {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            line-height: 1.6;
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.02);
+            border-left: 3px solid var(--accent-rose);
+        }
+
+        .must-include-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--text-primary);
+            padding: 1.25rem;
+            margin: 1rem 0;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .must-include-title {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.8125rem;
+            padding: 0.6rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            background: var(--bg-primary);
+            border-radius: 4px;
+        }
+
+        .must-include-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            font-weight: 900;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+        }
+
+        .item-met {
+            border-left: 3px solid var(--accent-success);
+            color: var(--accent-success);
+            background: rgba(6, 95, 70, 0.03);
+        }
+
+        .item-missed {
+            border-left: 3px solid var(--accent-danger);
+            color: var(--text-tertiary);
+            opacity: 0.8;
+            background: rgba(190, 18, 60, 0.03);
+            text-decoration: line-through;
         }
 
         /* ============ Agent Performance Label ============ */
@@ -1167,6 +1211,76 @@
 
         .perf-weak {
             color: #dc2626;
+        }
+
+        .agent-output-container {
+            margin: 1.5rem 0;
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
+        }
+
+        .agent-output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: #1e293b;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .agent-output-pre {
+            white-space: pre-wrap;
+            margin: 0;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 0.875rem;
+            padding: 1.25rem;
+            line-height: 1.6;
+            font-family: var(--font-mono);
+        }
+
+        .copy-output-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all var(--transition-fast);
+            font-family: var(--font-body);
+        }
+
+        .copy-output-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #fff;
+        }
+
+        .execution-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem 0;
+            border-top: 1px dashed rgba(0, 0, 0, 0.1);
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        .test-detail-loading {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-tertiary);
+            font-style: italic;
+            font-family: var(--font-heading);
+            font-size: 1.1rem;
         }
 
         /* ============ Leaderboard ============ */
@@ -1337,9 +1451,14 @@
             <h2 class="section-heading">Test Case Breakdown</h2>
             <p class="section-description">Detailed results for all 22 evaluation tests</p>
 
-            <div class="search-container">
+            <div class="search-container" style="display: flex; gap: 1rem;">
                 <input type="text" id="testSearch" class="search-input"
-                    placeholder="Search agents (e.g. 'lateral') or specific tests..." onkeyup="filterTests()">
+                    placeholder="Search agents (e.g. 'lateral') or specific tests..." onkeyup="filterTests()"
+                    style="flex: 1;">
+                <select id="modelFilter" class="search-input" style="width: auto; cursor: pointer;"
+                    onchange="handleModelFilterChange()">
+                    <option value="">Select Model...</option>
+                </select>
             </div>
 
             <div class="accordion" id="testAccordion"></div>
@@ -1347,9 +1466,10 @@
     </div>
 
     <script>
-        // Configuration
-        const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/poemswe/co-researcher/main/evals/benchmark_overview.json';
+        // Configuration - uses relative path for GitHub Pages compatibility
+        const GITHUB_RAW_URL = 'benchmark_overview.json';
         let globalOverview = null;
+        let detailedRuns = {}; // Cache for {run_id: data}
 
         async function loadData() {
             try {
@@ -1359,8 +1479,31 @@
                 globalOverview = await response.json();
                 renderDashboard(globalOverview);
             } catch (error) {
-                console.log('Data not found, showing upload modal');
-                document.getElementById('uploadModal').classList.add('active');
+                // Silent fail or graceful handled elsewhere
+            }
+        }
+
+        async function loadRunDetail(runId) {
+            if (detailedRuns[runId]) return detailedRuns[runId];
+
+            const run = globalOverview.runs.find(r => r.run_id === runId);
+            if (!run || !run.detail_file) return null;
+
+            try {
+                // Try relative path first
+                let response = await fetch(run.detail_file);
+                if (!response.ok) {
+                    // Try GitHub URL construction (naive)
+                    const baseUrl = GITHUB_RAW_URL.split('/').slice(0, -1).join('/');
+                    response = await fetch(`${baseUrl}/${run.detail_file}`);
+                }
+                if (!response.ok) throw new Error('Detail fetch failed');
+
+                const detailData = await response.json();
+                detailedRuns[runId] = detailData;
+                return detailData;
+            } catch (e) {
+                return null;
             }
         }
 
@@ -1383,6 +1526,10 @@
         function updateHeroMetrics(overview, model) {
             const runs = overview.runs || [];
             const latest = runs.filter(r => r.model === model).pop() || runs[runs.length - 1];
+
+            // Trigger detailed render if we switch model
+            if (latest) renderTestAccordion(latest);
+
             const totalTests = latest?.tests_run || 22;
             const overallAvg = latest?.average_score || 0;
             const passCount = latest?.tests_passed || 0;
@@ -1512,22 +1659,26 @@
 
             // 3. Agent Performance Matrix
             const matrixData = {};
-            history.forEach(h => {
+            runs.forEach(h => {
+                if (!h.scores_by_agent) return;
+                const provider = h.model.split(':')[0].toLowerCase();
                 for (const [agent, scores] of Object.entries(h.scores_by_agent)) {
                     if (!matrixData[agent]) matrixData[agent] = {};
-                    matrixData[agent][h.model] = scores.reduce((a, b) => a + b, 0) / scores.length;
+                    matrixData[agent][provider] = scores.reduce((a, b) => a + b, 0) / scores.length;
                 }
             });
 
             document.getElementById('agentMatrix').innerHTML = Object.entries(matrixData)
                 .sort((a, b) => {
-                    const aAvg = Object.values(a[1]).reduce((a, b) => a + b) / Object.values(a[1]).length;
-                    const bAvg = Object.values(b[1]).reduce((a, b) => a + b) / Object.values(b[1]).length;
+                    const aValues = Object.values(a[1]);
+                    const bValues = Object.values(b[1]);
+                    const aAvg = aValues.reduce((a, b) => a + b, 0) / aValues.length;
+                    const bAvg = bValues.reduce((a, b) => a + b, 0) / bValues.length;
                     return bAvg - aAvg;
                 })
                 .map(([agent, scores]) => {
                     const values = Object.values(scores);
-                    const agentAvg = values.reduce((a, b) => a + b) / values.length;
+                    const agentAvg = values.reduce((a, b) => a + b, 0) / values.length;
                     const bestModel = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
 
                     // Star-based Performance Rating
@@ -1546,7 +1697,6 @@
                         perfLabel = '❌';
                         perfClass = 'perf-weak';
                     }
-
                     return `
                         <div class="matrix-row">
                             <div class="agent-name">
@@ -1563,16 +1713,166 @@
                         else className += 'score-below70';
                         return `<div class="${className}">${score.toFixed(1)}</div>`;
                     }).join('')}
-                            <div class="best-model">${bestModel}</div>
+                            <div class="score-cell ${agentAvg >= 90 ? 'score-90plus' : agentAvg >= 80 ? 'score-80to90' : agentAvg >= 70 ? 'score-70to80' : 'score-below70'}" 
+                                 style="display: flex; flex-direction: column; justify-content: center; align-items: center; line-height: 1;">
+                                <div style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; margin-bottom: 2px;">
+                                    ${agentAvg.toFixed(1)}
+                                </div>
+                                <div class="best-model" style="font-size: 0.6rem; color: rgba(255,255,255,0.9); margin-top: 2px;">
+                                    ${bestModel.split(':')[0]}
+                                </div>
+                            </div>
                         </div>
                     `;
                 }).join('');
 
-            // 4. Charts
-            renderCharts(history, latest);
+            // 5. Populate Model Filter
+            const modelSelect = document.getElementById('modelFilter');
+            const currentVal = modelSelect.value;
+            modelSelect.innerHTML = '<option value="">Select Model...</option>' +
+                overview.summary_stats.models.map(m => `<option value="${m}" ${m === currentVal ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
 
-            // 5. Test Accordion
+            // 6. Charts
+            renderCharts(runs, latest);
+
+            // 7. Test Accordion (Default to latest)
             renderTestAccordion(latest);
+        }
+
+        function handleModelFilterChange() {
+            const selectedModel = document.getElementById('modelFilter').value;
+            if (!selectedModel) return;
+
+            // Find latest run for this model
+            const runs = globalOverview.runs.filter(r => r.model === selectedModel);
+            if (runs.length > 0) {
+                renderTestAccordion(runs[runs.length - 1]);
+                updateHeroMetrics(globalOverview, selectedModel);
+            }
+        }
+
+        async function renderTestAccordion(latest) {
+            const accordion = document.getElementById('testAccordion');
+            const agents = Object.keys(latest.scores_by_agent).sort();
+
+            // Show loading state if details not cached
+            if (!detailedRuns[latest.run_id]) {
+                accordion.innerHTML = '<div class="test-detail-loading">Loading specific test performance and agent logs...</div>';
+            }
+
+            // Load details
+            const details = await loadRunDetail(latest.run_id);
+
+            accordion.innerHTML = agents.map((agent, idx) => {
+                const agentScores = latest.scores_by_agent[agent];
+                const avg = agentScores.reduce((a, b) => a + b, 0) / agentScores.length;
+
+                // Filter test details for this agent
+                const agentDetails = details ? details.results.filter(r => r.test_case.agent === agent) : [];
+
+                return `
+                    <div class="accordion-item">
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <div>
+                                <div class="accordion-title">
+                                    ${agent.replace('-', ' ')}
+                                </div>
+                                <div class="accordion-meta">${agentScores.length} tests • Avg: ${avg.toFixed(1)}</div>
+                            </div>
+                            <div class="accordion-toggle">▼</div>
+                        </div>
+                        <div class="accordion-content">
+                            ${agentScores.map((score, i) => {
+                    const detail = agentDetails[i];
+                    const testInfo = detail ? detail.test_case : (testMetadata[agent] ? testMetadata[agent][i] : { name: `Test ${i + 1}`, difficulty: 'Medium' });
+                    const passed = detail ? detail.passed : score >= 70;
+
+                    return `
+                                    <div style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                            <div>
+                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                                                    ${testInfo.name || testInfo.id}
+                                                    <span class="badge badge-${(testInfo.difficulty || 'Medium').toLowerCase()}">${testInfo.difficulty || 'Medium'}</span>
+                                                </div>
+                                                <div style="font-size: 0.875rem; color: var(--text-tertiary);">${latest.model.toUpperCase()} Model • ${latest.run_id}</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-primary);">${score.toFixed(0)}</div>
+                                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">${passed ? '✓ PASS' : '✗ FAIL'}</div>
+                                            </div>
+                                        </div>
+
+                                        ${detail && detail.judge_output && detail.judge_output.overall_justification ? `
+                                            <div class="overall-justification">
+                                                ${detail.judge_output.overall_justification}
+                                            </div>
+                                        ` : ''}
+
+                                        ${detail && detail.judge_output && detail.judge_output.must_include_analysis ? `
+                                            <div class="must-include-container">
+                                                <div class="must-include-title">
+                                                    Checklist Analysis
+                                                    <span style="font-size: 0.65rem; opacity: 0.7;">${detail.judge_output.must_include_analysis.details || ''}</span>
+                                                </div>
+                                                <div class="checklist-grid">
+                                                    ${(detail.judge_output.must_include_analysis.met || []).map(item => `
+                                                        <div class="checklist-item item-met">
+                                                            <span class="must-include-status">✓</span>
+                                                            ${item}
+                                                        </div>
+                                                    `).join('')}
+                                                    ${(detail.judge_output.must_include_analysis.missed || []).map(item => `
+                                                        <div class="checklist-item item-missed">
+                                                            <span class="must-include-status">✗</span>
+                                                            ${item}
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        ` : ''}
+
+                                        ${detail && detail.judge_output && detail.judge_output.rubric_breakdown ? `
+                                            <div class="rubric-profile">
+                                                <div class="rubric-profile-title">Rubric breakdown</div>
+                                                ${Object.entries(detail.judge_output.rubric_breakdown).map(([name, data]) => `
+                                                    <div style="margin-bottom: 1rem;">
+                                                        <div class="rubric-item">
+                                                            <span class="rubric-name">${name.replace(/-/g, ' ').toUpperCase()}</span>
+                                                            <span class="rubric-score">${data.score}/100</span>
+                                                        </div>
+                                                        <div class="detail-reasoning">${data.reasoning}</div>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+
+                                        ${detail && detail.agent_output ? `
+                                            <div class="agent-output-container">
+                                                <div class="agent-output-header">
+                                                    <span>Agent Output</span>
+                                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                                        <span>${(detail.agent_output.length / 1024).toFixed(1)} KB</span>
+                                                        <button class="copy-output-btn" onclick="copyToClipboard(this, \`${detail.id}\`)">Copy</button>
+                                                    </div>
+                                                </div>
+                                                <pre id="output-${detail.id}" class="agent-output-pre">${detail.agent_output.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                                            </div>
+                                        ` : ''}
+
+                                        ${detail && detail.execution_metadata ? `
+                                            <div class="execution-meta">
+                                                <div class="execution-meta-item">⏱️ ${detail.execution_metadata.duration_seconds.toFixed(2)}s execution</div>
+                                                <div class="execution-meta-item">🏷️ Source: ${detail.execution_metadata.source}</div>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                `;
+                }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderCharts(history, latest) {
@@ -1597,30 +1897,27 @@
             const trendCanvas = document.getElementById('trendChart');
             const ctx = trendCanvas.getContext('2d');
 
-            // Create gradients for each model
-            const gradients = {
-                claude: ctx.createLinearGradient(0, 0, 0, 300),
-                codex: ctx.createLinearGradient(0, 0, 0, 300),
-                gemini: ctx.createLinearGradient(0, 0, 0, 300)
-            };
-
-            gradients.claude.addColorStop(0, 'rgba(30, 58, 138, 0.2)');
-            gradients.claude.addColorStop(1, 'rgba(30, 58, 138, 0)');
-
-            gradients.codex.addColorStop(0, 'rgba(146, 64, 14, 0.2)');
-            gradients.codex.addColorStop(1, 'rgba(146, 64, 14, 0)');
-
-            gradients.gemini.addColorStop(0, 'rgba(6, 95, 70, 0.2)');
-            gradients.gemini.addColorStop(1, 'rgba(6, 95, 70, 0)');
-
             const colors = {
-                claude: { border: '#1e3a8a', bg: gradients.claude },
-                codex: { border: '#92400e', bg: gradients.codex },
-                gemini: { border: '#065f46', bg: gradients.gemini }
+                claude: { border: '#1e3a8a', bg: 'rgba(30, 58, 138, 0.2)' },
+                codex: { border: '#92400e', bg: 'rgba(146, 64, 14, 0.2)' },
+                gemini: { border: '#065f46', bg: 'rgba(6, 95, 70, 0.2)' },
+                fallback: [
+                    { border: '#be123c', bg: 'rgba(190, 18, 60, 0.2)' },
+                    { border: '#6d28d9', bg: 'rgba(109, 40, 217, 0.2)' },
+                    { border: '#0369a1', bg: 'rgba(3, 105, 161, 0.2)' }
+                ]
             };
 
-            Object.entries(models).forEach(([key, data]) => {
-                const color = colors[key] || { border: '#1e3a8a', bg: gradients.claude };
+            let fallbackIdx = 0;
+            Object.entries(models).forEach(([modelId, data]) => {
+                const provider = modelId.split(':')[0].toLowerCase();
+                let color = colors[provider];
+
+                if (!color) {
+                    color = colors.fallback[fallbackIdx % colors.fallback.length];
+                    fallbackIdx++;
+                }
+
                 data.borderColor = color.border;
                 data.backgroundColor = color.bg;
                 data.borderWidth = 3;
@@ -1750,85 +2047,6 @@
             });
         }
 
-        function renderTestAccordion(latest) {
-            const accordion = document.getElementById('testAccordion');
-            const agents = Object.keys(latest.scores_by_agent).sort();
-
-            accordion.innerHTML = agents.map((agent, idx) => {
-                const scores = latest.scores_by_agent[agent];
-                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                const agentTests = testMetadata[agent] || [];
-
-                return `
-                    <div class="accordion-item">
-                        <div class="accordion-header" onclick="toggleAccordion(this)">
-                            <div>
-                                <div class="accordion-title">
-                                    ${agent.replace('-', ' ')}
-                                    ${agentTests.length > 0 && scores.length > 0 ? `
-                                        <span class="badge badge-${agentTests[0].difficulty.toLowerCase()}">${agentTests[0].difficulty}</span>
-                                    ` : ''}
-                                </div>
-                                <div class="accordion-meta">${scores.length} tests • Avg: ${avg.toFixed(1)}</div>
-                            </div>
-                            <div class="accordion-toggle">▼</div>
-                        </div>
-                        <div class="accordion-content">
-                            ${scores.map((score, i) => {
-                    const testInfo = agentTests[i] || { name: `Test ${i + 1}`, rubrics: '', mustInclude: [], difficulty: 'Unknown' };
-                    return `
-                                    <div style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                                            <div>
-                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
-                                                    ${testInfo.name}
-                                                    <span class="badge badge-${testInfo.difficulty.toLowerCase()}">${testInfo.difficulty}</span>
-                                                </div>
-                                                <div style="font-size: 0.875rem; color: var(--text-tertiary);">${latest.model} Model</div>
-                                            </div>
-                                            <div style="text-align: right;">
-                                                <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-primary);">${score.toFixed(0)}</div>
-                                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">${score >= 70 ? '✓ PASS' : '✗ FAIL'}</div>
-                                            </div>
-                                        </div>
-
-                                        ${testInfo.rubrics ? `
-                                            <div class="rubric-profile">
-                                                <div class="rubric-profile-title">Rubric Profile</div>
-                                                ${testInfo.rubrics.split(',').map(rubric => {
-                        const match = rubric.trim().match(/(.+?)\s*\((\d+)%\)/);
-                        if (match) {
-                            return `
-                                                            <div class="rubric-item">
-                                                                <span class="rubric-name">${match[1]}</span>
-                                                                <span class="rubric-weight">${match[2]}%</span>
-                                                            </div>
-                                                        `;
-                        }
-                        return '';
-                    }).join('')}
-                                            </div>
-                                        ` : ''}
-
-                                        ${testInfo.mustInclude && testInfo.mustInclude.length > 0 ? `
-                                            <div class="must-include">
-                                                <div class="must-include-title">Required Behaviors</div>
-                                                ${testInfo.mustInclude.map(behavior => `
-                                                    <div class="must-include-item">
-                                                        <span class="must-include-status">✓</span>
-                                                        <span>${behavior}</span>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                `;
-                }).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
 
         function toggleAccordion(header) {
             header.classList.toggle('open');
@@ -1848,6 +2066,25 @@
                     item.style.display = 'none';
                 }
             });
+        }
+
+        async function copyToClipboard(btn, id) {
+            const text = document.getElementById(`output-${id}`).innerText;
+            try {
+                await navigator.clipboard.writeText(text);
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                btn.style.borderColor = 'var(--accent-success)';
+                btn.style.color = 'var(--accent-success)';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.borderColor = 'rgba(255,255,255,0.2)';
+                    btn.style.color = '#fff';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard');
+            }
         }
     </script>
 </body>
