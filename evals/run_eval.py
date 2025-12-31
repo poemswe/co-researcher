@@ -155,13 +155,19 @@ def extract_difficulty(test_path: Path) -> str:
 
 
 def extract_justification(judge_output: str) -> str:
-    """Extract overall justification from judge output"""
     import re
-    if match := re.search(r"OVERALL_JUSTIFICATION:\s*(.+?)(?=\n\n|\n[A-Z_]+:|$)", judge_output, re.DOTALL):
-        return match.group(1).strip()
-    # Fallback: use first paragraph
-    lines = judge_output.strip().split("\n\n")
-    return lines[0] if lines else ""
+    
+    if match := re.search(r"OVERALL_JUSTIFICATION:\s*(.+?)(?=\n\n|\nRESULT:|$)", judge_output, re.DOTALL):
+        justification = match.group(1).strip()
+        if not justification.startswith(("ANALYTICAL", "OUTPUT", "RESEARCH", "DESIGN")):
+            return justification
+    
+    for pattern in [r"REASONING:\s*(.+?)(?=\n\n|\n[A-Z_]+:|$)", 
+                    r"JUSTIFICATION:\s*(.+?)(?=\n\n|\n[A-Z_]+:|$)"]:
+        if match := re.search(pattern, judge_output, re.DOTALL):
+            return match.group(1).strip()
+    
+    return ""
 
 
 def save_benchmark_v2(reports, model: str, run_id: str):

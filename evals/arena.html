@@ -1283,6 +1283,77 @@
             font-size: 1.1rem;
         }
 
+        .test-case-item {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .test-case-item:last-child {
+            border-bottom: none;
+        }
+
+        .test-case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            background: var(--bg-primary);
+            transition: background var(--transition-fast);
+        }
+
+        .test-case-header:hover {
+            background: var(--bg-elevated);
+        }
+
+        .test-case-header.open {
+            background: var(--bg-elevated);
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .test-case-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .test-case-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .test-case-score {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .test-case-score-value {
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+        }
+
+        .test-case-status {
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .test-case-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .test-case-content.open {
+            max-height: 2000px;
+        }
+
+        .test-case-details {
+            padding: 1.25rem;
+            background: var(--bg-secondary);
+        }
+
         /* ============ Leaderboard ============ */
         .leaderboard {
             display: grid;
@@ -1476,7 +1547,14 @@
             </div>
 
             <div class="radar-section-container">
-                <h2 class="section-heading">Agent Capability Signature</h2>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+                    <h2 class="section-heading" style="margin-bottom: 0;">Agent Capability Signature</h2>
+                    <select id="radarModelFilter" class="search-input"
+                        style="width: auto; cursor: pointer; padding: 0.5rem 1rem; font-size: 0.875rem;"
+                        onchange="handleRadarModelChange()">
+                    </select>
+                </div>
                 <div class="chart-card-sidebar">
                     <div style="flex: 1; position: relative;">
                         <canvas id="radarChart"></canvas>
@@ -1787,15 +1865,25 @@
 
             // 5. Populate Model Filter
             const modelSelect = document.getElementById('modelFilter');
+            const radarModelSelect = document.getElementById('radarModelFilter');
             const currentVal = modelSelect.value;
-            modelSelect.innerHTML = '<option value="">Select Model...</option>' +
-                overview.summary_stats.models.map(m => `<option value="${m}" ${m === currentVal ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
+            const modelOptions = overview.summary_stats.models.map(m => `<option value="${m}" ${m === currentVal ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
+            modelSelect.innerHTML = '<option value="">Select Model...</option>' + modelOptions;
+            radarModelSelect.innerHTML = modelOptions;
 
-            // 6. Charts
             renderCharts(runs, latest);
 
-            // 7. Test Accordion (Default to latest)
             renderTestAccordion(latest);
+        }
+
+        function handleRadarModelChange() {
+            const selectedModel = document.getElementById('radarModelFilter').value;
+            if (!selectedModel) return;
+
+            const runs = globalOverview.runs.filter(r => r.model === selectedModel);
+            if (runs.length > 0) {
+                updateRadarChart(runs[runs.length - 1]);
+            }
         }
 
         function handleModelFilterChange() {
@@ -1828,7 +1916,6 @@
                 const agentScores = latest.scores_by_agent[agent];
                 const avg = agentScores.reduce((a, b) => a + b, 0) / agentScores.length;
 
-                // Filter test details for this agent
                 const agentDetails = details && details.test_results ? details.test_results.filter(r => r.agent === agent) : [];
 
                 return `
@@ -1847,88 +1934,92 @@
                     const detail = agentDetails[i];
                     const testInfo = detail ? { name: detail.test_name, difficulty: detail.difficulty, id: detail.test_case } : (testMetadata[agent] ? testMetadata[agent][i] : { name: `Test ${i + 1}`, difficulty: 'Medium' });
                     const passed = detail ? detail.passed : score >= 70;
+                    const testId = detail ? detail.id : `${agent}-${i}`;
 
                     return `
-                                    <div style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                                            <div>
-                                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
-                                                    ${testInfo.name || testInfo.id}
-                                                    <span class="badge badge-${(testInfo.difficulty || 'Medium').toLowerCase()}">${testInfo.difficulty || 'Medium'}</span>
-                                                </div>
-                                                <div style="font-size: 0.875rem; color: var(--text-tertiary);">${latest.model.toUpperCase()} Model • ${latest.run_id}</div>
-                                            </div>
-                                            <div style="text-align: right;">
-                                                <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-primary);">${score.toFixed(0)}</div>
-                                                <div style="font-size: 0.75rem; color: var(--text-tertiary);">${passed ? '✓ PASS' : '✗ FAIL'}</div>
-                                            </div>
+                                <div class="test-case-item">
+                                    <div class="test-case-header" onclick="toggleTestCase(this)">
+                                        <div class="test-case-info">
+                                            <span class="test-case-name">${testInfo.name || testInfo.id}</span>
+                                            <span class="badge badge-${(testInfo.difficulty || 'Medium').toLowerCase()}">${testInfo.difficulty || 'Medium'}</span>
                                         </div>
-
-                                        ${detail && detail.judge_output && detail.judge_output.overall_justification ? `
-                                            <div class="overall-justification">
-                                                ${detail.judge_output.overall_justification}
-                                            </div>
-                                        ` : ''}
-
-                                        ${detail && detail.judge_output && detail.judge_output.must_include_analysis ? `
-                                            <div class="must-include-container">
-                                                <div class="must-include-title">
-                                                    Checklist Analysis
-                                                    <span style="font-size: 0.65rem; opacity: 0.7;">${detail.judge_output.must_include_analysis.details || ''}</span>
-                                                </div>
-                                                <div class="checklist-grid">
-                                                    ${(detail.judge_output.must_include_analysis.met || []).map(item => `
-                                                        <div class="checklist-item item-met">
-                                                            <span class="must-include-status">✓</span>
-                                                            ${item}
-                                                        </div>
-                                                    `).join('')}
-                                                    ${(detail.judge_output.must_include_analysis.missed || []).map(item => `
-                                                        <div class="checklist-item item-missed">
-                                                            <span class="must-include-status">✗</span>
-                                                            ${item}
-                                                        </div>
-                                                    `).join('')}
-                                                </div>
-                                            </div>
-                                        ` : ''}
-
-                                        ${detail && detail.judge_output && detail.judge_output.rubric_breakdown ? `
-                                            <div class="rubric-profile">
-                                                <div class="rubric-profile-title">Rubric breakdown</div>
-                                                ${Object.entries(detail.judge_output.rubric_breakdown).map(([name, data]) => `
-                                                    <div style="margin-bottom: 1rem;">
-                                                        <div class="rubric-item">
-                                                            <span class="rubric-name">${name.replace(/-/g, ' ').toUpperCase()}</span>
-                                                            <span class="rubric-score">${data.score}/100</span>
-                                                        </div>
-                                                        <div class="detail-reasoning">${data.reasoning}</div>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        ` : ''}
-
-                                        ${detail && detail.agent_output ? `
-                                            <div class="agent-output-container">
-                                                <div class="agent-output-header">
-                                                    <span>Agent Output</span>
-                                                    <div style="display: flex; gap: 10px; align-items: center;">
-                                                        <span>${(detail.agent_output.length / 1024).toFixed(1)} KB</span>
-                                                        <button class="copy-output-btn" onclick="copyToClipboard(this, \`${detail.id}\`)">Copy</button>
-                                                    </div>
-                                                </div>
-                                                <pre id="output-${detail.id}" class="agent-output-pre">${detail.agent_output.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-                                            </div>
-                                        ` : ''}
-
-                                        ${detail && detail.execution_metadata ? `
-                                            <div class="execution-meta">
-                                                <div class="execution-meta-item">⏱️ ${detail.execution_metadata.duration_seconds.toFixed(2)}s execution</div>
-                                                <div class="execution-meta-item">🏷️ Source: ${detail.execution_metadata.source}</div>
-                                            </div>
-                                        ` : ''}
+                                        <div class="test-case-score">
+                                            <span class="test-case-score-value">${score.toFixed(0)}</span>
+                                            <span class="test-case-status" style="color: ${passed ? 'var(--accent-success)' : 'var(--accent-danger)'};">${passed ? '✓ PASS' : '✗ FAIL'}</span>
+                                            <span class="accordion-toggle" style="font-size: 0.875rem;">▼</span>
+                                        </div>
                                     </div>
-                                `;
+                                    <div class="test-case-content">
+                                        <div class="test-case-details">
+                                            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 1rem;">${latest.model.toUpperCase()} • ${latest.run_id}</div>
+
+                                            ${detail && detail.judge_output && detail.judge_output.overall_justification && !detail.judge_output.overall_justification.startsWith('ANALYTICAL') && !detail.judge_output.overall_justification.startsWith('OUTPUT') ? `
+                                                <div class="overall-justification">
+                                                    ${detail.judge_output.overall_justification}
+                                                </div>
+                                            ` : ''}
+
+                                            ${detail && detail.judge_output && detail.judge_output.must_include_analysis ? `
+                                                <div class="must-include-container">
+                                                    <div class="must-include-title">
+                                                        Checklist Analysis
+                                                        <span style="font-size: 0.65rem; opacity: 0.7;">${detail.judge_output.must_include_analysis.details || ''}</span>
+                                                    </div>
+                                                    <div class="checklist-grid">
+                                                        ${(detail.judge_output.must_include_analysis.met || []).map(item => `
+                                                            <div class="checklist-item item-met">
+                                                                <span class="must-include-status">✓</span>
+                                                                ${item}
+                                                            </div>
+                                                        `).join('')}
+                                                        ${(detail.judge_output.must_include_analysis.missed || []).map(item => `
+                                                            <div class="checklist-item item-missed">
+                                                                <span class="must-include-status">✗</span>
+                                                                ${item}
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                </div>
+                                            ` : ''}
+
+                                            ${detail && detail.judge_output && detail.judge_output.rubric_breakdown ? `
+                                                <div class="rubric-profile">
+                                                    <div class="rubric-profile-title">Rubric breakdown</div>
+                                                    ${Object.entries(detail.judge_output.rubric_breakdown).map(([name, data]) => `
+                                                        <div style="margin-bottom: 1rem;">
+                                                            <div class="rubric-item">
+                                                                <span class="rubric-name">${name.replace(/-/g, ' ').toUpperCase()}</span>
+                                                                <span class="rubric-score">${data.score}/100</span>
+                                                            </div>
+                                                            <div class="detail-reasoning">${data.reasoning}</div>
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            ` : ''}
+
+                                            ${detail && detail.agent_output ? `
+                                                <div class="agent-output-container">
+                                                    <div class="agent-output-header">
+                                                        <span>Agent Output</span>
+                                                        <div style="display: flex; gap: 10px; align-items: center;">
+                                                            <span>${(detail.agent_output.length / 1024).toFixed(1)} KB</span>
+                                                            <button class="copy-output-btn" onclick="copyToClipboard(this, \`${testId}\`)">Copy</button>
+                                                        </div>
+                                                    </div>
+                                                    <pre id="output-${testId}" class="agent-output-pre">${detail.agent_output.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                                                </div>
+                                            ` : ''}
+
+                                            ${detail && detail.execution_metadata ? `
+                                                <div class="execution-meta">
+                                                    <div class="execution-meta-item">⏱️ ${detail.execution_metadata.duration_seconds.toFixed(2)}s</div>
+                                                    <div class="execution-meta-item">🏷️ ${detail.execution_metadata.source}</div>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
                 }).join('')}
                         </div>
                     </div>
@@ -2129,6 +2220,13 @@
             header.classList.toggle('open');
             header.nextElementSibling.classList.toggle('open');
             header.querySelector('.accordion-toggle').classList.toggle('open');
+        }
+
+        function toggleTestCase(header) {
+            header.classList.toggle('open');
+            header.nextElementSibling.classList.toggle('open');
+            const toggle = header.querySelector('.accordion-toggle');
+            if (toggle) toggle.classList.toggle('open');
         }
 
         function filterTests() {
