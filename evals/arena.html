@@ -1390,7 +1390,56 @@
         .leaderboard-delta.positive {
             color: var(--accent-success);
         }
+
+        /* ============ Footer ============ */
+        .site-footer {
+            background: var(--bg-secondary);
+            border-top: 3px double var(--accent-primary);
+            padding: 2rem 0;
+            margin-top: var(--spacing-2xl);
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-xl);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: color var(--transition-fast);
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-secondary);
+        }
+
+        .footer-copyright {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+        }
+
+        .footer-copyright a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .footer-copyright a:hover {
+            text-decoration: underline;
+        }
     </style>
+
 </head>
 
 <body>
@@ -1465,11 +1514,26 @@
         </section>
     </div>
 
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/poemswe/co-researcher" target="_blank">GitHub</a>
+                <a href="http://linkedin.com/in/poepoemyintswe/" target="_blank">LinkedIn</a>
+            </div>
+            <div class="footer-copyright">
+                &copy; 2025 <a href="http://linkedin.com/in/poepoemyintswe/" target="_blank">Poe Poe Myint Swe</a>
+                &bull; MIT License
+            </div>
+        </div>
+    </footer>
+
     <script>
         // Configuration - uses relative path for GitHub Pages compatibility
         const GITHUB_RAW_URL = 'benchmark_overview.json';
         let globalOverview = null;
-        let detailedRuns = {}; // Cache for {run_id: data}
+        let detailedRuns = {};
+        let radarChartInstance = null;
 
         async function loadData() {
             try {
@@ -1490,13 +1554,7 @@
             if (!run || !run.detail_file) return null;
 
             try {
-                // Try relative path first
-                let response = await fetch(run.detail_file);
-                if (!response.ok) {
-                    // Try GitHub URL construction (naive)
-                    const baseUrl = GITHUB_RAW_URL.split('/').slice(0, -1).join('/');
-                    response = await fetch(`${baseUrl}/${run.detail_file}`);
-                }
+                const response = await fetch(run.detail_file);
                 if (!response.ok) throw new Error('Detail fetch failed');
 
                 const detailData = await response.json();
@@ -1506,6 +1564,7 @@
                 return null;
             }
         }
+
 
         function handleFileUpload(event) {
             const file = event.dataTransfer?.files?.[0] || event.target?.files?.[0];
@@ -1743,13 +1802,15 @@
             const selectedModel = document.getElementById('modelFilter').value;
             if (!selectedModel) return;
 
-            // Find latest run for this model
             const runs = globalOverview.runs.filter(r => r.model === selectedModel);
             if (runs.length > 0) {
-                renderTestAccordion(runs[runs.length - 1]);
+                const latestForModel = runs[runs.length - 1];
+                renderTestAccordion(latestForModel);
                 updateHeroMetrics(globalOverview, selectedModel);
+                updateRadarChart(latestForModel);
             }
         }
+
 
         async function renderTestAccordion(latest) {
             const accordion = document.getElementById('testAccordion');
@@ -1983,7 +2044,8 @@
             });
             const radarData = Object.values(latest.scores_by_agent).map(s => s.reduce((a, b) => a + b, 0) / s.length);
 
-            new Chart(document.getElementById('radarChart'), {
+            if (radarChartInstance) radarChartInstance.destroy();
+            radarChartInstance = new Chart(document.getElementById('radarChart'), {
                 type: 'radar',
                 data: {
                     labels: radarLabels,
@@ -2045,6 +2107,21 @@
                     }
                 }
             });
+        }
+
+        function updateRadarChart(run) {
+            if (!radarChartInstance) return;
+
+            const radarLabels = Object.keys(run.scores_by_agent).map(l => {
+                const name = l.replace('-', ' ');
+                return name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            });
+            const radarData = Object.values(run.scores_by_agent).map(s => s.reduce((a, b) => a + b, 0) / s.length);
+
+            radarChartInstance.data.labels = radarLabels;
+            radarChartInstance.data.datasets[0].label = run.model.charAt(0).toUpperCase() + run.model.slice(1);
+            radarChartInstance.data.datasets[0].data = radarData;
+            radarChartInstance.update();
         }
 
 
