@@ -45,6 +45,7 @@ python run_eval.py literature-reviewer -v            # Verbose output
 | | contradictory-evidence | Hard |
 | | fallacy-detection | Medium |
 | | methodology-critique | Medium |
+| **grant-writer** | grant-proposal | Medium |
 | **hypothesis-explorer** | hypothesis-formulation | Medium |
 | | unfalsifiable-claim | Hard |
 | | variable-mapping | Hard |
@@ -71,7 +72,7 @@ The framework uses specialized rubrics based on the agent's task domain:
 | `analytical-quality` | Critical Analyzer, Lateral Thinker | Logical rigor, fallacy detection |
 | `quantitative-quality` | Quantitative Analyst | Statistical accuracy, method choice |
 | `qualitative-quality` | Qualitative Researcher | Coding strategy, thematic depth |
-| `design-quality` | Hypothesis Explorer, Ethics Expert | Feasibility, ethics, variables |
+| `design-quality` | Hypothesis Explorer, Ethics Expert, Grant Writer | Feasibility, ethics, variables |
 | `research-quality` | Literature Reviewer, Peer Reviewer | Citation chain, gap analysis |
 | `output-structure` | All | Organization, clarity (Fixed 25%) |
 

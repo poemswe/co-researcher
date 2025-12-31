@@ -234,6 +234,19 @@ Quick lookup guide for all 23 test cases, their specifications, and evaluation r
 
 ---
 
+## Grant-Writer (1 test)
+
+### 1. Grant Proposal Structure
+- **Difficulty**: Medium
+- **Focus**: Structuring a funding proposal from a research concept
+- **Rubric Profile**: Design Quality (50%), Analytical Quality (30%), Output Structure (20%)
+- **Task**: Structure an NSF grant proposal for an AI wildfire prediction project
+- **Must Identify**: Significance, independent specific aims, feasibility/limitations, NSF alignment
+- **Timeout**: 900s
+- **Key Skill**: Transform technical idea into fundable narrative arc
+
+---
+
 ## Rubric Reference
 
 ### 1. Analytical Quality (125 lines)
@@ -308,6 +321,7 @@ Quick lookup guide for all 23 test cases, their specifications, and evaluation r
 - Hypothesis-Explorer (all 3 tests)
 - Ethics-Expert (1 test)
 - Lateral-Thinker (1 test)
+- Grant-Writer (1 test)
 
 **Key Criteria**:
 - Testable hypothesis formulation
@@ -418,6 +432,7 @@ This distribution is intentional - PhD-level agents should struggle with hard te
 | Simpson's Paradox | Quantitative (80%) | Analytical (20%) | Quant-Analyst |
 | Stat Method Selection | Quantitative (75%) | Output (25%) | Quant-Analyst |
 | Privacy Risk | Design (75%) | Reasoning (25%) | Ethics-Expert |
+| Grant Proposal | Design (50%) | Analytical (30%) | Grant-Writer |
 | Manuscript Critique | Analytical (75%) | Output (25%) | Peer-Reviewer |
 
 ---
