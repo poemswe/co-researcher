@@ -102,17 +102,72 @@
       },
       "pass_rate": 90.9,
       "detail_file": "test_results_detail/run_20251230_221026.json"
+    },
+    {
+      "run_id": "run_20260102_175215",
+      "timestamp": "2026-01-02T17:57:55.552069Z",
+      "model": "gemini:gemini-3-flash-preview",
+      "model_version": "gemini-3-flash-preview",
+      "tests_run": 22,
+      "tests_passed": 21,
+      "average_score": 92.2,
+      "scores_by_agent": {
+        "critical-analyzer": [
+          99.2,
+          97.0,
+          95.2
+        ],
+        "ethics-expert": [
+          91.5
+        ],
+        "grant-writer": [
+          91.8
+        ],
+        "hypothesis-explorer": [
+          85.9,
+          87.5,
+          86.0
+        ],
+        "lateral-thinker": [
+          100.0,
+          96.2,
+          96.6
+        ],
+        "peer-reviewer": [
+          98.5
+        ],
+        "qual-researcher": [
+          92.2,
+          93.5,
+          86.2
+        ],
+        "literature-reviewer": [
+          97.0,
+          60.1,
+          85.0,
+          97.4
+        ],
+        "quant-analyst": [
+          98.0,
+          98.2,
+          96.0
+        ]
+      },
+      "pass_rate": 95.5,
+      "detail_file": "test_results_detail/run_20260102_175215.json"
     }
   ],
   "summary_stats": {
-    "total_runs": 2,
+    "total_runs": 3,
     "models": [
       "claude:opus",
-      "codex:gpt-5.2 xhigh"
+      "codex:gpt-5.2 xhigh",
+      "gemini:gemini-3-flash-preview"
     ],
     "agents": [
       "critical-analyzer",
       "ethics-expert",
+      "grant-writer",
       "hypothesis-explorer",
       "lateral-thinker",
       "literature-reviewer",
@@ -120,6 +175,6 @@
       "qual-researcher",
       "quant-analyst"
     ],
-    "overall_pass_rate": 90.9
+    "overall_pass_rate": 92.4
   }
 }
