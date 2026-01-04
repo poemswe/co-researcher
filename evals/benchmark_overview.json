@@ -7,8 +7,8 @@
       "model": "claude:opus",
       "model_version": "opus",
       "tests_run": 22,
-      "tests_passed": 20,
-      "average_score": 84.5,
+      "tests_passed": 22,
+      "average_score": 86.3,
       "scores_by_agent": {
         "critical-analyzer": [
           91.0,
@@ -34,8 +34,8 @@
         ],
         "literature-reviewer": [
           75.0,
-          62.0,
-          69.8,
+          81.4,
+          82.0,
           81.0
         ],
         "qual-researcher": [
@@ -49,7 +49,7 @@
           92.8
         ]
       },
-      "pass_rate": 90.9,
+      "pass_rate": 100.0,
       "detail_file": "test_results_detail/run_20251230_221024.json"
     },
     {
@@ -175,6 +175,6 @@
       "qual-researcher",
       "quant-analyst"
     ],
-    "overall_pass_rate": 92.4
+    "overall_pass_rate": 95.5
   }
 }

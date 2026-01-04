@@ -1851,14 +1851,9 @@
                         else className += 'score-below70';
                         return `<div class="${className}">${score.toFixed(1)}</div>`;
                     }).join('')}
-                            <div class="score-cell ${agentAvg >= 90 ? 'score-90plus' : agentAvg >= 80 ? 'score-80to90' : agentAvg >= 70 ? 'score-70to80' : 'score-below70'}" 
-                                 style="display: flex; flex-direction: column; justify-content: center; align-items: center; line-height: 1;">
-                                <div style="font-weight: 700; font-family: var(--font-mono); font-size: 1.1rem; margin-bottom: 2px;">
-                                    ${agentAvg.toFixed(1)}
-                                </div>
-                                <div class="best-model" style="font-size: 0.6rem; color: rgba(255,255,255,0.9); margin-top: 2px;">
-                                    ${bestModel.split(':')[0]}
-                                </div>
+                            <div class="score-cell" 
+                                 style="display: flex; justify-content: center; align-items: center; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                                ${bestModel}
                             </div>
                         </div>
                     `;
