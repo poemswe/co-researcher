@@ -13,7 +13,7 @@ from pathlib import Path
 
 EVALS_DIR = Path(__file__).parent.parent
 CLI_CONFIG = {
-    "claude": {"base": ["--print", "--verbose"], "tools": ["--tools", "WebSearch,WebFetch,Read"]},
+    "claude": {"base": ["--print", "--verbose"], "tools": ["--tools", "WebSearch,WebFetch,Read,Grep,Glob"]},
     "gemini": {"base": [], "tools": ["--yolo"], "stdin": True},
     "codex": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
     "gpt": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
@@ -119,7 +119,7 @@ def parse_test_case(path: Path) -> TestCase:
 
 def find_cli(provider: str) -> Path | None:
     paths = {
-        "claude": ["/usr/local/bin/claude", os.path.expanduser("~/.claude/local/claude")],
+        "claude": ["/usr/local/bin/claude", os.path.expanduser("~/.claude/local/claude"), os.path.expanduser("~/.local/bin/claude")],
         "gemini": ["/usr/local/bin/gemini", os.path.expanduser("~/.gemini/bin/gemini")],
         "codex": ["/usr/local/bin/codex", os.path.expanduser("~ ~/.codex/bin/codex")],
         "gpt": ["/usr/local/bin/codex", os.path.expanduser("~/.codex/bin/codex")],
