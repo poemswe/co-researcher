@@ -32,8 +32,8 @@ I'll analyze your query and build an execution plan using specialized agents.
 2. **Select Agents**: Choose optimal agent sequence
 3. **Generate Plan**: Build execution DAG
 4. **Present Plan**: Show workflow to user
-5. **Execute**: Run agents sequentially
-6. **Synthesize**: Integrate outputs
+5. **Execute**: Run agents sequentially, save outputs
+6. **Synthesize**: Integrate outputs, save final report
 
 I'm analyzing your research topic to determine the optimal workflow...
 
@@ -41,6 +41,63 @@ I'm analyzing your research topic to determine the optimal workflow...
 [I will generate this based on your query]
 
 **Proceed?** (yes/no/modify)
+
+---
+
+## File Writing Protocol
+
+**CRITICAL**: After plan approval, you MUST save all research outputs to files.
+
+### Step 1: Create Output Directory
+After user approves the plan, immediately:
+1. Use Bash to create timestamped directory: `mkdir -p research-outputs/$(date +%Y-%m-%d_%H-%M-%S)`
+2. Store the full path in a variable for subsequent file writes
+3. Confirm directory creation to user
+
+### Step 2: Write Research Plan
+Use Write tool to create `00-research-plan.md` in the output directory:
+```markdown
+# Research Plan: [Query]
+
+**Created**: [Timestamp]
+**Query**: [User's research query]
+
+## Selected Agents
+1. [agent-name] - [purpose]
+2. [agent-name] - [purpose]
+...
+
+## Execution Plan
+[Full plan as presented to user]
+```
+
+### Step 3: Write Agent Outputs
+After EACH agent completes execution:
+1. Use Write tool to save output to `{NN}-{agent-name}.md`
+   - NN = sequential number (01, 02, 03, etc.)
+   - Example: `01-literature-reviewer.md`, `02-critical-analyzer.md`
+2. Format:
+```markdown
+# {Agent Name} Output
+
+**Agent**: {agent-name}
+**Executed**: [Timestamp]
+
+---
+
+[Full agent output - preserve all markdown formatting]
+```
+
+### Step 4: Write Final Synthesis
+After synthesis completes:
+1. Use Write tool to save to `final-synthesis.md`
+2. Include complete synthesis with all sections
+3. Add metadata header with timestamp and agents used
+
+### Error Handling
+- If directory creation fails: warn user and continue with conversation-only output
+- If Write fails: log error, notify user, continue execution
+- Partial results are acceptable if execution is interrupted
 
 ---
 

@@ -230,4 +230,43 @@ For each key conclusion:
 [Formatted citations]
 ```
 
-**CHECKPOINT**: Review synthesis for accuracy and completeness with user.
+### File Writing Instructions
+
+**CRITICAL**: After generating the synthesis, you MUST write it to a file.
+
+**Context Detection**:
+1. If called from `/research` orchestration: output directory path will be available in context
+2. If called standalone: create new directory
+
+**Standalone Mode** (synthesis invoked directly, not via /research):
+1. Create directory: `mkdir -p research-synthesis-outputs/$(date +%Y-%m-%d_%H-%M-%S)`
+2. Write synthesis to `synthesis-report.md` in that directory
+3. Notify user of file location
+
+**Orchestrated Mode** (called from /research):
+1. Use the output directory path from research orchestration context
+2. Write synthesis to `final-synthesis.md` in that directory
+3. Add metadata header:
+```markdown
+# Research Synthesis: [Topic]
+
+**Completed**: [Timestamp]
+**Agents Used**: [List of agents that contributed]
+**Research Query**: [Original query]
+
+---
+
+[Rest of synthesis content]
+```
+
+**File Writing**:
+- Use Write tool to save the complete synthesis
+- Preserve all markdown formatting
+- Include all sections (Executive Summary through References)
+- Confirm file creation to user with full path
+
+**Error Handling**:
+- If Write fails: notify user, provide synthesis in conversation
+- If directory doesn't exist in orchestrated mode: create it with fallback naming
+
+**CHECKPOINT**: Review synthesis for accuracy and completeness with user, and confirm file has been written.
