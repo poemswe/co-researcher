@@ -20,11 +20,26 @@ Eight domain-expert agents provide PhD-level research capabilities:
 
 ### Platform Integration
 
+**Current Version: v1.0.1**
+
 The system supports three CLI platforms through unified agent definitions:
 
-- **Claude Code**: Native commands in `commands/` and agent definitions in `agents/`
-- **Gemini CLI**: Official extension format via `gemini-extension.json` and centralized commands
-- **OpenAI Codex**: Repository skills in `.codex/skills/` and manifest in `AGENTS.md`
+- **Claude Code**: 
+  - Installation: `claude plugins install poemswe/co-researcher` or `claude plugins link .`
+  - Native commands in `commands/` and agent definitions in `agents/`
+  - Plugin manifest: `.claude-plugin/plugin.json`
+
+- **Gemini CLI**: 
+  - Installation: `gemini extension add https://github.com/poemswe/co-researcher` or `gemini extension link .`
+  - Official extension format via `gemini-extension.json` and centralized commands
+  - Context file: `GEMINI.md`
+
+- **OpenAI Codex**: 
+  - Installation: Link or copy repository to `~/.codex/skills/co-researcher`
+  - Repository skills in `.codex/skills/` and manifest in `AGENTS.md`
+  - Skills available via `$` prefix (e.g., `$research`)
+
+All platforms share the same agent definitions but use platform-specific command wrappers.
 
 ### Research Quality Principles
 

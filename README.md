@@ -1,6 +1,71 @@
-# Co-Researcher (v1.0.0)
+# Co-Researcher (v1.0.1)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, and **OpenAI Codex**.
+
+## 📦 Installation
+
+### Claude Code
+
+**Option 1: From Marketplace (Recommended)**
+```bash
+claude plugins install poemswe/co-researcher
+```
+
+**Option 2: From Local Directory**
+```bash
+cd /path/to/co-researcher
+claude plugins link .
+```
+
+**Verification:**
+```bash
+claude plugins list
+Type /research to test
+```
+
+### Gemini CLI
+
+**Option 1: From GitHub**
+```bash
+gemini extension add https://github.com/poemswe/co-researcher
+```
+
+**Option 2: From Local Directory**
+```bash
+cd /path/to/co-researcher
+gemini extension link .
+```
+
+**Verification:**
+```bash
+gemini extension list
+Type /research to test
+```
+
+### VS Code (via Codex)
+
+**From Local Directory:**
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/poemswe/co-researcher.git
+   cd co-researcher
+   ```
+
+2. Link to Codex workspace:
+   ```bash
+   mkdir -p ~/.codex/skills
+   ln -s "$(pwd)" ~/.codex/skills/co-researcher
+   ```
+
+3. Verify in VS Code:
+   - Open Command Palette (Cmd+Shift+P)
+   - Type "Codex: List Skills"
+   - Look for `$research` in the available skills
+
+**Alternative: Direct Copy**
+```bash
+cp -r /path/to/co-researcher ~/.codex/skills/
+```
 
 ## 🚀 Native Platform Parity
 
