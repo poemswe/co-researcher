@@ -2,7 +2,7 @@
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, and **OpenAI Codex**.
 
-## 📦 Installation
+## Installation
 
 ### Claude Code
 
@@ -67,7 +67,7 @@ Type /research to test
 cp -r /path/to/co-researcher ~/.codex/skills/
 ```
 
-## 🚀 Native Platform Parity
+## Native Platform Parity
 
 The suite provides native research commands across all supported platforms:
 
@@ -81,7 +81,7 @@ The suite provides native research commands across all supported platforms:
 | **Ethical Risk** | `/ethics` | `/ethics` | `$ethics` |
 | **Grant Proposal** | `/grant` | `/grant` | `$grant` |
 
-## 🧠 Research Orchestration Engine
+## Research Orchestration Engine
 
 The `/research` command features intelligent agent orchestration that automatically:
 - Analyzes your research question
@@ -135,7 +135,7 @@ Pre-configured agent combinations for common scenarios:
 /research "topic" --template=comprehensive # Deep multi-method analysis
 ```
 
-## 🎓 Specialized Agents
+## Specialized Agents
 
 The suite includes 9 PhD-level agents, each governed by **Systemic Honesty** principles (no fabrication, accuracy over count).
 
@@ -149,7 +149,7 @@ The suite includes 9 PhD-level agents, each governed by **Systemic Honesty** pri
 8.  **Ethics Expert**: IRB compliance, privacy risks, and data ethics.
 9.  **Grant Writer**: Grant proposal development & funding strategy.
 
-## 🧪 Evaluation Framework
+## Evaluation Framework
 
 Verify agent performance with the v2.0 benchmark system:
 
@@ -180,9 +180,9 @@ Two-file architecture for scalability and transparency:
 ```bash
 open evals/arena.html
 ```
-View model leaderboards, capability matrices, and score trends with star-based performance ratings (⭐⭐⭐/⭐⭐/⭐/❌).
+View model leaderboards, capability matrices, and score trends with performance ratings (Excellent/Good/Fair/Poor).
 
-## 🏗️ Architecture
+## Architecture
 
 - `agents/`: Core agent definitions (Markdown).
 - `commands/`: Unified platform commands (.md for Claude, .toml for Gemini).
@@ -190,5 +190,5 @@ View model leaderboards, capability matrices, and score trends with star-based p
 - `evals/`: 22 test cases and Python runner.
 - manifests: `gemini-extension.json`, `AGENTS.md`, `GEMINI.md`.
 
-## 📜 License
+## License
 MIT
