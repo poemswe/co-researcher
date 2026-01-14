@@ -27,7 +27,7 @@ Type /research to test
 
 **Option 1: From GitHub**
 ```bash
-gemini extension add https://github.com/poemswe/co-researcher
+gemini extension install https://github.com/poemswe/co-researcher
 ```
 
 **Option 2: From Local Directory**
