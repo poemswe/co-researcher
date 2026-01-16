@@ -12,7 +12,7 @@ tools:
   - Read
   - Grep
   - Glob
-  - Delegate
+  - delegate_to_agent
 model: sonnet
 ---
 

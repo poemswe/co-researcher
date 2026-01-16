@@ -10,7 +10,7 @@ tools:
   - WebSearch
   - WebFetch
   - Read
-  - Delegate
+  - delegate_to_agent
 model: sonnet
 ---
 
