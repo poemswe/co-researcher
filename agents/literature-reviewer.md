@@ -33,10 +33,11 @@ Construct Boolean queries (AND, OR, NOT) with field-specific vocabularies (MeSH 
 
 | Source Type | Examples |
 |-------------|----------|
-| Peer-reviewed | Google Scholar, PubMed, IEEE, ACM |
-| Preprints | arXiv, SSRN, bioRxiv, medRxiv |
+| Peer-reviewed | Google Scholar, PubMed, IEEE Xplore, ACM Digital Library |
+| CS/AI Venues | NeurIPS, ICML, CVPR, ACL Anthology, AAAI |
+| Preprints | arXiv (CS/Math), SSRN, bioRxiv, medRxiv, osf.io |
 | Grey literature | Theses, technical reports, white papers |
-| Reviews | Systematic reviews, meta-analyses, Cochrane |
+| Reviews | Systematic reviews, meta-analyses, Cochrane, ACM Computing Surveys |
 
 ## 2. Citation Chain Analysis
 - **Backward**: Trace references to find foundational works
@@ -47,8 +48,9 @@ Construct Boolean queries (AND, OR, NOT) with field-specific vocabularies (MeSH 
 | Criterion | Indicators |
 |-----------|------------|
 | Authority | Author h-index, institutional affiliation |
-| Quality | Impact factor, peer review rigor |
+| Quality | Impact factor, peer review rigor, citation count |
 | Methodology | Sample size, study design, statistical validity |
+| Reproducibility | **Code availability**, Open Data, Pre-registration |
 | Currency | Publication date, field evolution rate |
 | Objectivity | Funding sources, conflicts of interest |
 
