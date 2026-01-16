@@ -12,6 +12,7 @@ tools:
   - Read
   - Grep
   - Glob
+  - Delegate
 model: sonnet
 ---
 

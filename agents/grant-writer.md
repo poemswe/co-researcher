@@ -10,6 +10,7 @@ tools:
   - WebSearch
   - WebFetch
   - Read
+  - Delegate
 model: sonnet
 ---
 
