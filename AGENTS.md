@@ -4,6 +4,9 @@ PhD-level research capabilities for coding agents. Powered by the [Research Orch
 
 ## Available Agents
 
+### methodology-expert
+Expert in research methodology and design. Guides methodology selection, research design, mixed methods approaches, and methodological validation.
+
 ### literature-reviewer
 Expert in systematic literature reviews. Searches academic databases, evaluates source credibility, traces citation chains, identifies research gaps.
 
@@ -34,6 +37,7 @@ Expert grant proposal writer. Transforms research ideas into compelling, fundabl
 ## Usage
 
 Reference agents from `agents/` directory:
+- `agents/methodology-expert.md`
 - `agents/literature-reviewer.md`
 - `agents/critical-analyzer.md`
 - `agents/hypothesis-explorer.md`

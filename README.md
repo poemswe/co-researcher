@@ -74,6 +74,7 @@ The suite provides native research commands across all supported platforms:
 | Feature | Command (Claude) | Slash (Gemini) | Skill (Codex) |
 |---------|------------------|----------------|---------------|
 | **Research Project** | `/research` | `/research` | `$research` |
+| **Methodology** | `/methodology` | `/methodology` | `$methodology` |
 | **Critical Analysis** | `/analyze` | `/analyze` | `$analyze` |
 | **Bibliography** | `/bibliography` | `/bibliography` | `$bibliography` |
 | **Synthesize** | `/synthesize` | `/synthesize` | `$synthesize` |
@@ -137,17 +138,18 @@ Pre-configured agent combinations for common scenarios:
 
 ## Specialized Agents
 
-The suite includes 9 PhD-level agents, each governed by **Systemic Honesty** principles (no fabrication, accuracy over count).
+The suite includes 10 PhD-level agents, each governed by **Systemic Honesty** principles (no fabrication, accuracy over count).
 
-1.  **Literature Reviewer**: Systematic reviews & citation chain analysis.
-2.  **Critical Analyzer**: Fallacy detection & bias identification.
-3.  **Hypothesis Explorer**: Variable mapping & experimental design.
-4.  **Lateral Thinker**: Cross-domain analogies & first-principles.
-5.  **Qualitative Researcher**: Thematic analysis & coding strategies.
-6.  **Quantitative Analyst**: Statistical power & effect size interpretation.
-7.  **Peer Reviewer**: Academic manuscript & proposal critique.
-8.  **Ethics Expert**: IRB compliance, privacy risks, and data ethics.
-9.  **Grant Writer**: Grant proposal development & funding strategy.
+1.  **Methodology Expert**: Research design, methodology selection, and validation.
+2.  **Literature Reviewer**: Systematic reviews & citation chain analysis.
+3.  **Critical Analyzer**: Fallacy detection & bias identification.
+4.  **Hypothesis Explorer**: Variable mapping & experimental design.
+5.  **Lateral Thinker**: Cross-domain analogies & first-principles.
+6.  **Qualitative Researcher**: Thematic analysis & coding strategies.
+7.  **Quantitative Analyst**: Statistical power & effect size interpretation.
+8.  **Peer Reviewer**: Academic manuscript & proposal critique.
+9.  **Ethics Expert**: IRB compliance, privacy risks, and data ethics.
+10. **Grant Writer**: Grant proposal development & funding strategy.
 
 ## Evaluation Framework
 
