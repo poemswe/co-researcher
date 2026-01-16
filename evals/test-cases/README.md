@@ -1,6 +1,6 @@
 # Test Cases & Rubrics Reference
 
-Quick lookup guide for all 23 test cases, their specifications, and evaluation rubrics.
+Quick lookup guide for all 26 test cases, their specifications, and evaluation rubrics.
 
 ---
 
@@ -221,6 +221,37 @@ Quick lookup guide for all 23 test cases, their specifications, and evaluation r
 
 ---
 
+## Methodology-Expert (3 tests)
+
+### 1. Methodology Selection
+- **Difficulty**: Medium
+- **Focus**: Matching research questions to optimal methodology
+- **Rubric Profile**: Design Quality (70%), Analytical Quality (30%)
+- **Task**: Recommend methodology for understanding remote work well-being
+- **Must Identify**: Question classification, 2+ candidate methodologies, design specification, quality standards
+- **Timeout**: 900s
+- **Key Skill**: Map research question to appropriate method family
+
+### 2. Mixed Methods Design
+- **Difficulty**: Hard
+- **Focus**: Designing integrated mixed-methods studies
+- **Rubric Profile**: Design Quality (75%), Analytical Quality (25%)
+- **Task**: Design mixed-methods study evaluating workplace wellness program
+- **Must Identify**: Mixed methods design type, qual/quant components, integration point, timeline
+- **Timeout**: 900s
+- **Key Skill**: Integrate qualitative and quantitative approaches coherently
+
+### 3. Methodology Validation
+- **Difficulty**: Medium
+- **Focus**: Evaluating whether proposed design fits research question
+- **Rubric Profile**: Analytical Quality (70%), Design Quality (30%)
+- **Task**: Critique a proposed correlational study design and identify flaws
+- **Must Identify**: 2+ validity threats, explain impact, propose improvements
+- **Timeout**: 900s
+- **Key Skill**: Assess design-question fit and measurement validity
+
+---
+
 ## Peer-Reviewer (1 test)
 
 ### 1. Manuscript Critique
@@ -432,6 +463,9 @@ This distribution is intentional - PhD-level agents should struggle with hard te
 | Simpson's Paradox | Quantitative (80%) | Analytical (20%) | Quant-Analyst |
 | Stat Method Selection | Quantitative (75%) | Output (25%) | Quant-Analyst |
 | Privacy Risk | Design (75%) | Reasoning (25%) | Ethics-Expert |
+| Methodology Selection | Design (70%) | Analytical (30%) | Methodology-Expert |
+| Mixed Methods Design | Design (75%) | Analytical (25%) | Methodology-Expert |
+| Methodology Validation | Analytical (70%) | Design (30%) | Methodology-Expert |
 | Grant Proposal | Design (50%) | Analytical (30%) | Grant-Writer |
 | Manuscript Critique | Analytical (75%) | Output (25%) | Peer-Reviewer |
 
