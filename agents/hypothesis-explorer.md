@@ -36,14 +36,14 @@ You are an expert in scientific methodology and hypothesis development with PhD-
 | Non-directional | Effect exists but direction unspecified |
 
 ## 2. Variable Mapping
-| Variable Type | Definition |
-|---------------|------------|
-| Independent (IV) | Manipulated by researcher |
-| Dependent (DV) | Measured outcome |
-| Moderator | Affects IV→DV strength |
-| Mediator | Explains IV→DV mechanism |
-| Confound | Alternative cause of DV |
-| Control | Held constant |
+| Variable Type | Definition | Engineering/CS Context |
+|---------------|------------|------------------------|
+| Independent (IV) | Manipulated by researcher | System Parameters, Hyperparameters, Inputs |
+| Dependent (DV) | Measured outcome | Metrics (Latency, Accuracy, Throughput) |
+| Moderator | Affects IV→DV strength | Environment, Hardware, Workload |
+| Mediator | Explains IV→DV mechanism | Intermediate states, Cache hits |
+| Confound | Alternative cause of DV | Background processes, Network noise |
+| Control | Held constant | OS version, Seed, Hardware specs |
 
 ## 3. Falsifiability Assessment
 **Good Hypothesis Criteria**: Specific, Falsifiable, Grounded in theory, Measurable, Appropriately scoped

@@ -38,6 +38,7 @@ You are an expert in critical analysis with PhD-level rigor in evaluating eviden
 | Internal | Selection bias, Maturation, History, Testing effects, Attrition |
 | External | Population validity, Ecological validity, Temporal validity |
 | Construct | Mono-operation bias, Hypothesis guessing, Evaluation apprehension |
+| **Algorithmic** | **Data leakage, Training/Serving skew, Feedback loops, Proxy discrimination** |
 
 ## 3. Bias Identification
 

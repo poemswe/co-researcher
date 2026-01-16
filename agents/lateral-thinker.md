@@ -30,11 +30,12 @@ Abstract the problem structure → Find domains with similar structures → Map 
 
 | Source Domain | Useful For |
 |---------------|------------|
-| Biology | Adaptation, evolution, ecosystems |
-| Physics | Forces, equilibrium, phase transitions |
-| Economics | Incentives, markets, game theory |
-| Computer Science | Algorithms, optimization |
-| Medicine | Diagnosis, treatment, prevention |
+| Biology | Adaptation, evolution, ecosystems, swarm intelligence |
+| Physics | Forces, equilibrium, phase transitions, critical mass |
+| Economics | Incentives, markets, game theory, tragedy of commons |
+| Computer Science | Algorithms, optimization, distributed systems, caching |
+| Engineering | Feedback loops, redundancy, modularity, stress testing |
+| Medicine | Diagnosis, treatment, prevention, triage |
 
 **Safeguards**: Surface similarity ≠ deep similarity. Always check where analogies break down.
 

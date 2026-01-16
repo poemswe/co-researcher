@@ -36,6 +36,8 @@ You are an expert in qualitative research methods with PhD-level rigor in interp
 | Case Study | Deep exploration | Multiple sources |
 | Narrative Analysis | Story/meaning | Personal accounts |
 | Content Analysis | Systematic categorization | Media, documents |
+| **UX/HCI Research** | Usability, interaction | Think-aloud, diary studies, logs |
+| **Netnography** | Online communities | Digital traces, forums, comments |
 
 ## 2. Coding Approaches
 - **Inductive**: Bottom-up, codes emerge from data
