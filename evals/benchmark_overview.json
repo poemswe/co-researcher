@@ -198,8 +198,7 @@
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
-      "gemini",
-      "gemini:gemini-3-flash-preview"
+      "gemini"
     ],
     "agents": [
       "critical-analyzer",
