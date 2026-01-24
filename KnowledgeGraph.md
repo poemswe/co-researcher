@@ -69,7 +69,7 @@ All platforms share the same agent definitions but use platform-specific command
 
 **Testing Infrastructure:**
 - Parallel execution via `run_eval.py` with multi-threading (`-j` flag)
-- Provider-specific tool enablement for platform parity
+- Provider-specific tool enablement for agents; judge runs tool-free for isolation
 - Persistent result indexing in `results/latest/index.md`
 - Extended model targeting: `--model "provider:version reasoning-level"`
 

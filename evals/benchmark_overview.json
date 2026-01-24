@@ -155,13 +155,50 @@
       },
       "pass_rate": 95.5,
       "detail_file": "test_results_detail/run_20260102_175215.json"
+    },
+    {
+      "run_id": "run_20260116_165130",
+      "timestamp": "2026-01-16T16:55:26.709668Z",
+      "model": "gemini",
+      "model_version": "gemini-3-flash-preview",
+      "tests_run": 3,
+      "tests_passed": 3,
+      "average_score": 93.1,
+      "scores_by_agent": {
+        "methodology-expert": [
+          93.3,
+          90.0,
+          96.0
+        ]
+      },
+      "pass_rate": 100.0,
+      "detail_file": "test_results_detail/run_20260116_165130.json"
+    },
+    {
+      "run_id": "run_20260124_150435",
+      "timestamp": "2026-01-24T15:08:09.539365Z",
+      "model": "claude:opus",
+      "model_version": "opus",
+      "tests_run": 3,
+      "tests_passed": 3,
+      "average_score": 84.9,
+      "scores_by_agent": {
+        "methodology-expert": [
+          80.8,
+          87.0,
+          87.0
+        ]
+      },
+      "pass_rate": 100.0,
+      "detail_file": "test_results_detail/run_20260124_150435.json"
     }
   ],
   "summary_stats": {
-    "total_runs": 3,
+    "total_runs": 5,
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
+      "gemini",
       "gemini:gemini-3-flash-preview"
     ],
     "agents": [
@@ -171,10 +208,11 @@
       "hypothesis-explorer",
       "lateral-thinker",
       "literature-reviewer",
+      "methodology-expert",
       "peer-reviewer",
       "qual-researcher",
       "quant-analyst"
     ],
-    "overall_pass_rate": 95.5
+    "overall_pass_rate": 95.8
   }
 }
