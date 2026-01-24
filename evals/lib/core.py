@@ -127,7 +127,7 @@ def find_cli(provider: str) -> Path | None:
     return next((Path(p) for p in paths.get(provider, []) if Path(p).exists()), None)
 
 
-def run_cli(model: str, prompt: str, timeout: int = 600) -> tuple[bool, str, str]:
+def run_cli(model: str, prompt: str, timeout: int = 600, use_tools: bool = True) -> tuple[bool, str, str]:
     parts = model.split(":")
     provider = parts[0].lower()
     model_str = parts[1] if len(parts) > 1 else None
@@ -149,7 +149,8 @@ def run_cli(model: str, prompt: str, timeout: int = 600) -> tuple[bool, str, str
     if extra and provider == "codex":
         cmd += ["-c", f"reasoning=\"{extra}\""]
         
-    cmd += config["tools"]
+    if use_tools:
+        cmd += config["tools"]
     
     stdin_input = prompt if config.get("stdin") else None
     if stdin_input:
@@ -242,7 +243,7 @@ def evaluate_output(tc: TestCase, agent_result: AgentResult, model: str = "claud
         "source": "automated_run"
     }
 
-    success, judge_out, error = run_cli(model, prompt, 600)
+    success, judge_out, error = run_cli(model, prompt, 600, use_tools=False)
     if not success:
         rpt.judge_output = f"Judge error: {error}"
         return rpt
