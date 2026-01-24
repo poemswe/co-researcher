@@ -20,7 +20,7 @@ Eight domain-expert agents provide PhD-level research capabilities:
 
 ### Platform Integration
 
-**Current Version: v1.0.1**
+**Current Version: v1.1.0**
 
 The system supports three CLI platforms through unified agent definitions:
 

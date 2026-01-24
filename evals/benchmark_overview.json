@@ -6,9 +6,9 @@
       "timestamp": "2025-12-30T22:16:50.370056Z",
       "model": "claude:opus",
       "model_version": "opus",
-      "tests_run": 22,
-      "tests_passed": 22,
-      "average_score": 86.3,
+      "tests_run": 25,
+      "tests_passed": 25,
+      "average_score": 85.8,
       "scores_by_agent": {
         "critical-analyzer": [
           91.0,
@@ -47,6 +47,11 @@
           91.0,
           92.5,
           92.8
+        ],
+        "methodology-expert": [
+          80.8,
+          87.0,
+          87.0
         ]
       },
       "pass_rate": 100.0,
@@ -160,28 +165,10 @@
       },
       "pass_rate": 96.0,
       "detail_file": "test_results_detail/run_20260102_175215.json"
-    },
-    {
-      "run_id": "run_20260124_150435",
-      "timestamp": "2026-01-24T15:08:09.539365Z",
-      "model": "claude:opus",
-      "model_version": "opus",
-      "tests_run": 3,
-      "tests_passed": 3,
-      "average_score": 84.9,
-      "scores_by_agent": {
-        "methodology-expert": [
-          80.8,
-          87.0,
-          87.0
-        ]
-      },
-      "pass_rate": 100.0,
-      "detail_file": "test_results_detail/run_20260124_150435.json"
     }
   ],
   "summary_stats": {
-    "total_runs": 4,
+    "total_runs": 3,
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
