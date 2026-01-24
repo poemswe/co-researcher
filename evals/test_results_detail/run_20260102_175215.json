@@ -1,6 +1,6 @@
 {
   "run_id": "run_20260102_175215",
-  "timestamp": "2026-01-02T17:57:55.552069Z",
+  "timestamp": "2026-01-16T16:55:26.709668Z",
   "model": "gemini:gemini-3-flash-preview",
   "model_version": "gemini-3-flash-preview",
   "test_results": [
@@ -1244,6 +1244,166 @@
       },
       "execution_metadata": {
         "duration_seconds": 254.7149338722229,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "gemini_methodology-expert_methodology-selection_20260116",
+      "agent": "methodology-expert",
+      "test_case": "methodology-selection",
+      "test_name": "Methodology Selection",
+      "difficulty": "Medium",
+      "score": 93.3,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "design-quality": {
+          "weight": 70,
+          "score": 93
+        },
+        "analytical-quality": {
+          "weight": 30,
+          "score": 94
+        }
+      },
+      "agent_output": "### Methodological Guidance: The Lived Experience of Remote Work and Well-being in a Small Team\n\n**Question Classification**: **Exploratory and Mechanism-focused**. The inquiry seeks to understand the \"how\" and \"why\" of a subjective phenomenon (well-being) within a specific context (remote work), prioritizing the \"lived experience\" (depth) over statistical prevalence (breadth).\n\n**Candidate Methodologies**:\n1. **Interpretative Phenomenological Analysis (IPA)** - Focuses on how individuals make sense of their major life experiences. - **Pros**: Deepest insight into \"lived experience.\" - **Cons**: Extremely resource-intensive; typically recommended for samples of N=3 to 6. Analyzing 15 cases at IPA depth is often prohibitive for a single researcher.\n2. **Reflexive Thematic Analysis (TA)** - A systematic framework for identifying, analyzing, and reporting patterns (themes) across a dataset. - **Pros**: Highly practical and flexible for N=15. Allows for both inductive (data-driven) and deductive (theory-driven) insights. - **Cons**: Risk of being \"thin\" or descriptive if the researcher does not engage in deep interpretive work.\n3. **Qualitative Case Study** - Investigates a contemporary phenomenon within its real-life context, especially when boundaries between phenomenon and context are not clearly evident. - **Pros**: Ideal for a \"bounded system\" like your 15-person team. - **Cons**: Requires strict boundary setting to avoid data saturation issues.\n\n**Recommended Approach**: **Qualitative Case Study using Semi-Structured Interviews and Reflexive Thematic Analysis (Braun & Clarke framework).**\n\nThis design offers the best balance of rigor and practicality. By treating your team as a \"case,\" you can look for patterns that define the group's culture while using Thematic Analysis to ensure the \"lived experience\" of individuals is not lost in the aggregate.\n\n**Design Specification**:\n- **Participants**: **Census Sampling** (all 15 team members). This ensures no one is excluded, which is vital for team morale in a small group.\n- **Data Collection**: **Semi-Structured Interviews** (45\u201360 minutes). Use an interview guide with open-ended questions: \"Walk me through a typical Tuesday,\" \"Tell me about a time you felt most connected/disconnected,\" and \"How do you decide when the workday is over?\"\n- **Analysis**: **Inductive Thematic Analysis**. Follow the six-phase Braun & Clarke process: (1) Familiarization, (2) Initial Coding, (3) Generating Themes, (4) Reviewing Themes, (5) Defining/Naming Themes, (6) Reporting.\n- **Quality Standards**: **SRQR** (Standards for Reporting Qualitative Research) and **Member Reflective Sessions** (sharing initial findings with the team to see if they resonate).\n\n**Validity Assessment**:\n- **Threat: Power Dynamics/Social Desirability**. If you are the manager, employees may self-censor negative experiences for fear of being perceived as \"unfit\" for remote work.\n- **Mitigation**: Use a neutral third-party interviewer if possible. If not, explicitly frame the study as \"process improvement\" rather than \"performance evaluation\" and provide anonymized summaries.\n- **Threat: Confirmation Bias**. You may only see themes that align with your own experience of remote work.\n- **Mitigation**: Maintain a **Reflexivity Journal** to document your own biases throughout the process.\n\n**Timeline & Feasibility**:\n- **Interviewing**: 2 weeks (3 interviews/day).\n- **Transcription/Coding**: 3 weeks.\n- **Theme Development**: 2 weeks.\n- **Total**: ~7 weeks for a high-rigor internal report.\n\n**Methodological Limitations**:\n- **Non-Generalizability**: Results are specific to your team's unique culture and cannot be used to predict the well-being of remote workers in other industries or larger firms.\n- **No Causal Inference**: This methodology cannot prove that remote work *caused* a change in well-being (which would require a pre/post longitudinal quantitative design), only how it is *experienced* as a factor.\n\n<checkpoint>\n- Would you like to refine the interview guide to focus on specific aspects like \"digital exhaustion\" or \"social isolation\"?\n- Should we discuss the trade-offs of using an anonymous open-ended survey instead of interviews to mitigate the power dynamic issue?\n- Do you need guidance on specific qualitative software (e.g., NVivo, MAXQDA, or manual tagging) for N=15?\n</checkpoint>\n",
+      "judge_output": {
+        "evaluation": "The response is of high professional quality, providing a rigorous yet practical framework for a small-team study. It balances the depth of qualitative inquiry with the realities of organizational constraints. The inclusion of reflexive thematic analysis and specific validity mitigations for power dynamics shows a sophisticated understanding of qualitative methodology. All task requirements were met with clarity and precision.",
+        "rubric_breakdown": {
+          "design-quality": {
+            "weight": 70,
+            "score": 93,
+            "reasoning": "The design is highly feasible, providing a realistic 7-week timeline for a single researcher. It identifies critical qualitative \"confounds\" such as power dynamics and confirmation bias, offering practical mitigation (reflexivity journals, third-party interviewing). While it addresses the specific ethical risks of manager-employee research, it lacks detail on formal consent protocols (informed consent, right to withdraw), though it mentions anonymization. The design is optimized for the specific context (census sampling for a small team)."
+          },
+          "analytical-quality": {
+            "weight": 30,
+            "score": 94,
+            "reasoning": "The agent demonstrates excellent logical rigor, correctly identifying that IPA is unsuitable for N=15 while TA/Case Study is optimal. It avoids the fallacy of overclaiming by explicitly noting the lack of causal inference and generalizability. The counterargument strength is high, presenting three distinct methodologies with pros/cons before justifying the recommendation. It correctly identifies the hidden assumption that the requester might be the manager."
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Question classification",
+            "At least 2 candidate methodologies with clear reasoning",
+            "Recommended approach with justification",
+            "Specific design specification (sampling",
+            "data collection",
+            "analysis)",
+            "Quality standards relevant to chosen methodology"
+          ],
+          "missed": [],
+          "details": "Covered 7/7 required elements"
+        },
+        "overall_justification": "The response is of high professional quality, providing a rigorous yet practical framework for a small-team study. It balances the depth of qualitative inquiry with the realities of organizational constraints. The inclusion of reflexive thematic analysis and specific validity mitigations for power dynamics shows a sophisticated understanding of qualitative methodology. All task requirements were met with clarity and precision."
+      },
+      "execution_metadata": {
+        "duration_seconds": 26.499621152877808,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "gemini_methodology-expert_methodology-validation_20260116",
+      "agent": "methodology-expert",
+      "test_case": "methodology-validation",
+      "test_name": "Methodology Validation",
+      "difficulty": "Medium",
+      "score": 90.0,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "analytical-quality": {
+          "weight": 70,
+          "score": 94
+        },
+        "design-quality": {
+          "weight": 30,
+          "score": 81
+        }
+      },
+      "agent_output": "### Methodological Guidance: Personality Traits and Remote Work Success\n\n**Question Classification**: **Relational / Predictive**\nThis research seeks to identify associations between stable individual differences (personality) and an outcome variable (remote work success). It is not testing a causal intervention but rather examining predictive validity.\n\n**Candidate Methodologies**:\n\n1.  **Cross-Sectional Self-Report Survey (Current Plan)**\n    *   *Fit:* High. Standard for trait-outcome research when objective data is unavailable.\n    *   *Pros:* Feasible within 3 months; high statistical power (N=500).\n    *   *Cons:* **High risk of Common Method Variance (CMV)**. Personality traits (e.g., Neuroticism, Conscientiousness) systematically bias self-ratings of performance. Single-item DV has poor psychometric properties.\n\n2.  **Multi-Source Design (Worker + Supervisor)**\n    *   *Fit:* Superior. \"Success\" is rated by an observer, removing self-report bias.\n    *   *Pros:* Drastically increases validity of the \"Performance\" construct.\n    *   *Cons:* Recruitment is difficult; matching dyads reduces sample size significantly; privacy concerns.\n\n3.  **Experience Sampling Method (ESM)**\n    *   *Fit:* Moderate. Measures daily fluctuations in \"success\" (focus, mood).\n    *   *Pros:* High ecological validity; separates trait vs. state.\n    *   *Cons:* High participant burden; dropout risk; complex analysis (multilevel modeling).\n\n**Recommended Approach**: **Enhanced Cross-Sectional Survey**\n*Justification:* Given the 3-month timeline, a multi-source design is likely too risky for recruitment. A cross-sectional survey is sound *if and only if* you replace the single-item measure with validated scales and control for method variance.\n\n**Design Specification**:\n\n*   **Participants**:\n    *   **N=500** is adequate for linear regression (Green\u2019s rule: $N \\geq 50 + 8k$).\n    *   **Sampling:** Stratified sampling is preferred over convenience to ensure diversity in job roles (e.g., tech vs. admin) which moderate the personality-performance link.\n*   **Measurement (Critical Upgrade)**:\n    *   **IV (Personality):** Big Five Inventory (BFI-2-S or IPIP-50). *Do not use TIPI (10-item) if you have 30 minutes.*\n    *   **DV (Success - Multidimensional):** \"Success\" is not just performance. Use a composite:\n        1.  **Task Performance:** *Individual Work Performance Questionnaire (IWPQ)* - Short Form.\n        2.  **Remote Competence:** *E-Work Self-Efficacy Scale* (measures digital/remote confidence).\n        3.  **Well-being:** *Oldenburg Burnout Inventory* (disengagement/exhaustion subscales).\n*   **Controls**:\n    *   Job Autonomy (critical moderator).\n    *   Home Environment (dedicated office space vs. shared).\n    *   Remote Tenure.\n*   **Analysis**:\n    *   **Hierarchical Linear Regression**: Step 1 (Controls), Step 2 (Big Five).\n    *   **Common Method Variance Check**: Harman\u2019s single-factor test or use of a marker variable (theoretical unrelated construct).\n\n**Validity Assessment**:\n\n*   **Construct Validity (Major Threat):** The single item \"Rate your job performance\" suffers from the **Dunning-Kruger effect** and **Social Desirability Bias**. Replacing it with the IWPQ improves reliability.\n*   **Common Method Bias:** Since the same person rates their personality (IV) and performance (DV), correlations will be inflated. (e.g., A Conscientious person may rate their performance strictly, while a Narcissist rates it leniently).\n*   **Sampling Bias:** Remote workers recruited online (e.g., MTurk/Prolific) may be \"professional survey takers.\" Use strict attention checks.\n\n**Timeline & Feasibility**:\n*   **Recruitment (Weeks 1-6):** Aggressive distribution required for N=500.\n*   **Data Cleaning (Week 7):** Expect 10-15% careless responding; over-recruit to N=600.\n*   **Analysis (Weeks 8-10):** Straightforward regression.\n*   **Feasibility:** High. The 30-minute estimated length is actually *too long* for just Big Five + Performance. You have \"budget\" to measure variables properly.\n\n**Methodological Limitations**:\n*   **Causality:** You cannot claim personality *causes* success, only predicts it.\n*   **Subjectivity:** You are measuring *perceived* success, not objective output (sales, code commits).\n*   **Survivor Bias:** You are surveying people currently employed remotely; those who failed due to personality mismatch may have already returned to office or been fired.\n",
+      "judge_output": {
+        "evaluation": "This is a high-quality, PhD-level response that drastically improves the user's initial weak proposal. The critique is sharp, using specific terminology (CMV, Dunning-Kruger, Survivor Bias) correctly. The proposed redesign is practical and scientifically rigorous, recommending specific validated scales instead of vague advice. The only notable gap is the lack of explicit ethical planning (consent/IRB), which prevents a perfect design score, but the methodological core is excellent.",
+        "rubric_breakdown": {
+          "analytical-quality": {
+            "weight": 70,
+            "score": 94,
+            "reasoning": "The agent demonstrated excellent analytical rigor. It correctly classified the research question (predictive) and identified specific, high-impact methodological flaws (Common Method Variance, Survivor Bias, poor psychometrics of single-item DVs). The analysis of \"why\" these are problems was logically sound (e.g., explaining how shared method variance inflates correlations). It also effectively analyzed alternative designs (Multi-source, ESM) to justify its recommendation."
+          },
+          "design-quality": {
+            "weight": 30,
+            "score": 81,
+            "reasoning": "The design is methodologically very strong regarding validity and controls. It proposes specific, validated instruments (IWPQ, BFI-2-S) and relevant control variables (job autonomy, home environment). Feasibility analysis is detailed and realistic. However, the score is penalized significantly in the \"Ethical Considerations\" dimension (approx. 10/25 points there), as the output fails to explicitly mention informed consent, data protection, or IRB review for the recommended survey, effectively ignoring the ethics rubric requirements despite the otherwise high quality."
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Identify that the question is correlational/predictive",
+            "Identify at least 2 major methodology problems",
+            "Explain why each problem is problematic for the research question",
+            "Propose specific improvements"
+          ],
+          "missed": [],
+          "details": "Covered 4/4 required elements"
+        },
+        "overall_justification": "This is a high-quality, PhD-level response that drastically improves the user's initial weak proposal. The critique is sharp, using specific terminology (CMV, Dunning-Kruger, Survivor Bias) correctly. The proposed redesign is practical and scientifically rigorous, recommending specific validated scales instead of vague advice. The only notable gap is the lack of explicit ethical planning (consent/IRB), which prevents a perfect design score, but the methodological core is excellent."
+      },
+      "execution_metadata": {
+        "duration_seconds": 48.63175702095032,
+        "source": "automated_run"
+      }
+    },
+    {
+      "id": "gemini_methodology-expert_mixed-methods-design_20260116",
+      "agent": "methodology-expert",
+      "test_case": "mixed-methods-design",
+      "test_name": "Mixed Methods Design",
+      "difficulty": "Medium",
+      "score": 96.0,
+      "passed": true,
+      "threshold": 70,
+      "rubrics": {
+        "design-quality": {
+          "weight": 75,
+          "score": 96
+        },
+        "analytical-quality": {
+          "weight": 25,
+          "score": 94
+        }
+      },
+      "agent_output": "### Methodological Guidance: Evaluation of Workplace Wellness Program\n\n**Question Classification**: \n- **Effectiveness (\"Does it work?\")**: **Causal**. You aim to attribute changes in health/stress specifically to the program, ruling out time or other factors.\n- **Mechanism (\"How?\")**: **Explanatory/Process**. You need to understand the participant experience and active ingredients.\n- **Moderators (\"For whom?\")**: **Relational/Exploratory**. You are looking for differential effects based on demographics or baseline characteristics.\n\n**Candidate Methodologies**:\n1.  **Waitlist Control RCT (Randomized Controlled Trial)** - **Best Fit**. Randomize half the employees to start immediately, half to start after 3 months. The waitlist group serves as a clean control for the 3-month study period. High internal validity.\n2.  **Quasi-Experimental Non-Equivalent Groups** - **Feasible Alternative**. Compare distinct departments (e.g., Sales vs. HR). Easier to implement but introduces selection bias (groups may differ at baseline).\n3.  **Single Group Pre-Post** - **Weakest**. Measure everyone before and after. Impossible to know if improvements were due to the program or just \"time passing\" or \"seasonality.\"\n\n**Recommended Approach**: **Convergent Parallel Mixed Methods Design** embedded within a **Waitlist Control RCT**.\nThis design runs the quantitative trial (for effectiveness) and qualitative interviews (for mechanism) simultaneously to maximize the utility of the 3-month window.\n\n**Design Specification**:\n\n- **Participants (N=200)**:\n    -   **Quantitative**: Randomly assign employees to **Intervention Group (n=100)** and **Waitlist Control Group (n=100)**.\n    -   **Qualitative**: Purposive subsample of **15-20 employees** from the Intervention Group (stratified by high vs. low engagement) for interviews at Month 2.5.\n\n- **Data Collection**:\n    -   **Timeline**: \n        -   **Baseline (T0)**: Survey all 200 employees.\n        -   **Endline (T1)**: Survey all 200 employees (at 3 months).\n        -   **Interviews**: Week 10-12 (Intervention group only).\n    -   **Instruments (Validated)**:\n        -   *Stress*: **Perceived Stress Scale (PSS-10)** (Gold standard for subjective stress).\n        -   *Engagement*: **Utrecht Work Engagement Scale (UWES-9)**.\n        -   *Well-being*: **WHO-5 Well-Being Index** (Brief, sensitive to change).\n        -   *Mechanism*: Semi-structured interview protocol focusing on \"User Experience\" and \"Barriers/Facilitators.\"\n\n- **Analysis**:\n    -   **Effectiveness**: **ANCOVA** (Analysis of Covariance). Compare T1 scores between groups, controlling for T0 scores. This is more powerful than a simple t-test or ANOVA.\n    -   **Mechanism**: **Thematic Analysis** of interview transcripts to identify active ingredients (e.g., \"social connection,\" \"stress reduction techniques\").\n    -   **Moderation (\"For Whom\")**: Add interaction terms (Group \u00d7 Gender, Group \u00d7 Department) to the ANCOVA models.\n\n- **Quality Standards (CONSORT & GRAMMS)**:\n    -   **Randomization**: Use a computer-generated sequence. Conceal allocation until baseline is complete.\n    -   **Integration**: Use a \"Joint Display\" table to compare statistical findings with qualitative themes side-by-side.\n\n**Validity Assessment**:\n-   **Threat**: **Contamination** (Employees in control group talking to intervention group).\n    -   *Mitigation*: Randomize by team/cluster instead of individual if teams work closely, or measure \"contamination\" in the endline survey.\n-   **Threat**: **Attrition** (Drop-out).\n    -   *Mitigation*: Use **Intention-to-Treat (ITT)** analysis (analyze everyone in their original group, regardless of attendance).\n\n**Timeline & Feasibility**:\n-   **Month 1**: Baseline survey (Week 1), Randomization (Week 2), Launch.\n-   **Month 2**: Program running. Recruitment for interviews.\n-   **Month 3**: Conduct interviews (Weeks 9-11). Endline survey (Week 12).\n-   **Feasible?**: Yes. The Waitlist design allows you to offer the program to *everyone* (just delayed for half), which satisfies ethical/fairness concerns in a workplace.\n\n**Methodological Limitations**:\n1.  **Power for Subgroups**: With N=200, you are powered to detect main effects, but likely **underpowered** to statistically detect complex subgroup differences (\"For whom\") unless effects are very large. These findings should be labeled \"exploratory.\"\n2.  **Short Duration**: 3 months measures short-term adoption, not long-term behavior change or ROI.\n",
+      "judge_output": {
+        "evaluation": "The output demonstrates PhD-level methodological expertise. It goes beyond a basic design by incorporating specific validated instruments, sophisticated analysis plans (ANCOVA with interaction terms), and addressing nuanced validity threats like contamination and attrition. The recognition of statistical power limitations for the \"For whom\" question adds significant credibility to the response.",
+        "rubric_breakdown": {
+          "design-quality": {
+            "weight": 75,
+            "score": 96,
+            "reasoning": "The design is exemplary. It selects the most robust method possible (Waitlist RCT) within the constraints (3 months, workplace setting), maximizing internal validity while addressing the ethical issue of denying treatment in a workplace. It specifically addresses threats like contamination and attrition (proposing ITT analysis). It uses validated instruments (PSS-10, UWES-9) rather than vague \"surveys\". The timeline is realistic, and the power limitation for subgroups is correctly identified, demonstrating high methodological competence."
+          },
+          "analytical-quality": {
+            "weight": 25,
+            "score": 94,
+            "reasoning": "The logical progression from research questions to method selection is flawless. The agent effectively categorizes the questions (Causal, Explanatory, Relational) and maps them to appropriate analyses. It logically compares three candidate methodologies (RCT, Quasi, Pre-Post) and justifies the selection of the best fit while acknowledging the limitations (power for subgroups, short duration) of the chosen design."
+          }
+        },
+        "must_include_analysis": {
+          "met": [
+            "Recognition that this requires mixed methods",
+            "Clear mixed methods design type (Convergent Parallel embedded in RCT)",
+            "Quantitative component (PSS-10/UWES-9",
+            "ANCOVA)",
+            "Qualitative component (Purposive subsample",
+            "Interviews)",
+            "Integration point (Joint Display)",
+            "Timeline showing phase sequencing"
+          ],
+          "missed": [],
+          "details": "Covered 8/8 required elements"
+        },
+        "overall_justification": "The output demonstrates PhD-level methodological expertise. It goes beyond a basic design by incorporating specific validated instruments, sophisticated analysis plans (ANCOVA with interaction terms), and addressing nuanced validity threats like contamination and attrition. The recognition of statistical power limitations for the \"For whom\" question adds significant credibility to the response."
+      },
+      "execution_metadata": {
+        "duration_seconds": 44.645477056503296,
         "source": "automated_run"
       }
     }

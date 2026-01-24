@@ -105,12 +105,12 @@
     },
     {
       "run_id": "run_20260102_175215",
-      "timestamp": "2026-01-02T17:57:55.552069Z",
-      "model": "gemini:gemini-3-flash-preview",
+      "timestamp": "2026-01-16T16:55:26.709668Z",
+      "model": "gemini",
       "model_version": "gemini-3-flash-preview",
-      "tests_run": 22,
-      "tests_passed": 21,
-      "average_score": 92.2,
+      "tests_run": 25,
+      "tests_passed": 24,
+      "average_score": 92.3,
       "scores_by_agent": {
         "critical-analyzer": [
           99.2,
@@ -151,28 +151,15 @@
           98.0,
           98.2,
           96.0
-        ]
-      },
-      "pass_rate": 95.5,
-      "detail_file": "test_results_detail/run_20260102_175215.json"
-    },
-    {
-      "run_id": "run_20260116_165130",
-      "timestamp": "2026-01-16T16:55:26.709668Z",
-      "model": "gemini",
-      "model_version": "gemini-3-flash-preview",
-      "tests_run": 3,
-      "tests_passed": 3,
-      "average_score": 93.1,
-      "scores_by_agent": {
+        ],
         "methodology-expert": [
           93.3,
           90.0,
           96.0
         ]
       },
-      "pass_rate": 100.0,
-      "detail_file": "test_results_detail/run_20260116_165130.json"
+      "pass_rate": 96.0,
+      "detail_file": "test_results_detail/run_20260102_175215.json"
     },
     {
       "run_id": "run_20260124_150435",
@@ -194,7 +181,7 @@
     }
   ],
   "summary_stats": {
-    "total_runs": 5,
+    "total_runs": 4,
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
