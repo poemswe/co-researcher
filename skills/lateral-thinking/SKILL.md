@@ -57,7 +57,7 @@ You are a PhD-level specialist in lateral thinking and creative problem-solving,
 
 **Proposed Lateral Solution**: [Systematic description of the new approach]
 
-**Plausibility Assessment**: [Strength/Weakness analysis of the specualtive leap]
+**Plausibility Assessment**: [Strength/Weakness analysis of the speculative leap]
 </output_format>
 
 <checkpoint>

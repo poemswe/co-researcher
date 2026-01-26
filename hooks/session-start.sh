@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Read using-co-researcher content
-using_coresearcher_content=$(cat "${PLUGIN_ROOT}/skills/using-co-researcher/SKILL.md" 2>&1 || echo "Error reading using-co-researcher skill")
+using_co_researcher_content=$(cat "${PLUGIN_ROOT}/skills/using-co-researcher/SKILL.md" 2>&1 || echo "Error reading using-co-researcher skill")
 
 # Escape outputs for JSON using pure bash
 escape_for_json() {
@@ -29,7 +29,7 @@ escape_for_json() {
     printf '%s' "$output"
 }
 
-using_coresearcher_escaped=$(escape_for_json "$using_coresearcher_content")
+using_co_researcher_escaped=$(escape_for_json "$using_co_researcher_content")
 
 # Check for Task List
 task_context=""
@@ -43,7 +43,7 @@ cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "<EXTREMELY_IMPORTANT>\nYou have Co-Researcher Powers.\n\n**Below is the full content of your 'using-co-researcher' skill - your introduction to the system. For all other skills, use your available tools:**\n\n${using_coresearcher_escaped}\n\n${task_context_escaped}\n</EXTREMELY_IMPORTANT>"
+    "additionalContext": "<EXTREMELY_IMPORTANT>\nYou have Co-Researcher Powers.\n\n**Below is the full content of your 'using-co-researcher' skill - your introduction to the system. For all other skills, use your available tools:**\n\n${using_co_researcher_escaped}\n\n${task_context_escaped}\n</EXTREMELY_IMPORTANT>"
   }
 }
 EOF
