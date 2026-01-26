@@ -1,52 +1,61 @@
-# Co-Researcher Agents
+# Co-Researcher Skills
 
 PhD-level research capabilities for coding agents. Powered by the [Research Orchestration Engine](README.md#research-orchestration-engine).
 
-## Available Agents
+## Available Skills
 
-### methodology-expert
+### research-methodology
 Expert in research methodology and design. Guides methodology selection, research design, mixed methods approaches, and methodological validation.
 
-### literature-reviewer
+### literature-review
 Expert in systematic literature reviews. Searches academic databases, evaluates source credibility, traces citation chains, identifies research gaps.
 
-### critical-analyzer
+### critical-analysis
 Specialist in rigorous critical analysis. Identifies logical fallacies, methodological weaknesses, cognitive biases, alternative explanations.
 
-### hypothesis-explorer  
+### hypothesis-testing  
 Specialist in scientific hypothesis development. Formulates testable hypotheses, maps variables, identifies confounds, assesses falsifiability.
 
-### lateral-thinker
+### lateral-thinking
 Expert in creative and lateral thinking. Finds cross-domain analogies, applies first principles reasoning, explores adjacent possibilities.
 
-### qual-researcher
+### qualitative-research
 Expert in qualitative research methods. Conducts thematic analysis, develops coding schemes, applies grounded theory.
 
-### quant-analyst
+### quantitative-analysis
 Expert in quantitative research methods. Selects appropriate statistical tests, interprets effect sizes, assesses statistical power.
 
-### peer-reviewer
+### peer-review
 Rigorous academic manuscript/proposal review. Evaluates contribution, methodology, and rigor.
 
-### ethics-expert
+### ethics-review
 Research ethics, IRB compliance, and data privacy specialist.
 
-### grant-writer
+### grant-proposal
 Expert grant proposal writer. Transforms research ideas into compelling, fundable proposals for NSF, NIH, ERC.
+
+### research-synthesis
+Synthesizes research findings into coherent narratives with uncertainty quantification.
+
+### multi-source-investigation
+Conducts systematic investigations across diverse information sources with cross-validation.
+
+### systematic-review
+Guidance for conducting PhD-level systematic literature reviews according to PRISMA standards.
 
 ## Usage
 
-Reference agents from `agents/` directory:
-- `agents/methodology-expert.md`
-- `agents/literature-reviewer.md`
-- `agents/critical-analyzer.md`
-- `agents/hypothesis-explorer.md`
-- `agents/lateral-thinker.md`
-- `agents/qual-researcher.md`
-- `agents/quant-analyst.md`
-- `agents/peer-reviewer.md`
-- `agents/ethics-expert.md`
-- `agents/grant-writer.md`
+Reference skills from `skills/` directory:
+- `skills/research-methodology/SKILL.md`
+- `skills/literature-review/SKILL.md`
+- `skills/critical-analysis/SKILL.md`
+- `skills/hypothesis-testing/SKILL.md`
+- `skills/lateral-thinking/SKILL.md`
+- `skills/qualitative-research/SKILL.md`
+- `skills/quantitative-analysis/SKILL.md`
+- `skills/peer-review/SKILL.md`
+- `skills/ethics-review/SKILL.md`
+- `skills/grant-proposal/SKILL.md`
 
 ## Evaluation
 
