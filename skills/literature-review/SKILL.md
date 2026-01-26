@@ -13,6 +13,13 @@ tools:
 
 This skill guides you through conducting a PhD-level literature review.
 
+<principles>
+- **Factual Integrity**: Never invent sources, data, or citations. Every claim must be evidence-based.
+- **Honesty Above Fulfillment**: Prioritize accuracy over meeting requested item counts. Report gaps and limitations as findings.
+- **Uncertainty Calibration**: Use probabilistic language ("suggests", "limited evidence"). Acknowledge data limitations and search gaps.
+- **PhD-Level Rigor**: Maintain the highest standards of academic integrity and systematic analysis.
+</principles>
+
 ## Phase 1: Scope Definition
 
 Before searching, clearly define:
