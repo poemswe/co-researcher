@@ -37,31 +37,36 @@ python run_eval.py literature-reviewer -v            # Verbose output
 > [!TIP]
 > Use quotes for model strings with spaces: `--model "codex:gpt-5.2-codex high"`
 
-## Available Tests (22 total)
+## Available Tests (26 total)
 
 | Agent | Test | Difficulty |
 |-------|------|------------|
-| **critical-analyzer** | bias-identification | Hard |
+| **critical-analysis** | bias-identification | Hard |
 | | contradictory-evidence | Hard |
 | | fallacy-detection | Medium |
 | | methodology-critique | Medium |
-| **grant-writer** | grant-proposal | Medium |
-| **hypothesis-explorer** | hypothesis-formulation | Medium |
+| **ethics-review** | privacy-risk | Hard |
+| **grant-proposal** | grant-proposal | Medium |
+| **hypothesis-testing** | hypothesis-formulation | Medium |
 | | unfalsifiable-claim | Hard |
 | | variable-mapping | Hard |
-| **lateral-thinker** | analogy-finding | Hard |
+| **lateral-thinking** | analogy-finding | Hard |
 | | constraint-satisfaction | Hard |
 | | first-principles | Hard |
-| **literature-reviewer** | basic-search | Easy |
+| **literature-review** | basic-search | Easy |
 | | citation-chain | Hard |
 | | gap-analysis | Medium |
 | | hallucination-detection | Hard |
-| **qual-researcher** | coding-strategy | Medium |
+| **peer-review** | manuscript-critique | Hard |
+| **qualitative-research** | coding-strategy | Medium |
 | | leading-questions | Hard |
 | | thematic-analysis | Medium |
-| **quant-analyst** | effect-size-interpretation | Medium |
+| **quantitative-analysis** | effect-size-interpretation | Medium |
 | | simpson-paradox | Hard |
 | | stat-method-selection | Medium |
+| **research-methodology** | methodology-selection | Medium |
+| | methodology-validation | Hard |
+| | mixed-methods-design | Hard |
 
 ## Scoring (Task-Specific)
 
@@ -69,11 +74,11 @@ The framework uses specialized rubrics based on the agent's task domain:
 
 | Rubric | Agents | Key Focus |
 |--------|--------|-----------|
-| `analytical-quality` | Critical Analyzer, Lateral Thinker | Logical rigor, fallacy detection |
+| `analytical-quality` | Critical, Lateral, Methodology | Logical rigor, fallacy detection |
 | `quantitative-quality` | Quantitative Analyst | Statistical accuracy, method choice |
 | `qualitative-quality` | Qualitative Researcher | Coding strategy, thematic depth |
-| `design-quality` | Hypothesis Explorer, Ethics Expert, Grant Writer | Feasibility, ethics, variables |
-| `research-quality` | Literature Reviewer, Peer Reviewer | Citation chain, gap analysis |
+| `design-quality` | Hypothesis, Ethics, Grant | Feasibility, ethics, variables |
+| `research-quality` | Literature, Peer Review | Citation chain, gap analysis |
 | `output-structure` | All | Organization, clarity (Fixed 25%) |
 
 **Passing**: ≥70/100 overall (Hard tests: ≥80)
@@ -107,7 +112,11 @@ Every test run automatically generates benchmark data using a two-file architect
 open evals/arena.html
 ```
 
-Features model leaderboards, capability matrices, and star-based performance ratings (⭐⭐⭐/⭐⭐/⭐/❌).
+**Features:**
+- **Model Leaderboards**: Compare performance trends across models.
+- **Run ID Filtering**: View specific historic runs (e.g. "Gemini Jan 26") vs "Global Latest".
+- **Capability Matrices**: Star-based performance ratings (⭐⭐⭐/⭐⭐/⭐/❌).
+- **Deep Inspection**: View full agent outputs with syntax highlighting.
 
 ## Structure
 
