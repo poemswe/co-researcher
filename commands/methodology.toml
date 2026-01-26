@@ -1,0 +1,2 @@
+description = "Select appropriate research methodology, design, and validate research approach"
+prompt = """Invoke the co-researcher:research-methodology skill and follow it exactly as presented to you: {{args}}"""
