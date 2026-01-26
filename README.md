@@ -1,6 +1,6 @@
 # Co-Researcher (v1.1.1)
 
-A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, and **OpenAI Codex**.
+A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, **OpenAI Codex**, and **OpenCode**.
 
 ## Installation
 
@@ -17,12 +17,6 @@ cd /path/to/co-researcher
 claude plugins link .
 ```
 
-**Verification:**
-```bash
-claude plugins list
-Type /research to test
-```
-
 ### Gemini CLI
 
 **Option 1: From GitHub**
@@ -36,36 +30,38 @@ cd /path/to/co-researcher
 gemini extension link .
 ```
 
-**Verification:**
-```bash
-gemini extension list
-Type /research to test
+### Codex
+
+**Option 1: Ask Codex (Agentic)**
+Tell Codex:
+```text
+Fetch and follow instructions from https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md
 ```
 
-### VS Code (via Codex)
-
-**From Local Directory:**
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/poemswe/co-researcher.git
-   cd co-researcher
-   ```
-
-2. Link to Codex workspace:
-   ```bash
-   mkdir -p ~/.codex/skills
-   ln -s "$(pwd)" ~/.codex/skills/co-researcher
-   ```
-
-3. Verify in VS Code:
-   - Open Command Palette (Cmd+Shift+P)
-   - Type "Codex: List Skills"
-   - Look for `$research` in the available skills
-
-**Alternative: Direct Copy**
+**Option 2: Manual Setup**
 ```bash
-cp -r /path/to/co-researcher ~/.codex/skills/
+# 1. Clone this repo to ~/.codex/skills/co-researcher
+# 2. Add hook to ~/.codex/AGENTS.md
+# 3. Run:
+~/.codex/skills/co-researcher/.codex/co-researcher-codex bootstrap
 ```
+See [.codex/INSTALL.md](.codex/INSTALL.md) for details.
+
+### OpenCode
+
+**Option 1: Ask OpenCode (Agentic)**
+Tell OpenCode:
+```text
+Fetch and follow instructions from https://raw.githubusercontent.com/poemswe/co-researcher/main/.opencode/INSTALL.md
+```
+
+**Option 2: Manual Setup**
+```bash
+# 1. Clone this repo
+# 2. Run the installer:
+./.opencode/install.sh
+```
+See [.opencode/INSTALL.md](.opencode/INSTALL.md) for details.
 
 ## Native Platform Parity
 
@@ -136,20 +132,24 @@ Pre-configured agent combinations for common scenarios:
 /research "topic" --template=comprehensive # Deep multi-method analysis
 ```
 
-## Specialized Agents
+## Specialized Skills
 
-The suite includes 10 PhD-level agents, each governed by **Systemic Honesty** principles (no fabrication, accuracy over count).
+The suite includes PhD-level research skills, each governed by **Systemic Honesty** principles.
 
-1.  **Methodology Expert**: Research design, methodology selection, and validation.
-2.  **Literature Reviewer**: Systematic reviews & citation chain analysis.
-3.  **Critical Analyzer**: Fallacy detection & bias identification.
-4.  **Hypothesis Explorer**: Variable mapping & experimental design.
-5.  **Lateral Thinker**: Cross-domain analogies & first-principles.
-6.  **Qualitative Researcher**: Thematic analysis & coding strategies.
-7.  **Quantitative Analyst**: Statistical power & effect size interpretation.
-8.  **Peer Reviewer**: Academic manuscript & proposal critique.
-9.  **Ethics Expert**: IRB compliance, privacy risks, and data ethics.
-10. **Grant Writer**: Grant proposal development & funding strategy.
+- **critical-analysis**: Riguous logic checking and fallacy detection
+- **ethics-review**: IRB compliance and privacy risk assessment
+- **grant-writing**: Funding strategy and proposal development
+- **hypothesis-testing**: Variable mapping and experimental design
+- **lateral-thinking**: Cross-domain analogies and first-principles reasoning
+- **literature-review**: Systematic search and citation analysis
+- **multi-source-investigation**: Cross-validation across diverse sources
+- **peer-review**: Manuscript critique and methodological review
+- **qualitative-research**: Thematic analysis and coding
+- **quantitative-analysis**: Statistical power and effect size interpretation
+- **research-methodology**: Design selection and validation
+- **research-synthesis**: Narrative synthesis with uncertainty quantification
+- **systematic-review**: PRISMA-standard systematic review guidance
+
 
 ## Evaluation Framework
 

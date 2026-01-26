@@ -1,0 +1,178 @@
+#!/usr/bin/env node
+
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import { fileURLToPath } from 'url';
+import { extractFrontmatter, findSkillsInDir, resolveSkillPath, stripFrontmatter } from '../lib/skills-core.js';
+
+// Paths
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoDir = path.resolve(__dirname, '..');
+const coreSkillsDir = path.join(repoDir, 'skills');
+const homeDir = os.homedir();
+// Codex personal skills usually live in ~/.codex/skills
+const personalSkillsDir = path.join(homeDir, '.codex', 'skills');
+const bootstrapFile = path.join(__dirname, 'bootstrap.md');
+
+// Utility functions
+function printSkill(skillPath, sourceType) {
+    const skillFile = path.join(skillPath, 'SKILL.md');
+    // For core skills, we want relative path from coreSkillsDir
+    // For personal skills, relative from personalSkillsDir
+    let relPath;
+    let displayName;
+
+    if (sourceType === 'personal') {
+        relPath = path.relative(personalSkillsDir, skillPath);
+        displayName = relPath.replace(/\\/g, '/');
+    } else {
+        relPath = path.relative(coreSkillsDir, skillPath);
+        displayName = `co-researcher:${relPath.replace(/\\/g, '/')}`;
+    }
+
+    // Extract and print metadata
+    const { description } = extractFrontmatter(skillFile);
+
+    console.log(displayName);
+    if (description) console.log(`  ${description}`);
+    console.log('');
+}
+
+// Commands
+function runFindSkills() {
+    console.log('Available skills:');
+    console.log('==================');
+    console.log('');
+
+    const foundSkills = new Set();
+
+    // Find personal skills first (these take precedence)
+    const personalSkills = findSkillsInDir(personalSkillsDir, 'personal', 2);
+    for (const skill of personalSkills) {
+        const relPath = path.relative(personalSkillsDir, skill.path);
+        foundSkills.add(relPath);
+        printSkill(skill.path, 'personal');
+    }
+
+    // Find core skills (only if not already found in personal)
+    const coreSkills = findSkillsInDir(coreSkillsDir, 'core', 1);
+    for (const skill of coreSkills) {
+        const relPath = path.relative(coreSkillsDir, skill.path);
+        if (!foundSkills.has(relPath)) {
+            printSkill(skill.path, 'core');
+        }
+    }
+
+    console.log('Usage:');
+    console.log('  co-researcher-codex use-skill <skill-name>   # Load a specific skill');
+    console.log('');
+    console.log('Skill naming:');
+    console.log('  Core skills: co-researcher:skill-name');
+    console.log('  Personal skills: skill-name');
+    console.log('');
+}
+
+function runBootstrap() {
+    console.log('# Co-Researcher Bootstrap for Codex');
+    console.log('# ================================');
+    console.log('');
+
+    // Show the bootstrap instructions
+    if (fs.existsSync(bootstrapFile)) {
+        console.log('## Bootstrap Instructions:');
+        console.log('');
+        try {
+            const content = fs.readFileSync(bootstrapFile, 'utf8');
+            console.log(content);
+        } catch (error) {
+            console.log(`Error reading bootstrap file: ${error.message}`);
+        }
+        console.log('');
+        console.log('---');
+        console.log('');
+    }
+
+    // Run find-skills to show available skills
+    console.log('## Available Skills:');
+    console.log('');
+    runFindSkills();
+
+    console.log('');
+    console.log('---');
+    console.log('');
+    console.log('# Bootstrap Complete!');
+    console.log('# You are now a PhD-level Co-Researcher.');
+}
+
+function runUseSkill(skillName) {
+    if (!skillName) {
+        console.log('Usage: co-researcher-codex use-skill <skill-name>');
+        return;
+    }
+
+    const result = resolveSkillPath(skillName, coreSkillsDir, personalSkillsDir);
+
+    if (!result) {
+        console.log(`Error: Skill not found: ${skillName}`);
+        console.log('');
+        console.log('Available skills:');
+        runFindSkills();
+        return;
+    }
+
+    const { skillFile, sourceType, skillPath } = result;
+
+    // Extract frontmatter and content
+    let content, frontmatter;
+    try {
+        const fullContent = fs.readFileSync(skillFile, 'utf8');
+        const meta = extractFrontmatter(skillFile);
+        content = stripFrontmatter(fullContent);
+        frontmatter = meta;
+    } catch (error) {
+        console.log(`Error reading skill file: ${error.message}`);
+        return;
+    }
+
+    // Display skill header
+    const displayName = sourceType === 'core'
+        ? `co-researcher:${skillPath}`
+        : skillPath;
+
+    const skillDirectory = path.dirname(skillFile);
+
+    console.log(`# ${frontmatter.name || displayName}`);
+    if (frontmatter.description) {
+        console.log(`# ${frontmatter.description}`);
+    }
+    console.log(`# Skill-specific tools and reference files live in ${skillDirectory}`);
+    console.log('# ============================================');
+    console.log('');
+
+    // Display the skill content
+    console.log(content);
+}
+
+// Main CLI
+const command = process.argv[2];
+const arg = process.argv[3];
+
+switch (command) {
+    case 'bootstrap':
+        runBootstrap();
+        break;
+    case 'use-skill':
+        runUseSkill(arg);
+        break;
+    case 'find-skills':
+        runFindSkills();
+        break;
+    default:
+        console.log('Co-Researcher for Codex');
+        console.log('Usage:');
+        console.log('  co-researcher-codex bootstrap              # Run complete bootstrap');
+        console.log('  co-researcher-codex use-skill <skill-name> # Load a specific skill');
+        console.log('  co-researcher-codex find-skills            # List available skills');
+        break;
+}
