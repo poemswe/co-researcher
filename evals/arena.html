@@ -1587,6 +1587,10 @@
                     onchange="handleModelFilterChange()">
                     <option value="">Select Model...</option>
                 </select>
+                <select id="runFilter" class="search-input" style="width: auto; cursor: pointer; max-width: 200px;"
+                    onchange="handleRunFilterChange()">
+                    <option value="">Latest Run</option>
+                </select>
             </div>
 
             <div class="accordion" id="testAccordion"></div>
@@ -1885,14 +1889,48 @@
 
         function handleModelFilterChange() {
             const selectedModel = document.getElementById('modelFilter').value;
-            if (!selectedModel) return;
+            const runSelect = document.getElementById('runFilter');
 
+            // Allow clearing model to reset to global latest
+            if (!selectedModel) {
+                runSelect.innerHTML = '<option value="">Latest Run</option>';
+                const latest = globalOverview.runs[globalOverview.runs.length - 1];
+                renderTestAccordion(latest);
+                updateHeroMetrics(globalOverview, latest.model);
+                updateRadarChart(latest);
+                return;
+            }
+
+            // Populate Run Select
             const runs = globalOverview.runs.filter(r => r.model === selectedModel);
-            if (runs.length > 0) {
-                const latestForModel = runs[runs.length - 1];
-                renderTestAccordion(latestForModel);
-                updateHeroMetrics(globalOverview, selectedModel);
-                updateRadarChart(latestForModel);
+            // Sort new to old
+            runs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            runSelect.innerHTML = runs.map(r =>
+                `<option value="${r.run_id}">${new Date(r.timestamp).toLocaleDateString()} (${r.run_id.split('_')[1] || 'Merged'})</option>`
+            ).join('');
+
+            // Trigger latest for this model
+            handleRunFilterChange();
+        }
+
+        function handleRunFilterChange() {
+            const runId = document.getElementById('runFilter').value;
+            let run;
+
+            if (runId) {
+                run = globalOverview.runs.find(r => r.run_id === runId);
+            } else {
+                // If no specific run (or just changed model), pick latest for model
+                const selectedModel = document.getElementById('modelFilter').value;
+                const modelRuns = globalOverview.runs.filter(r => r.model === selectedModel);
+                run = modelRuns[modelRuns.length - 1];
+            }
+
+            if (run) {
+                renderTestAccordion(run);
+                updateHeroMetrics(globalOverview, run.model);
+                updateRadarChart(run);
             }
         }
 
