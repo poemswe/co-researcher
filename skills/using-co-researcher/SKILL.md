@@ -1,6 +1,8 @@
 ---
 name: using-co-researcher
 description: Use when understanding your capabilities, how to use skills, or the rules of the Co-Researcher system.
+tools:
+  - AskUserQuestion
 ---
 
 # Using Co-Researcher
