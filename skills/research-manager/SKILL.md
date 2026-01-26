@@ -49,7 +49,7 @@ Analyze the user's request. Is it a quick question or a project?
         *   [ ] Task: Screening (Dependencies: Search Strategy)
         *   [ ] Task: Extraction (Dependencies: Screening)
 
-3.  **Phase 3: Persistence (Cross-Platform)**
+3.  **Phase 3: PersistenceS**
     *   **If `Task` tool is available**: Use it immediately to persist the list.
     *   **Otherwise**: Create a file named `research-tasks.md` with the checklist.
     *   **Output**: Confirm the plan to the user.
