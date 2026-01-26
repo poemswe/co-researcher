@@ -1758,8 +1758,14 @@
             // 2. Model Comparison (Quick Win 4: Leaderboard)
             const models = {};
             runs.forEach(run => {
-                if (!models[run.model] || models[run.model].score < run.average_score) {
-                    models[run.model] = { score: run.average_score, passed: run.tests_passed || 20, total: run.tests_run || 22 };
+                // Always use the latest run for the "Current State" leaderboard
+                if (!models[run.model] || new Date(run.timestamp) > new Date(models[run.model].timestamp)) {
+                    models[run.model] = {
+                        score: run.average_score,
+                        passed: run.tests_passed || 20,
+                        total: run.tests_run || 22,
+                        timestamp: run.timestamp
+                    };
                 }
             });
             const sortedModels = Object.entries(models)
@@ -1863,14 +1869,24 @@
                     `;
                 }).join('');
 
-            // 5. Populate Model Filter
+            // 5. Populate Model Filter - Default to Top Ranked Model
+            const topModel = sortedModels.length > 0 ? sortedModels[0][0] : (overview.summary_stats.models[0] || '');
+
             const modelSelect = document.getElementById('modelFilter');
             const radarModelSelect = document.getElementById('radarModelFilter');
-            const currentVal = modelSelect.value;
+            const currentVal = modelSelect.value || topModel; // Default to top model
+
             const modelOptions = overview.summary_stats.models.map(m => `<option value="${m}" ${m === currentVal ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
-            const radarOptions = overview.summary_stats.models.map(m => `<option value="${m}" ${m === latest.model ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
+            const radarOptions = overview.summary_stats.models.map(m => `<option value="${m}" ${m === topModel ? 'selected' : ''}>${m.toUpperCase()}</option>`).join('');
+
             modelSelect.innerHTML = '<option value="">Select Model...</option>' + modelOptions;
             radarModelSelect.innerHTML = radarOptions;
+
+            // If we just loaded and set the default, trigger the cascade to ensure the accordion matches
+            if (!modelSelect.value && topModel) {
+                modelSelect.value = topModel;
+                handleModelFilterChange(); // This will trigger run filter update and accordion render
+            }
 
             renderCharts(runs, latest);
 

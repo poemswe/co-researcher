@@ -6,7 +6,7 @@
   "test_results": [
     {
       "id": "claude_critical-analyzer_fallacy-detection_20251230",
-      "agent": "critical-analyzer",
+      "agent": "critical-analysis",
       "test_case": "fallacy-detection",
       "test_name": "Fallacy Detection",
       "difficulty": "Medium",
@@ -57,7 +57,7 @@
     },
     {
       "id": "claude_hypothesis-explorer_variable-mapping_20251230",
-      "agent": "hypothesis-explorer",
+      "agent": "hypothesis-testing",
       "test_case": "variable-mapping",
       "test_name": "Variable Mapping",
       "difficulty": "Medium",
@@ -118,7 +118,7 @@
     },
     {
       "id": "claude_hypothesis-explorer_unfalsifiable-claim_20251230",
-      "agent": "hypothesis-explorer",
+      "agent": "hypothesis-testing",
       "test_case": "unfalsifiable-claim",
       "test_name": "Unfalsifiable Claim",
       "difficulty": "Medium",
@@ -180,7 +180,7 @@
     },
     {
       "id": "claude_critical-analyzer_methodology-critique_20251230",
-      "agent": "critical-analyzer",
+      "agent": "critical-analysis",
       "test_case": "methodology-critique",
       "test_name": "Methodology Critique",
       "difficulty": "Medium",
@@ -236,7 +236,7 @@
     },
     {
       "id": "claude_ethics-expert_privacy-risk_20251230",
-      "agent": "ethics-expert",
+      "agent": "ethics-review",
       "test_case": "privacy-risk",
       "test_name": "Privacy Risk",
       "difficulty": "Medium",
@@ -296,7 +296,7 @@
     },
     {
       "id": "claude_hypothesis-explorer_hypothesis-formulation_20251230",
-      "agent": "hypothesis-explorer",
+      "agent": "hypothesis-testing",
       "test_case": "hypothesis-formulation",
       "test_name": "Hypothesis Formulation",
       "difficulty": "Medium",
@@ -358,7 +358,7 @@
     },
     {
       "id": "claude_critical-analyzer_contradictory-evidence_20251230",
-      "agent": "critical-analyzer",
+      "agent": "critical-analysis",
       "test_case": "contradictory-evidence",
       "test_name": "Contradictory Evidence",
       "difficulty": "Medium",
@@ -411,7 +411,7 @@
     },
     {
       "id": "claude_critical-analyzer_bias-identification_20251230",
-      "agent": "critical-analyzer",
+      "agent": "critical-analysis",
       "test_case": "bias-identification",
       "test_name": "Bias Identification",
       "difficulty": "Medium",
@@ -464,7 +464,7 @@
     },
     {
       "id": "claude_lateral-thinker_constraint-satisfaction_20251230",
-      "agent": "lateral-thinker",
+      "agent": "lateral-thinking",
       "test_case": "constraint-satisfaction",
       "test_name": "Constraint Satisfaction",
       "difficulty": "Medium",
@@ -516,7 +516,7 @@
     },
     {
       "id": "claude_peer-reviewer_manuscript-critique_20251230",
-      "agent": "peer-reviewer",
+      "agent": "peer-review",
       "test_case": "manuscript-critique",
       "test_name": "Manuscript Critique",
       "difficulty": "Medium",
@@ -576,7 +576,7 @@
     },
     {
       "id": "claude_lateral-thinker_first-principles_20251230",
-      "agent": "lateral-thinker",
+      "agent": "lateral-thinking",
       "test_case": "first-principles",
       "test_name": "First Principles",
       "difficulty": "Medium",
@@ -628,7 +628,7 @@
     },
     {
       "id": "claude_literature-reviewer_hallucination-detection_20251230",
-      "agent": "literature-reviewer",
+      "agent": "literature-review",
       "test_case": "hallucination-detection",
       "test_name": "Hallucination Detection",
       "difficulty": "Medium",
@@ -689,7 +689,7 @@
     },
     {
       "id": "claude_literature-reviewer_basic-search_20251230",
-      "agent": "literature-reviewer",
+      "agent": "literature-review",
       "test_case": "basic-search",
       "test_name": "Basic Search",
       "difficulty": "Medium",
@@ -750,7 +750,7 @@
     },
     {
       "id": "claude_literature-reviewer_citation-chain_20251230",
-      "agent": "literature-reviewer",
+      "agent": "literature-review",
       "test_case": "citation-chain",
       "test_name": "Citation Chain",
       "difficulty": "Medium",
@@ -811,7 +811,7 @@
     },
     {
       "id": "claude_qual-researcher_coding-strategy_20251230",
-      "agent": "qual-researcher",
+      "agent": "qualitative-research",
       "test_case": "coding-strategy",
       "test_name": "Coding Strategy",
       "difficulty": "Medium",
@@ -865,7 +865,7 @@
     },
     {
       "id": "claude_qual-researcher_leading-questions_20251230",
-      "agent": "qual-researcher",
+      "agent": "qualitative-research",
       "test_case": "leading-questions",
       "test_name": "Leading Questions",
       "difficulty": "Medium",
@@ -917,7 +917,7 @@
     },
     {
       "id": "claude_qual-researcher_thematic-analysis_20251230",
-      "agent": "qual-researcher",
+      "agent": "qualitative-research",
       "test_case": "thematic-analysis",
       "test_name": "Thematic Analysis",
       "difficulty": "Medium",
@@ -968,7 +968,7 @@
     },
     {
       "id": "claude_quant-analyst_effect-size-interpretation_20251230",
-      "agent": "quant-analyst",
+      "agent": "quantitative-analysis",
       "test_case": "effect-size-interpretation",
       "test_name": "Effect Size Interpretation",
       "difficulty": "Medium",
@@ -1020,7 +1020,7 @@
     },
     {
       "id": "claude_quant-analyst_simpson-paradox_20251230",
-      "agent": "quant-analyst",
+      "agent": "quantitative-analysis",
       "test_case": "simpson-paradox",
       "test_name": "Simpson Paradox",
       "difficulty": "Medium",
@@ -1072,7 +1072,7 @@
     },
     {
       "id": "claude_lateral-thinker_analogy-finding_20251230",
-      "agent": "lateral-thinker",
+      "agent": "lateral-thinking",
       "test_case": "analogy-finding",
       "test_name": "Analogy Finding",
       "difficulty": "Medium",
@@ -1123,7 +1123,7 @@
     },
     {
       "id": "claude_quant-analyst_stat-method-selection_20251230",
-      "agent": "quant-analyst",
+      "agent": "quantitative-analysis",
       "test_case": "stat-method-selection",
       "test_name": "Stat Method Selection",
       "difficulty": "Medium",
@@ -1175,7 +1175,7 @@
     },
     {
       "id": "claude_literature-reviewer_gap-analysis_20251230",
-      "agent": "literature-reviewer",
+      "agent": "literature-review",
       "test_case": "gap-analysis",
       "test_name": "Gap Analysis",
       "difficulty": "Medium",
@@ -1236,7 +1236,7 @@
     },
     {
       "id": "claude_methodology-expert_methodology-selection_20260124",
-      "agent": "methodology-expert",
+      "agent": "research-methodology",
       "test_case": "methodology-selection",
       "test_name": "Methodology Selection",
       "difficulty": "Medium",
@@ -1290,7 +1290,7 @@
     },
     {
       "id": "claude_methodology-expert_methodology-validation_20260124",
-      "agent": "methodology-expert",
+      "agent": "research-methodology",
       "test_case": "methodology-validation",
       "test_name": "Methodology Validation",
       "difficulty": "Medium",
@@ -1341,7 +1341,7 @@
     },
     {
       "id": "claude_methodology-expert_mixed-methods-design_20260124",
-      "agent": "methodology-expert",
+      "agent": "research-methodology",
       "test_case": "mixed-methods-design",
       "test_name": "Mixed Methods Design",
       "difficulty": "Medium",
