@@ -31,12 +31,19 @@ escape_for_json() {
 
 using_coresearcher_escaped=$(escape_for_json "$using_coresearcher_content")
 
+# Check for Task List
+task_context=""
+if [ -n "${CLAUDE_CODE_TASK_LIST_ID:-}" ]; then
+    task_context="You are resuming work on Task List: ${CLAUDE_CODE_TASK_LIST_ID}. Use the 'Task' tools to check the status of your research."
+fi
+task_context_escaped=$(escape_for_json "$task_context")
+
 # Output context injection as JSON
 cat <<EOF
 {
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": "<EXTREMELY_IMPORTANT>\nYou have Co-Researcher Powers.\n\n**Below is the full content of your 'using-co-researcher' skill - your introduction to the system. For all other skills, use your available tools:**\n\n${using_coresearcher_escaped}\n</EXTREMELY_IMPORTANT>"
+    "additionalContext": "<EXTREMELY_IMPORTANT>\nYou have Co-Researcher Powers.\n\n**Below is the full content of your 'using-co-researcher' skill - your introduction to the system. For all other skills, use your available tools:**\n\n${using_coresearcher_escaped}\n\n${task_context_escaped}\n</EXTREMELY_IMPORTANT>"
   }
 }
 EOF
