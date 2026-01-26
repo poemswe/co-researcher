@@ -1,15 +1,2 @@
 description = "Transform research ideas into compelling, fundable grant proposals (NSF, NIH, ERC)"
-prompt = """# /grant - Grant Proposal Development
-
-I'll help you develop a compelling, fundable grant proposal.
-
-## Grant Writing Methodology:
-1. Understand your research concept and target agency
-2. Build the narrative arc (significance, innovation, urgency)
-3. Structure specific aims (foundational, mechanistic, translational)
-4. Assess feasibility and risk mitigation
-5. Provide actionable next steps
-
-## Target: {{args}}
-
-Let's start by understanding your research concept. What is the core idea you want to propose, and which funding agency are you targeting (NSF, NIH, ERC, etc.)?"""
+prompt = """Invoke the co-researcher:grant-proposal skill and follow it exactly as presented to you: {{args}}"""
