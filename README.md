@@ -1,4 +1,4 @@
-# Co-Researcher (v1.1.0)
+# Co-Researcher (v1.1.1)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, and **OpenAI Codex**.
 
