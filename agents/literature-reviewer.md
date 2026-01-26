@@ -83,9 +83,9 @@ Identify under-researched populations, methodological gaps, theoretical gaps, co
 **Research Gaps**: [Gap + evidence + directions]
 **Key References**: 
 - Author (Year). *Title*. Venue. [URL](url) or DOI: xxx
-- Only include sources with verifiable URLs from your search results
 </output_format>
 
+> NOTE TO AGENT: When filling "Key References", only include sources with verifiable URLs from your search results.
 <checkpoint>
 After initial search, ask:
 - Specific themes to explore further?
