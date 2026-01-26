@@ -165,27 +165,96 @@
       },
       "pass_rate": 100.0,
       "detail_file": "test_results_detail/run_20260102_175215.json"
+    },
+    {
+      "run_id": "run_20260126_010734",
+      "timestamp": "2026-01-26T01:44:26.269976Z",
+      "model": "gemini",
+      "model_version": "gemini-3-flash-preview",
+      "tests_run": 26,
+      "tests_passed": 24,
+      "average_score": 91.5,
+      "scores_by_agent": {
+        "critical-analysis": [
+          97.8,
+          96.0,
+          97.8,
+          96.0
+        ],
+        "ethics-review": [
+          98.0
+        ],
+        "grant-proposal": [
+          92.2
+        ],
+        "hypothesis-testing": [
+          74.0,
+          88.6,
+          85.0
+        ],
+        "lateral-thinking": [
+          96.9,
+          100.0,
+          97.2
+        ],
+        "literature-review": [
+          90.0,
+          100.0,
+          58.0,
+          62.9
+        ],
+        "peer-review": [
+          97.0
+        ],
+        "qualitative-research": [
+          94.0,
+          95.0,
+          85.0
+        ],
+        "quantitative-analysis": [
+          98.2,
+          98.2,
+          100.0
+        ],
+        "research-methodology": [
+          92.6,
+          94.0,
+          95.0
+        ]
+      },
+      "pass_rate": 92.3,
+      "detail_file": "test_results_detail/run_20260126_010734.json"
     }
   ],
   "summary_stats": {
-    "total_runs": 3,
+    "total_runs": 4,
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
       "gemini"
     ],
     "agents": [
+      "critical-analysis",
       "critical-analyzer",
       "ethics-expert",
+      "ethics-review",
+      "grant-proposal",
       "grant-writer",
       "hypothesis-explorer",
+      "hypothesis-testing",
       "lateral-thinker",
+      "lateral-thinking",
+      "literature-review",
       "literature-reviewer",
       "methodology-expert",
+      "peer-review",
       "peer-reviewer",
       "qual-researcher",
-      "quant-analyst"
+      "qualitative-research",
+      "quant-analyst",
+      "quantitative-analysis",
+      "research-methodology"
     ],
-    "overall_pass_rate": 97.2
+    "overall_pass_rate": 95.9
   }
 }
