@@ -110,12 +110,12 @@
     },
     {
       "run_id": "run_20260102_175215",
-      "timestamp": "2026-01-16T16:55:26.709668Z",
+      "timestamp": "2026-01-26T00:30:30.688559Z",
       "model": "gemini",
       "model_version": "gemini-3-flash-preview",
       "tests_run": 25,
-      "tests_passed": 24,
-      "average_score": 92.3,
+      "tests_passed": 25,
+      "average_score": 93.6,
       "scores_by_agent": {
         "critical-analyzer": [
           99.2,
@@ -148,7 +148,7 @@
         ],
         "literature-reviewer": [
           97.0,
-          60.1,
+          92.8,
           85.0,
           97.4
         ],
@@ -163,7 +163,7 @@
           96.0
         ]
       },
-      "pass_rate": 96.0,
+      "pass_rate": 100.0,
       "detail_file": "test_results_detail/run_20260102_175215.json"
     }
   ],
@@ -186,6 +186,6 @@
       "qual-researcher",
       "quant-analyst"
     ],
-    "overall_pass_rate": 95.8
+    "overall_pass_rate": 97.2
   }
 }
