@@ -10,45 +10,45 @@
       "tests_passed": 25,
       "average_score": 85.8,
       "scores_by_agent": {
-        "critical-analyzer": [
+        "critical-analysis": [
           91.0,
           92.5,
           92.5,
           91.0
         ],
-        "hypothesis-explorer": [
+        "hypothesis-testing": [
           84.0,
           73.0,
           81.0
         ],
-        "ethics-expert": [
+        "ethics-review": [
           91.0
         ],
-        "lateral-thinker": [
+        "lateral-thinking": [
           93.0,
           89.0,
           83.8
         ],
-        "peer-reviewer": [
+        "peer-review": [
           83.4
         ],
-        "literature-reviewer": [
+        "literature-review": [
           75.0,
           81.4,
           82.0,
           81.0
         ],
-        "qual-researcher": [
+        "qualitative-research": [
           87.0,
           81.5,
           80.5
         ],
-        "quant-analyst": [
+        "quantitative-analysis": [
           91.0,
           92.5,
           92.8
         ],
-        "methodology-expert": [
+        "research-methodology": [
           80.8,
           87.0,
           87.0
@@ -66,39 +66,39 @@
       "tests_passed": 20,
       "average_score": 83.2,
       "scores_by_agent": {
-        "critical-analyzer": [
+        "critical-analysis": [
           87.8,
           87.0,
           91.5,
           91.5
         ],
-        "ethics-expert": [
+        "ethics-review": [
           81.4
         ],
-        "hypothesis-explorer": [
+        "hypothesis-testing": [
           78.8,
           78.0,
           83.4
         ],
-        "lateral-thinker": [
+        "lateral-thinking": [
           92.8,
           90.1,
           86.4
         ],
-        "peer-reviewer": [
+        "peer-review": [
           85.4
         ],
-        "quant-analyst": [
+        "quantitative-analysis": [
           92.2,
           91.2,
           92.5
         ],
-        "qual-researcher": [
+        "qualitative-research": [
           76.2,
           76.2,
           84.5
         ],
-        "literature-reviewer": [
+        "literature-review": [
           83.4,
           55.0,
           76.1,
@@ -117,47 +117,47 @@
       "tests_passed": 25,
       "average_score": 93.6,
       "scores_by_agent": {
-        "critical-analyzer": [
+        "critical-analysis": [
           99.2,
           97.0,
           95.2
         ],
-        "ethics-expert": [
+        "ethics-review": [
           91.5
         ],
-        "grant-writer": [
+        "grant-proposal": [
           91.8
         ],
-        "hypothesis-explorer": [
+        "hypothesis-testing": [
           85.9,
           87.5,
           86.0
         ],
-        "lateral-thinker": [
+        "lateral-thinking": [
           100.0,
           96.2,
           96.6
         ],
-        "peer-reviewer": [
+        "peer-review": [
           98.5
         ],
-        "qual-researcher": [
+        "qualitative-research": [
           92.2,
           93.5,
           86.2
         ],
-        "literature-reviewer": [
+        "literature-review": [
           97.0,
           92.8,
           85.0,
           97.4
         ],
-        "quant-analyst": [
+        "quantitative-analysis": [
           98.0,
           98.2,
           96.0
         ],
-        "methodology-expert": [
+        "research-methodology": [
           93.3,
           90.0,
           96.0
@@ -169,7 +169,7 @@
     {
       "run_id": "run_20260126_010734",
       "timestamp": "2026-01-26T01:44:26.269976Z",
-      "model": "gemini",
+      "model": "gemini:gemini-3-flash-preview",
       "model_version": "gemini-3-flash-preview",
       "tests_run": 26,
       "tests_passed": 24,
@@ -289,7 +289,6 @@
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
-      "gemini",
       "gemini:gemini-3-flash-preview"
     ],
     "overall_pass_rate": 96.8
