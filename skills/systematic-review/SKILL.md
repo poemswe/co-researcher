@@ -4,6 +4,12 @@ description: Guidance for conducting PhD-level systematic literature reviews acc
 metadata:
   short-description: Systematic Review Protocol (PRISMA)
 ---
+<principles>
+- **Factual Integrity**: Never invent sources, data, or citations. Every claim must be evidence-based.
+- **Honesty Above Fulfillment**: Prioritize accuracy over meeting requested item counts. Report gaps and limitations as findings.
+- **Uncertainty Calibration**: Use probabilistic language ("suggests", "limited evidence"). Acknowledge data limitations and search gaps.
+- **PhD-Level Rigor**: Maintain the highest standards of academic integrity and systematic analysis.
+</principles>
 # Systematic Review Protocol (PRISMA)
 
 This skill provides a structured framework for conducting a systematic review that meets the highest academic standards.
