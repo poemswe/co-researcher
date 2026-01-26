@@ -4,29 +4,29 @@ This document provides a technical overview of the co-researcher system architec
 
 ## Core Components
 
-### Specialized Research Agents
+### Specialized Research Skills
 
-Eight domain-expert agents provide PhD-level research capabilities:
+Nine domain-expert skills provide PhD-level research capabilities:
 
-- **Literature Reviewer**: Systematic literature reviews, citation analysis, and hallucination detection
-- **Critical Analyzer**: Bias identification and logical fallacy detection
-- **Hypothesis Explorer**: Testable hypothesis formulation and variable mapping
-- **Lateral Thinker**: Cross-domain analogy and first-principles reasoning
-- **Qualitative Researcher**: Thematic analysis and coding strategies
-- **Quantitative Analyst**: Statistical method selection and interpretation
-- **Peer Reviewer**: Academic manuscript and proposal evaluation
-- **Ethics Expert**: Research ethics, IRB compliance, and privacy risk assessment
-- **Grant Writer**: Grant proposal development, specific aims, and funding strategy
+- **literature-review**: Systematic literature reviews, citation analysis, and hallucination detection
+- **critical-analysis**: Bias identification and logical fallacy detection
+- **hypothesis-testing**: Testable hypothesis formulation and variable mapping
+- **lateral-thinking**: Cross-domain analogy and first-principles reasoning
+- **qualitative-research**: Thematic analysis and coding strategies
+- **quantitative-analysis**: Statistical method selection and interpretation
+- **peer-review**: Academic manuscript and proposal evaluation
+- **ethics-review**: Research ethics, IRB compliance, and privacy risk assessment
+- **grant-proposal**: Grant proposal development, specific aims, and funding strategy
 
 ### Platform Integration
 
-**Current Version: v1.1.1**
+**Current Version: v2.0.0**
 
-The system supports three CLI platforms through unified agent definitions:
+The system supports three CLI platforms through unified skill definitions:
 
 - **Claude Code**: 
   - Installation: `claude plugins install poemswe/co-researcher` or `claude plugins link .`
-  - Native commands in `commands/` and agent definitions in `agents/`
+  - Native commands in `commands/` and skill definitions in `skills/`
   - Plugin manifest: `.claude-plugin/plugin.json`
 
 - **Gemini CLI**: 
@@ -39,7 +39,7 @@ The system supports three CLI platforms through unified agent definitions:
   - Repository skills in `.codex/skills/` and manifest in `AGENTS.md`
   - Skills available via `$` prefix (e.g., `$research`)
 
-All platforms share the same agent definitions but use platform-specific command wrappers.
+All platforms share the same skill definitions in `skills/` but use platform-specific command wrappers.
 
 ### Research Quality Principles
 
@@ -83,6 +83,7 @@ High-performance HTML/JS visualization platform:
     - Detailed agent outputs with syntax highlighting and syntax-aware scrolling
     - Dynamic "Must-include" checklist verification (Met/Missed)
     - Overall judge justification and task-specific rubric profiling
+- **Historic Run Filtering**: Dropdown selection to view specific past runs (e.g., "Jan 02" vs "Jan 26") alongside model selection
 - **Fast Loading**: Optimized for 10-50x faster performance through v2 binary schema
 
 ## Research Orchestration Engine
@@ -124,6 +125,6 @@ Predefined agent combinations for common scenarios:
 ## Distribution Model
 
 Repository-as-a-Plugin architecture:
-- Agents discovered via platform-specific manifests
+- Skills discovered via platform-specific manifests
 - CLI-driven testing with multi-model support
 - Universal compatibility across Claude, Gemini, and Codex platforms
