@@ -111,7 +111,7 @@
     {
       "run_id": "run_20260102_175215",
       "timestamp": "2026-01-26T00:30:30.688559Z",
-      "model": "gemini",
+      "model": "gemini:gemini-3-flash-preview",
       "model_version": "gemini-3-flash-preview",
       "tests_run": 25,
       "tests_passed": 25,
@@ -224,6 +224,64 @@
       },
       "pass_rate": 92.3,
       "detail_file": "test_results_detail/run_20260126_010734.json"
+    },
+    {
+      "run_id": "run_20260126_044632",
+      "timestamp": "2026-01-26T05:10:37.211000Z",
+      "model": "gemini:gemini-3-flash-preview",
+      "tests_run": 26,
+      "tests_passed": 26,
+      "average_score": 92.7,
+      "pass_rate": 100.0,
+      "scores_by_agent": {
+        "literature-review": [
+          93.0,
+          96.5,
+          95.1,
+          91.5
+        ],
+        "critical-analysis": [
+          96.5,
+          99.0,
+          100.0,
+          95.8
+        ],
+        "ethics-review": [
+          96.8
+        ],
+        "grant-proposal": [
+          86.5
+        ],
+        "hypothesis-testing": [
+          81.3,
+          82.5,
+          85.3
+        ],
+        "lateral-thinking": [
+          93.2,
+          99.7,
+          94.6
+        ],
+        "peer-review": [
+          98.5
+        ],
+        "qualitative-research": [
+          84.0,
+          87.5,
+          91.8
+        ],
+        "quantitative-analysis": [
+          98.5,
+          96.5,
+          98.0
+        ],
+        "research-methodology": [
+          82.0,
+          91.0,
+          93.8
+        ]
+      },
+      "detail_file": "test_results_detail/run_20260126_044632.json"
     }
   ],
   "summary_stats": {
@@ -231,30 +289,9 @@
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
-      "gemini"
+      "gemini",
+      "gemini:gemini-3-flash-preview"
     ],
-    "agents": [
-      "critical-analysis",
-      "critical-analyzer",
-      "ethics-expert",
-      "ethics-review",
-      "grant-proposal",
-      "grant-writer",
-      "hypothesis-explorer",
-      "hypothesis-testing",
-      "lateral-thinker",
-      "lateral-thinking",
-      "literature-review",
-      "literature-reviewer",
-      "methodology-expert",
-      "peer-review",
-      "peer-reviewer",
-      "qual-researcher",
-      "qualitative-research",
-      "quant-analyst",
-      "quantitative-analysis",
-      "research-methodology"
-    ],
-    "overall_pass_rate": 95.9
+    "overall_pass_rate": 96.8
   }
 }
