@@ -172,9 +172,34 @@ def run_cli(model: str, prompt: str, timeout: int = 600, use_tools: bool = True)
 def execute_agent(agent: str, prompt: str, timeout: int = 600, model: str = "claude") -> AgentResult:
     start = time.time()
     
+    # Try agents/ first (legacy/Claude), then skills/
     agent_file = EVALS_DIR.parent / "agents" / f"{agent}.md"
     if not agent_file.exists():
-        print(f"WARNING: No agent file for {agent}, using fallback prompt")
+        # Try skills/ directory
+        skill_file = EVALS_DIR.parent / "skills" / agent / "SKILL.md"
+        if skill_file.exists():
+            agent_file = skill_file
+        else:
+            # Try mapping (some skill names differ from agent names in evals)
+            mapping = {
+                "critical-analysis": "critical-analysis",
+                "literature-review": "literature-review",
+                "hypothesis-testing": "hypothesis-testing",
+                "grant-proposal": "grant-writing",
+                "ethics-review": "ethics-review",
+                "lateral-thinking": "lateral-thinking",
+                "research-methodology": "research-methodology",
+                "peer-review": "peer-review",
+                "qualitative-research": "qualitative-research",
+                "quantitative-analysis": "quantitative-analysis",
+            }
+            if agent in mapping:
+                skill_file = EVALS_DIR.parent / "skills" / mapping[agent] / "SKILL.md"
+                if skill_file.exists():
+                    agent_file = skill_file
+
+    if not agent_file.exists():
+        print(f"WARNING: No agent/skill file for {agent}, using fallback prompt")
         methodology = ""
     else:
         methodology = agent_file.read_text()
