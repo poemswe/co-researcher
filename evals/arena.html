@@ -1577,7 +1577,7 @@
         <!-- Test Case Details -->
         <section class="tests-section" aria-label="Individual Test Results">
             <h2 class="section-heading">Test Case Breakdown</h2>
-            <p class="section-description">Detailed results for all 22 evaluation tests</p>
+            <p class="section-description">Detailed results for all evaluation tests</p>
 
             <div class="search-container" style="display: flex; gap: 1rem;">
                 <input type="text" id="testSearch" class="search-input"
@@ -1755,7 +1755,7 @@
             const models = {};
             runs.forEach(run => {
                 if (!models[run.model] || models[run.model].score < run.average_score) {
-                    models[run.model] = { score: run.average_score, passed: run.tests_passed || 20 };
+                    models[run.model] = { score: run.average_score, passed: run.tests_passed || 20, total: run.tests_run || 22 };
                 }
             });
             const sortedModels = Object.entries(models)
@@ -1780,8 +1780,8 @@
                                 <div class="leaderboard-details">
                                     <div class="leaderboard-model">${model.charAt(0).toUpperCase() + model.slice(1)}</div>
                                     <div class="leaderboard-stats">
-                                        <span class="leaderboard-stat-item">${data.passed}/22 passed</span>
-                                        <span class="leaderboard-stat-item">${(data.passed / 22 * 100).toFixed(0)}% rate</span>
+                                        <span class="leaderboard-stat-item">${data.passed}/${data.total} passed</span>
+                                        <span class="leaderboard-stat-item">${(data.passed / data.total * 100).toFixed(0)}% rate</span>
                                     </div>
                                 </div>
                                 <div class="leaderboard-score">
