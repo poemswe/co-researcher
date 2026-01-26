@@ -128,3 +128,41 @@ Repository-as-a-Plugin architecture:
 - Skills discovered via platform-specific manifests
 - CLI-driven testing with multi-model support
 - Universal compatibility across Claude, Gemini, and Codex platforms
+
+## Commit Message Style
+
+All commits should follow the Conventional Commits format:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+```
+
+**Format Rules:**
+- **Header**: `<type>(<scope>): <subject>` (max 72 characters)
+  - `type`: feat, fix, docs, style, refactor, test, chore
+  - `scope`: component/area affected (e.g., dashboard, skills, evals)
+  - `subject`: imperative mood, lowercase, no period
+  
+- **Body**: Bullet points explaining the changes
+  - Start each point with `-` or `*`
+  - Focus on *what* changed and *why*, not *how*
+  - Keep lines under 72 characters
+
+**Examples:**
+```
+feat(dashboard): add normalized capability matrix
+
+- Consolidate duplicate skill names (e.g., "Critical Analysis" only)
+- Remove legacy "gemini" from model dropdown
+- Default to #1 ranked model on page load
+```
+
+```
+fix(evals): merge split Gemini test runs into single 26/26 dataset
+
+- Recover 4 missing tests from markdown reports
+- Normalize JSON model field to "gemini:gemini-3-flash-preview"
+- Update benchmark_overview.json to reference consolidated run
+```
