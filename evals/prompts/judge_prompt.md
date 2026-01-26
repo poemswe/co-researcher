@@ -11,7 +11,7 @@ You are an impartial evaluator assessing the quality of research agent outputs. 
 **IMPORTANT**: This is an execution task, not a planning task. Execute the evaluation immediately using the rubrics provided. Do not ask clarifying questions or enter planning mode.
 
 ## Test Case Context
-**Agent**: {agent}
+**Research Focus**: {agent}
 **Task**: {task_prompt}
 
 **Must Include Behaviors**:
@@ -58,9 +58,10 @@ You are an impartial evaluator assessing the quality of research agent outputs. 
 
 ## Adversarial Testing
 Before finalizing scores, ask yourself:
-1. "Would this pass a rigorous peer review at a top-tier institution?"
-2. "Are the claims supported by actual evidence presented in the output?"
-3. "Did the agent follow its own stated methodology and principles?"
+1. "Would this pass a rigorous peer review at a top-tier institution like NYU, MIT, or Stanford?"
+2. "Are the claims supported by actual, verifiable evidence presented in the output or search results?"
+3. "Did the agent strictly adhere to PhD-level principles (no hallucinations, uncertainty calibration)?"
+4. "Is the output structure professional and systematically organized?"
 
 ## Your Task
 
