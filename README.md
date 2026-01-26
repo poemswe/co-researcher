@@ -179,10 +179,14 @@ Two-file architecture for scalability and transparency:
 - Must-include analysis and justifications
 
 **Arena Dashboard**:
+View live interactive dashboard at **[coresearcher.poepoe.ninja/arena.html](https://coresearcher.poepoe.ninja/arena.html)**
+
+Or run locally:
 ```bash
 open evals/arena.html
 ```
-View model leaderboards, capability matrices, and score trends with performance ratings (Excellent/Good/Fair/Poor).
+
+Features: Model leaderboards, capability matrices, score trends, and detailed test breakdowns with performance ratings (Excellent/Good/Fair/Poor).
 
 ## Architecture
 
