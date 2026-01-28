@@ -1,2 +1,2 @@
 description = "Peer review a research manuscript or proposal"
-prompt = """Read the skill file from your extension directory at 'skills/peer-review/SKILL.md' and follow its protocol exactly for this request: {{args}}"""
+prompt = """Apply the 'peer-review' skill defined in your context and follow its protocol exactly for this request: {{args}}"""

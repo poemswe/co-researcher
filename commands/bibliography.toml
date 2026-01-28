@@ -1,2 +1,2 @@
 description = "Generate formatted bibliography and citations in various academic styles"
-prompt = """Read the skill file from your extension directory at 'skills/literature-review/SKILL.md' and follow its protocol exactly for this request: {{args}}"""
+prompt = """Apply the 'literature-review' skill defined in your context and follow its protocol exactly for this request: {{args}}"""

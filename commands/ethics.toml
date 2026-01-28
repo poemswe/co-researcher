@@ -1,2 +1,2 @@
 description = "Analyze ethical risks and compliance (IRB, Privacy)"
-prompt = """Read the skill file from your extension directory at 'skills/ethics-review/SKILL.md' and follow its protocol exactly for this request: {{args}}"""
+prompt = """Apply the 'ethics-review' skill defined in your context and follow its protocol exactly for this request: {{args}}"""

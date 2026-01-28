@@ -1,2 +1,2 @@
 description = "Critically analyze content, claims, or arguments with rigorous evaluation"
-prompt = """Read the skill file from your extension directory at 'skills/critical-analysis/SKILL.md' and follow its protocol exactly for this request: {{args}}"""
+prompt = """Apply the 'critical-analysis' skill defined in your context and follow its protocol exactly for this request: {{args}}"""

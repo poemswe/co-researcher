@@ -3,4 +3,4 @@ description: Synthesize findings from multiple sources into coherent conclusions
 argument-hint: [topic] | [research-question]
 ---
 
-Read the skill file from 'skills/research-synthesis/SKILL.md' and follow its protocol exactly for this request: $ARGUMENTS
+Apply the 'research-synthesis' skill defined in your context and follow its protocol exactly for this request: $ARGUMENTS

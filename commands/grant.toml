@@ -1,2 +1,2 @@
 description = "Transform research ideas into compelling, fundable grant proposals (NSF, NIH, ERC)"
-prompt = """Read the skill file from your extension directory at 'skills/grant-writing/SKILL.md' and follow its protocol exactly for this request: {{args}}"""
+prompt = """Apply the 'grant-writing' skill defined in your context and follow its protocol exactly for this request: {{args}}"""

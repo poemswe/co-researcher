@@ -1,2 +1,2 @@
 description = "Select appropriate research methodology, design, and validate research approach"
-prompt = """Read the skill file from your extension directory at 'skills/research-methodology/SKILL.md' and follow its protocol exactly for this request: {{args}}"""
+prompt = """Apply the 'research-methodology' skill defined in your context and follow its protocol exactly for this request: {{args}}"""

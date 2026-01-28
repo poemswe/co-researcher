@@ -3,4 +3,4 @@ description: Select appropriate research methodology, design, and validate resea
 argument-hint: [research-question] | [study-design] | [research-context]
 ---
 
-Read the skill file from 'skills/research-methodology/SKILL.md' and follow its protocol exactly for this request: $ARGUMENTS
+Apply the 'research-methodology' skill defined in your context and follow its protocol exactly for this request: $ARGUMENTS
