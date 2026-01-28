@@ -1,2 +1,2 @@
 description = "Transform research ideas into compelling, fundable grant proposals (NSF, NIH, ERC)"
-prompt = """Apply the 'grant-writing' skill defined in your context and follow its protocol exactly for this request: {{args}}"""
+prompt = """Invoke the co-researcher:grant-writing skill and follow it exactly as presented to you: {{args}}"""

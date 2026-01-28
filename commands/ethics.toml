@@ -1,2 +1,2 @@
 description = "Analyze ethical risks and compliance (IRB, Privacy)"
-prompt = """Apply the 'ethics-review' skill defined in your context and follow its protocol exactly for this request: {{args}}"""
+prompt = """Invoke the co-researcher:ethics-review skill and follow it exactly as presented to you: {{args}}"""

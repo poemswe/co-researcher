@@ -1,2 +1,2 @@
 description = "Generate formatted bibliography and citations in various academic styles"
-prompt = """Apply the 'literature-review' skill defined in your context and follow its protocol exactly for this request: {{args}}"""
+prompt = """Invoke the co-researcher:literature-review skill and follow it exactly as presented to you: {{args}}"""

@@ -1,2 +1,2 @@
 description = "Critically analyze content, claims, or arguments with rigorous evaluation"
-prompt = """Apply the 'critical-analysis' skill defined in your context and follow its protocol exactly for this request: {{args}}"""
+prompt = """Invoke the co-researcher:critical-analysis skill and follow it exactly as presented to you: {{args}}"""
