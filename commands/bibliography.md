@@ -3,4 +3,4 @@ description: Generate formatted bibliography and citations in various academic s
 argument-hint: [style] | apa | mla | chicago | ieee | harvard | vancouver
 ---
 
-Invoke the co-researcher:literature-review skill and follow it exactly as presented to you: $ARGUMENTS
+Read the skill file from 'skills/literature-review/SKILL.md' and follow its protocol exactly for this request: $ARGUMENTS

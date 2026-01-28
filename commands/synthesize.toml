@@ -1,2 +1,2 @@
 description = "Synthesize findings from multiple sources into coherent conclusions"
-prompt = """Invoke the co-researcher:research-synthesis skill and follow it exactly as presented to you: {{args}}"""
+prompt = """Read the skill file from your extension directory at 'skills/research-synthesis/SKILL.md' and follow its protocol exactly for this request: {{args}}"""

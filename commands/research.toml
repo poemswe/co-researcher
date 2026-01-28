@@ -1,2 +1,2 @@
 description = "Start a research project with intelligent agent orchestration"
-prompt = """Invoke the co-researcher:research-manager skill and follow it exactly as presented to you: {{args}}"""
+prompt = """Read the skill file from your extension directory at 'skills/research-manager/SKILL.md' and follow its protocol exactly for this request: {{args}}"""

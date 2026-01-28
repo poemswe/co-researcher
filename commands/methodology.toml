@@ -1,2 +1,2 @@
 description = "Select appropriate research methodology, design, and validate research approach"
-prompt = """Invoke the co-researcher:research-methodology skill and follow it exactly as presented to you: {{args}}"""
+prompt = """Read the skill file from your extension directory at 'skills/research-methodology/SKILL.md' and follow its protocol exactly for this request: {{args}}"""

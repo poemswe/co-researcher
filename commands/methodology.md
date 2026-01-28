@@ -3,4 +3,4 @@ description: Select appropriate research methodology, design, and validate resea
 argument-hint: [research-question] | [study-design] | [research-context]
 ---
 
-Invoke the co-researcher:research-methodology skill and follow it exactly as presented to you: $ARGUMENTS
+Read the skill file from 'skills/research-methodology/SKILL.md' and follow its protocol exactly for this request: $ARGUMENTS
