@@ -279,7 +279,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
     print(f"\n✅ Benchmark saved (v2.0)")
     print(f"   Detail: {detail_file.name}")
     print(f"   Overview: {overview_file.name} ({len(overview['runs'])} runs)")
-    print(f"   Arena Dashboard: file://{EVALS_DIR.absolute()}/arena.html")
+    print(f"   Arena Dashboard: file://{EVALS_DIR.absolute()}/index.html")
     
     # Trend
     if len(overview["runs"]) > 1:

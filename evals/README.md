@@ -109,7 +109,7 @@ Every test run automatically generates benchmark data using a two-file architect
 
 **View Dashboard**:
 ```bash
-open evals/arena.html
+open evals/index.html
 ```
 
 **Features:**

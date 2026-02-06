@@ -30,6 +30,12 @@ cd /path/to/co-researcher
 gemini extension link .
 ```
 
+> **⚠️ Important:** If you encounter "Skill not found" errors, run Gemini with:
+> ```bash
+> gemini --include-directories ~/.gemini/extensions
+> ```
+> This grants workspace permissions for extension skills. See [.gemini/TROUBLESHOOTING.md](.gemini/TROUBLESHOOTING.md) for details.
+
 ### Codex
 
 **Option 1: Ask Codex (Agentic)**
@@ -179,11 +185,11 @@ Two-file architecture for scalability and transparency:
 - Must-include analysis and justifications
 
 **Arena Dashboard**:
-View live interactive dashboard at **[coresearcher.poepoe.ninja/arena.html](https://coresearcher.poepoe.ninja/arena.html)**
+View live interactive dashboard at **[coresearcher.poepoe.ninja](https://coresearcher.poepoe.ninja)**
 
 Or run locally:
 ```bash
-open evals/arena.html
+open evals/index.html
 ```
 
 Features: Model leaderboards, capability matrices, score trends, and detailed test breakdowns with performance ratings (Excellent/Good/Fair/Poor).
