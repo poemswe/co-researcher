@@ -32,3 +32,4 @@ When you identify a task that matches a skill, you must:
 - **ethics-review**: IRB compliance and risk assessment.
 - **grant-writing**: Funding proposals.
 - **lateral-thinking**: Creative problem solving.
+- **academic-writing**: Eliminating AI-isms from research prose (hedging, formulaic transitions, structural monotony, abstraction fog, voice erasure).

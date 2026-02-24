@@ -1,4 +1,4 @@
-# Co-Researcher (v2.0.0)
+# Co-Researcher (v2.1.0)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, **OpenAI Codex**, and **OpenCode**.
 
@@ -29,12 +29,6 @@ gemini extension install https://github.com/poemswe/co-researcher
 cd /path/to/co-researcher
 gemini extension link .
 ```
-
-> **⚠️ Important:** If you encounter "Skill not found" errors, run Gemini with:
-> ```bash
-> gemini --include-directories ~/.gemini/extensions
-> ```
-> This grants workspace permissions for extension skills. See [.gemini/TROUBLESHOOTING.md](.gemini/TROUBLESHOOTING.md) for details.
 
 ### Codex
 
@@ -146,6 +140,7 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **ethics-review**: IRB compliance and privacy risk assessment
 - **grant-writing**: Funding strategy and proposal development
 - **hypothesis-testing**: Variable mapping and experimental design
+- **academic-writing**: Eliminating AI-isms from research prose
 - **lateral-thinking**: Cross-domain analogies and first-principles reasoning
 - **literature-review**: Systematic search and citation analysis
 - **multi-source-investigation**: Cross-validation across diverse sources
