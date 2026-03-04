@@ -147,6 +147,7 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **peer-review**: Manuscript critique and methodological review
 - **qualitative-research**: Thematic analysis and coding
 - **quantitative-analysis**: Statistical power and effect size interpretation
+- **research-manager**: Dynamic task scaffolding and polyglot session persistence
 - **research-methodology**: Design selection and validation
 - **research-synthesis**: Narrative synthesis with uncertainty quantification
 - **systematic-review**: PRISMA-standard systematic review guidance
@@ -180,7 +181,7 @@ Two-file architecture for scalability and transparency:
 - Must-include analysis and justifications
 
 **Arena Dashboard**:
-View live interactive dashboard at **[coresearcher.poepoe.ninja](https://coresearcher.poepoe.ninja)**
+View live interactive dashboard at **[coresearcher.poemswe.com](https://coresearcher.poemswe.com)**
 
 Or run locally:
 ```bash
@@ -191,11 +192,15 @@ Features: Model leaderboards, capability matrices, score trends, and detailed te
 
 ## Architecture
 
-- `agents/`: Core agent definitions (Markdown).
+- `skills/`: Specialized research skills (Markdown).
 - `commands/`: Unified platform commands (.md for Claude, .toml for Gemini).
 - `.codex/skills/`: Native repository skills for Codex.
 - `evals/`: 22 test cases and Python runner.
 - manifests: `gemini-extension.json`, `AGENTS.md`, `GEMINI.md`.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=poemswe/co-researcher&type=Date)](https://star-history.com/#poemswe/co-researcher&Date)
 
 ## License
 MIT
