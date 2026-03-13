@@ -220,17 +220,10 @@
             align-items: center;
             justify-content: space-between;
             background: var(--bg-primary);
-            position: fixed;
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
             z-index: 1000;
-            transform: translateY(0);
-            transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.25s;
-        }
-
-        .site-nav.nav-hidden {
-            transform: translateY(-100%);
+            transition: box-shadow 0.25s;
         }
 
         .site-nav.nav-scrolled {
@@ -273,8 +266,6 @@
 
         .site-nav-cta:hover { background: var(--accent-secondary) !important; }
 
-        /* offset body for fixed nav */
-        .container { padding-top: 52px; }
 
         /* ============ Section Headings ============ */
         .section-heading {
@@ -2397,20 +2388,8 @@
         (function () {
             const nav = document.querySelector('.site-nav');
             if (!nav) return;
-            let lastY = 0;
-            let ticking = false;
-
             window.addEventListener('scroll', () => {
-                if (!ticking) {
-                    requestAnimationFrame(() => {
-                        const y = window.scrollY;
-                        nav.classList.toggle('nav-scrolled', y > 10);
-                        nav.classList.toggle('nav-hidden', y > lastY && y > 80);
-                        lastY = y;
-                        ticking = false;
-                    });
-                    ticking = true;
-                }
+                nav.classList.toggle('nav-scrolled', window.scrollY > 10);
             }, { passive: true });
         })();
     </script>
