@@ -215,14 +215,26 @@
         /* ============ Nav ============ */
         .site-nav {
             border-bottom: 1px solid var(--glass-border);
-            padding: 1rem 2rem;
+            padding: 0.75rem 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: var(--bg-secondary);
-            position: sticky;
+            background: var(--bg-primary);
+            position: fixed;
             top: 0;
-            z-index: 100;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            transform: translateY(0);
+            transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.25s;
+        }
+
+        .site-nav.nav-hidden {
+            transform: translateY(-100%);
+        }
+
+        .site-nav.nav-scrolled {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
         .site-nav-brand {
@@ -260,6 +272,9 @@
         }
 
         .site-nav-cta:hover { background: var(--accent-secondary) !important; }
+
+        /* offset body for fixed nav */
+        .container { padding-top: 52px; }
 
         /* ============ Section Headings ============ */
         .section-heading {
@@ -2102,7 +2117,7 @@
                                                 </div>
                                             ` : ''}
 
-                                            ${detail && detail.agent_output ? `
+                                            ${detail && detail.agent_output && !detail.agent_output.startsWith('[Reconstructed') ? `
                                                 <div class="agent-output-container">
                                                     <div class="agent-output-header">
                                                         <span>Agent Output</span>
@@ -2112,6 +2127,16 @@
                                                         </div>
                                                     </div>
                                                     <pre id="output-${testId}" class="agent-output-pre">${detail.agent_output.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                                                </div>
+                                            ` : detail && detail.agent_output && detail.agent_output.startsWith('[Reconstructed') ? `
+                                                <div class="agent-output-container">
+                                                    <div class="agent-output-header">
+                                                        <span>Agent Output</span>
+                                                        <span style="font-style: italic; color: var(--text-tertiary); font-size: 0.8rem;">not captured</span>
+                                                    </div>
+                                                    <div style="padding: 1rem 1.25rem; color: var(--text-tertiary); font-size: 0.85rem; font-style: italic;">
+                                                        Output was not recorded for this run. Score was verified manually.
+                                                    </div>
                                                 </div>
                                             ` : ''}
 
@@ -2366,6 +2391,28 @@
                 alert('Failed to copy to clipboard');
             }
         }
+    </script>
+
+    <script>
+        (function () {
+            const nav = document.querySelector('.site-nav');
+            if (!nav) return;
+            let lastY = 0;
+            let ticking = false;
+
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                        const y = window.scrollY;
+                        nav.classList.toggle('nav-scrolled', y > 10);
+                        nav.classList.toggle('nav-hidden', y > lastY && y > 80);
+                        lastY = y;
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }, { passive: true });
+        })();
     </script>
 </body>
 
