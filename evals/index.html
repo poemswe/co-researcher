@@ -212,67 +212,54 @@
             display: block;
         }
 
-        /* ============ Header ============ */
-        .header {
-            padding: 2.5rem 0 2rem;
-            position: relative;
-            border-bottom: 3px double var(--accent-primary);
+        /* ============ Nav ============ */
+        .site-nav {
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             background: var(--bg-secondary);
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            left: 0;
+            position: sticky;
             top: 0;
-            width: 4px;
-            height: 60%;
-            background: var(--accent-rose);
-            transform: translateY(20%);
+            z-index: 100;
         }
 
-        .header::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            width: 120px;
-            height: 3px;
-            background: var(--accent-secondary);
-        }
-
-        .header-title {
+        .site-nav-brand {
             font-family: var(--font-heading);
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            color: var(--accent-primary);
-            letter-spacing: -0.03em;
-            line-height: 0.95;
-            text-align: left;
-            max-width: 1600px;
-            margin-left: auto;
-            margin-right: auto;
-            padding: 0 1.25rem;
-            position: relative;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            text-decoration: none;
         }
 
-        .header-subtitle {
-            font-family: var(--font-body);
-            font-size: 1rem;
-            color: var(--accent-secondary);
-            font-weight: 400;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            text-align: left;
-            max-width: 1600px;
-            margin-left: auto;
-            margin-right: auto;
-            padding: 0 1.25rem;
-            font-size: 0.75rem;
-            letter-spacing: 0.1em;
+        .site-nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            list-style: none;
         }
+
+        .site-nav-links a {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .site-nav-links a:hover { color: var(--text-primary); }
+
+        .site-nav-cta {
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--accent-primary);
+            color: white !important;
+            padding: 0.4rem 1rem;
+            border-radius: 4px;
+        }
+
+        .site-nav-cta:hover { background: var(--accent-secondary) !important; }
 
         /* ============ Section Headings ============ */
         .section-heading {
@@ -1579,11 +1566,16 @@
 
     <!-- Dashboard Container -->
     <div class="container" id="dashboard">
-        <!-- Header -->
-        <header class="header" role="banner">
-            <h1 class="header-title">Co-Researcher Benchmark</h1>
-            <p class="header-subtitle">PhD-Level Research Agent Evaluation Framework</p>
-        </header>
+        <!-- Nav -->
+        <nav class="site-nav">
+            <a href="/" class="site-nav-brand">Co-Researcher</a>
+            <ul class="site-nav-links">
+                <li><a href="/#skills">Skills</a></li>
+                <li><a href="/#install">Install</a></li>
+                <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
+                <li><a href="/" class="site-nav-cta">← Home</a></li>
+            </ul>
+        </nav>
 
         <!-- Hero Command Center -->
         <section class="hero-section" aria-label="Key Performance Metrics">
