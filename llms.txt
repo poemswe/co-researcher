@@ -1,0 +1,43 @@
+# Co-Researcher
+
+> A PhD-level research agent suite for Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. Governed by Systemic Honesty — no fabricated citations, no hallucinated data.
+
+This site is a live benchmark arena evaluating research agent performance across 22 test cases and 8 agent types.
+
+## What Co-Researcher Does
+
+Co-Researcher provides specialized research skills that run inside AI coding assistants. Each skill is a structured protocol enforcing academic rigor.
+
+## Research Skills
+
+- **Critical Analysis** — fallacy detection, bias identification, contradictory evidence handling
+- **Literature Review** — systematic search, citation chaining, hallucination detection, gap analysis
+- **Hypothesis Testing** — variable mapping, falsification criteria, experimental controls
+- **Quantitative Analysis** — statistical method selection, effect size interpretation, Simpson's paradox detection
+- **Qualitative Research** — thematic analysis, coding strategy, leading-question detection
+- **Peer Review** — manuscript critique and methodological rigor scoring
+- **Ethics Review** — IRB compliance, privacy risk assessment
+- **Research Synthesis** — multi-source narrative synthesis with uncertainty quantification
+- **Systematic Review** — PRISMA-standard protocol, Risk of Bias assessment
+- **Grant Writing** — funding strategy, Specific Aims development
+- **Lateral Thinking** — cross-domain analogies, constraint satisfaction, first-principles reasoning
+- **Research Manager** — dynamic task scaffolding and polyglot session persistence
+- **Academic Writing** — eliminating AI-isms from research prose
+
+## Benchmark Arena (this site)
+
+Models evaluated: Claude (Anthropic), Codex (OpenAI)
+Test cases: 22 across 8 agent types
+Rubrics: reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
+Scores: Excellent / Good / Fair / Poor
+
+## Installation
+
+Claude Code: `claude plugins install poemswe/co-researcher`
+Gemini CLI: `gemini extension install https://github.com/poemswe/co-researcher`
+Source: https://github.com/poemswe/co-researcher
+
+## Links
+
+- Plugin source and docs: https://github.com/poemswe/co-researcher
+- Creator: https://poemswe.com

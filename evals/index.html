@@ -4,7 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Co-Researcher Benchmark Dashboard</title>
+    <title>Co-Researcher — AI Research Agent Benchmark</title>
+    <meta name="description" content="Co-Researcher is a PhD-level research suite for Claude Code, Gemini CLI, and OpenAI Codex. This arena benchmarks specialized research agents across critical analysis, literature review, hypothesis testing, quantitative analysis, and more.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://coresearcher.poemswe.com/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://coresearcher.poemswe.com/">
+    <meta property="og:title" content="Co-Researcher — AI Research Agent Benchmark">
+    <meta property="og:description" content="Live benchmark arena for Co-Researcher, a PhD-level research suite for Claude Code, Gemini CLI, and OpenAI Codex. Evaluate agents across critical analysis, literature review, quantitative analysis, and more.">
+    <meta property="og:site_name" content="Co-Researcher">
+
+    <!-- LLM discoverability -->
+    <link rel="alternate" type="text/plain" href="/llms.txt">
+    <link rel="home" href="https://coresearcher.poemswe.com/">
+
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link
@@ -1515,6 +1530,52 @@
 </head>
 
 <body>
+
+    <noscript>
+        <style>
+            .noscript-fallback { font-family: Georgia, serif; max-width: 720px; margin: 4rem auto; padding: 0 1.5rem; line-height: 1.7; color: #18181b; }
+            .noscript-fallback h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+            .noscript-fallback h2 { font-size: 1.2rem; margin: 2rem 0 0.5rem; font-weight: 600; }
+            .noscript-fallback ul { padding-left: 1.5rem; }
+            .noscript-fallback li { margin-bottom: 0.4rem; }
+            .noscript-fallback a { color: #1e3a8a; }
+            .noscript-fallback .meta { color: #71717a; font-size: 0.9rem; margin-bottom: 2rem; }
+        </style>
+        <div class="noscript-fallback">
+            <h1>Co-Researcher Benchmark Arena</h1>
+            <p class="meta">A live evaluation dashboard for Co-Researcher — a PhD-level research agent suite. JavaScript is required to view the interactive dashboard.</p>
+
+            <h2>What is Co-Researcher?</h2>
+            <p>Co-Researcher is a professional research suite for <a href="https://github.com/poemswe/co-researcher">Claude Code, Gemini CLI, OpenAI Codex, and OpenCode</a>. It provides PhD-level research skills governed by Systemic Honesty principles — no fabricated citations, no hallucinated data.</p>
+
+            <h2>Research Skills</h2>
+            <ul>
+                <li><strong>Critical Analysis</strong> — logic checking, fallacy detection, bias identification</li>
+                <li><strong>Literature Review</strong> — systematic search, citation chaining, gap analysis</li>
+                <li><strong>Hypothesis Testing</strong> — variable mapping, falsification criteria, experimental design</li>
+                <li><strong>Quantitative Analysis</strong> — statistical power, effect size interpretation, method selection</li>
+                <li><strong>Qualitative Research</strong> — thematic analysis, coding strategy, saturation assessment</li>
+                <li><strong>Peer Review</strong> — manuscript critique and methodological evaluation</li>
+                <li><strong>Ethics Review</strong> — IRB compliance and privacy risk assessment</li>
+                <li><strong>Research Synthesis</strong> — narrative synthesis with uncertainty quantification</li>
+                <li><strong>Systematic Review</strong> — PRISMA-standard protocol and Risk of Bias assessment</li>
+                <li><strong>Grant Writing</strong> — funding strategy and proposal development</li>
+                <li><strong>Lateral Thinking</strong> — cross-domain analogies and first-principles reasoning</li>
+            </ul>
+
+            <h2>What This Arena Benchmarks</h2>
+            <p>22 test cases across 8 agent types. Models evaluated include Claude (Anthropic) and Codex (OpenAI). Rubrics cover reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, and research design. Results are scored Excellent / Good / Fair / Poor.</p>
+
+            <h2>Install</h2>
+            <ul>
+                <li>Claude Code: <code>claude plugins install poemswe/co-researcher</code></li>
+                <li>Gemini CLI: <code>gemini extension install https://github.com/poemswe/co-researcher</code></li>
+                <li>Source: <a href="https://github.com/poemswe/co-researcher">github.com/poemswe/co-researcher</a></li>
+            </ul>
+
+            <p style="margin-top:2rem;">Part of <a href="https://poemswe.com">poemswe.com</a> — AI tools for research and writing.</p>
+        </div>
+    </noscript>
 
     <!-- Dashboard Container -->
     <div class="container" id="dashboard">

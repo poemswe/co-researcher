@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Co-Researcher — Research Without Hallucinations</title>
+    <meta name="description" content="Co-Researcher is a PhD-level research suite for Claude Code, Gemini CLI, and OpenAI Codex. Structured protocols for literature review, critical analysis, hypothesis testing, and more — governed by Systemic Honesty. No fabricated citations.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://coresearcher.poemswe.com/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://coresearcher.poemswe.com/">
+    <meta property="og:title" content="Co-Researcher — Research Without Hallucinations">
+    <meta property="og:description" content="A PhD-level research suite for Claude Code, Gemini CLI, and OpenAI Codex. Systemic Honesty: no fabricated citations, no invented data.">
+    <meta property="og:site_name" content="Co-Researcher">
+
+    <link rel="alternate" type="text/plain" href="/llms.txt">
+    <link rel="icon" type="image/svg+xml" href="/evals/favicon.svg">
+
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #fefce8;
+            --bg-off: #fffef7;
+            --bg-card: #fef9e6;
+            --text: #18181b;
+            --text-mid: #3f3f46;
+            --text-dim: #71717a;
+            --navy: #1e3a8a;
+            --amber: #92400e;
+            --green: #065f46;
+            --rose: #be123c;
+            --border: #d4d4d8;
+            --font-serif: 'Spectral', Georgia, serif;
+            --font-sans: 'Outfit', -apple-system, sans-serif;
+            --font-mono: 'DM Mono', 'SF Mono', monospace;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        a { color: var(--navy); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* ── Nav ── */
+        nav {
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            font-family: var(--font-serif);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-mid);
+        }
+
+        .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+        .nav-cta {
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: var(--navy);
+            color: white !important;
+            padding: 0.4rem 1rem;
+            border-radius: 4px;
+        }
+
+        .nav-cta:hover { background: var(--amber); }
+
+        /* ── Hero ── */
+        .hero {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 6rem 2rem 4rem;
+        }
+
+        .hero-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--text-dim);
+            margin-bottom: 1.25rem;
+        }
+
+        .hero h1 {
+            font-family: var(--font-serif);
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            color: var(--text);
+            margin-bottom: 1.5rem;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            color: var(--rose);
+        }
+
+        .hero-body {
+            font-size: 1.15rem;
+            color: var(--text-mid);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            line-height: 1.75;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: var(--navy);
+            color: white;
+            padding: 0.75rem 1.75rem;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: background 0.15s;
+        }
+
+        .btn-primary:hover { background: var(--amber); text-decoration: none; }
+
+        .btn-secondary {
+            color: var(--text-mid);
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover { color: var(--text); border-color: var(--text); text-decoration: none; }
+
+        /* ── Rule ── */
+        .rule {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── Problem ── */
+        .problem {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        @media (max-width: 640px) { .problem { grid-template-columns: 1fr; gap: 2rem; } }
+
+        .problem-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--rose);
+            margin-bottom: 0.75rem;
+        }
+
+        .problem h2 {
+            font-family: var(--font-serif);
+            font-size: 1.6rem;
+            font-weight: 700;
+            line-height: 1.25;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .problem p {
+            color: var(--text-mid);
+            font-size: 0.95rem;
+            line-height: 1.75;
+        }
+
+        .principle {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--green);
+            padding: 1.5rem;
+        }
+
+        .principle-name {
+            font-family: var(--font-serif);
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .principle p {
+            color: var(--text-mid);
+            font-size: 0.875rem;
+            line-height: 1.65;
+        }
+
+        /* ── Skills ── */
+        .skills-section {
+            background: var(--bg-off);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 4rem 2rem;
+        }
+
+        .skills-inner {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+        }
+
+        .section-title {
+            font-family: var(--font-serif);
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-sub {
+            color: var(--text-mid);
+            font-size: 0.95rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1px;
+            border: 1px solid var(--border);
+            background: var(--border);
+        }
+
+        .skill-card {
+            background: var(--bg-off);
+            padding: 1.25rem 1.5rem;
+            transition: background 0.15s;
+        }
+
+        .skill-card:hover { background: var(--bg); }
+
+        .skill-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+        }
+
+        .skill-desc {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            line-height: 1.55;
+        }
+
+        .skill-tag {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--navy);
+            background: rgba(30, 58, 138, 0.07);
+            padding: 0.1rem 0.4rem;
+            border-radius: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Honesty block ── */
+        .honesty {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        .honesty-inner {
+            border: 2px solid var(--text);
+            padding: 2.5rem;
+            position: relative;
+        }
+
+        .honesty-inner::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            width: 80px;
+            height: 6px;
+            background: var(--rose);
+        }
+
+        .honesty h2 {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .honesty p {
+            color: var(--text-mid);
+            font-size: 0.95rem;
+            line-height: 1.75;
+            max-width: 560px;
+        }
+
+        .honesty-rules {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .honesty-rule {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-mid);
+            padding-left: 1rem;
+            border-left: 2px solid var(--green);
+        }
+
+        /* ── Install ── */
+        .install {
+            background: var(--bg-off);
+            border-top: 1px solid var(--border);
+            padding: 4rem 2rem;
+        }
+
+        .install-inner {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .platforms {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .platform {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+        }
+
+        .platform-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .platform code {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--navy);
+            background: rgba(30, 58, 138, 0.06);
+            padding: 0.6rem 0.75rem;
+            border-radius: 2px;
+            word-break: break-all;
+            line-height: 1.5;
+        }
+
+        /* ── Arena callout ── */
+        .arena {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .arena-text h2 {
+            font-family: var(--font-serif);
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4rem;
+        }
+
+        .arena-text p {
+            color: var(--text-dim);
+            font-size: 0.875rem;
+        }
+
+        /* ── Footer ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-inner {
+            max-width: 860px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-left {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .footer-left a { color: var(--text-dim); }
+        .footer-left a:hover { color: var(--text); }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+        }
+
+        .footer-links a {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .footer-links a:hover { color: var(--text); text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <span class="nav-brand">Co-Researcher</span>
+    <ul class="nav-links">
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#install">Install</a></li>
+        <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
+        <li><a href="/evals/" class="nav-cta">Arena →</a></li>
+    </ul>
+</nav>
+
+<section class="hero">
+    <p class="hero-label">Co-Researcher v2.1 — Claude Code · Gemini CLI · OpenAI Codex · OpenCode</p>
+    <h1>Your AI assistant<br>is <em>making up</em> citations.<br>Co-Researcher doesn't.</h1>
+    <p class="hero-body">A PhD-level research suite that runs inside the AI tools you already use. Every skill enforces Systemic Honesty — structured protocols that prevent hallucination at the method level, not just the output level.</p>
+    <div class="hero-actions">
+        <a href="#install" class="btn-primary">Install in 30 seconds</a>
+        <a href="https://github.com/poemswe/co-researcher" class="btn-secondary">View on GitHub →</a>
+    </div>
+</section>
+
+<div class="rule"><hr style="border:none; border-top: 1px solid var(--border);"></div>
+
+<section class="problem">
+    <div>
+        <p class="problem-label">The problem</p>
+        <h2>General-purpose AI fails researchers in specific ways.</h2>
+        <p>It invents citations that look real. It conflates correlation with causation. It skips IRB considerations. It produces "comprehensive" literature reviews that miss half the field. These aren't hallucinations you can spot easily — they're methodological failures dressed in confident prose.</p>
+    </div>
+    <div>
+        <div class="principle">
+            <p class="problem-label" style="color: var(--green);">The principle</p>
+            <p class="principle-name">Systemic Honesty</p>
+            <p>Co-Researcher's core rule: accuracy over output count. Every skill is a structured protocol that requires the agent to flag uncertainty, refuse to fabricate sources, and distinguish between what the evidence shows and what you might wish it showed. If it doesn't know, it says so.</p>
+        </div>
+    </div>
+</section>
+
+<section class="skills-section" id="skills">
+    <div class="skills-inner">
+        <p class="section-label">Research skills</p>
+        <h2 class="section-title">Thirteen specialized protocols.</h2>
+        <p class="section-sub">Each skill is a structured workflow, not a prompt. Invoke it and the agent follows a defined method — the same way a trained researcher would.</p>
+
+        <div class="skills-grid">
+            <div class="skill-card">
+                <span class="skill-tag">/analyze</span>
+                <p class="skill-name">Critical Analysis</p>
+                <p class="skill-desc">Fallacy detection, bias identification, contradictory evidence handling. Evaluates the strength of an argument, not just its surface coherence.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/review-lit</span>
+                <p class="skill-name">Literature Review</p>
+                <p class="skill-desc">Systematic search, citation chaining, hallucination detection, gap analysis. Refuses to cite sources it cannot verify.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/hypothesis</span>
+                <p class="skill-name">Hypothesis Testing</p>
+                <p class="skill-desc">Variable mapping, falsification criteria, experimental controls. Distinguishes testable claims from unfalsifiable ones.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/quantitative</span>
+                <p class="skill-name">Quantitative Analysis</p>
+                <p class="skill-desc">Statistical method selection, effect size interpretation, Simpson's paradox detection, power analysis.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/qualitative</span>
+                <p class="skill-name">Qualitative Research</p>
+                <p class="skill-desc">Thematic analysis, coding strategy, leading-question detection, theoretical saturation assessment.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/review</span>
+                <p class="skill-name">Peer Review</p>
+                <p class="skill-desc">Manuscript critique with methodological rigor scoring. Structures feedback the way a journal reviewer would.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/ethics</span>
+                <p class="skill-name">Ethics Review</p>
+                <p class="skill-desc">IRB compliance assessment, participant privacy risk, dual-use research concerns.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/systematic</span>
+                <p class="skill-name">Systematic Review</p>
+                <p class="skill-desc">PRISMA-standard protocol, inclusion/exclusion criteria, Risk of Bias assessment.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/synthesize</span>
+                <p class="skill-name">Research Synthesis</p>
+                <p class="skill-desc">Narrative synthesis with explicit uncertainty quantification. Distinguishes strong evidence from weak consensus.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/methodology</span>
+                <p class="skill-name">Research Methodology</p>
+                <p class="skill-desc">Design selection and validation — matches your research question to appropriate methods, sampling strategies, and validity controls.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/grant</span>
+                <p class="skill-name">Grant Writing</p>
+                <p class="skill-desc">Funding strategy, Specific Aims development, alignment with agency priorities.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/lateral</span>
+                <p class="skill-name">Lateral Thinking</p>
+                <p class="skill-desc">Cross-domain analogies, constraint satisfaction, first-principles reasoning for novel research problems.</p>
+            </div>
+            <div class="skill-card">
+                <span class="skill-tag">/research</span>
+                <p class="skill-name">Research Orchestration</p>
+                <p class="skill-desc">Intelligent multi-agent coordination. Analyzes your question, selects the right agents, executes a phased research plan.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="honesty">
+    <div class="honesty-inner">
+        <h2>What Systemic Honesty means in practice.</h2>
+        <p>It's a constraint built into the protocol, not a request made to the model. Every Co-Researcher skill enforces these rules at the method level:</p>
+        <div class="honesty-rules">
+            <p class="honesty-rule">Never fabricate a citation. If a source cannot be verified, say so.</p>
+            <p class="honesty-rule">Distinguish what the evidence shows from what it suggests.</p>
+            <p class="honesty-rule">Quantify uncertainty — "likely," "insufficient evidence," "conflicting findings."</p>
+            <p class="honesty-rule">Refuse to produce a "comprehensive" review when coverage is partial.</p>
+            <p class="honesty-rule">Flag methodological limits before presenting conclusions.</p>
+        </div>
+    </div>
+</section>
+
+<section class="install" id="install">
+    <div class="install-inner">
+        <p class="section-label">Installation</p>
+        <h2 class="section-title">Works inside the tools you already use.</h2>
+        <p class="section-sub">Pick your platform. Co-Researcher installs as a native plugin or extension — no separate app, no new interface to learn.</p>
+
+        <div class="platforms">
+            <div class="platform">
+                <p class="platform-name">Claude Code</p>
+                <code>claude plugins install poemswe/co-researcher</code>
+            </div>
+            <div class="platform">
+                <p class="platform-name">Gemini CLI</p>
+                <code>gemini extension install https://github.com/poemswe/co-researcher</code>
+            </div>
+            <div class="platform">
+                <p class="platform-name">OpenAI Codex</p>
+                <code>Tell Codex: "Fetch and follow https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md"</code>
+            </div>
+            <div class="platform">
+                <p class="platform-name">From source</p>
+                <code>git clone github.com/poemswe/co-researcher</code>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="arena">
+    <div class="arena-text">
+        <h2>See how it performs under rigorous evaluation.</h2>
+        <p>22 test cases. 8 agent types. Claude vs. Codex. Scored across six rubrics covering reasoning quality, analytical depth, and methodological rigor.</p>
+    </div>
+    <a href="/evals/" class="btn-primary">Open Benchmark Arena →</a>
+</section>
+
+<footer>
+    <div class="footer-inner">
+        <p class="footer-left">
+            Co-Researcher · MIT License ·
+            Part of <a href="https://poemswe.com">poemswe.com</a>
+        </p>
+        <ul class="footer-links">
+            <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
+            <li><a href="/evals/">Benchmark Arena</a></li>
+            <li><a href="/llms.txt">llms.txt</a></li>
+        </ul>
+    </div>
+</footer>
+
+</body>
+</html>
