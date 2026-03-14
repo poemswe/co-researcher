@@ -6,15 +6,16 @@ A professional research suite for conducting rigorous academic research using sp
 
 ### Claude Code
 
-**Option 1: From Marketplace (Recommended)**
-```bash
-claude plugins install poemswe/co-researcher
+**Option 1: Slash commands**
+```
+/plugin marketplace add poemswe/co-researcher
+/plugin install co-researcher
 ```
 
-**Option 2: From Local Directory**
+**Option 2: Claude CLI**
 ```bash
-cd /path/to/co-researcher
-claude plugins link .
+claude plugin install poemswe/co-researcher
+claude plugin install co-researcher
 ```
 
 ### Gemini CLI
