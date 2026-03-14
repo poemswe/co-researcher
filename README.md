@@ -151,6 +151,7 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **research-methodology**: Design selection and validation
 - **research-synthesis**: Narrative synthesis with uncertainty quantification
 - **systematic-review**: PRISMA-standard systematic review guidance
+- **using-co-researcher**: Orients Claude to all available skills in the suite; run once per session to activate the full protocol set
 
 
 ## Evaluation Framework
