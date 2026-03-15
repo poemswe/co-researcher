@@ -290,6 +290,59 @@
 
         .site-nav-cta:hover { background: var(--accent-secondary) !important; }
 
+        .site-nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .site-nav-toggle span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 600px) {
+            .site-nav { padding: 1rem 1.25rem; position: relative; flex-wrap: wrap; }
+
+            .site-nav-toggle { display: flex; }
+
+            .site-nav-links {
+                display: none;
+                flex-direction: column;
+                gap: 0;
+                width: 100%;
+                padding: 0.5rem 0 0.75rem;
+            }
+
+            .site-nav-links.open { display: flex; }
+
+            .site-nav-links li { border-top: 1px solid var(--border); }
+
+            .site-nav-links a {
+                display: block;
+                padding: 0.6rem 0;
+                font-size: 0.95rem;
+            }
+
+            .site-nav-cta {
+                background: none;
+                color: var(--accent-primary) !important;
+                padding: 0.6rem 0;
+                border-radius: 0;
+                font-size: 0.95rem;
+            }
+
+            .site-nav-cta:hover { background: none !important; color: var(--text-primary) !important; }
+        }
+
 
         /* ============ Section Headings ============ */
         .section-heading {
@@ -1596,6 +1649,9 @@
 
     <nav class="site-nav">
         <a href="/" class="site-nav-brand">Co-Researcher</a>
+        <button class="site-nav-toggle" aria-label="Toggle menu" onclick="this.nextElementSibling.classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </button>
         <ul class="site-nav-links">
             <li><a href="/#skills">Skills</a></li>
             <li><a href="/#install">Install</a></li>
