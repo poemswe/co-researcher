@@ -129,6 +129,59 @@
 
         .nav-cta:hover { background: var(--amber); }
 
+        .nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.25rem;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .nav-toggle span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        @media (max-width: 600px) {
+            nav { padding: 1rem 1.25rem; position: relative; flex-wrap: wrap; }
+
+            .nav-toggle { display: flex; }
+
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                gap: 0;
+                width: 100%;
+                padding: 0.5rem 0 0.75rem;
+            }
+
+            .nav-links.open { display: flex; }
+
+            .nav-links li { border-top: 1px solid var(--border); }
+
+            .nav-links a {
+                display: block;
+                padding: 0.6rem 0;
+                font-size: 0.95rem;
+            }
+
+            .nav-cta {
+                background: none;
+                color: var(--navy) !important;
+                padding: 0.6rem 0;
+                border-radius: 0;
+                font-size: 0.95rem;
+            }
+
+            .nav-cta:hover { background: none; color: var(--text) !important; }
+        }
+
         /* ── Hero ── */
         .hero {
             max-width: 860px;
@@ -508,6 +561,9 @@
 
 <nav>
     <span class="nav-brand">Co-Researcher</span>
+    <button class="nav-toggle" aria-label="Toggle menu" onclick="this.nextElementSibling.classList.toggle('open')">
+        <span></span><span></span><span></span>
+    </button>
     <ul class="nav-links">
         <li><a href="#skills">Skills</a></li>
         <li><a href="#install">Install</a></li>
