@@ -1,0 +1,44 @@
+{
+  "name": "co-researcher",
+  "version": "2.1.0",
+  "description": "PhD-level research capabilities: literature review, multi-source investigation, critical analysis, hypothesis-driven exploration, quantitative/qualitative methods, peer review, ethics review, and grant writing",
+  "author": {
+    "name": "poemswe"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/poemswe/co-researcher",
+  "homepage": "https://github.com/poemswe/co-researcher",
+  "keywords": [
+    "research",
+    "literature-review",
+    "critical-analysis",
+    "hypothesis",
+    "academic",
+    "investigation",
+    "peer-review",
+    "ethics",
+    "grant-writing",
+    "quantitative",
+    "qualitative",
+    "systematic-review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Co-Researcher",
+    "shortDescription": "PhD-level research suite — literature review, critical analysis, and multi-agent orchestration.",
+    "longDescription": "Co-Researcher is a professional research suite providing PhD-level capabilities across literature review, critical analysis, hypothesis testing, quantitative and qualitative methods, peer review, ethics review, and grant writing. Features an intelligent orchestration engine that coordinates specialized research agents. Compatible with Claude Code, Gemini CLI, OpenAI Codex, and OpenCode.",
+    "developerName": "poemswe",
+    "category": "Research",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Review the literature on climate change mitigation strategies",
+      "Analyze the methodology of this research paper",
+      "Help me design a hypothesis-driven experiment",
+      "Write a grant proposal for my research project"
+    ]
+  }
+}
