@@ -8,7 +8,8 @@ This document provides a technical overview of the co-researcher system architec
 
 Nine domain-expert skills provide PhD-level research capabilities:
 
-- **literature-review**: Systematic literature reviews, citation analysis, and hallucination detection
+- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`) consumed by both review skills.
+- **systematic-review**: PRISMA/Cochrane/JBI reviews with Risk-of-Bias and GRADE. Reuses literature-review's backend scripts.
 - **critical-analysis**: Bias identification and logical fallacy detection
 - **hypothesis-testing**: Testable hypothesis formulation and variable mapping
 - **lateral-thinking**: Cross-domain analogy and first-principles reasoning
@@ -40,6 +41,18 @@ The system supports three CLI platforms through unified skill definitions:
   - Skills available via `$` prefix (e.g., `$research`)
 
 All platforms share the same skill definitions in `skills/` but use platform-specific command wrappers.
+
+### Literature Search Backend
+
+Three CLI search scripts ship with the `literature-review` skill, executed via `uv run`:
+
+- **OpenAlex** (`openalex_cli.py`) — cross-disciplinary, ~250M works, citation counts and bibliometrics
+- **arXiv** (`search_arxiv.py`, `download_paper.py`, `download_paper_source.py`) — preprints for CS/physics/math/quant-bio
+- **Europe PMC** (`europepmc_api.py`) — life-science open-access full text + forward/backward citation graph
+
+Shared HTTP client (`skills/scienceskillscommon/`) handles rate limiting, retries, and exponential backoff. All scripts use PEP 723 inline dependencies resolved by `uv` on first run. Backend scripts and the shared HTTP client are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0.
+
+**Prerequisite**: `uv` package manager. One-time setup via `scripts/setup.sh` (detects existing install, falls back to astral.sh installer, warms the dep cache).
 
 ### Research Quality Principles
 
