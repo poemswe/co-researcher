@@ -85,6 +85,7 @@ Shared HTTP client (`skills/scienceskillscommon/`) handles rate limiting, retrie
 - Provider-specific tool enablement for agents; judge runs tool-free for isolation
 - Persistent result indexing in `results/latest/index.md`
 - Extended model targeting: `--model "provider:version reasoning-level"`
+- Robust CLI location via `shutil.which` and `/opt/homebrew/bin` path discovery support for Apple Silicon macOS
 
 ### Arena Dashboard
 

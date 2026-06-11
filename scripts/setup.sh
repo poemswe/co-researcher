@@ -56,7 +56,7 @@ prompt_openalex_key() {
     say "  - With a free key: \$1/day budget, ~10 req/s. Get one at https://openalex.org → account settings."
     printf '\033[1;36m[co-researcher]\033[0m Paste OpenAlex API key (input hidden, press Enter to skip): '
     local key=""
-    read -s key
+    read -s key || true
     echo
 
     if [ -z "${key}" ]; then

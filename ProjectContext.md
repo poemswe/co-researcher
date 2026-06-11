@@ -18,6 +18,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 - **2026-06-04**: `setup.sh` also prompts (optionally) for `OPENALEX_API_KEY`, writes to `~/.env` mode 600, never echoes the value. Free polite pool still works without a key but throttles after ~1 `--search` per day.
 - **2026-06-04**: Backend scripts live inside `literature-review/scripts/` (not as separate top-level skills). User-facing surface area = the two review skills only.
 - **2026-06-04**: Kept both `literature-review` (narrative/scoping) and `systematic-review` (PRISMA). Methodological distinction justifies the 60% protocol overlap.
+- **2026-06-11**: Made `scripts/setup.sh` robust under non-interactive environments (added `|| true` to key input `read`). Updated `evals/lib/core.py` to use `shutil.which` and check `/opt/homebrew/bin` to fix evaluation CLI discovery on Apple Silicon macOS.
 
 ## Pitfalls
 
