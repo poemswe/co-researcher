@@ -33,12 +33,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 import urllib.parse
-import xml.etree.ElementTree as ET
 
-from science_skills.scienceskillscommon import http_client
+from science_skills.scienceskillscommon import http_client, jats
 
 _API_BASE = "https://www.ebi.ac.uk/europepmc/webservices/rest/"
 _PDF_BASE = "https://europepmc.org/"
@@ -70,62 +68,6 @@ def write_output(data, output_file, *, write_as_json=True):
   except (OSError, TypeError) as e:
     print(f"Error writing to file {output_file}: {e}")
     sys.exit(1)
-
-
-def _extract_all_text(elem):
-  """Recursively extract all text content from an XML element."""
-  parts = []
-  if elem.text:
-    parts.append(elem.text)
-  for child in elem:
-    parts.append(_extract_all_text(child))
-    if child.tail:
-      parts.append(child.tail)
-  return "".join(parts)
-
-
-def _xml_to_plain_text(xml_string):
-  """Extract article title, abstract, and body text from JATS XML."""
-  try:
-    root = ET.fromstring(xml_string)
-  except ET.ParseError:
-    # If XML parsing fails, fall back to regex-based tag stripping.
-    text = re.sub(r"<[^>]+>", " ", xml_string)
-    return re.sub(r"\s+", " ", text).strip()
-
-  sections = []
-
-  # Extract article title.
-  for title in root.iter("article-title"):
-    t = _extract_all_text(title).strip()
-    if t:
-      sections.append(f"# {t}")
-    break
-
-  # Extract abstract(s).
-  for abstract in root.iter("abstract"):
-    text = _extract_all_text(abstract).strip()
-    if text:
-      sections.append(f"## Abstract\n\n{text}")
-
-  # Extract body paragraphs.
-  for body in root.iter("body"):
-    body_parts = []
-    for elem in body.iter():
-      tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
-      if tag == "title":
-        title_text = _extract_all_text(elem).strip()
-        if title_text:
-          body_parts.append(f"\n## {title_text}\n")
-      elif tag == "p":
-        para = _extract_all_text(elem).strip()
-        if para:
-          body_parts.append(para)
-    if body_parts:
-      sections.append("\n\n".join(body_parts))
-    break  # Only the first <body> element.
-
-  return "\n\n".join(sections)
 
 
 # ---------------------------------------------------------------------------
@@ -194,7 +136,7 @@ def get_fulltext(pmcid, fmt="text"):
   if fmt == "xml":
     return xml_content
   else:
-    return _xml_to_plain_text(xml_content)
+    return jats.xml_to_markdown(xml_content)
 
 
 def get_citations(source, article_id, page=1, page_size=25):
