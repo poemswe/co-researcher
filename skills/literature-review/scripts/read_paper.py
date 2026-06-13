@@ -85,8 +85,48 @@ def try_extract(pdf_path: pathlib.Path, fulltext_path: pathlib.Path) -> bool:
   return True
 
 
+def lookup_openalex_work(doi: str) -> dict | None:
+  url = f"works/https://doi.org/{doi}"
+  api_key = os.environ.get("OPENALEX_API_KEY")
+  if api_key:
+    url += "?" + urllib.parse.urlencode({"api_key": api_key})
+  try:
+    return _OPENALEX.fetch_json(url)
+  except http_client.HttpError as e:
+    if e.status_code == 404:
+      return None
+    raise
+
+
 def fetch_epmc_fulltext(pmcid: str) -> str | None:
-  return None
+  try:
+    xml = _EPMC.fetch_text(f"{pmcid}/fullTextXML", timeout=60)
+  except http_client.HttpError:
+    return None
+  md = jats.xml_to_markdown(xml)
+  return md if md.strip() else None
+
+
+def _download_pdf(client, url: str, dest: pathlib.Path, timeout: int) -> bool:
+  try:
+    data = client.fetch_bytes(url, timeout=timeout)
+  except http_client.HttpError:
+    return False
+  if data[:5] != b"%PDF-":
+    return False
+  dest.write_bytes(data)
+  return True
+
+
+def fetch_arxiv_pdf(arxiv_id: str, dest: pathlib.Path) -> bool:
+  return _download_pdf(
+      _ARXIV, f"https://arxiv.org/pdf/{arxiv_id}.pdf", dest, timeout=60)
+
+
+def fetch_oa_pdf(url: str, dest: pathlib.Path) -> bool:
+  parsed = urllib.parse.urlparse(url)
+  client = http_client.HttpClient(f"{parsed.scheme}://{parsed.netloc}", qps=1.0)
+  return _download_pdf(client, url, dest, timeout=120)
 
 
 def read_paper(doi, arxiv, pmcid, workspace) -> None:
@@ -102,10 +142,53 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
   if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
     return emit("fulltext", fulltext_path, "user_pdf", identifier)
 
+  work = lookup_openalex_work(doi) if doi else None
+  ids = (work or {}).get("ids") or {}
+  pmcid = pmcid or pmcid_from_ids(ids)
+  arxiv = arxiv or (doi_to_arxiv(doi) if doi else None)
+
   if pmcid:
     text = fetch_epmc_fulltext(pmcid)
     if text:
       fulltext_path.write_text(text, encoding="utf-8")
       return emit("fulltext", fulltext_path, "epmc", identifier)
 
+  if arxiv and fetch_arxiv_pdf(arxiv, pdf_path):
+    if try_extract(pdf_path, fulltext_path):
+      return emit("fulltext", fulltext_path, "arxiv_pdf", identifier)
+
+  oa = (work or {}).get("best_oa_location") or {}
+  if oa.get("pdf_url") and fetch_oa_pdf(oa["pdf_url"], pdf_path):
+    if try_extract(pdf_path, fulltext_path):
+      return emit("fulltext", fulltext_path, "oa_pdf", identifier)
+
+  inv = (work or {}).get("abstract_inverted_index")
+  if inv:
+    title = (work or {}).get("title") or identifier
+    abstract_path.write_text(
+        f"# {title}\n\n{abstract_from_inverted_index(inv)}\n",
+        encoding="utf-8",
+    )
+    return emit("abstract-only", abstract_path, "openalex_abstract", identifier)
+
   emit("abstract-only", None, "none", identifier)
+
+
+def parse_args() -> argparse.Namespace:
+  parser = argparse.ArgumentParser(
+      description="Acquire full text for a paper into papers/{id}/."
+  )
+  group = parser.add_mutually_exclusive_group(required=True)
+  group.add_argument("--doi", help="DOI, e.g. 10.1038/s41586-021-03819-2")
+  group.add_argument("--arxiv", help="arXiv ID, e.g. 1706.03762")
+  group.add_argument("--pmcid", help="PubMed Central ID, e.g. PMC8371605")
+  parser.add_argument(
+      "--workspace", default=".",
+      help="Parent directory of papers/ (default: current directory)",
+  )
+  return parser.parse_args()
+
+
+if __name__ == "__main__":
+  args = parse_args()
+  read_paper(args.doi, args.arxiv, args.pmcid, args.workspace)

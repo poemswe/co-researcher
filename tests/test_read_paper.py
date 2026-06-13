@@ -98,5 +98,85 @@ def test_corrupt_user_pdf_falls_through(tmp_path, capsys, monkeypatch):
   assert out["source"] == "epmc"
 
 
+def _no_network(monkeypatch, **overrides):
+  defaults = {
+      "lookup_openalex_work": lambda doi: None,
+      "fetch_epmc_fulltext": lambda pmcid: None,
+      "fetch_arxiv_pdf": lambda aid, dest: False,
+      "fetch_oa_pdf": lambda url, dest: False,
+  }
+  defaults.update(overrides)
+  for name, fn in defaults.items():
+    monkeypatch.setattr(read_paper, name, fn)
+
+
+def test_chain_doi_resolves_pmcid_via_openalex(tmp_path, capsys, monkeypatch):
+  work = {"ids": {"pmcid": "https://.../PMC9"}, "title": "T"}
+  _no_network(monkeypatch,
+              lookup_openalex_work=lambda doi: work,
+              fetch_epmc_fulltext=lambda pmcid: "# md" if pmcid == "PMC9" else None)
+  read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["source"] == "epmc"
+  assert out["status"] == "fulltext"
+
+
+def test_chain_arxiv_pdf_after_epmc_miss(tmp_path, capsys, monkeypatch):
+  def fake_arxiv(aid, dest):
+    dest.write_bytes(b"%PDF-fake")
+    return True
+
+  _no_network(monkeypatch, fetch_arxiv_pdf=fake_arxiv)
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# arxiv md")
+  read_paper.read_paper(doi=None, arxiv="1706.03762", pmcid=None,
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["source"] == "arxiv_pdf"
+
+
+def test_chain_oa_pdf_route(tmp_path, capsys, monkeypatch):
+  work = {"ids": {}, "best_oa_location": {"pdf_url": "https://x.org/p.pdf"}}
+
+  def fake_oa(url, dest):
+    dest.write_bytes(b"%PDF-fake")
+    return True
+
+  _no_network(monkeypatch,
+              lookup_openalex_work=lambda doi: work,
+              fetch_oa_pdf=fake_oa)
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# oa md")
+  read_paper.read_paper(doi="10.1/y", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["source"] == "oa_pdf"
+
+
+def test_chain_abstract_fallback(tmp_path, capsys, monkeypatch):
+  work = {
+      "ids": {},
+      "title": "Paywalled Paper",
+      "abstract_inverted_index": {"hello": [0], "world": [1]},
+  }
+  _no_network(monkeypatch, lookup_openalex_work=lambda doi: work)
+  read_paper.read_paper(doi="10.1/z", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["status"] == "abstract-only"
+  assert out["source"] == "openalex_abstract"
+  body = pathlib.Path(out["path"]).read_text(encoding="utf-8")
+  assert "# Paywalled Paper" in body
+  assert "hello world" in body
+
+
+def test_chain_nothing_found(tmp_path, capsys, monkeypatch):
+  _no_network(monkeypatch)
+  read_paper.read_paper(doi="10.1/none", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out == {"status": "abstract-only", "path": None,
+                 "source": "none", "id": "10.1/none"}
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))
