@@ -57,5 +57,46 @@ def test_emit_prints_json_line(capsys):
   }
 
 
+def test_cached_fulltext_is_noop(tmp_path, capsys):
+  d = tmp_path / "papers" / "PMC1"
+  d.mkdir(parents=True)
+  (d / "fulltext.md").write_text("# cached", encoding="utf-8")
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC1",
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["status"] == "fulltext"
+  assert out["source"] == "cached"
+  assert out["path"].endswith("papers/PMC1/fulltext.md")
+
+
+def test_user_pdf_is_extracted(tmp_path, capsys, monkeypatch):
+  d = tmp_path / "papers" / "PMC2"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-fake")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC2",
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["status"] == "fulltext"
+  assert out["source"] == "user_pdf"
+  assert (d / "fulltext.md").read_text(encoding="utf-8") == "# extracted"
+
+
+def test_corrupt_user_pdf_falls_through(tmp_path, capsys, monkeypatch):
+  d = tmp_path / "papers" / "PMC3"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-corrupt")
+
+  def boom(path):
+    raise ValueError("cannot parse")
+
+  monkeypatch.setattr(read_paper, "extract_pdf", boom)
+  monkeypatch.setattr(read_paper, "fetch_epmc_fulltext", lambda p: "# epmc md")
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC3",
+                        workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["source"] == "epmc"
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))

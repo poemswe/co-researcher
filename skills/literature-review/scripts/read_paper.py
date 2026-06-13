@@ -67,3 +67,45 @@ def emit(status: str, path, source: str, identifier: str) -> None:
       "source": source,
       "id": identifier,
   }))
+
+
+def extract_pdf(pdf_path: pathlib.Path) -> str:
+  return pymupdf4llm.to_markdown(str(pdf_path))
+
+
+def try_extract(pdf_path: pathlib.Path, fulltext_path: pathlib.Path) -> bool:
+  try:
+    md = extract_pdf(pdf_path)
+  except Exception as e:
+    print(f"PDF extraction failed for {pdf_path}: {e}", file=sys.stderr)
+    return False
+  if not md.strip():
+    return False
+  fulltext_path.write_text(md, encoding="utf-8")
+  return True
+
+
+def fetch_epmc_fulltext(pmcid: str) -> str | None:
+  return None
+
+
+def read_paper(doi, arxiv, pmcid, workspace) -> None:
+  identifier = doi or arxiv or pmcid
+  paper_dir = pathlib.Path(workspace) / "papers" / sanitize_id(identifier)
+  paper_dir.mkdir(parents=True, exist_ok=True)
+  pdf_path = paper_dir / "paper.pdf"
+  fulltext_path = paper_dir / "fulltext.md"
+  abstract_path = paper_dir / "abstract.md"
+
+  if fulltext_path.exists():
+    return emit("fulltext", fulltext_path, "cached", identifier)
+  if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
+    return emit("fulltext", fulltext_path, "user_pdf", identifier)
+
+  if pmcid:
+    text = fetch_epmc_fulltext(pmcid)
+    if text:
+      fulltext_path.write_text(text, encoding="utf-8")
+      return emit("fulltext", fulltext_path, "epmc", identifier)
+
+  emit("abstract-only", None, "none", identifier)
