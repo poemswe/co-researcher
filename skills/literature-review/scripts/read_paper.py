@@ -86,7 +86,7 @@ def try_extract(pdf_path: pathlib.Path, fulltext_path: pathlib.Path) -> bool:
 
 
 def lookup_openalex_work(doi: str) -> dict | None:
-  url = f"works/https://doi.org/{doi}"
+  url = f"https://api.openalex.org/works/https://doi.org/{doi}"
   api_key = os.environ.get("OPENALEX_API_KEY")
   if api_key:
     url += "?" + urllib.parse.urlencode({"api_key": api_key})

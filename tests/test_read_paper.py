@@ -178,5 +178,20 @@ def test_chain_nothing_found(tmp_path, capsys, monkeypatch):
                  "source": "none", "id": "10.1/none"}
 
 
+def test_lookup_openalex_work_url_accepted_by_client(monkeypatch):
+  seen = {}
+
+  def fake_fetch_json(url):
+    read_paper._OPENALEX._resolve_url(url)
+    seen["url"] = url
+    return {"ok": True}
+
+  monkeypatch.setattr(read_paper._OPENALEX, "fetch_json", fake_fetch_json)
+  monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
+  result = read_paper.lookup_openalex_work("10.7717/peerj.4375")
+  assert result == {"ok": True}
+  assert seen["url"].startswith("https://api.openalex.org/works/")
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))
