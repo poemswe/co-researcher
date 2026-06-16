@@ -13,6 +13,7 @@ import importlib.util
 import json
 import pathlib
 import sys
+import urllib.parse
 
 import pytest
 
@@ -101,6 +102,7 @@ def test_corrupt_user_pdf_falls_through(tmp_path, capsys, monkeypatch):
 def _no_network(monkeypatch, **overrides):
   defaults = {
       "lookup_openalex_work": lambda doi: None,
+      "resolve_pmcid_via_epmc": lambda doi: None,
       "fetch_epmc_fulltext": lambda pmcid: None,
       "fetch_arxiv_pdf": lambda aid, dest: False,
       "fetch_oa_pdf": lambda url, dest: False,
@@ -176,6 +178,53 @@ def test_chain_nothing_found(tmp_path, capsys, monkeypatch):
   out = json.loads(capsys.readouterr().out)
   assert out == {"status": "abstract-only", "path": None,
                  "source": "none", "id": "10.1/none"}
+
+
+def test_resolve_pmcid_via_epmc_returns_first_pmcid(monkeypatch):
+  seen = {}
+
+  def fake_fetch_json(url):
+    read_paper._EPMC._resolve_url(url)
+    seen["url"] = url
+    return {"resultList": {"result": [
+        {"pmid": "34265844"},
+        {"pmcid": "PMC8371605", "source": "MED"},
+    ]}}
+
+  monkeypatch.setattr(read_paper._EPMC, "fetch_json", fake_fetch_json)
+  assert read_paper.resolve_pmcid_via_epmc("10.1038/s41586-021-03819-2") == (
+      "PMC8371605")
+  assert 'DOI:"10.1038/s41586-021-03819-2"' in urllib.parse.unquote(
+      seen["url"])
+
+
+def test_resolve_pmcid_via_epmc_no_match_returns_none(monkeypatch):
+  monkeypatch.setattr(read_paper._EPMC, "fetch_json",
+                      lambda url: {"resultList": {"result": []}})
+  assert read_paper.resolve_pmcid_via_epmc("10.1/nomatch") is None
+
+
+def test_resolve_pmcid_via_epmc_swallows_http_error(monkeypatch):
+  def boom(url):
+    raise read_paper.http_client.HttpError("fail", status_code=500)
+
+  monkeypatch.setattr(read_paper._EPMC, "fetch_json", boom)
+  assert read_paper.resolve_pmcid_via_epmc("10.1/err") is None
+
+
+def test_chain_resolves_pmcid_via_epmc_when_openalex_lacks_it(
+    tmp_path, capsys, monkeypatch):
+  work = {"ids": {}, "title": "AlphaFold"}
+  _no_network(monkeypatch,
+              lookup_openalex_work=lambda doi: work,
+              resolve_pmcid_via_epmc=lambda doi: "PMC8371605",
+              fetch_epmc_fulltext=lambda pmcid: "# md" if pmcid == "PMC8371605"
+              else None)
+  read_paper.read_paper(doi="10.1038/s41586-021-03819-2", arxiv=None,
+                        pmcid=None, workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["source"] == "epmc"
+  assert out["status"] == "fulltext"
 
 
 def test_lookup_openalex_work_url_accepted_by_client(monkeypatch):

@@ -98,6 +98,23 @@ def lookup_openalex_work(doi: str) -> dict | None:
     raise
 
 
+def resolve_pmcid_via_epmc(doi: str) -> str | None:
+  params = urllib.parse.urlencode({
+      "query": f'DOI:"{doi}"',
+      "format": "json",
+      "resultType": "lite",
+      "pageSize": 1,
+  })
+  try:
+    data = _EPMC.fetch_json(f"search?{params}")
+  except http_client.HttpError:
+    return None
+  for result in data.get("resultList", {}).get("result", []):
+    if pmcid := result.get("pmcid"):
+      return pmcid
+  return None
+
+
 def fetch_epmc_fulltext(pmcid: str) -> str | None:
   try:
     xml = _EPMC.fetch_text(f"{pmcid}/fullTextXML", timeout=60)
@@ -145,6 +162,8 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
   work = lookup_openalex_work(doi) if doi else None
   ids = (work or {}).get("ids") or {}
   pmcid = pmcid or pmcid_from_ids(ids)
+  if not pmcid and doi:
+    pmcid = resolve_pmcid_via_epmc(doi)
   arxiv = arxiv or (doi_to_arxiv(doi) if doi else None)
 
   if pmcid:
