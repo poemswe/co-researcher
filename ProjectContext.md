@@ -8,7 +8,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Open Threads
 
-- **In progress**: paper reading + review-funnel workflow. Spec `docs/superpowers/specs/2026-06-11-paper-reading-workflow-design.md`, plan `docs/superpowers/plans/2026-06-12-paper-reading-workflow.md` (8 tasks, subagent-driven w/ haiku). Task 1 DONE (`abe12c4`): JATS extraction moved to `scienceskillscommon/jats.py`, europepmc_api refactored, 3 unit tests pass. Phase 1 = Tasks 1–5 (read_paper.py), phase 2 = Tasks 6–8 (funnel protocol).
+- **In progress**: paper reading + review-funnel workflow. Spec + plan live under `docs/superpowers/` as **local working docs only** (gitignored, not committed). 8 tasks, subagent-driven w/ haiku. Task 1 DONE: JATS extraction moved to `scienceskillscommon/jats.py`, europepmc_api refactored, 3 unit tests pass. Phase 1 = Tasks 1–5 (read_paper.py), phase 2 = Tasks 6–8 (funnel protocol).
 - **RESOLVED (2026-06-15)**: The Europe PMC full-text bug was transient/network — not reproducing. `{pmcid}/fullTextXML` returns 200 + valid JATS for PMC8371605 and the docs example PMC3258128. The epmc route in read_paper.py is fully functional end-to-end.
 - **DONE (2026-06-15)**: OpenAlex doesn't reliably return `pmcid` in `ids` (e.g. AlphaFold `10.1038/s41586-021-03819-2`), sending papers down the OA-PDF route instead of preferred JATS. Added `resolve_pmcid_via_epmc(doi)` — an EPMC `DOI:"..."` search fallback wired into the chain after `pmcid_from_ids`. AlphaFold now resolves via `source: epmc`. 4 new tests, 18 total green.
 

@@ -9,6 +9,9 @@ __pycache__/
 # macOS
 .DS_Store
 
+# Superpowers planning artifacts (local working docs, not committed)
+docs/superpowers/
+
 # read_paper.py workspace outputs (full text, abstracts, downloaded PDFs)
 rp-smoke/
 papers/
