@@ -159,9 +159,8 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
   if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
     return emit("fulltext", fulltext_path, "user_pdf", identifier)
 
-  work = lookup_openalex_work(doi) if doi else None
-  ids = (work or {}).get("ids") or {}
-  pmcid = pmcid or pmcid_from_ids(ids)
+  work = (lookup_openalex_work(doi) if doi else None) or {}
+  pmcid = pmcid or pmcid_from_ids(work.get("ids") or {})
   if not pmcid and doi:
     pmcid = resolve_pmcid_via_epmc(doi)
   arxiv = arxiv or (doi_to_arxiv(doi) if doi else None)
@@ -176,14 +175,14 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
     if try_extract(pdf_path, fulltext_path):
       return emit("fulltext", fulltext_path, "arxiv_pdf", identifier)
 
-  oa = (work or {}).get("best_oa_location") or {}
+  oa = work.get("best_oa_location") or {}
   if oa.get("pdf_url") and fetch_oa_pdf(oa["pdf_url"], pdf_path):
     if try_extract(pdf_path, fulltext_path):
       return emit("fulltext", fulltext_path, "oa_pdf", identifier)
 
-  inv = (work or {}).get("abstract_inverted_index")
+  inv = work.get("abstract_inverted_index")
   if inv:
-    title = (work or {}).get("title") or identifier
+    title = work.get("title") or identifier
     abstract_path.write_text(
         f"# {title}\n\n{abstract_from_inverted_index(inv)}\n",
         encoding="utf-8",
