@@ -93,9 +93,9 @@ def lookup_openalex_work(doi: str) -> dict | None:
   try:
     return _OPENALEX.fetch_json(url)
   except http_client.HttpError as e:
-    if e.status_code == 404:
-      return None
-    raise
+    if e.status_code != 404:
+      print(f"OpenAlex lookup failed for {doi}: {e}", file=sys.stderr)
+    return None
 
 
 def resolve_pmcid_via_epmc(doi: str) -> str | None:

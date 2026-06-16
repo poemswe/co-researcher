@@ -180,6 +180,44 @@ def test_chain_nothing_found(tmp_path, capsys, monkeypatch):
                  "source": "none", "id": "10.1/none"}
 
 
+def test_lookup_openalex_work_returns_none_on_404(monkeypatch):
+  def boom(url):
+    raise read_paper.http_client.HttpError("missing", status_code=404)
+
+  monkeypatch.setattr(read_paper._OPENALEX, "fetch_json", boom)
+  monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
+  assert read_paper.lookup_openalex_work("10.1/missing") is None
+
+
+def test_lookup_openalex_work_degrades_on_server_error(monkeypatch, capsys):
+  def boom(url):
+    raise read_paper.http_client.HttpError("down", status_code=500)
+
+  monkeypatch.setattr(read_paper._OPENALEX, "fetch_json", boom)
+  monkeypatch.delenv("OPENALEX_API_KEY", raising=False)
+  assert read_paper.lookup_openalex_work("10.1/down") is None
+  assert "OpenAlex" in capsys.readouterr().err
+
+
+def test_chain_falls_through_to_arxiv_when_openalex_errors(
+    tmp_path, capsys, monkeypatch):
+  def boom(url):
+    raise read_paper.http_client.HttpError("down", status_code=503)
+
+  def fake_arxiv(aid, dest):
+    dest.write_bytes(b"%PDF-fake")
+    return True
+
+  monkeypatch.setattr(read_paper._OPENALEX, "fetch_json", boom)
+  _no_network(monkeypatch, lookup_openalex_work=read_paper.lookup_openalex_work,
+              fetch_arxiv_pdf=fake_arxiv)
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# md")
+  read_paper.read_paper(doi="10.48550/arxiv.1706.03762", arxiv=None,
+                        pmcid=None, workspace=tmp_path)
+  out = json.loads(capsys.readouterr().out)
+  assert out["source"] == "arxiv_pdf"
+
+
 def test_resolve_pmcid_via_epmc_returns_first_pmcid(monkeypatch):
   seen = {}
 
