@@ -8,7 +8,7 @@ This document provides a technical overview of the co-researcher system architec
 
 Nine domain-expert skills provide PhD-level research capabilities:
 
-- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`) consumed by both review skills.
+- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`, `read_paper.py`) consumed by both review skills.
 - **systematic-review**: PRISMA/Cochrane/JBI reviews with Risk-of-Bias and GRADE. Reuses literature-review's backend scripts.
 - **critical-analysis**: Bias identification and logical fallacy detection
 - **hypothesis-testing**: Testable hypothesis formulation and variable mapping
@@ -49,8 +49,11 @@ Three CLI search scripts ship with the `literature-review` skill, executed via `
 - **OpenAlex** (`openalex_cli.py`) — cross-disciplinary, ~250M works, citation counts and bibliometrics
 - **arXiv** (`search_arxiv.py`, `download_paper.py`, `download_paper_source.py`) — preprints for CS/physics/math/quant-bio
 - **Europe PMC** (`europepmc_api.py`) — life-science open-access full text + forward/backward citation graph
+- **Full-text acquisition** (`read_paper.py`) — any identifier (DOI/arXiv/PMCID) → markdown via a fallback chain (cached/user PDF → Europe PMC JATS → arXiv PDF → OpenAlex OA PDF → abstract-only). Original to this repo (not vendored); depends on `pymupdf4llm` (AGPL-3.0) at runtime.
 
-Shared HTTP client (`skills/scienceskillscommon/`) handles rate limiting, retries, and exponential backoff. All scripts use PEP 723 inline dependencies resolved by `uv` on first run. Backend scripts and the shared HTTP client are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0.
+Both review skills run a persistent funnel in a `review/{slug}/` workspace: `protocol.md` (query log), `corpus.json` (candidate pool + screening decisions, source of truth for PRISMA counts), `papers/{id}/` (full texts + per-paper `notes.md`), `synthesis.md`.
+
+Shared HTTP client (`skills/scienceskillscommon/`) handles rate limiting, retries, and exponential backoff, plus JATS→markdown extraction (`jats.py`). All scripts use PEP 723 inline dependencies resolved by `uv` on first run. Backend scripts and the shared HTTP client are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0.
 
 **Prerequisite**: `uv` package manager. One-time setup via `scripts/setup.sh` (detects existing install, falls back to astral.sh installer, warms the dep cache).
 

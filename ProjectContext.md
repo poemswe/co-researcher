@@ -8,13 +8,10 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Open Threads
 
-- **In progress**: paper reading + review-funnel workflow. Spec + plan live under `docs/superpowers/` as **local working docs only** (gitignored, not committed). 8 tasks, subagent-driven w/ haiku. Task 1 DONE: JATS extraction moved to `scienceskillscommon/jats.py`, europepmc_api refactored, 3 unit tests pass. Phase 1 = Tasks 1–5 (read_paper.py), phase 2 = Tasks 6–8 (funnel protocol).
-- **RESOLVED (2026-06-15)**: The Europe PMC full-text bug was transient/network — not reproducing. `{pmcid}/fullTextXML` returns 200 + valid JATS for PMC8371605 and the docs example PMC3258128. The epmc route in read_paper.py is fully functional end-to-end.
-- **DONE (2026-06-15)**: OpenAlex doesn't reliably return `pmcid` in `ids` (e.g. AlphaFold `10.1038/s41586-021-03819-2`), sending papers down the OA-PDF route instead of preferred JATS. Added `resolve_pmcid_via_epmc(doi)` — an EPMC `DOI:"..."` search fallback wired into the chain after `pmcid_from_ids`. AlphaFold now resolves via `source: epmc`. 4 new tests, 18 total green.
-
 - Decision pending on whether to merge `literature-review` and `systematic-review` into one skill with a rigor parameter. Currently kept separate (PRISMA distinction is meaningful).
 - Other co-researcher skills (`research-synthesis`, `multi-source-investigation`, `peer-review`) still use `WebSearch` only. May benefit from the same backend integration in a follow-up.
 - README / CONTRIBUTING not yet updated to mention `scripts/setup.sh` as a first-run step.
+- **PR #19 not yet merged**: public repo — held open until the full paper-reading feature is verified (Phase 2 done, pending live e2e of the funnel protocol). See memory `pr19-merge-gate`.
 
 ## Recent Decisions
 
@@ -23,6 +20,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 - **2026-06-04**: Backend scripts live inside `literature-review/scripts/` (not as separate top-level skills). User-facing surface area = the two review skills only.
 - **2026-06-04**: Kept both `literature-review` (narrative/scoping) and `systematic-review` (PRISMA). Methodological distinction justifies the 60% protocol overlap.
 - **2026-06-11**: Made `scripts/setup.sh` robust under non-interactive environments (added `|| true` to key input `read`). Updated `evals/lib/core.py` to use `shutil.which` and check `/opt/homebrew/bin` to fix evaluation CLI discovery on Apple Silicon macOS.
+- **2026-06-17**: Paper-reading + review-funnel workflow complete. Phase 1 (Tasks 1–5): `read_paper.py` resolution chain + backends, EPMC PMCID fallback, 31 unit tests. Phase 2 (Tasks 6–8): both review SKILL.md protocols rewritten around the `review/{slug}/` workspace with `corpus.json` screening state, pilot screening, evidence/background split, `notes.md` as the unit of synthesis, abstract-only/PRISMA "not retrieved" handling. **Deviation from the spec draft (agreed 2026-06-12)**: the arXiv-HTML retrieval route was dropped; `read_paper.py`'s `source` enum has no `arxiv_html`.
 
 ## Pitfalls
 
