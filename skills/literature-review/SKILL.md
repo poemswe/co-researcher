@@ -58,6 +58,15 @@ uv run scripts/europepmc_api.py get_references MED <PMID> --output refs.json
 uv run scripts/europepmc_api.py get_fulltext <PMCID> --output fulltext.txt
 ```
 
+**4. Full-text acquisition** — `scripts/read_paper.py` (any identifier → markdown)
+One call per paper; resolves the best legal open-access route automatically.
+```bash
+uv run scripts/read_paper.py --doi 10.1038/s41586-021-03819-2 --workspace review/<slug>
+uv run scripts/read_paper.py --arxiv 1706.03762 --workspace review/<slug>
+uv run scripts/read_paper.py --pmcid PMC8371605 --workspace review/<slug>
+```
+Prints one JSON line: `{"status": "fulltext|abstract-only", "path": ..., "source": ..., "id": ...}`. Files land in `review/<slug>/papers/{id}/` (`paper.pdf`, `fulltext.md` or `abstract.md`). A PDF the user drops at `papers/{id}/paper.pdf` is picked up before any network call. Paywalled papers return `abstract-only` — never scrape for them.
+
 **Picking a backend:**
 - Cross-discipline overview, citation counts, author/institution metadata → OpenAlex
 - Bleeding-edge preprints in CS/ML/physics → arXiv
@@ -67,11 +76,15 @@ For broad reviews, run all three in parallel and dedupe by DOI in step 3.
 </search_backend>
 
 <protocol>
-1. **Scope** — Define the research question and strict inclusion/exclusion criteria (population, methods, date range, language).
-2. **Systematic search** — Execute the backends above. Record the exact query strings used per database for reproducibility. Save raw JSON outputs to disk; do not load them into context wholesale.
-3. **Screening & dedup** — Use `jq` to slim records and deduplicate by DOI / normalized title. Filter on the inclusion criteria from step 1.
-4. **Data extraction** — For shortlisted papers, fetch full text via Europe PMC (`get_fulltext`) or download PDFs (arXiv `download_paper.py`). Extract methods, findings, and limitations.
-5. **Synthesis** — Organize findings into themes, identify research frontiers, surface contradictions, name gaps.
+All state lives in a review workspace `review/{slug}/`: `protocol.md` (question, criteria, query log), `corpus.json` (candidate pool + screening decisions), `papers/{id}/` (full texts + notes), `synthesis.md`. Create it at step 1; on a restarted session, read `corpus.json` first and resume where screening left off.
+
+1. **Scope** — Write the research question and strict inclusion/exclusion criteria to `protocol.md`. Pause for user approval of the criteria. Scoping searches may revise the question; append revisions, never overwrite.
+2. **Search** — Execute the backends. Log every query verbatim in `protocol.md` with date and hit count. Save raw JSON in the workspace; do not load it into context wholesale.
+3. **Dedupe & pool** — Merge results into `corpus.json`, one record per paper: `key` (normalized DOI, else normalized title), `ids`, `title`, `year`, `cited_by`, `found_via`, `screening: {status, stage, reason}`, `fulltext`, `role`.
+4. **Title/abstract screening** — Set `screening.status` (`included`/`excluded`) and `reason` per record. Exclusion reasons are mandatory. If the pool exceeds ~50, pilot-screen a random ~20 first and surface borderline calls to the user before bulk screening.
+5. **Acquire & read** — For each included paper, run `read_paper.py`. Classify each as `evidence` (bears directly on the question) or `background`. Evidence papers require `notes.md` written from the full text — methods and results actually read via Read/Grep on `fulltext.md`, one paper at a time, never multiple full texts in context. Background papers may be cited at abstract level. `notes.md` format: citation, read depth, design, N, key effects, claims relevant to the question (with section anchors), limitations, theme tags.
+6. **Snowball** — For core evidence papers, run `get_references`/`get_citations` (Europe PMC) or follow OpenAlex `referenced_works`. New candidates enter at step 4 with `found_via: snowball:*`. One round by default; stop when a round adds nothing. If included papers reveal vocabulary the original queries missed, run one adapted search round and log it.
+7. **Synthesize** — Write `synthesis.md` from `notes.md` files only. Tag any citation whose `fulltext` is `abstract-only` with `[abstract-only]` inline. End with a retrieval summary listing papers not retrieved and the `papers/{id}/paper.pdf` path where the user can drop a legally obtained PDF for a re-run.
 </protocol>
 
 <output_format>
@@ -94,15 +107,14 @@ For broad reviews, run all three in parallel and dedupe by DOI in step 3.
 
 **Annotated bibliography**:
 - [Full citation with DOI/arXiv ID/PMID] — [Key contribution + quality note]
+
+**Retrieval summary**: [N full-text / N abstract-only; drop-in paths for missing PDFs]
 </output_format>
 
 <checkpoint>
-After initial pass, ask:
-- Narrow by date range, geography, or methodology?
-- Forward citation chaining on the most-cited paper via Europe PMC?
-- Deeper extraction on a specific subset?
+Pause for the user only at: (1) end of Scope — criteria approval; (2) pilot screening — borderline calls; (3) before Synthesize, if the included set is unexpectedly large (>40) or small (<3). Otherwise run the funnel autonomously.
 </checkpoint>
 
 <attribution>
-The `openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`, and `download_paper_source.py` scripts plus the `scienceskillscommon` HTTP client are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0. Per-source headers preserved.
+The `openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`, and `download_paper_source.py` scripts plus the `scienceskillscommon` HTTP client are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0. Per-source headers preserved. `read_paper.py` is original to this repository; it depends on PyMuPDF/pymupdf4llm (AGPL-3.0) as a runtime dependency fetched by uv, not vendored.
 </attribution>
