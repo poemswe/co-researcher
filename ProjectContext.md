@@ -28,6 +28,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 - `[tool.uv.sources]` paths in script PEP 723 headers are resolved **relative to the script file's directory**, not CWD. Path is `../../scienceskillscommon` from `skills/literature-review/scripts/X.py` → `skills/scienceskillscommon/`. If scripts move, paths must be re-counted.
 - `scienceskillscommon/` directory name must stay verbatim (no kebab-case rename) — the wheel build maps `.` → `science_skills/scienceskillscommon` and scripts import `from science_skills.scienceskillscommon import http_client`.
+- **Stale-wheel gotcha**: `uv` builds `scienceskillscommon` as a *non-editable* wheel keyed on path+version (pinned 0.1.0), so source edits to `http_client.py`/`jats.py` are NOT picked up by `uv run` until you pass `--reinstall` (or bump the version). `editable = true` is impossible here — hatchling rejects editable installs when a `sources` mapping rewrites a prefix (`.` → `science_skills/...`). After editing `scienceskillscommon/`, always run tests with `uv run --reinstall`.
 - OpenAlex `--search` queries cost 10× more than `--filter`. Prefer `--filter` with resolved IDs over name-based `--search` when possible.
 - Europe PMC search auto-appends `OPEN_ACCESS:y`. To search closed-access metadata, would need to modify `europepmc_api.py` (don't unless asked).
 

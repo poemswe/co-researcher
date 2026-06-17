@@ -142,6 +142,8 @@ def fetch_arxiv_pdf(arxiv_id: str, dest: pathlib.Path) -> bool:
 
 def fetch_oa_pdf(url: str, dest: pathlib.Path) -> bool:
   parsed = urllib.parse.urlparse(url)
+  if parsed.scheme not in ("http", "https") or not parsed.netloc:
+    return False
   client = http_client.HttpClient(f"{parsed.scheme}://{parsed.netloc}", qps=1.0)
   return _download_pdf(client, url, dest, timeout=120)
 

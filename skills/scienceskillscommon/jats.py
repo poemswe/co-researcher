@@ -18,6 +18,18 @@ import re
 import xml.etree.ElementTree as ET
 
 
+def _local_name(tag):
+  """Return an element tag without its XML namespace prefix."""
+  return tag.rpartition("}")[2]
+
+
+def _iter_local(root, name):
+  """Yield descendant elements whose local (namespace-stripped) tag matches."""
+  for elem in root.iter():
+    if _local_name(elem.tag) == name:
+      yield elem
+
+
 def extract_all_text(elem):
   """Recursively extract all text content from an XML element."""
   parts = []
@@ -40,21 +52,21 @@ def xml_to_markdown(xml_string):
 
   sections = []
 
-  for title in root.iter("article-title"):
+  for title in _iter_local(root, "article-title"):
     t = extract_all_text(title).strip()
     if t:
       sections.append(f"# {t}")
     break
 
-  for abstract in root.iter("abstract"):
+  for abstract in _iter_local(root, "abstract"):
     text = extract_all_text(abstract).strip()
     if text:
       sections.append(f"## Abstract\n\n{text}")
 
-  for body in root.iter("body"):
+  for body in _iter_local(root, "body"):
     body_parts = []
     for elem in body.iter():
-      tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
+      tag = _local_name(elem.tag)
       if tag == "title":
         title_text = extract_all_text(elem).strip()
         if title_text:

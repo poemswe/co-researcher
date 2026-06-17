@@ -265,6 +265,13 @@ def test_chain_resolves_pmcid_via_epmc_when_openalex_lacks_it(
   assert out["status"] == "fulltext"
 
 
+def test_fetch_oa_pdf_rejects_non_http_scheme(tmp_path):
+  assert read_paper.fetch_oa_pdf("file:///etc/passwd", tmp_path / "x.pdf") is (
+      False)
+  assert read_paper.fetch_oa_pdf("ftp://h/x.pdf", tmp_path / "x.pdf") is False
+  assert not (tmp_path / "x.pdf").exists()
+
+
 def test_lookup_openalex_work_url_accepted_by_client(monkeypatch):
   seen = {}
 
