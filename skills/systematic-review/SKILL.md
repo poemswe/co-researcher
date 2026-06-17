@@ -32,6 +32,7 @@ For database search execution, use the three CLI backends owned by the `literatu
 | OpenAlex | `openalex_cli.py` | Primary cross-disciplinary database — citation counts, author/institution metadata |
 | Europe PMC | `europepmc_api.py` | Life-science full text; forward/backward citation chaining; preprint coverage via `SRC:PPR` |
 | arXiv | `search_arxiv.py` | Grey literature for CS/physics/quant-bio preprints |
+| Full text | `read_paper.py` | Retrieval for eligibility assessment and extraction; logs abstract-only for "reports not retrieved" in the PRISMA flow |
 
 For each database, record verbatim:
 1. The exact query string
@@ -39,6 +40,8 @@ For each database, record verbatim:
 3. The total hit count (`hitCount` field for Europe PMC, length of `results` for OpenAlex/arXiv after pagination)
 
 This metadata feeds the PRISMA flow diagram and the supplementary search log required for publication.
+
+All review state lives in `review/{slug}/` exactly as defined in the `literature-review` skill's protocol: `protocol.md`, `corpus.json`, `papers/{id}/`, `synthesis.md`. `corpus.json` is the source of truth for every PRISMA flow count.
 </search_backend>
 
 <competencies>
@@ -61,8 +64,8 @@ This metadata feeds the PRISMA flow diagram and the supplementary search log req
 1. **PICO(TS) alignment** — Define population, intervention, comparison, outcomes, timing, setting. Lock inclusion/exclusion criteria before searching.
 2. **Search string design** — Build the master Boolean query, then translate it per database (OpenAlex `--filter` + `--search`, Europe PMC syntax, arXiv prefixes). Save each verbatim to a `search_log.md`.
 3. **Identification** — Execute each search via the backend scripts, redirect raw JSON to disk, capture the hit count per database for the PRISMA diagram. Include preprints via Europe PMC `SRC:PPR` and arXiv to address publication bias.
-4. **Deduplication & screening** — Merge JSON outputs, dedupe by DOI then by title fingerprint. Run title/abstract screening against the inclusion criteria. Log exclusion reasons.
-5. **Full-text retrieval** — For eligible records, use `europepmc_api.py get_fulltext` (open-access) or `download_paper.py` (arXiv). Note records where full text is inaccessible.
+4. **Deduplication & screening** — Merge JSON outputs into `corpus.json`, dedupe by DOI then title fingerprint. Title/abstract screening sets `screening.status` and a mandatory exclusion `reason` per record. Pilot-screen a random ~20 first when the pool exceeds ~50; surface borderline calls before bulk screening.
+5. **Full-text retrieval & extraction** — Run `read_paper.py` per eligible record (`--workspace review/{slug}`). Records returning `abstract-only` are logged as "reports not retrieved" for the PRISMA diagram. For retrieved papers, write `notes.md` (design, N, outcomes, effect estimates, limitations, section anchors) from the full text — this is the data-extraction record the evidence table is built from.
 6. **Quality appraisal** — Apply the chosen RoB tool to every included study. Record domain-level judgments.
 7. **Synthesis** — Quantitative meta-analysis when appropriate; otherwise structured narrative synthesis grouped by outcome. Assign GRADE rating per outcome.
 </protocol>
@@ -80,9 +83,10 @@ This metadata feeds the PRISMA flow diagram and the supplementary search log req
 | Europe PMC | `…` | YYYY-MM-DD | N |
 | arXiv | `…` | YYYY-MM-DD | N |
 
-**PRISMA flow**:
+**PRISMA flow** (all counts from `corpus.json`):
 - Identified: N (after dedup: N)
-- Screened (title/abstract): N → excluded N
+- Screened (title/abstract): N → excluded N (reasons in corpus.json)
+- Sought for retrieval: N → not retrieved N (abstract-only)
 - Full-text assessed: N → excluded N (reasons logged)
 - Included: N
 
