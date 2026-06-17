@@ -266,9 +266,8 @@ def test_chain_resolves_pmcid_via_epmc_when_openalex_lacks_it(
 
 
 def test_fetch_oa_pdf_rejects_non_http_scheme(tmp_path):
-  assert read_paper.fetch_oa_pdf("file:///etc/passwd", tmp_path / "x.pdf") is (
-      False)
-  assert read_paper.fetch_oa_pdf("ftp://h/x.pdf", tmp_path / "x.pdf") is False
+  assert not read_paper.fetch_oa_pdf("file:///etc/passwd", tmp_path / "x.pdf")
+  assert not read_paper.fetch_oa_pdf("ftp://h/x.pdf", tmp_path / "x.pdf")
   assert not (tmp_path / "x.pdf").exists()
 
 
