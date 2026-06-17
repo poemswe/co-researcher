@@ -45,6 +45,16 @@ def test_download_paper_404_prints_message(tmp_path, capsys, monkeypatch):
   assert "404" in capsys.readouterr().err
 
 
+def test_download_paper_html_404_suggests_pdf(tmp_path, capsys, monkeypatch):
+  monkeypatch.setattr(download_paper._CLIENT, "fetch_bytes", _raise(404))
+  args = argparse.Namespace(id="0000.0", format="html",
+                            output=str(tmp_path / "p"))
+  download_paper.download_paper(args)
+  err = capsys.readouterr().err
+  assert "HTML format is not available" in err
+  assert "--format pdf" in err
+
+
 def test_download_paper_non_404_reraises(tmp_path, monkeypatch):
   monkeypatch.setattr(download_paper._CLIENT, "fetch_bytes", _raise(500))
   args = argparse.Namespace(id="0000.0", format="pdf", output=str(tmp_path / "p"))
