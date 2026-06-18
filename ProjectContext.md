@@ -11,7 +11,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 - Decision pending on whether to merge `literature-review` and `systematic-review` into one skill with a rigor parameter. Currently kept separate (PRISMA distinction is meaningful).
 - Other co-researcher skills (`research-synthesis`, `multi-source-investigation`, `peer-review`) still use `WebSearch` only. May benefit from the same backend integration in a follow-up.
 - README / CONTRIBUTING not yet updated to mention `scripts/setup.sh` as a first-run step.
-- **PR #19 not yet merged**: public repo — held open until the full paper-reading feature is verified (Phase 2 done, pending live e2e of the funnel protocol). See memory `pr19-merge-gate`.
+- **PR #19 not yet merged**: public repo — held open until the full paper-reading feature is verified. Phase 2 done; funnel ran live via local plugin install (2026-06-18) and the extraction pipeline was exercised on real papers. Live-run feedback fixed: search_arxiv single-JSON + hit count, workspace anchored to invocation CWD, arXiv relevance default, OpenAlex topic-filter guidance + hit counts, EPMC hit count, PyMuPDF stdout-pollution suppression, table/heading caveats in notes.md. Remaining: Semantic Scholar backend (backlog, new feature). See memory `pr19-merge-gate`, `literature-search-feedback`.
 
 ## Recent Decisions
 
