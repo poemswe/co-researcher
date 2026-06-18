@@ -65,11 +65,11 @@ uv run scripts/europepmc_api.py get_fulltext <PMCID> --output fulltext.txt
 **4. Full-text acquisition** — `scripts/read_paper.py` (any identifier → markdown)
 One call per paper; resolves the best legal open-access route automatically.
 ```bash
-uv run scripts/read_paper.py --doi 10.1038/s41586-021-03819-2 --workspace review/<slug>
-uv run scripts/read_paper.py --arxiv 1706.03762 --workspace review/<slug>
-uv run scripts/read_paper.py --pmcid PMC8371605 --workspace review/<slug>
+uv run scripts/read_paper.py --doi 10.1038/s41586-021-03819-2 --workspace "$WS"
+uv run scripts/read_paper.py --arxiv 1706.03762 --workspace "$WS"
+uv run scripts/read_paper.py --pmcid PMC8371605 --workspace "$WS"
 ```
-Prints one JSON line: `{"status": "fulltext|abstract-only", "path": ..., "source": ..., "id": ...}`. Files land in `review/<slug>/papers/{id}/` (`paper.pdf`, `fulltext.md` or `abstract.md`). A PDF the user drops at `papers/{id}/paper.pdf` is picked up before any network call. Paywalled papers return `abstract-only` — never scrape for them.
+(`$WS` is the absolute workspace from step 1 — `$(pwd)/review/{slug}`; never pass a relative path.) Prints one JSON line: `{"status": "fulltext|abstract-only", "path": ..., "source": ..., "id": ...}`. Files land in `$WS/papers/{id}/` (`paper.pdf`, `fulltext.md` or `abstract.md`). A PDF the user drops at `$WS/papers/{id}/paper.pdf` is picked up before any network call. Paywalled papers return `abstract-only` — never scrape for them.
 
 **Picking a backend:**
 - Cross-discipline overview, citation counts, author/institution metadata → OpenAlex
