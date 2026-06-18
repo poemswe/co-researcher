@@ -475,6 +475,11 @@ def handle_filter(args: argparse.Namespace) -> None:
     params["page"] = args.page
 
   data = fetch_with_retry(url, params, api_key=args.api_key)
+  count = (data.get("meta") or {}).get("count")
+  if count is not None:
+    page = len(data.get("results") or [])
+    print(f"OpenAlex: {count} total hits ({page} on this page)",
+          file=sys.stderr)
   print_json(data)
 
 

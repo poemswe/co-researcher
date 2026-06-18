@@ -96,6 +96,8 @@ def search(query, max_results=10, result_type="core", cursor="*", sort=""):
   results = data.get("resultList", {}).get("result", [])
   hit_count = data.get("hitCount", 0)
   next_cursor = data.get("nextCursorMark", "")
+  print(f"Europe PMC: {hit_count} total hits ({len(results[:max_results])}"
+        " returned)", file=sys.stderr)
 
   return {
       "hitCount": hit_count,
