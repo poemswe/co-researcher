@@ -22,7 +22,9 @@ You are a PhD-level expert in systematic literature reviews and bibliometric ana
 </principles>
 
 <search_backend>
-This skill owns three command-line search backends in `scripts/`. They are not separate skills — invoke them via `Bash` from this skill's directory. All three handle rate limits and retries automatically and depend on the shared `scienceskillscommon` package (auto-installed by `uv` on first run).
+This skill owns the command-line search backends in `scripts/`. They are not separate skills. They handle rate limits and retries automatically and depend on the shared `scienceskillscommon` package (auto-installed by `uv` on first run).
+
+**Invocation & workspace (read first):** Invoke each script by its **absolute path** under this skill's base directory (shown to you above as "Base directory for this skill") — e.g. `uv run <skill-dir>/scripts/openalex_cli.py …`. **Never `cd` into the skill directory.** Stay in the directory where the user invoked the skill and anchor the review workspace there with an **absolute** path: compute `WS="$(pwd)/review/{slug}"` once at step 1 and pass `$WS` as `--workspace` everywhere. Relative `review/{slug}` resolves against the wrong directory and pollutes the installed plugin. In the command examples below, `scripts/…` is shorthand for `<skill-dir>/scripts/…`.
 
 **Prerequisites:**
 - **`uv`** must be installed. Verify with `uv --version`. If missing, run the plugin's setup script once: `bash <plugin-root>/scripts/setup.sh`. The setup script installs `uv`, prompts (optionally) for an OpenAlex API key, and warms the dependency cache. Fallback if setup is unreachable: `curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH"`.
@@ -38,15 +40,17 @@ uv run scripts/openalex_cli.py filter works \
   --select "id,doi,title,publication_year,authorships,cited_by_count,abstract_inverted_index" \
   --per-page 10 > openalex.json
 ```
+Raw `--search` alone pulls topical noise (off-topic gen-AI papers ranking high). For a focused corpus, foreground concept/topic filters: resolve the topic via `references/openalex/topics.md`, then narrow with `--filter "topics.id:T<id>"` (or `concepts.id:C<id>`) and use `--search` only to rank within that slice. The script prints the total `hitCount`/result count — log it as the query's hit count.
 
 **2. arXiv** — `scripts/search_arxiv.py` (preprints: CS, physics, math, quant-bio, stat)
 Use for very recent work, ML/CS topics, and physics. Query syntax: `references/arxiv/query_syntax.md`.
 ```bash
 uv run scripts/search_arxiv.py \
   --query "ti:\"your phrase\" AND cat:cs.LG" \
-  --sort_by submittedDate --sort_order descending \
+  --sort_by relevance \
   --max_results 10 > arxiv.json
 ```
+Default to `relevance` for a review — it surfaces foundational work. Use `--sort_by submittedDate --sort_order descending` only when you specifically want the newest preprints; date-sort biases the pool to the most recent month and misses seminal papers. Emits one JSON object with a `results_count` field — log that as the hit count.
 
 **3. Europe PMC** — `scripts/europepmc_api.py` (life-science open-access full text + citation graph)
 Use for biomedical topics, full-text retrieval, and forward/backward citation chaining.

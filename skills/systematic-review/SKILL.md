@@ -23,7 +23,7 @@ You are a PhD-level specialist in systematic reviews following PRISMA, Cochrane,
 </principles>
 
 <search_backend>
-For database search execution, use the three CLI backends owned by the `literature-review` skill, located at `co-researcher/skills/literature-review/scripts/`. Invoke them via `Bash` from the `literature-review` directory.
+For database search execution, use the CLI backends owned by the `literature-review` skill, located in its `scripts/` directory. Invoke each by its **absolute path** (`uv run <literature-review-dir>/scripts/X.py …`); **never `cd` into the skill directory**. Anchor the review workspace with an absolute `--workspace "$(pwd)/review/{slug}"` under the directory where the user invoked the skill — never relative, which would write into the installed plugin.
 
 **Prerequisite — `uv` must be installed.** Run `bash <plugin-root>/scripts/setup.sh` once. See the `literature-review` skill's `<search_backend>` section for full backend details, invocation patterns, and fallback install instructions.
 

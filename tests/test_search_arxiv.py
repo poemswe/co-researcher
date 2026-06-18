@@ -50,11 +50,12 @@ def _args():
 def test_search_arxiv_emits_single_json_object(capsys, monkeypatch):
   monkeypatch.setattr(search_arxiv._CLIENT, "fetch_bytes", lambda url: _FEED)
   search_arxiv.search_arxiv(_args())
-  out = capsys.readouterr().out
-  data = json.loads(out)
+  captured = capsys.readouterr()
+  data = json.loads(captured.out)
   assert data["status"] == "success"
   assert data["results_count"] == 2
   assert [p["id"] for p in data["papers"]] == ["2301.00001v1", "2301.00002v1"]
+  assert "2 results" in captured.err
 
 
 if __name__ == "__main__":

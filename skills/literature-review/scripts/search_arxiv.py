@@ -148,6 +148,7 @@ def search_arxiv(args: argparse.Namespace):
     paper["authors"] = authors
     results.append(paper)
 
+  print(f"arXiv: {len(results)} results", file=sys.stderr)
   print(
       json.dumps(
           {
