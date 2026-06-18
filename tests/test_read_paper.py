@@ -11,6 +11,7 @@
 
 import importlib.util
 import json
+import os
 import pathlib
 import sys
 import urllib.parse
@@ -263,6 +264,10 @@ def test_chain_resolves_pmcid_via_epmc_when_openalex_lacks_it(
   out = json.loads(capsys.readouterr().out)
   assert out["source"] == "epmc"
   assert out["status"] == "fulltext"
+
+
+def test_pymupdf_layout_recommendation_suppressed():
+  assert os.environ.get("PYMUPDF_SUGGEST_LAYOUT_ANALYZER") == "0"
 
 
 def test_fetch_oa_pdf_rejects_non_http_scheme(tmp_path):

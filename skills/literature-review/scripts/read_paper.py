@@ -25,6 +25,10 @@ import re
 import sys
 import urllib.parse
 
+# Must precede the pymupdf4llm import: stops PyMuPDF printing its layout
+# recommendation to stdout, which would corrupt our JSON status line.
+os.environ.setdefault("PYMUPDF_SUGGEST_LAYOUT_ANALYZER", "0")
+
 import pymupdf4llm
 
 from science_skills.scienceskillscommon import http_client, jats
