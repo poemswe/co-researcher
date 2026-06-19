@@ -34,6 +34,16 @@ def test_sanitize_id_replaces_unsafe_chars():
   assert read_paper.sanitize_id("PMC8371605") == "PMC8371605"
 
 
+def test_sanitize_id_blocks_path_traversal():
+  assert read_paper.sanitize_id("..") == "_"
+  assert read_paper.sanitize_id(".") == "_"
+  assert read_paper.sanitize_id("../../etc") == "__.._etc"
+  assert read_paper.sanitize_id(".hidden") == "_hidden"
+  assert read_paper.sanitize_id("") == "_"
+  for bad in ("..", ".", "../../etc", ".hidden", ""):
+    assert read_paper.sanitize_id(bad) not in (".", "..", "")
+
+
 def test_doi_to_arxiv():
   assert read_paper.doi_to_arxiv("10.48550/arXiv.1706.03762") == "1706.03762"
   assert read_paper.doi_to_arxiv("10.1038/s41586-021-03819-2") is None

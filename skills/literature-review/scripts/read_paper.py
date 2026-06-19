@@ -43,7 +43,8 @@ _ARXIV = http_client.HttpClient("https://arxiv.org/", qps=1.0 / 3.0)
 
 
 def sanitize_id(identifier: str) -> str:
-  return re.sub(r"[^A-Za-z0-9._-]", "_", identifier)
+  safe = re.sub(r"[^A-Za-z0-9._-]", "_", identifier)
+  return re.sub(r"^\.+", "_", safe) or "_"
 
 
 def doi_to_arxiv(doi: str) -> str | None:

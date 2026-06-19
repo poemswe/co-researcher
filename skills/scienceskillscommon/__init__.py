@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Package marker for science_skills.common."""
+"""Package marker for science_skills.scienceskillscommon."""
