@@ -53,7 +53,7 @@ Three CLI search scripts ship with the `literature-review` skill, executed via `
 
 Both review skills run a persistent funnel in a `review/{slug}/` workspace: `protocol.md` (query log), `corpus.json` (candidate pool + screening decisions, source of truth for PRISMA counts), `papers/{id}/` (full texts + per-paper `notes.md`), `synthesis.md`.
 
-Shared `scienceskillscommon/` package (`http_client.py` rate limiting/retries/backoff, `jats.py` JATS→markdown) is original to this repo under MIT — a clean-room reimplementation whose design was inspired by science-skills (no code copied). All scripts use PEP 723 inline dependencies resolved by `uv` on first run. The five search/download backend scripts remain vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0; `read_paper.py` is original (MIT).
+Shared `scienceskillscommon/` package (`http_client.py` rate limiting/retries/backoff, `jats.py` JATS→markdown) and all backend scripts are **original to this repo under MIT** — clean-room reimplementations whose designs were inspired by [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) (Apache-2.0) with no code copied. All scripts use PEP 723 inline dependencies resolved by `uv` on first run. Only non-MIT footprint: the optional AGPL `pymupdf4llm` runtime dep fetched by uv for `read_paper.py`.
 
 **Prerequisite**: `uv` package manager. One-time setup via `scripts/setup.sh` (detects existing install, falls back to astral.sh installer, warms the dep cache).
 
