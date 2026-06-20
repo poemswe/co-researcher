@@ -8,7 +8,7 @@ This document provides a technical overview of the co-researcher system architec
 
 Nine domain-expert skills provide PhD-level research capabilities:
 
-- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`, `read_paper.py`) consumed by both review skills.
+- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `read_paper.py`) consumed by both review skills.
 - **systematic-review**: PRISMA/Cochrane/JBI reviews with Risk-of-Bias and GRADE. Reuses literature-review's backend scripts.
 - **critical-analysis**: Bias identification and logical fallacy detection
 - **hypothesis-testing**: Testable hypothesis formulation and variable mapping
@@ -47,7 +47,7 @@ All platforms share the same skill definitions in `skills/` but use platform-spe
 Three CLI search scripts ship with the `literature-review` skill, executed via `uv run`:
 
 - **OpenAlex** (`openalex_cli.py`) — cross-disciplinary, ~250M works, citation counts and bibliometrics
-- **arXiv** (`search_arxiv.py`, `download_paper.py`, `download_paper_source.py`) — preprints for CS/physics/math/quant-bio
+- **arXiv** (`search_arxiv.py`) — preprints for CS/physics/math/quant-bio
 - **Europe PMC** (`europepmc_api.py`) — life-science open-access full text + forward/backward citation graph
 - **Full-text acquisition** (`read_paper.py`) — any identifier (DOI/arXiv/PMCID) → markdown via a fallback chain (cached/user PDF → Europe PMC JATS → arXiv PDF → OpenAlex OA PDF → abstract-only). Original to this repo (not vendored); depends on `pymupdf4llm` (AGPL-3.0) at runtime.
 
