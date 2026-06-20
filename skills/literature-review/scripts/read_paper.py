@@ -10,11 +10,8 @@ Paywalled papers are a normal outcome (abstract-only), not an error.
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#   "scienceskillscommon",
 #   "pymupdf4llm",
 # ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../../scienceskillscommon" }
 # ///
 
 import argparse
@@ -31,7 +28,8 @@ os.environ.setdefault("PYMUPDF_SUGGEST_LAYOUT_ANALYZER", "0")
 
 import pymupdf4llm
 
-from science_skills.scienceskillscommon import http_client, jats
+import http_client
+import jats
 
 _OPENALEX = http_client.HttpClient("https://api.openalex.org/", qps=1.0)
 _EPMC = http_client.HttpClient(

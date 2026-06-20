@@ -2,10 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #   "pytest",
-#   "scienceskillscommon",
 # ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../skills/scienceskillscommon" }
 # ///
 
 import argparse
@@ -16,10 +13,10 @@ import sys
 
 import pytest
 
-_SCRIPT = (
-    pathlib.Path(__file__).resolve().parent.parent
-    / "skills/literature-review/scripts/search_arxiv.py"
-)
+_SCRIPTS = (pathlib.Path(__file__).resolve().parent.parent
+            / "skills/literature-review/scripts")
+sys.path.insert(0, str(_SCRIPTS))
+_SCRIPT = _SCRIPTS / "search_arxiv.py"
 _spec = importlib.util.spec_from_file_location("search_arxiv", _SCRIPT)
 search_arxiv = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(search_arxiv)

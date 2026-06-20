@@ -22,7 +22,7 @@ You are a PhD-level expert in systematic literature reviews and bibliometric ana
 </principles>
 
 <search_backend>
-This skill owns the command-line search backends in `scripts/`. They are not separate skills. They handle rate limits and retries automatically and depend on the shared `scienceskillscommon` package (auto-installed by `uv` on first run).
+This skill owns the command-line search backends in `scripts/`. They are not separate skills. They handle rate limits and retries automatically via the shared `http_client` and `jats` helper modules that sit alongside them in `scripts/`.
 
 **Invocation & workspace (read first):** Invoke each script by its **absolute path** under this skill's base directory (shown to you above as "Base directory for this skill") — e.g. `uv run <skill-dir>/scripts/openalex_cli.py …`. **Never `cd` into the skill directory.** Stay in the directory where the user invoked the skill and anchor the review workspace there with an **absolute** path: compute `WS="$(pwd)/review/{slug}"` once at step 1 and pass `$WS` as `--workspace` everywhere. Relative `review/{slug}` resolves against the wrong directory and pollutes the installed plugin. In the command examples below, `scripts/…` is shorthand for `<skill-dir>/scripts/…`.
 

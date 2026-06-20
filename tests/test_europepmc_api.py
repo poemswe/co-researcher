@@ -2,10 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #   "pytest",
-#   "scienceskillscommon",
 # ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../skills/scienceskillscommon" }
 # ///
 
 import importlib.util
@@ -14,10 +11,10 @@ import sys
 
 import pytest
 
-_SCRIPT = (
-    pathlib.Path(__file__).resolve().parent.parent
-    / "skills/literature-review/scripts/europepmc_api.py"
-)
+_SCRIPTS = (pathlib.Path(__file__).resolve().parent.parent
+            / "skills/literature-review/scripts")
+sys.path.insert(0, str(_SCRIPTS))
+_SCRIPT = _SCRIPTS / "europepmc_api.py"
 _spec = importlib.util.spec_from_file_location("europepmc_api", _SCRIPT)
 epmc = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(epmc)

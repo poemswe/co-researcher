@@ -18,11 +18,6 @@ Queries arXiv by search string or id list, parses the Atom feed, and prints
 
 # /// script
 # requires-python = ">=3.10"
-# dependencies = [
-#   "scienceskillscommon",
-# ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../../scienceskillscommon" }
 # ///
 
 import argparse
@@ -31,7 +26,7 @@ import sys
 import urllib.parse
 import xml.etree.ElementTree as ET
 
-from science_skills.scienceskillscommon import http_client
+import http_client
 
 _BASE_URL = "http://export.arxiv.org/api/query?"
 _ATOM = "{http://www.w3.org/2005/Atom}"

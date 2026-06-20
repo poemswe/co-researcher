@@ -4,7 +4,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**Branch `feat/literature-search-backends`** (2026-06-04) — replacing the hand-wavy `WebSearch`-based literature-review protocol with three real database backends: OpenAlex, arXiv, Europe PMC. Architecture: `literature-review` owns the scripts; `systematic-review` references them. `scienceskillscommon` (MIT) is the shared HTTP client + JATS extractor. `uv` bootstrap handled by `scripts/setup.sh`, not as a skill.
+**Branch `feat/literature-search-backends`** (2026-06-04) — replacing the hand-wavy `WebSearch`-based literature-review protocol with three real database backends: OpenAlex, arXiv, Europe PMC. Architecture: `literature-review` owns the scripts; `systematic-review` references them. `http_client.py` + `jats.py` (MIT, in `scripts/`, imported as sibling modules) are the shared HTTP client + JATS extractor. `uv` bootstrap handled by `scripts/setup.sh`, not as a skill.
 
 ## Open Threads
 
@@ -20,14 +20,13 @@ Rolling state. Prune entries >3 weeks after each milestone.
 - **2026-06-04**: Backend scripts live inside `literature-review/scripts/` (not as separate top-level skills). User-facing surface area = the two review skills only.
 - **2026-06-04**: Kept both `literature-review` (narrative/scoping) and `systematic-review` (PRISMA). Methodological distinction justifies the 60% protocol overlap.
 - **2026-06-11**: Made `scripts/setup.sh` robust under non-interactive environments (added `|| true` to key input `read`). Updated `evals/lib/core.py` to use `shutil.which` and check `/opt/homebrew/bin` to fix evaluation CLI discovery on Apple Silicon macOS.
-- **2026-06-20**: Backend is now original MIT throughout — `scienceskillscommon` + all four scripts (`search_arxiv.py`, `europepmc_api.py`, `openalex_cli.py`, `read_paper.py`), reimplemented to a minimal surface (openalex keeps just `filter`). Deleted unused `download_paper.py`/`download_paper_source.py`. Each verified with contract tests + live API calls. Only non-MIT footprint: the optional AGPL `pymupdf4llm` runtime dep. Dropped the `<attribution>` block from literature-review SKILL.md (token savings; credit lives in per-file source headers).
+- **2026-06-20**: Backend is now original MIT throughout — all four scripts (`search_arxiv.py`, `europepmc_api.py`, `openalex_cli.py`, `read_paper.py`) plus the `http_client.py`/`jats.py` helpers, reimplemented to a minimal surface (openalex keeps just `filter`). Deleted unused `download_paper.py`/`download_paper_source.py`. Each verified with contract tests + live API calls. Only non-MIT footprint: the optional AGPL `pymupdf4llm` runtime dep. Dropped the `<attribution>` block from literature-review SKILL.md (token savings; credit lives in per-file source headers).
+- **2026-06-20**: De-packaged `scienceskillscommon` — moved `http_client.py`/`jats.py` into `scripts/` as plain sibling modules, deleted the package dir + stub `SKILL.md` (was a phantom skill) + `pyproject`/`__init__`/uv.sources. Removes the foreign "science-skills" name, the build machinery, and the stale-wheel `--reinstall` gotcha. 45 tests green.
 - **2026-06-17**: Paper-reading + review-funnel workflow complete. Phase 1 (Tasks 1–5): `read_paper.py` resolution chain + backends, EPMC PMCID fallback, 31 unit tests. Phase 2 (Tasks 6–8): both review SKILL.md protocols rewritten around the `review/{slug}/` workspace with `corpus.json` screening state, pilot screening, evidence/background split, `notes.md` as the unit of synthesis, abstract-only/PRISMA "not retrieved" handling. **Deviation from the spec draft (agreed 2026-06-12)**: the arXiv-HTML retrieval route was dropped; `read_paper.py`'s `source` enum has no `arxiv_html`.
 
 ## Pitfalls
 
-- `[tool.uv.sources]` paths in script PEP 723 headers are resolved **relative to the script file's directory**, not CWD. Path is `../../scienceskillscommon` from `skills/literature-review/scripts/X.py` → `skills/scienceskillscommon/`. If scripts move, paths must be re-counted.
-- `scienceskillscommon/` directory name must stay verbatim (no kebab-case rename) — the wheel build maps `.` → `science_skills/scienceskillscommon` and scripts import `from science_skills.scienceskillscommon import http_client`.
-- **Stale-wheel gotcha**: `uv` builds `scienceskillscommon` as a *non-editable* wheel keyed on path+version, so source edits to `http_client.py`/`jats.py` are NOT picked up by `uv run` until you pass `--reinstall` (or bump the version). `editable = true` is impossible here — hatchling rejects editable installs when a `sources` mapping rewrites a prefix (`.` → `science_skills/...`). After editing `scienceskillscommon/`, always run tests with `uv run --reinstall`.
+- `http_client.py` and `jats.py` are plain sibling modules in `scripts/` (no package/build). `uv run script.py` puts the script dir on `sys.path`, so `import http_client` resolves; tests load scripts by path and must `sys.path.insert(0, <scripts dir>)` first. Editing them is live — no `--reinstall` needed.
 - OpenAlex `--search` queries cost 10× more than `--filter`. Prefer `--filter` with resolved IDs over name-based `--search` when possible.
 - Europe PMC search auto-appends `OPEN_ACCESS:y`. To search closed-access metadata, would need to modify `europepmc_api.py` (don't unless asked).
 

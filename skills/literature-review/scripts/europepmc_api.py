@@ -19,11 +19,6 @@ Usage:
 
 # /// script
 # requires-python = ">=3.10"
-# dependencies = [
-#   "scienceskillscommon",
-# ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../../scienceskillscommon" }
 # ///
 
 import argparse
@@ -32,7 +27,8 @@ import os
 import sys
 import urllib.parse
 
-from science_skills.scienceskillscommon import http_client, jats
+import http_client
+import jats
 
 _API_BASE = "https://www.ebi.ac.uk/europepmc/webservices/rest/"
 _PDF_BASE = "https://europepmc.org/"

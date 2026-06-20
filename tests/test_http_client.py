@@ -2,21 +2,22 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #   "pytest",
-#   "scienceskillscommon",
 # ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../skills/scienceskillscommon" }
 # ///
 
 import gzip
 import io
 import json
+import pathlib
 import sys
 import urllib.error
 
 import pytest
 
-from science_skills.scienceskillscommon import http_client
+sys.path.insert(0, str(
+    pathlib.Path(__file__).resolve().parent.parent
+    / "skills/literature-review/scripts"))
+import http_client
 
 
 class _Headers(dict):

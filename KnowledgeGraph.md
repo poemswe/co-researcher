@@ -53,7 +53,7 @@ Three CLI search scripts ship with the `literature-review` skill, executed via `
 
 Both review skills run a persistent funnel in a `review/{slug}/` workspace: `protocol.md` (query log), `corpus.json` (candidate pool + screening decisions, source of truth for PRISMA counts), `papers/{id}/` (full texts + per-paper `notes.md`), `synthesis.md`.
 
-Shared `scienceskillscommon/` package (`http_client.py` rate limiting/retries/backoff, `jats.py` JATS→markdown) backs all scripts via PEP 723 inline dependencies resolved by `uv` on first run. Everything here is MIT; the only non-MIT footprint is the optional AGPL `pymupdf4llm` runtime dep fetched by uv for `read_paper.py`.
+Shared helper modules `http_client.py` (rate limiting/retries/backoff) and `jats.py` (JATS→markdown) live in `scripts/` alongside the backends and are imported as siblings (`import http_client`) — no separate package or build. Stdlib-only; `uv run` puts the script dir on `sys.path`. Everything here is MIT; the only non-MIT footprint is the optional AGPL `pymupdf4llm` runtime dep fetched by uv for `read_paper.py`.
 
 **Prerequisite**: `uv` package manager. One-time setup via `scripts/setup.sh` (detects existing install, falls back to astral.sh installer, warms the dep cache).
 

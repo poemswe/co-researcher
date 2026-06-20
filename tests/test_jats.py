@@ -2,17 +2,18 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #   "pytest",
-#   "scienceskillscommon",
 # ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../skills/scienceskillscommon" }
 # ///
 
+import pathlib
 import sys
 
 import pytest
 
-from science_skills.scienceskillscommon import jats
+sys.path.insert(0, str(
+    pathlib.Path(__file__).resolve().parent.parent
+    / "skills/literature-review/scripts"))
+import jats
 
 _JATS_SAMPLE = """<?xml version="1.0"?>
 <article>

@@ -18,11 +18,8 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#   "scienceskillscommon",
 #   "python-dotenv",
 # ]
-# [tool.uv.sources]
-# scienceskillscommon = { path = "../../scienceskillscommon" }
 # ///
 
 import argparse
@@ -35,7 +32,7 @@ import urllib.parse
 
 import dotenv
 
-from science_skills.scienceskillscommon import http_client
+import http_client
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
