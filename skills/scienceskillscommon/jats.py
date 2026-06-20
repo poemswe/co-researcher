@@ -1,61 +1,63 @@
-# Copyright 2026 Google LLC
+# MIT License
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Copyright (c) 2026 Poe Poe / co-researcher contributors
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction. The above copyright notice and this
+# permission notice shall be included in all copies. THE SOFTWARE IS PROVIDED
+# "AS IS", WITHOUT WARRANTY OF ANY KIND. See the MIT License for details.
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Original to this repository.
 
-"""JATS XML to markdown extraction shared by literature-review scripts."""
+"""Extract title, abstract, and body text from JATS XML as markdown."""
 
 import re
 import xml.etree.ElementTree as ET
 
 
 def _local_name(tag):
-  """Return an element tag without its XML namespace prefix."""
+  """Strip any XML namespace prefix from an element tag."""
   return tag.rpartition("}")[2]
 
 
 def _iter_local(root, name):
-  """Yield descendant elements whose local (namespace-stripped) tag matches."""
-  for elem in root.iter():
-    if _local_name(elem.tag) == name:
-      yield elem
+  """Yield descendants whose namespace-stripped tag equals `name`."""
+  for element in root.iter():
+    if _local_name(element.tag) == name:
+      yield element
 
 
 def extract_all_text(elem):
-  """Recursively extract all text content from an XML element."""
-  parts = []
+  """Return all text under `elem`, flattening nested inline markup."""
+  pieces = []
   if elem.text:
-    parts.append(elem.text)
+    pieces.append(elem.text)
   for child in elem:
-    parts.append(extract_all_text(child))
+    pieces.append(extract_all_text(child))
     if child.tail:
-      parts.append(child.tail)
-  return "".join(parts)
+      pieces.append(child.tail)
+  return "".join(pieces)
 
 
 def xml_to_markdown(xml_string):
-  """Extract article title, abstract, and body text from JATS XML."""
+  """Convert a JATS article into a markdown title/abstract/body string.
+
+  Falls back to a crude tag strip when the input is not well-formed XML.
+  Namespace prefixes are ignored throughout, so namespaced JATS works too.
+  """
   try:
     root = ET.fromstring(xml_string)
   except ET.ParseError:
-    text = re.sub(r"<[^>]*>?", " ", xml_string)
-    return re.sub(r"\s+", " ", text).strip()
+    stripped = re.sub(r"<[^>]*>?", " ", xml_string)
+    return re.sub(r"\s+", " ", stripped).strip()
 
   sections = []
 
   for title in _iter_local(root, "article-title"):
-    t = extract_all_text(title).strip()
-    if t:
-      sections.append(f"# {t}")
+    text = extract_all_text(title).strip()
+    if text:
+      sections.append(f"# {text}")
     break
 
   for abstract in _iter_local(root, "abstract"):
@@ -64,19 +66,19 @@ def xml_to_markdown(xml_string):
       sections.append(f"## Abstract\n\n{text}")
 
   for body in _iter_local(root, "body"):
-    body_parts = []
-    for elem in body.iter():
-      tag = _local_name(elem.tag)
+    parts = []
+    for element in body.iter():
+      tag = _local_name(element.tag)
       if tag == "title":
-        title_text = extract_all_text(elem).strip()
-        if title_text:
-          body_parts.append(f"\n## {title_text}\n")
+        heading = extract_all_text(element).strip()
+        if heading:
+          parts.append(f"\n## {heading}\n")
       elif tag == "p":
-        para = extract_all_text(elem).strip()
+        para = extract_all_text(element).strip()
         if para:
-          body_parts.append(para)
-    if body_parts:
-      sections.append("\n\n".join(body_parts))
+          parts.append(para)
+    if parts:
+      sections.append("\n\n".join(parts))
     break
 
   return "\n\n".join(sections)

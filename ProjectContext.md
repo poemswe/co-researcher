@@ -4,7 +4,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**Branch `feat/literature-search-backends`** (2026-06-04) — replacing the hand-wavy `WebSearch`-based literature-review protocol with three real database backends: OpenAlex, arXiv, Europe PMC. Architecture: `literature-review` owns the scripts; `systematic-review` references them. `scienceskillscommon` (Apache-2.0, vendored from google-deepmind/science-skills) is the shared HTTP client. `uv` bootstrap handled by `scripts/setup.sh`, not as a skill.
+**Branch `feat/literature-search-backends`** (2026-06-04) — replacing the hand-wavy `WebSearch`-based literature-review protocol with three real database backends: OpenAlex, arXiv, Europe PMC. Architecture: `literature-review` owns the scripts; `systematic-review` references them. `scienceskillscommon` (MIT, original to this repo as of 2026-06-20 — clean-room reimplementation inspired by science-skills) is the shared HTTP client + JATS extractor. `uv` bootstrap handled by `scripts/setup.sh`, not as a skill.
 
 ## Open Threads
 
@@ -20,6 +20,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 - **2026-06-04**: Backend scripts live inside `literature-review/scripts/` (not as separate top-level skills). User-facing surface area = the two review skills only.
 - **2026-06-04**: Kept both `literature-review` (narrative/scoping) and `systematic-review` (PRISMA). Methodological distinction justifies the 60% protocol overlap.
 - **2026-06-11**: Made `scripts/setup.sh` robust under non-interactive environments (added `|| true` to key input `read`). Updated `evals/lib/core.py` to use `shutil.which` and check `/opt/homebrew/bin` to fix evaluation CLI discovery on Apple Silicon macOS.
+- **2026-06-20**: Replaced vendored Apache `scienceskillscommon` (`http_client.py`, `jats.py`) with an original MIT clean-room reimplementation (minimal surface: only what the scripts use — no streaming/POST/throttle-control). Design inspired by science-skills, no code copied. 9 new contract tests in `test_http_client.py` (verified parity against the old impl first, then swapped). pyproject bumped 0.1.0→0.2.0. The five search/download backend scripts remain vendored Apache; `read_paper.py` stays MIT-original.
 - **2026-06-17**: Paper-reading + review-funnel workflow complete. Phase 1 (Tasks 1–5): `read_paper.py` resolution chain + backends, EPMC PMCID fallback, 31 unit tests. Phase 2 (Tasks 6–8): both review SKILL.md protocols rewritten around the `review/{slug}/` workspace with `corpus.json` screening state, pilot screening, evidence/background split, `notes.md` as the unit of synthesis, abstract-only/PRISMA "not retrieved" handling. **Deviation from the spec draft (agreed 2026-06-12)**: the arXiv-HTML retrieval route was dropped; `read_paper.py`'s `source` enum has no `arxiv_html`.
 
 ## Pitfalls

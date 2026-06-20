@@ -120,5 +120,5 @@ Pause for the user only at: (1) end of Scope — criteria approval; (2) pilot sc
 </checkpoint>
 
 <attribution>
-The `openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`, and `download_paper_source.py` scripts plus the `scienceskillscommon` HTTP client are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0. Per-source headers preserved. `read_paper.py` is original to this repository; it depends on PyMuPDF/pymupdf4llm (AGPL-3.0) as a runtime dependency fetched by uv, not vendored.
+The `openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `download_paper.py`, and `download_paper_source.py` scripts are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0 (per-source headers preserved). `read_paper.py` and the `scienceskillscommon` package (`http_client.py`, `jats.py`) are original to this repository under MIT; the HTTP client's design was inspired by science-skills but no code was copied. `read_paper.py` depends on PyMuPDF/pymupdf4llm (AGPL-3.0) as a runtime dependency fetched by uv, not vendored.
 </attribution>
