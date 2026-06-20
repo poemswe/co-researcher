@@ -118,7 +118,3 @@ All state lives in a review workspace `review/{slug}/`: `protocol.md` (question,
 <checkpoint>
 Pause for the user only at: (1) end of Scope — criteria approval; (2) pilot screening — borderline calls; (3) before Synthesize, if the included set is unexpectedly large (>40) or small (<3). Otherwise run the funnel autonomously.
 </checkpoint>
-
-<attribution>
-The `openalex_cli.py`, `europepmc_api.py`, and `search_arxiv.py` scripts are vendored from [google-deepmind/science-skills](https://github.com/google-deepmind/science-skills) under Apache License 2.0 (per-source headers preserved). `read_paper.py` and the `scienceskillscommon` package (`http_client.py`, `jats.py`) are original to this repository under MIT; designs were inspired by science-skills but no code was copied. `read_paper.py` depends on PyMuPDF/pymupdf4llm (AGPL-3.0) as a runtime dependency fetched by uv, not vendored.
-</attribution>
