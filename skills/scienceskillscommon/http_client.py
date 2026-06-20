@@ -28,6 +28,7 @@ retries on transient errors (HTTP 429 / 5xx), exponential backoff with jitter,
 from __future__ import annotations
 
 import contextlib
+import datetime
 import email.utils
 import fcntl
 import gzip
@@ -135,7 +136,6 @@ def _retry_after_secs(headers):
   parsed = email.utils.parsedate_to_datetime(value)
   if parsed is None:
     return None
-  import datetime
   delta = (parsed - datetime.datetime.now(datetime.timezone.utc)).total_seconds()
   return max(0.0, delta)
 
