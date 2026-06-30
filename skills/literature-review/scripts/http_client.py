@@ -162,14 +162,14 @@ class HttpClient:
     self.max_retries = max_retries
     self.timeout = timeout
     self.user_agent = user_agent or os.environ.get(
-        "SCIENCE_SKILLS_USER_AGENT", "")
+        "CO_RESEARCHER_USER_AGENT", "")
     self.referer_skill = referer_skill
     self._limiter = _RateLimiter(self.hostname, qps)
 
   def _resolve_url(self, url):
     if "://" not in url:
       return urllib.parse.urljoin(self.base_url, url)
-    if not url.startswith(self.base_url):
+    if urllib.parse.urlparse(url).hostname != self.hostname:
       raise ValueError(
           f"URL {url!r} does not match base_url {self.base_url!r}")
     return url

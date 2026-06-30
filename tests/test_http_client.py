@@ -76,6 +76,12 @@ def test_resolve_url_absolute_must_match_base():
     c._resolve_url("https://evil.test/x")
 
 
+def test_resolve_url_rejects_host_prefix_attack():
+  c = http_client.HttpClient("https://api.test", qps=1000.0)
+  with pytest.raises(ValueError):
+    c._resolve_url("https://api.test.evil.com/x")
+
+
 def test_fetch_json_success(monkeypatch):
   _patch_urlopen(monkeypatch, [_Resp(json.dumps({"ok": 1}).encode())])
   assert _client().fetch_json("x") == {"ok": 1}
