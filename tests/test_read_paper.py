@@ -207,6 +207,14 @@ def test_lookup_openalex_work_degrades_on_server_error(monkeypatch, capsys):
   assert "OpenAlex" in capsys.readouterr().err
 
 
+def test_lookup_warns_on_retracted(monkeypatch, capsys):
+  monkeypatch.setattr(read_paper._OPENALEX, "fetch_json",
+                      lambda url: {"id": "W1", "is_retracted": True})
+  work = read_paper.lookup_openalex_work("10.1/retracted")
+  assert work["is_retracted"] is True
+  assert "retracted" in capsys.readouterr().err
+
+
 def test_chain_falls_through_to_arxiv_when_openalex_errors(
     tmp_path, capsys, monkeypatch):
   def boom(url):

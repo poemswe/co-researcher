@@ -94,7 +94,11 @@ def lookup_openalex_work(doi: str) -> dict | None:
   if api_key:
     url += "?" + urllib.parse.urlencode({"api_key": api_key})
   try:
-    return _OPENALEX.fetch_json(url)
+    work = _OPENALEX.fetch_json(url)
+    if work.get("is_retracted"):
+      print(f"WARNING: {doi} is marked retracted in OpenAlex",
+            file=sys.stderr)
+    return work
   except http_client.HttpError as e:
     if e.status_code != 404:
       print(f"OpenAlex lookup failed for {doi}: {e}", file=sys.stderr)
