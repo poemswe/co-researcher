@@ -618,7 +618,7 @@
             </div>
             <div class="skill-card">
                 <p class="skill-name">Literature Review</p>
-                <p class="skill-desc">Systematic search, citation chaining, hallucination detection, gap analysis. Refuses to cite sources it cannot verify.</p>
+                <p class="skill-desc">Searches OpenAlex, arXiv, and Europe PMC directly, retrieves full text, and verifies every citation against the databases — fabricated, mismatched, and retracted references are caught before output.</p>
             </div>
             <div class="skill-card">
                 <p class="skill-name">Hypothesis Testing</p>
@@ -643,7 +643,7 @@
             </div>
             <div class="skill-card">
                 <p class="skill-name">Systematic Review</p>
-                <p class="skill-desc">PRISMA-standard protocol, inclusion/exclusion criteria, Risk of Bias assessment.</p>
+                <p class="skill-desc">PRISMA-standard protocol with flow counts computed from the screening record, inclusion/exclusion criteria, Risk of Bias assessment.</p>
             </div>
             <div class="skill-card">
                 <p class="skill-name">Research Synthesis</p>
@@ -672,7 +672,7 @@
 <section class="honesty">
     <div class="honesty-inner">
         <h2>Systemic Honesty is a protocol constraint, not a model instruction.</h2>
-        <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — at search, at citation, at synthesis — so the constraint doesn't depend on a single instruction holding under pressure.</p>
+        <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — searches run against real scholarly databases, and a citation verifier resolves every reference before a bibliography ships, failing loudly on fabricated, mismatched, or retracted entries. The constraint doesn't depend on a single instruction holding under pressure.</p>
         <div class="honesty-rules">
             <p class="honesty-rule">Never fabricate a citation. If a source cannot be verified, say so.</p>
             <p class="honesty-rule">Distinguish what the evidence shows from what it suggests.</p>
