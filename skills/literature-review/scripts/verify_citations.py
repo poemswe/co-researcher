@@ -53,20 +53,26 @@ def _extract_doi(text: str) -> str | None:
   return match.group(0).rstrip(".,;:)]}")
 
 
-_BIB_ENTRY_RE = re.compile(
-    r"@(?!(?:comment|string|preamble)\b)\w+\s*\{\s*([^,\s]+)\s*,(.*?)\}(?=\s*(?:@|\Z))",
-    re.DOTALL | re.IGNORECASE)
+_BIB_ENTRY_START_RE = re.compile(
+    r"^\s*@(?!(?:comment|string|preamble)\b)\w+\s*\{", re.IGNORECASE | re.MULTILINE)
+_BIB_KEY_RE = re.compile(r"\{\s*([^,\s]+)\s*,")
 _BIB_FIELD_RE = re.compile(
     r"(\w+)\s*=\s*(?:\{((?:[^{}]|\{[^{}]*\})*)\}|\"([^\"]*)\")")
 
 
 def _parse_bibtex(raw: str) -> list[dict]:
   entries = []
-  for key, body in _BIB_ENTRY_RE.findall(raw):
+  starts = list(_BIB_ENTRY_START_RE.finditer(raw))
+  for i, match in enumerate(starts):
+    end = starts[i + 1].start() if i + 1 < len(starts) else len(raw)
+    chunk = raw[match.start():end]
+    key_match = _BIB_KEY_RE.search(chunk)
+    if not key_match:
+      continue
     fields = {name.lower(): (braced or quoted).replace("{", "").replace("}", "")
-              for name, braced, quoted in _BIB_FIELD_RE.findall(body)}
+              for name, braced, quoted in _BIB_FIELD_RE.findall(chunk)}
     entries.append({"doi": fields.get("doi"), "title": fields.get("title"),
-                    "raw": key})
+                    "raw": key_match.group(1)})
   return entries
 
 

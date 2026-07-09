@@ -2,6 +2,7 @@
 name: academic-writing
 description: You must use this when producing any research prose — literature reviews, syntheses, analyses, methodology descriptions, discussion sections, abstracts, or any written output intended for an academic audience.
 tools:
+  - Bash
   - Read
   - Grep
   - Glob

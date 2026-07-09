@@ -5,7 +5,8 @@ set -euo pipefail
 
 task_context=""
 if [ -n "${CLAUDE_CODE_TASK_LIST_ID:-}" ]; then
-    task_context="\nYou are resuming work on Task List: ${CLAUDE_CODE_TASK_LIST_ID}. Use the 'Task' tools to check the status of your research."
+    safe_id=$(printf '%s' "${CLAUDE_CODE_TASK_LIST_ID}" | tr -d '\n\r' | sed 's/\\/\\\\/g; s/"/\\"/g')
+    task_context="\nYou are resuming work on Task List: ${safe_id}. Use the 'Task' tools to check the status of your research."
 fi
 
 cat <<EOF

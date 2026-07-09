@@ -116,6 +116,25 @@ def test_parse_input_bibtex_commentary_not_skipped(tmp_path):
   assert entries[0]["title"] == "A Commentary Entry"
 
 
+def test_parse_input_bibtex_stray_line_between_entries(tmp_path):
+  f = tmp_path / "refs.bib"
+  f.write_text("""
+@article{first,
+  title = {First Title},
+  doi = {10.1/first}
+}
+stray line that is not an entry
+@article{second,
+  title = {Second Title},
+  doi = {10.1/second}
+}
+""")
+  entries = vc.parse_input(str(f))
+  assert len(entries) == 2
+  assert entries[0]["raw"] == "first" and entries[0]["doi"] == "10.1/first"
+  assert entries[1]["raw"] == "second" and entries[1]["doi"] == "10.1/second"
+
+
 def test_titles_match_tolerates_case_and_punctuation():
   assert vc.titles_match("Attention Is All You Need!",
                          "attention is all you need")
