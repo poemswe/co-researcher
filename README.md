@@ -71,13 +71,10 @@ The suite provides native research commands across all supported platforms:
 | Feature | Command (Claude) | Slash (Gemini) | Skill (Codex) |
 |---------|------------------|----------------|---------------|
 | **Research Project** | `/research` | `/research` | `$research` |
-| **Methodology** | `/methodology` | `/methodology` | `$methodology` |
 | **Critical Analysis** | `/analyze` | `/analyze` | `$analyze` |
-| **Bibliography** | `/bibliography` | `/bibliography` | `$bibliography` |
-| **Synthesize** | `/synthesize` | `/synthesize` | `$synthesize` |
 | **Peer Review** | `/review` | `/review` | `$review` |
-| **Ethical Risk** | `/ethics` | `/ethics` | `$ethics` |
-| **Grant Proposal** | `/grant` | `/grant` | `$grant` |
+
+Every other capability (methodology, synthesis, ethics review, grant writing, bibliography) is invoked by describing the task in natural language — the matching skill self-triggers via its description. Commands exist only for the three entry points people type habitually.
 
 ## Research Orchestration Engine
 
