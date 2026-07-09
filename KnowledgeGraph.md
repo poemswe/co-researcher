@@ -54,6 +54,7 @@ Three CLI search scripts ship with the `literature-review` skill, executed via `
 - **arXiv** (`search_arxiv.py`) — preprints for CS/physics/math/quant-bio
 - **Europe PMC** (`europepmc_api.py`) — life-science open-access full text + forward/backward citation graph
 - **Full-text acquisition** (`read_paper.py`) — any identifier (DOI/arXiv/PMCID) → markdown via a fallback chain (cached/user PDF → Europe PMC JATS → arXiv PDF → OpenAlex OA PDF → abstract-only).
+- **Citation verification** (`verify_citations.py`) — bibliography file → verified/mismatched/not_found per citation via OpenAlex + Europe PMC; nonzero exit on any failure, used as a pre-output gate by literature-review (protocol step 8) and academic-writing (self-audit).
 
 Both review skills run a persistent funnel in a `review/{slug}/` workspace: `protocol.md` (query log), `corpus.json` (candidate pool + screening decisions, source of truth for PRISMA counts), `papers/{id}/` (full texts + per-paper `notes.md`), `synthesis.md`.
 

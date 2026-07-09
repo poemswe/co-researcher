@@ -112,6 +112,7 @@ When producing any research prose, follow this sequence:
 - [ ] **Structure**: No three consecutive paragraphs within 10 words of each other in length. At least two different paragraph shapes per section.
 - [ ] **Specificity**: Zero instances of "various studies," "the literature," "multiple contexts," "important implications" without a concrete referent following within the same sentence.
 - [ ] **Voice**: Fewer than three instances of "it can be," "it is suggested," "it was found" per page. First person used where discipline permits.
+- [ ] **Citations verified**: If the draft cites scholarly sources, write them to a file (one per line or JSON) and run `uv run <literature-review-dir>/scripts/verify_citations.py --input refs.txt`. Exit 0 required — any `mismatched` or `not_found` citation is corrected or removed before presenting. Never present prose containing a citation the verifier could not resolve.
 
 If any check fails, revise before presenting the output.
 
