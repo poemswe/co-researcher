@@ -91,6 +91,31 @@ def test_parse_input_bibtex(tmp_path):
   assert entries[1]["title"] == "A Paper With Nested Braces"
 
 
+def test_parse_input_bibtex_one_line_entry(tmp_path):
+  f = tmp_path / "refs.bib"
+  f.write_text(
+      "@article{k1, title={One Line Entry}, year={2020}}\n")
+  entries = vc.parse_input(str(f))
+  assert len(entries) == 1
+  assert entries[0]["raw"] == "k1"
+  assert entries[0]["title"] == "One Line Entry"
+
+
+def test_parse_input_bibtex_commentary_not_skipped(tmp_path):
+  f = tmp_path / "refs.bib"
+  f.write_text("""
+@commentary{k1,
+  title = {A Commentary Entry}
+}
+
+@comment{ignore me}
+""")
+  entries = vc.parse_input(str(f))
+  assert len(entries) == 1
+  assert entries[0]["raw"] == "k1"
+  assert entries[0]["title"] == "A Commentary Entry"
+
+
 def test_titles_match_tolerates_case_and_punctuation():
   assert vc.titles_match("Attention Is All You Need!",
                          "attention is all you need")

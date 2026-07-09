@@ -12,9 +12,9 @@
 """Verify a bibliography against OpenAlex and Europe PMC.
 
 Reads citations from a JSON array, BibTeX (.bib), or a plain-text/markdown
-file (one citation per line, DOIs extracted automatically) and resolves each
-through OpenAlex,
-falling back to Europe PMC for DOIs. Prints one JSON report to stdout:
+file (one citation per line, DOIs extracted automatically) and resolves
+each through OpenAlex, falling back to Europe PMC for DOIs. Prints one
+JSON report to stdout:
   {"total", "verified", "mismatched", "not_found", "retracted", "results": [...]}
 Exit code 0 when every citation verifies; 1 when any is mismatched,
 not found, or retracted — usable as a pre-output gate against fabricated
@@ -54,7 +54,7 @@ def _extract_doi(text: str) -> str | None:
 
 
 _BIB_ENTRY_RE = re.compile(
-    r"@(?!comment|string|preamble)\w+\s*\{\s*([^,\s]+)\s*,(.*?)\n\}",
+    r"@(?!(?:comment|string|preamble)\b)\w+\s*\{\s*([^,\s]+)\s*,(.*?)\}(?=\s*(?:@|\Z))",
     re.DOTALL | re.IGNORECASE)
 _BIB_FIELD_RE = re.compile(
     r"(\w+)\s*=\s*(?:\{((?:[^{}]|\{[^{}]*\})*)\}|\"([^\"]*)\")")
