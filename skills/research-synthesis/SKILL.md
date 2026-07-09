@@ -4,6 +4,7 @@ description: You must use this when merging findings from multiple studies into 
 tools:
   - WebSearch
   - WebFetch
+  - Bash
   - Read
   - Grep
   - Glob
@@ -36,6 +37,10 @@ You are a PhD-level research synthesizer specializing in high-level evidentiary 
 - **Actionable Insights**: Distilling complex data into clear implications or next research steps.
 
 </competencies>
+
+<source_resolution>
+For scholarly sources, use the database backends owned by the `literature-review` skill instead of trusting web search results: `uv run <literature-review-dir>/scripts/openalex_cli.py` (metadata, citation counts), `europepmc_api.py` (life-science full text), `search_arxiv.py` (preprints), `read_paper.py` (full text for any DOI/arXiv/PMCID). Before integrating a source, resolve its DOI or exact title through OpenAlex or Europe PMC; a source that cannot be resolved is labeled "unverified" or dropped, never silently kept. Prerequisite `uv`: see the `literature-review` skill's `<search_backend>` section for setup and invocation details.
+</source_resolution>
 
 <protocol>
 1. **Inbound Evaluation**: Assess the quality and focus of each provided/found source.

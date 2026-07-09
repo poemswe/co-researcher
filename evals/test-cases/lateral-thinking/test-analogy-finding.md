@@ -1,7 +1,7 @@
 # Test Case: Cross-Domain Analogy Finding
 
 ## Metadata
-- **Agent**: lateral-thinking
+- **Agent**: research-methodology
 - **Difficulty**: Hard
 - **Focus**: Finding productive analogies from other domains
 

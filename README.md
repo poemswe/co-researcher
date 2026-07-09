@@ -1,6 +1,8 @@
-# Co-Researcher (v2.1.0)
+# Co-Researcher (v2.3.0)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, **OpenAI Codex**, and **OpenCode**.
+
+Searches run against real scholarly databases (OpenAlex, arXiv, Europe PMC), and every bibliography passes a verification gate that catches fabricated, mismatched, and retracted citations before output.
 
 ## Installation
 
@@ -71,13 +73,10 @@ The suite provides native research commands across all supported platforms:
 | Feature | Command (Claude) | Slash (Gemini) | Skill (Codex) |
 |---------|------------------|----------------|---------------|
 | **Research Project** | `/research` | `/research` | `$research` |
-| **Methodology** | `/methodology` | `/methodology` | `$methodology` |
 | **Critical Analysis** | `/analyze` | `/analyze` | `$analyze` |
-| **Bibliography** | `/bibliography` | `/bibliography` | `$bibliography` |
-| **Synthesize** | `/synthesize` | `/synthesize` | `$synthesize` |
 | **Peer Review** | `/review` | `/review` | `$review` |
-| **Ethical Risk** | `/ethics` | `/ethics` | `$ethics` |
-| **Grant Proposal** | `/grant` | `/grant` | `$grant` |
+
+Every other capability (methodology, synthesis, ethics review, grant writing, bibliography) is invoked by describing the task in natural language — the matching skill self-triggers via its description. Commands exist only for the three entry points people type habitually.
 
 ## Research Orchestration Engine
 
@@ -137,23 +136,36 @@ Pre-configured agent combinations for common scenarios:
 
 The suite includes PhD-level research skills, each governed by **Systemic Honesty** principles.
 
-- **critical-analysis**: Riguous logic checking and fallacy detection
+- **critical-analysis**: Rigorous logic checking and fallacy detection
 - **ethics-review**: IRB compliance and privacy risk assessment
 - **grant-writing**: Funding strategy and proposal development
 - **hypothesis-testing**: Variable mapping and experimental design
 - **academic-writing**: Eliminating AI-isms from research prose
-- **lateral-thinking**: Cross-domain analogies and first-principles reasoning
 - **literature-review**: Systematic search and citation analysis
 - **multi-source-investigation**: Cross-validation across diverse sources
 - **peer-review**: Manuscript critique and methodological review
 - **qualitative-research**: Thematic analysis and coding
 - **quantitative-analysis**: Statistical power and effect size interpretation
 - **research-manager**: Dynamic task scaffolding and polyglot session persistence
-- **research-methodology**: Design selection and validation
+- **research-methodology**: Design selection, validation, and creative reframing (cross-domain analogies, first-principles)
 - **research-synthesis**: Narrative synthesis with uncertainty quantification
 - **systematic-review**: PRISMA-standard systematic review guidance
 - **using-co-researcher**: Orients Claude to all available skills in the suite; run once per session to activate the full protocol set
 
+## Research Toolchain
+
+The `literature-review` skill ships CLI backends (`skills/literature-review/scripts/`, run via `uv`) that the other evidence-handling skills share:
+
+| Script | What it does |
+|--------|--------------|
+| `openalex_cli.py` | Cross-disciplinary search over ~250M works (OpenAlex) |
+| `search_arxiv.py` | Preprint search (CS, physics, math, quant-bio) |
+| `europepmc_api.py` | Life-science full text + forward/backward citation chaining |
+| `read_paper.py` | Any DOI/arXiv ID/PMCID → markdown full text via legal open-access routes; warns on retracted papers |
+| `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) and reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
+| `prisma_counts.py` | PRISMA 2020 flow counts computed from the review workspace's `corpus.json` |
+
+One-time setup: `bash scripts/setup.sh` (installs `uv`, optionally stores an OpenAlex API key).
 
 ## Evaluation Framework
 

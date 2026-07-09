@@ -4,18 +4,18 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**v2.2.0 released (2026-07-09)** — the literature-search backend rewrite merged to `main` via squash (PR #19, commit `6626924`) and shipped as `v2.2.0`. The `literature-review` skill now runs on three real database backends (OpenAlex, arXiv, Europe PMC) instead of hand-wavy `WebSearch`, plus a unified `read_paper.py` resolution chain. `literature-review` owns the scripts; `systematic-review` references them. `http_client.py` + `jats.py` (MIT, plain sibling modules in `scripts/`) are the shared HTTP client + JATS extractor. `uv` bootstrap handled by `scripts/setup.sh`, not as a skill.
+**`feat/backend-integration-and-skill-consolidation` is feature-complete, pending review/merge (2026-07-09).** Version bumped to 2.3.0 everywhere; PR opened against `main` (not merged — user gates merges). Shipped on this branch: `research-synthesis`, `multi-source-investigation`, and `peer-review` now resolve scholarly sources through the literature-review backends (`source_resolution` sections), with `peer-review` gaining a reference-audit protocol step; `lateral-thinking` folded into `research-methodology` as a creative-reframing competency (skill count 15 → 14); the SessionStart hook trimmed to the three Systemic Honesty principles; command shims pruned to `/research`, `/analyze`, `/review`; `research-manager` persists cross-session state in `research/{slug}/project.json`; and new integrity gates — `verify_citations.py` (bibliography verification against OpenAlex/Europe PMC, nonzero exit as a pre-output gate, wired into `literature-review` step 8 and `academic-writing` self-audit), `read_paper.py` retraction warnings, and `prisma_counts.py` (PRISMA 2020 flow counts, exit 1 on missing exclusion reasons, wired into `systematic-review`). 79 tests passing across 8 test files.
 
-No active branch work in flight. Next open item, if picked up, is the Semantic Scholar backend (see Open Threads).
+Next open item, if picked up after merge, is the Semantic Scholar backend (see Open Threads).
 
 ## Open Threads
 
 - **Semantic Scholar backend** (backlog, new feature, not started) — feedback from a live-run session flagged this as a gap; no scope/design decided yet.
 - Decision pending on whether to merge `literature-review` and `systematic-review` into one skill with a rigor parameter. Currently kept separate (PRISMA distinction is meaningful).
-- Other co-researcher skills (`research-synthesis`, `multi-source-investigation`, `peer-review`) still use `WebSearch` only. May benefit from the same backend integration in a follow-up.
 
 ## Recent Decisions
 
+- **2026-07-09**: `feat/backend-integration-and-skill-consolidation` marked feature-complete and PR opened against `main` (title: `feat: source-resolution integration, citation integrity gates, skill consolidation`, do not merge). Version bumped to 2.3.0 across `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, `gemini-extension.json`, `index.html`, and `KnowledgeGraph.md`. Full suite verified green: 79 tests across 8 files.
 - **2026-07-09**: PR #19 squash-merged to `main`, tagged `v2.2.0`, GitHub release published. Feature branch deleted (local + remote) after confirming zero tree diff against `main`. All 7 PR review threads resolved (2 were moot — files deleted in the MIT rewrite; 1 was already fixed — `sanitize_id` traversal guard, confirmed via test coverage before closing).
 - **2026-07-09**: SSRF hardening — `http_client._resolve_url` now compares hostnames instead of doing a string-prefix match, closing a host-prefix bypass (e.g. `api.openalex.org.evil.com`) that worked when `base_url` had no trailing slash. Coverage backfilled to 57 tests: `_retry_after_secs`/`_backoff_secs` edge cases, `openalex_cli.fetch_with_retry` 429/error branches, `europepmc_api.download_pdf` non-PDF path, `write_output` OSError path.
 - **2026-06-20**: Backend is now original MIT throughout — all four scripts (`search_arxiv.py`, `europepmc_api.py`, `openalex_cli.py`, `read_paper.py`) plus the `http_client.py`/`jats.py` helpers, reimplemented to a minimal surface (openalex keeps just `filter`). Deleted unused `download_paper.py`/`download_paper_source.py`. Only non-MIT footprint: the optional AGPL `pymupdf4llm` runtime dep.

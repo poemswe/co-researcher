@@ -6,22 +6,26 @@ This document provides a technical overview of the co-researcher system architec
 
 ### Specialized Research Skills
 
-Nine domain-expert skills provide PhD-level research capabilities:
+Domain-expert skills provide PhD-level research capabilities:
 
-- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `read_paper.py`) consumed by both review skills.
+- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `read_paper.py`) consumed by both review skills and referenced by research-synthesis, multi-source-investigation, and peer-review for source resolution.
 - **systematic-review**: PRISMA/Cochrane/JBI reviews with Risk-of-Bias and GRADE. Reuses literature-review's backend scripts.
+- **research-methodology**: Design selection and validation; absorbed lateral-thinking's creative-reframing moves (assumption inversion, first-principles deconstruction, cross-domain analogy) as a stuck-problem competency.
+- **research-manager**: Project scaffolding and multi-phase orchestration; persists state in research/{slug}/project.json (read-first, write-last)
+- **research-synthesis**: Cross-source evidentiary integration with confidence calibration
+- **multi-source-investigation**: Claim triangulation and source credibility auditing
 - **critical-analysis**: Bias identification and logical fallacy detection
 - **hypothesis-testing**: Testable hypothesis formulation and variable mapping
-- **lateral-thinking**: Cross-domain analogy and first-principles reasoning
 - **qualitative-research**: Thematic analysis and coding strategies
 - **quantitative-analysis**: Statistical method selection and interpretation
 - **peer-review**: Academic manuscript and proposal evaluation
 - **ethics-review**: Research ethics, IRB compliance, and privacy risk assessment
-- **grant-proposal**: Grant proposal development, specific aims, and funding strategy
+- **grant-writing**: Grant proposal development, specific aims, and funding strategy
+- **academic-writing**: Eliminating AI-isms from research prose
 
 ### Platform Integration
 
-**Current Version: v2.0.0**
+**Current Version: v2.3.0**
 
 The system supports three CLI platforms through unified skill definitions:
 
@@ -50,6 +54,8 @@ Three CLI search scripts ship with the `literature-review` skill, executed via `
 - **arXiv** (`search_arxiv.py`) — preprints for CS/physics/math/quant-bio
 - **Europe PMC** (`europepmc_api.py`) — life-science open-access full text + forward/backward citation graph
 - **Full-text acquisition** (`read_paper.py`) — any identifier (DOI/arXiv/PMCID) → markdown via a fallback chain (cached/user PDF → Europe PMC JATS → arXiv PDF → OpenAlex OA PDF → abstract-only).
+- **Citation verification** (`verify_citations.py`) — bibliography file → verified/mismatched/not_found per citation via OpenAlex + Europe PMC; nonzero exit on any failure, used as a pre-output gate by literature-review (protocol step 8) and academic-writing (self-audit).
+- **PRISMA counts** (`prisma_counts.py`) — corpus.json → PRISMA 2020 flow numbers (records-by-source/deduped/screened/excluded-by-reason/included/not-retrieved); exits 1 on missing exclusion reasons.
 
 Both review skills run a persistent funnel in a `review/{slug}/` workspace: `protocol.md` (query log), `corpus.json` (candidate pool + screening decisions, source of truth for PRISMA counts), `papers/{id}/` (full texts + per-paper `notes.md`), `synthesis.md`.
 

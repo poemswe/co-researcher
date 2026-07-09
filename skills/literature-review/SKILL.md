@@ -71,6 +71,12 @@ uv run scripts/read_paper.py --pmcid PMC8371605 --workspace "$WS"
 ```
 (`$WS` is the absolute workspace from step 1 — `$(pwd)/review/{slug}`; never pass a relative path.) Prints one JSON line: `{"status": "fulltext|abstract-only", "path": ..., "source": ..., "id": ...}`. Files land in `$WS/papers/{id}/` (`paper.pdf`, `fulltext.md` or `abstract.md`). A PDF the user drops at `$WS/papers/{id}/paper.pdf` is picked up before any network call. Paywalled papers return `abstract-only` — never scrape for them.
 
+**5. Citation verification** — `scripts/verify_citations.py` (bibliography → verified/mismatched/not_found)
+```bash
+uv run scripts/verify_citations.py --input "$WS/refs.json"
+```
+Input: JSON array (`[{"doi", "title"}]` or bare strings), BibTeX (`.bib`), or a text/markdown file with one citation per line (DOIs extracted automatically). Resolves each through OpenAlex, then Europe PMC for DOIs. Prints a JSON report; exit 0 only when every citation verifies. Run it on any bibliography before presenting it — a `mismatched` result means the DOI exists but the claimed title doesn't match it (the classic fabrication pattern); fix or drop before output.
+
 **Picking a backend:**
 - Cross-discipline overview, citation counts, author/institution metadata → OpenAlex
 - Bleeding-edge preprints in CS/ML/physics → arXiv
@@ -89,6 +95,7 @@ All state lives in a review workspace `review/{slug}/`: `protocol.md` (question,
 5. **Acquire & read** — For each included paper, run `read_paper.py`. Classify each as `evidence` (bears directly on the question) or `background`. Evidence papers require `notes.md` written from the full text — methods and results actually read via Read/Grep on `fulltext.md`, one paper at a time, never multiple full texts in context. Background papers may be cited at abstract level. `notes.md` format: citation, read depth, design, N, key effects, claims relevant to the question (with section anchors), limitations, theme tags. Do not trust extracted tables — multi-column tables come through as scrambled line fragments; re-read the source PDF for any tabular data. Heading detection in `fulltext.md` is imperfect; if section structure looks collapsed, cite by content rather than a section anchor.
 6. **Snowball** — For core evidence papers, run `get_references`/`get_citations` (Europe PMC) or follow OpenAlex `referenced_works`. New candidates enter at step 4 with `found_via: snowball:*`. One round by default; stop when a round adds nothing. If included papers reveal vocabulary the original queries missed, run one adapted search round and log it.
 7. **Synthesize** — Write `synthesis.md` from `notes.md` files only. Tag any citation whose `fulltext` is `abstract-only` with `[abstract-only]` inline. End with a retrieval summary listing papers not retrieved and the `papers/{id}/paper.pdf` path where the user can drop a legally obtained PDF for a re-run.
+8. **Verify bibliography** — Write the final citation list to `$WS/refs.json` and run `verify_citations.py --input "$WS/refs.json"`. Exit 0 is required before presenting; correct or remove any `mismatched`/`not_found` entry. (Papers screened through `corpus.json` will pass — this gate catches citations that entered the synthesis from memory rather than from the corpus.)
 </protocol>
 
 <output_format>
