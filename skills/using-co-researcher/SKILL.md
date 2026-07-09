@@ -22,7 +22,7 @@ When you identify a task that matches a skill, you must:
 3.  **Announce** your action: "I am using the [Skill Name] skill to..."
 
 ## Available Skills (Core)
-- **research-methodology**: Selecting and validating study designs.
+- **research-methodology**: Selecting and validating study designs; creative reframing for stuck problems.
 - **literature-review**: Systematic search and citation chaining.
 - **critical-analysis**: Identifying fallacies and bias.
 - **hypothesis-testing**: Experimental design and variable mapping.
@@ -31,5 +31,4 @@ When you identify a task that matches a skill, you must:
 - **peer-review**: Critiquing manuscripts.
 - **ethics-review**: IRB compliance and risk assessment.
 - **grant-writing**: Funding proposals.
-- **lateral-thinking**: Creative problem solving.
 - **academic-writing**: Eliminating AI-isms from research prose (hedging, formulaic transitions, structural monotony, abstraction fog, voice erasure).

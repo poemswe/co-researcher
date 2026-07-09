@@ -10,7 +10,6 @@ See `skills/` for the full list of capabilities, including:
 - `literature-review`
 - `critical-analysis`
 - `hypothesis-testing`
-- `lateral-thinking`
 - `qualitative-research`
 - `quantitative-analysis`
 - `peer-review`

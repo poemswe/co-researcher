@@ -212,7 +212,7 @@ def execute_agent(agent: str, prompt: str, timeout: int = 600, model: str = "cla
                 "hypothesis-testing": "hypothesis-testing",
                 "grant-proposal": "grant-writing",
                 "ethics-review": "ethics-review",
-                "lateral-thinking": "lateral-thinking",
+                "lateral-thinking": "research-methodology",
                 "research-methodology": "research-methodology",
                 "peer-review": "peer-review",
                 "qualitative-research": "qualitative-research",

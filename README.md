@@ -142,14 +142,13 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **grant-writing**: Funding strategy and proposal development
 - **hypothesis-testing**: Variable mapping and experimental design
 - **academic-writing**: Eliminating AI-isms from research prose
-- **lateral-thinking**: Cross-domain analogies and first-principles reasoning
 - **literature-review**: Systematic search and citation analysis
 - **multi-source-investigation**: Cross-validation across diverse sources
 - **peer-review**: Manuscript critique and methodological review
 - **qualitative-research**: Thematic analysis and coding
 - **quantitative-analysis**: Statistical power and effect size interpretation
 - **research-manager**: Dynamic task scaffolding and polyglot session persistence
-- **research-methodology**: Design selection and validation
+- **research-methodology**: Design selection, validation, and creative reframing (cross-domain analogies, first-principles)
 - **research-synthesis**: Narrative synthesis with uncertainty quantification
 - **systematic-review**: PRISMA-standard systematic review guidance
 - **using-co-researcher**: Orients Claude to all available skills in the suite; run once per session to activate the full protocol set
