@@ -150,7 +150,7 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **research-methodology**: Design selection, validation, and creative reframing (cross-domain analogies, first-principles)
 - **research-synthesis**: Narrative synthesis with uncertainty quantification
 - **systematic-review**: PRISMA-standard systematic review guidance
-- **using-co-researcher**: Orients Claude to all available skills in the suite; run once per session to activate the full protocol set
+- **using-co-researcher**: Orientation to the suite — how skills are invoked and the rules that govern them. Activation is automatic: a session-start hook injects the Systemic Honesty principles, and each skill self-triggers from its description.
 
 ## Research Toolchain
 
