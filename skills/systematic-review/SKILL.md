@@ -83,7 +83,7 @@ All review state lives in `review/{slug}/` exactly as defined in the `literature
 | Europe PMC | `…` | YYYY-MM-DD | N |
 | arXiv | `…` | YYYY-MM-DD | N |
 
-**PRISMA flow** (all counts from `corpus.json`): Generate the flow numbers with `uv run <literature-review-dir>/scripts/prisma_counts.py --corpus "$WS/corpus.json"` — never hand-count; the script exits 1 if any exclusion lacks a reason.
+**PRISMA flow**: take "Identified" from protocol.md's logged per-database hit counts. Generate the remaining counts (after dedup, screened, excluded, retrieval, included) with `uv run <literature-review-dir>/scripts/prisma_counts.py --corpus "$WS/corpus.json"` — never hand-count; the script exits 1 if any exclusion lacks a reason.
 - Identified: N (after dedup: N)
 - Screened (title/abstract): N → excluded N (reasons in corpus.json)
 - Sought for retrieval: N → not retrieved N (abstract-only)

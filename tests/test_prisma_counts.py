@@ -43,8 +43,8 @@ def test_counts_happy_path(tmp_path, capsys):
   code = pc.main(["--corpus", _write(tmp_path, records)])
   out = json.loads(capsys.readouterr().out)
   assert code == 0
-  assert out["identified_by_source"] == {"openalex": 2, "arxiv": 1,
-                                         "snowball:refs": 1}
+  assert out["records_by_source"] == {"openalex": 2, "arxiv": 1,
+                                      "snowball:refs": 1}
   assert out["after_dedup"] == 4
   assert out["excluded"] == {"wrong population": 2}
   assert out["included"] == 2
@@ -59,7 +59,7 @@ def test_wrapped_container_and_missing_fields(tmp_path, capsys):
   out = json.loads(capsys.readouterr().out)
   assert out["after_dedup"] == 1
   assert out["screened"] == 0
-  assert out["identified_by_source"] == {"unknown": 1}
+  assert out["records_by_source"] == {"unknown": 1}
   assert code == 0
 
 

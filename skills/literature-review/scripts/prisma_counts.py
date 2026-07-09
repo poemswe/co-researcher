@@ -11,9 +11,11 @@
 
 """Compute PRISMA 2020 flow counts from a review workspace corpus.json.
 
-Prints one JSON object to stdout (identified_by_source, after_dedup,
+Prints one JSON object to stdout (records_by_source, after_dedup,
 screened, excluded-by-reason, included, not_retrieved, in_synthesis) and a
-human summary to stderr. Exits 1 if any excluded record lacks a reason —
+human summary to stderr. records_by_source groups the deduplicated corpus
+by found_via; true pre-dedup identification counts come from the
+protocol.md query log. Exits 1 if any excluded record lacks a reason —
 exclusion reasons are mandatory in the review protocol.
 """
 
@@ -47,7 +49,7 @@ def compute(records: list[dict]) -> dict:
   not_retrieved = sum(1 for r in included
                       if r.get("fulltext") != "fulltext")
   return {
-      "identified_by_source": dict(by_source),
+      "records_by_source": dict(by_source),
       "after_dedup": len(records),
       "screened": sum(1 for s in screening if s.get("status")),
       "excluded": dict(excluded),
