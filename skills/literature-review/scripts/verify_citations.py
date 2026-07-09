@@ -14,9 +14,10 @@
 Reads citations from a JSON array or a plain-text/markdown file (one citation
 per line, DOIs extracted automatically) and resolves each through OpenAlex,
 falling back to Europe PMC for DOIs. Prints one JSON report to stdout:
-  {"total", "verified", "mismatched", "not_found", "results": [...]}
-Exit code 0 when every citation verifies; 1 when any is mismatched or
-not found — usable as a pre-output gate against fabricated references.
+  {"total", "verified", "mismatched", "not_found", "retracted", "results": [...]}
+Exit code 0 when every citation verifies; 1 when any is mismatched,
+not found, or retracted — usable as a pre-output gate against fabricated
+references.
 """
 
 # /// script
@@ -95,7 +96,7 @@ def resolve_doi(doi: str) -> dict | None:
     work = _OPENALEX.fetch_json(
         f"https://api.openalex.org/works/https://doi.org/{doi}")
     return {"title": work.get("title"), "doi": _doi_from_openalex(work) or doi,
-            "source": "openalex"}
+            "source": "openalex", "retracted": bool(work.get("is_retracted"))}
   except http_client.HttpError as err:
     if err.status_code != 404:
       print(f"OpenAlex error for DOI {doi}: {err}", file=sys.stderr)
@@ -110,7 +111,7 @@ def resolve_doi(doi: str) -> dict | None:
   if not hits:
     return None
   return {"title": hits[0].get("title"), "doi": hits[0].get("doi") or doi,
-          "source": "epmc"}
+          "source": "epmc", "retracted": False}
 
 
 def resolve_title(title: str) -> dict | None:
@@ -125,7 +126,7 @@ def resolve_title(title: str) -> dict | None:
   if not hits or not titles_match(title, hits[0].get("title") or ""):
     return None
   return {"title": hits[0].get("title"), "doi": _doi_from_openalex(hits[0]),
-          "source": "openalex"}
+          "source": "openalex", "retracted": bool(hits[0].get("is_retracted"))}
 
 
 def verify_one(entry: dict) -> dict:
@@ -136,16 +137,21 @@ def verify_one(entry: dict) -> dict:
     if hit:
       result.update(status="verified", doi=hit["doi"],
                     matched_title=hit["title"], source=hit["source"])
-      claimed = entry.get("title")
-      if (claimed and hit["title"] and _extract_doi(claimed) is None
-          and not titles_match(claimed, hit["title"])):
-        result["status"] = "mismatched"
+      if hit["retracted"]:
+        result["status"] = "retracted"
+      else:
+        claimed = entry.get("title")
+        if (claimed and hit["title"] and _extract_doi(claimed) is None
+            and not titles_match(claimed, hit["title"])):
+          result["status"] = "mismatched"
     return result
   if entry.get("title"):
     hit = resolve_title(entry["title"])
     if hit:
       result.update(status="verified", doi=hit["doi"],
                     matched_title=hit["title"], source=hit["source"])
+      if hit["retracted"]:
+        result["status"] = "retracted"
   return result
 
 
@@ -160,14 +166,15 @@ def main(argv=None) -> int:
   entries = parse_input(args.input)
   results = [verify_one(e) for e in entries]
   counts = {s: sum(1 for r in results if r["status"] == s)
-            for s in ("verified", "mismatched", "not_found")}
+            for s in ("verified", "mismatched", "not_found", "retracted")}
   print(json.dumps({"total": len(results), **counts, "results": results},
                    indent=2))
   print(f"Citations: {counts['verified']} verified, "
         f"{counts['mismatched']} mismatched, "
-        f"{counts['not_found']} not found (of {len(results)})",
+        f"{counts['not_found']} not found, "
+        f"{counts['retracted']} retracted (of {len(results)})",
         file=sys.stderr)
-  return 0 if counts["mismatched"] == 0 and counts["not_found"] == 0 else 1
+  return 0 if len(results) == counts["verified"] else 1
 
 
 if __name__ == "__main__":

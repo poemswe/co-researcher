@@ -21,9 +21,9 @@ vc = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vc)
 
 
-def _openalex_work(title, doi="10.1/x"):
+def _openalex_work(title, doi="10.1/x", retracted=False):
   return {"id": "https://openalex.org/W1", "title": title,
-          "doi": f"https://doi.org/{doi}"}
+          "doi": f"https://doi.org/{doi}", "is_retracted": retracted}
 
 
 def test_parse_input_json_dicts(tmp_path):
@@ -156,6 +156,33 @@ def test_main_nonzero_exit_on_failures(monkeypatch, tmp_path, capsys):
   out = json.loads(capsys.readouterr().out)
   assert code == 1
   assert out["not_found"] == 1
+
+
+def test_doi_retracted_flagged(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("Real Title", retracted=True))
+  result = vc.verify_one({"doi": "10.1/x", "title": "Real Title", "raw": "x"})
+  assert result["status"] == "retracted"
+  assert result["matched_title"] == "Real Title"
+
+
+def test_title_retracted_flagged(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json", lambda url: {
+      "results": [_openalex_work("Some Retracted Study", retracted=True)]})
+  result = vc.verify_one({"doi": None, "title": "Some Retracted Study",
+                          "raw": "t"})
+  assert result["status"] == "retracted"
+
+
+def test_main_nonzero_exit_on_retracted(monkeypatch, tmp_path, capsys):
+  f = tmp_path / "refs.json"
+  f.write_text(json.dumps([{"doi": "10.1/x"}]))
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T", retracted=True))
+  code = vc.main(["--input", str(f)])
+  out = json.loads(capsys.readouterr().out)
+  assert code == 1
+  assert out["retracted"] == 1
 
 
 if __name__ == "__main__":
