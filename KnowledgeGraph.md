@@ -11,7 +11,7 @@ Domain-expert skills provide PhD-level research capabilities:
 - **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `read_paper.py`) consumed by both review skills and referenced by research-synthesis, multi-source-investigation, and peer-review for source resolution.
 - **systematic-review**: PRISMA/Cochrane/JBI reviews with Risk-of-Bias and GRADE. Reuses literature-review's backend scripts.
 - **research-methodology**: Design selection and validation; absorbed lateral-thinking's creative-reframing moves (assumption inversion, first-principles deconstruction, cross-domain analogy) as a stuck-problem competency.
-- **research-manager**: Project scaffolding and multi-phase orchestration
+- **research-manager**: Project scaffolding and multi-phase orchestration; persists state in research/{slug}/project.json (read-first, write-last)
 - **research-synthesis**: Cross-source evidentiary integration with confidence calibration
 - **multi-source-investigation**: Claim triangulation and source credibility auditing
 - **critical-analysis**: Bias identification and logical fallacy detection
