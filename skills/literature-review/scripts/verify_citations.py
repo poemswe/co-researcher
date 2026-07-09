@@ -11,8 +11,9 @@
 
 """Verify a bibliography against OpenAlex and Europe PMC.
 
-Reads citations from a JSON array or a plain-text/markdown file (one citation
-per line, DOIs extracted automatically) and resolves each through OpenAlex,
+Reads citations from a JSON array, BibTeX (.bib), or a plain-text/markdown
+file (one citation per line, DOIs extracted automatically) and resolves each
+through OpenAlex,
 falling back to Europe PMC for DOIs. Prints one JSON report to stdout:
   {"total", "verified", "mismatched", "not_found", "retracted", "results": [...]}
 Exit code 0 when every citation verifies; 1 when any is mismatched,
@@ -52,6 +53,23 @@ def _extract_doi(text: str) -> str | None:
   return match.group(0).rstrip(".,;:)]}")
 
 
+_BIB_ENTRY_RE = re.compile(
+    r"@(?!comment|string|preamble)\w+\s*\{\s*([^,\s]+)\s*,(.*?)\n\}",
+    re.DOTALL | re.IGNORECASE)
+_BIB_FIELD_RE = re.compile(
+    r"(\w+)\s*=\s*(?:\{((?:[^{}]|\{[^{}]*\})*)\}|\"([^\"]*)\")")
+
+
+def _parse_bibtex(raw: str) -> list[dict]:
+  entries = []
+  for key, body in _BIB_ENTRY_RE.findall(raw):
+    fields = {name.lower(): (braced or quoted).replace("{", "").replace("}", "")
+              for name, braced, quoted in _BIB_FIELD_RE.findall(body)}
+    entries.append({"doi": fields.get("doi"), "title": fields.get("title"),
+                    "raw": key})
+  return entries
+
+
 def parse_input(path: str) -> list[dict]:
   raw = pathlib.Path(path).read_text(encoding="utf-8")
   entries = []
@@ -65,6 +83,8 @@ def parse_input(path: str) -> list[dict]:
         entries.append({"doi": item.get("doi"), "title": item.get("title"),
                         "raw": json.dumps(item)})
     return entries
+  if path.endswith(".bib"):
+    return _parse_bibtex(raw)
   for line in raw.splitlines():
     line = line.strip().lstrip("-*").strip()
     if not line:

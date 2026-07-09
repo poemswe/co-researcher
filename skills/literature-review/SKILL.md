@@ -75,7 +75,7 @@ uv run scripts/read_paper.py --pmcid PMC8371605 --workspace "$WS"
 ```bash
 uv run scripts/verify_citations.py --input "$WS/refs.json"
 ```
-Input: JSON array (`[{"doi", "title"}]` or bare strings) or a text/markdown file with one citation per line (DOIs extracted automatically). Resolves each through OpenAlex, then Europe PMC for DOIs. Prints a JSON report; exit 0 only when every citation verifies. Run it on any bibliography before presenting it — a `mismatched` result means the DOI exists but the claimed title doesn't match it (the classic fabrication pattern); fix or drop before output.
+Input: JSON array (`[{"doi", "title"}]` or bare strings), BibTeX (`.bib`), or a text/markdown file with one citation per line (DOIs extracted automatically). Resolves each through OpenAlex, then Europe PMC for DOIs. Prints a JSON report; exit 0 only when every citation verifies. Run it on any bibliography before presenting it — a `mismatched` result means the DOI exists but the claimed title doesn't match it (the classic fabrication pattern); fix or drop before output.
 
 **Picking a backend:**
 - Cross-discipline overview, citation counts, author/institution metadata → OpenAlex

@@ -65,6 +65,32 @@ def test_parse_input_text_lines(tmp_path):
   assert "no DOI at all" in entries[2]["title"]
 
 
+def test_parse_input_bibtex(tmp_path):
+  f = tmp_path / "refs.bib"
+  f.write_text("""
+@article{vaswani2017,
+  title = {Attention Is All You Need},
+  author = {Vaswani, Ashish},
+  doi = {10.48550/arXiv.1706.03762},
+  year = {2017}
+}
+
+@inproceedings{smith2020,
+  title = "A Paper With {Nested} Braces",
+  year = {2020}
+}
+
+@comment{ignore me}
+""")
+  entries = vc.parse_input(str(f))
+  assert len(entries) == 2
+  assert entries[0]["doi"] == "10.48550/arXiv.1706.03762"
+  assert entries[0]["title"] == "Attention Is All You Need"
+  assert entries[0]["raw"] == "vaswani2017"
+  assert entries[1]["doi"] is None
+  assert entries[1]["title"] == "A Paper With Nested Braces"
+
+
 def test_titles_match_tolerates_case_and_punctuation():
   assert vc.titles_match("Attention Is All You Need!",
                          "attention is all you need")
