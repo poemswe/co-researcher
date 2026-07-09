@@ -206,3 +206,5 @@ Features: Model leaderboards, capability matrices, score trends, and detailed te
 
 ## License
 MIT
+
+The project itself is MIT-licensed. One optional runtime dependency carries a stronger license: `pymupdf4llm` (and its `PyMuPDF` backend), used by `skills/literature-review/scripts/read_paper.py` for PDF text extraction, is **AGPL-3.0**. It is pulled in only when that script runs via `uv`, not bundled with the skills. If you redistribute a service built on `read_paper.py`, the AGPL terms apply to that dependency. The Europe PMC JATS and OpenAlex abstract routes do not require it.

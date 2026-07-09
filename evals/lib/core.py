@@ -118,11 +118,36 @@ def parse_test_case(path: Path) -> TestCase:
 
 
 def find_cli(provider: str) -> Path | None:
+    import shutil
+    # Try locating via PATH first
+    if path_str := shutil.which(provider):
+        return Path(path_str)
+    binary_name = "codex" if provider == "gpt" else provider
+    if path_str := shutil.which(binary_name):
+        return Path(path_str)
+
     paths = {
-        "claude": ["/usr/local/bin/claude", os.path.expanduser("~/.claude/local/claude"), os.path.expanduser("~/.local/bin/claude")],
-        "gemini": ["/usr/local/bin/gemini", os.path.expanduser("~/.gemini/bin/gemini")],
-        "codex": ["/usr/local/bin/codex", os.path.expanduser("~ ~/.codex/bin/codex")],
-        "gpt": ["/usr/local/bin/codex", os.path.expanduser("~/.codex/bin/codex")],
+        "claude": [
+            "/usr/local/bin/claude",
+            os.path.expanduser("~/.claude/local/claude"),
+            os.path.expanduser("~/.local/bin/claude"),
+            "/opt/homebrew/bin/claude",
+        ],
+        "gemini": [
+            "/usr/local/bin/gemini",
+            os.path.expanduser("~/.gemini/bin/gemini"),
+            "/opt/homebrew/bin/gemini",
+        ],
+        "codex": [
+            "/usr/local/bin/codex",
+            os.path.expanduser("~/.codex/bin/codex"),
+            "/opt/homebrew/bin/codex",
+        ],
+        "gpt": [
+            "/usr/local/bin/codex",
+            os.path.expanduser("~/.codex/bin/codex"),
+            "/opt/homebrew/bin/codex",
+        ],
     }
     return next((Path(p) for p in paths.get(provider, []) if Path(p).exists()), None)
 

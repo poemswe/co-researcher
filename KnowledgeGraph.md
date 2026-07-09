@@ -8,7 +8,8 @@ This document provides a technical overview of the co-researcher system architec
 
 Nine domain-expert skills provide PhD-level research capabilities:
 
-- **literature-review**: Systematic literature reviews, citation analysis, and hallucination detection
+- **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `read_paper.py`) consumed by both review skills.
+- **systematic-review**: PRISMA/Cochrane/JBI reviews with Risk-of-Bias and GRADE. Reuses literature-review's backend scripts.
 - **critical-analysis**: Bias identification and logical fallacy detection
 - **hypothesis-testing**: Testable hypothesis formulation and variable mapping
 - **lateral-thinking**: Cross-domain analogy and first-principles reasoning
@@ -41,6 +42,21 @@ The system supports three CLI platforms through unified skill definitions:
 
 All platforms share the same skill definitions in `skills/` but use platform-specific command wrappers.
 
+### Literature Search Backend
+
+Three CLI search scripts ship with the `literature-review` skill, executed via `uv run`:
+
+- **OpenAlex** (`openalex_cli.py`) — cross-disciplinary, ~250M works, citation counts and bibliometrics
+- **arXiv** (`search_arxiv.py`) — preprints for CS/physics/math/quant-bio
+- **Europe PMC** (`europepmc_api.py`) — life-science open-access full text + forward/backward citation graph
+- **Full-text acquisition** (`read_paper.py`) — any identifier (DOI/arXiv/PMCID) → markdown via a fallback chain (cached/user PDF → Europe PMC JATS → arXiv PDF → OpenAlex OA PDF → abstract-only).
+
+Both review skills run a persistent funnel in a `review/{slug}/` workspace: `protocol.md` (query log), `corpus.json` (candidate pool + screening decisions, source of truth for PRISMA counts), `papers/{id}/` (full texts + per-paper `notes.md`), `synthesis.md`.
+
+Shared helper modules `http_client.py` (rate limiting/retries/backoff) and `jats.py` (JATS→markdown) live in `scripts/` alongside the backends and are imported as siblings (`import http_client`) — no separate package or build. Stdlib-only; `uv run` puts the script dir on `sys.path`. Everything here is MIT; the only non-MIT footprint is the optional AGPL `pymupdf4llm` runtime dep fetched by uv for `read_paper.py`.
+
+**Prerequisite**: `uv` package manager. One-time setup via `scripts/setup.sh` (detects existing install, falls back to astral.sh installer, warms the dep cache).
+
 ### Research Quality Principles
 
 **Systemic Honesty:**
@@ -72,6 +88,7 @@ All platforms share the same skill definitions in `skills/` but use platform-spe
 - Provider-specific tool enablement for agents; judge runs tool-free for isolation
 - Persistent result indexing in `results/latest/index.md`
 - Extended model targeting: `--model "provider:version reasoning-level"`
+- Robust CLI location via `shutil.which` and `/opt/homebrew/bin` path discovery support for Apple Silicon macOS
 
 ### Arena Dashboard
 

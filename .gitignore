@@ -9,6 +9,16 @@ __pycache__/
 # macOS
 .DS_Store
 
+# Superpowers planning artifacts + local feedback notes (not committed)
+docs/superpowers/
+FEEDBACK-*.md
+review/
+
+# read_paper.py workspace outputs (full text, abstracts, downloaded PDFs)
+rp-smoke/
+papers/
+test_alphafold.md
+
 # Eval results
 evals/results/
 # Note: we keep evals/benchmark_overview.json and evals/test_results_detail/ 
