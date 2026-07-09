@@ -25,7 +25,7 @@ Domain-expert skills provide PhD-level research capabilities:
 
 ### Platform Integration
 
-**Current Version: v2.2.0**
+**Current Version: v2.3.0**
 
 The system supports three CLI platforms through unified skill definitions:
 
