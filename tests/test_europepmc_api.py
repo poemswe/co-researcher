@@ -64,5 +64,28 @@ def test_citations_and_references_unwrap(monkeypatch):
   assert refs["references"] == [{"id": 9}]
 
 
+def test_download_pdf_exits_on_non_pdf(monkeypatch, tmp_path):
+  monkeypatch.setattr(epmc._PDF_CLIENT, "fetch_bytes",
+                      lambda url, timeout=None: b"<html>not a pdf</html>")
+  with pytest.raises(SystemExit) as exc:
+    epmc.download_pdf("PMC1", str(tmp_path / "out.pdf"))
+  assert "not a PDF" in str(exc.value)
+
+
+def test_download_pdf_writes_valid_pdf(monkeypatch, tmp_path):
+  monkeypatch.setattr(epmc._PDF_CLIENT, "fetch_bytes",
+                      lambda url, timeout=None: b"%PDF-1.7 body")
+  out = tmp_path / "sub" / "out.pdf"
+  epmc.download_pdf("PMC1", str(out))
+  assert out.read_bytes().startswith(b"%PDF")
+
+
+def test_write_output_exits_on_oserror(tmp_path):
+  target = tmp_path / "missing_dir" / "out.json"
+  with pytest.raises(SystemExit) as exc:
+    epmc.write_output({"a": 1}, str(target))
+  assert "Error writing to file" in str(exc.value)
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))

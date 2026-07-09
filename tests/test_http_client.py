@@ -5,11 +5,13 @@
 # ]
 # ///
 
+import email.utils
 import gzip
 import io
 import json
 import pathlib
 import sys
+import time
 import urllib.error
 
 import pytest
@@ -127,6 +129,38 @@ def test_non_retryable_not_retried(monkeypatch):
   with pytest.raises(http_client.HttpError):
     _client().fetch("x")
   assert calls["n"] == 1
+
+
+def test_retry_after_none_when_absent():
+  assert http_client._retry_after_secs({}) is None
+
+
+def test_retry_after_parses_numeric():
+  assert http_client._retry_after_secs({"Retry-After": "12"}) == 12.0
+
+
+def test_retry_after_parses_http_date():
+  future = email.utils.formatdate(time.time() + 30, usegmt=True)
+  secs = http_client._retry_after_secs({"Retry-After": future})
+  assert 20 <= secs <= 30
+
+
+def test_retry_after_past_date_clamps_to_zero():
+  past = email.utils.formatdate(time.time() - 100, usegmt=True)
+  assert http_client._retry_after_secs({"Retry-After": past}) == 0.0
+
+
+def test_backoff_caps_at_max_plus_jitter(monkeypatch):
+  monkeypatch.setattr(http_client.random, "uniform", lambda a, b: b)
+  delay = _client()._backoff_secs(attempt=20, retry_after=None)
+  assert delay == (http_client.DEFAULT_BACKOFF_MAX_SECS
+                   + http_client.DEFAULT_JITTER_SECS)
+
+
+def test_backoff_honors_retry_after_floor(monkeypatch):
+  monkeypatch.setattr(http_client.random, "uniform", lambda a, b: 0.0)
+  delay = _client()._backoff_secs(attempt=0, retry_after=50.0)
+  assert delay == 50.0
 
 
 if __name__ == "__main__":
