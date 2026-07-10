@@ -156,6 +156,23 @@ def test_unidentifiable_record_is_dropped_with_warning(tmp_path, capsys):
   assert "no DOI, title, or identifier" in capsys.readouterr().err
 
 
+def test_main_summary_reports_skipped_records(tmp_path, capsys):
+  path = _write(tmp_path, "ep.json", {"results": [
+      {"title": None}, {"doi": "10.1/keep", "title": "Kept"}]})
+  out = tmp_path / "corpus.json"
+  bc.main(["--epmc", path, "--output", str(out)])
+  err = capsys.readouterr().err
+  assert "1 record skipped" in err
+  assert len(json.loads(out.read_text())) == 1
+
+
+def test_main_summary_omits_skipped_when_none(tmp_path, capsys):
+  path = _write(tmp_path, "ep.json", {"results": [
+      {"doi": "10.1/keep", "title": "Kept"}]})
+  bc.main(["--epmc", path, "--output", str(tmp_path / "corpus.json")])
+  assert "skipped" not in capsys.readouterr().err
+
+
 def test_load_epmc_reads_citation_and_reference_lists(tmp_path):
   cites = _write(tmp_path, "cit.json", {"hitCount": 1, "citations": [
       {"doi": "10.1/a", "title": "Citing Paper", "pubYear": "2024"}]})

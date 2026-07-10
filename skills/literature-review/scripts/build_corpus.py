@@ -37,6 +37,7 @@ import sys
 
 _EMPTY_SCREENING = {"status": None, "stage": None, "reason": None}
 _ID_FALLBACK_ORDER = ("arxiv", "pmcid", "pmid", "openalex")
+_SKIPPED = {"count": 0}
 
 
 def normalize_key(doi, title, ids=None):
@@ -61,6 +62,7 @@ def _record(doi, title, year, cited_by, found_via, ids):
   ids = {k: v for k, v in ids.items() if v}
   key = normalize_key(doi, title, ids)
   if key is None:
+    _SKIPPED["count"] += 1
     print("Skipping record with no DOI, title, or identifier", file=sys.stderr)
     return None
   return {
@@ -167,6 +169,7 @@ def main(argv=None) -> int:
   parser.add_argument("--output", required=True)
   args = parser.parse_args(argv)
 
+  _SKIPPED["count"] = 0
   output = pathlib.Path(args.output)
   records = _read(output) if output.exists() else []
   incoming = []
@@ -188,8 +191,12 @@ def main(argv=None) -> int:
   for record in corpus:
     by_source[record["found_via"]] = by_source.get(record["found_via"], 0) + 1
   summary = ", ".join(f"{v} {k}" for k, v in sorted(by_source.items()))
-  print(f"Corpus: {len(corpus)} records after dedup ({summary})",
-        file=sys.stderr)
+  line = f"Corpus: {len(corpus)} records after dedup ({summary})"
+  skipped = _SKIPPED["count"]
+  if skipped:
+    noun = "record" if skipped == 1 else "records"
+    line += f"; {skipped} {noun} skipped (unidentifiable)"
+  print(line, file=sys.stderr)
   return 0
 
 
