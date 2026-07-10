@@ -129,6 +129,33 @@ def test_main_writes_corpus_and_reports(tmp_path, capsys):
   assert "2 records" in capsys.readouterr().err
 
 
+def test_normalize_key_falls_back_to_stable_identifier():
+  assert bc.normalize_key(None, None, {"arxiv": "1706.03762v1"}) == (
+      "arxiv:1706.03762v1")
+  assert bc.normalize_key(None, "", {"pmcid": "PMC9"}) == "pmcid:PMC9"
+
+
+def test_normalize_key_none_when_nothing_identifies_the_record():
+  assert bc.normalize_key(None, "", {}) is None
+
+
+def test_untitled_records_with_distinct_ids_do_not_collide(tmp_path):
+  path = _write(tmp_path, "ep.json", {"results": [
+      {"title": None, "pmid": "111"},
+      {"title": "", "pmid": "222"}]})
+  recs = bc.load_epmc(path)
+  assert len(recs) == 2
+  assert len(bc.merge(recs)) == 2
+
+
+def test_unidentifiable_record_is_dropped_with_warning(tmp_path, capsys):
+  path = _write(tmp_path, "ep.json", {"results": [
+      {"title": None}, {"doi": "10.1/keep", "title": "Kept"}]})
+  recs = bc.load_epmc(path)
+  assert [r["key"] for r in recs] == ["10.1/keep"]
+  assert "no DOI, title, or identifier" in capsys.readouterr().err
+
+
 def test_load_epmc_reads_citation_and_reference_lists(tmp_path):
   cites = _write(tmp_path, "cit.json", {"hitCount": 1, "citations": [
       {"doi": "10.1/a", "title": "Citing Paper", "pubYear": "2024"}]})

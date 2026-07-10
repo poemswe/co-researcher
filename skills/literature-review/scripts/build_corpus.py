@@ -12,12 +12,14 @@
 """Merge raw backend search results into a normalized corpus.json.
 
 Reads any combination of OpenAlex, arXiv, and Europe PMC result files and
-emits one record per paper, deduplicated by normalized DOI (else normalized
-title), in the schema `prisma_counts.py` and the review protocol expect.
-Papers found by several backends get a joined `found_via` (e.g.
-"openalex+epmc"). Re-running against an existing corpus.json preserves every
-screening decision, `fulltext` status, and `role` already recorded, so a
-follow-up search never discards prior work.
+emits one record per paper, deduplicated by normalized DOI, else normalized
+title, else a source identifier, in the schema `prisma_counts.py` and the
+review protocol expect. A record carrying none of those is dropped with a
+stderr warning rather than merged into an unrelated one. Papers found by
+several backends get a joined `found_via` (e.g. "openalex+epmc") and the
+highest `cited_by` any backend reported. Re-running against an existing
+corpus.json preserves every screening decision, `fulltext` status, and `role`
+already recorded, so a follow-up search never discards prior work.
 
 `--epmc` also accepts `get_citations`/`get_references` output; pass
 `--found-via snowball:citations` to label those candidates' provenance.
@@ -34,18 +36,36 @@ import re
 import sys
 
 _EMPTY_SCREENING = {"status": None, "stage": None, "reason": None}
+_ID_FALLBACK_ORDER = ("arxiv", "pmcid", "pmid", "openalex")
 
 
-def normalize_key(doi, title):
+def normalize_key(doi, title, ids=None):
+  """Stable dedup key: DOI, else normalized title, else a source identifier.
+
+  Returns None when nothing identifies the record. Never returns "" — two
+  untitled papers must not collapse into one.
+  """
   if doi:
     return doi.lower()
-  return re.sub(r"[^a-z0-9]", "", (title or "").lower())
+  slug = re.sub(r"[^a-z0-9]", "", (title or "").lower())
+  if slug:
+    return slug
+  for name in _ID_FALLBACK_ORDER:
+    value = (ids or {}).get(name)
+    if value:
+      return f"{name}:{value}"
+  return None
 
 
 def _record(doi, title, year, cited_by, found_via, ids):
+  ids = {k: v for k, v in ids.items() if v}
+  key = normalize_key(doi, title, ids)
+  if key is None:
+    print("Skipping record with no DOI, title, or identifier", file=sys.stderr)
+    return None
   return {
-      "key": normalize_key(doi, title),
-      "ids": {k: v for k, v in ids.items() if v},
+      "key": key,
+      "ids": ids,
       "title": title,
       "year": year,
       "cited_by": cited_by,
@@ -71,20 +91,24 @@ def load_openalex(path) -> list[dict]:
   records = []
   for work in _read(path).get("results", []):
     doi = (work.get("doi") or "").removeprefix("https://doi.org/") or None
-    records.append(_record(
+    record = _record(
         doi, work.get("title"), _int_or_none(work.get("publication_year")),
         work.get("cited_by_count") or 0, "openalex",
-        {"openalex": work.get("id"), "doi": doi}))
+        {"openalex": work.get("id"), "doi": doi})
+    if record:
+      records.append(record)
   return records
 
 
 def load_arxiv(path) -> list[dict]:
   records = []
   for paper in _read(path).get("papers", []):
-    records.append(_record(
+    record = _record(
         None, (paper.get("title") or "").strip(),
         _int_or_none((paper.get("published") or "")[:4]), 0, "arxiv",
-        {"arxiv": paper.get("id")}))
+        {"arxiv": paper.get("id")})
+    if record:
+      records.append(record)
   return records
 
 
@@ -94,11 +118,13 @@ def load_epmc(path) -> list[dict]:
           or data.get("references") or [])
   records = []
   for hit in hits:
-    records.append(_record(
+    record = _record(
         hit.get("doi"), hit.get("title"), _int_or_none(hit.get("pubYear")),
         _int_or_none(hit.get("citedByCount")) or 0, "epmc",
         {"doi": hit.get("doi"), "pmid": hit.get("pmid"),
-         "pmcid": hit.get("pmcid")}))
+         "pmcid": hit.get("pmcid")})
+    if record:
+      records.append(record)
   return records
 
 

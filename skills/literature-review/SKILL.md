@@ -103,7 +103,7 @@ All state lives in a review workspace `review/{slug}/`: `protocol.md` (question,
 
 1. **Scope** — Write the research question and strict inclusion/exclusion criteria to `protocol.md`. Pause for user approval of the criteria. Scoping searches may revise the question; append revisions, never overwrite.
 2. **Search** — Execute the backends. Log every query verbatim in `protocol.md` with date and hit count. Save raw JSON in the workspace; do not load it into context wholesale.
-3. **Dedupe & pool** — Run `build_corpus.py` on the raw backend files; never hand-merge them. It emits one record per paper — `key` (normalized DOI, else normalized title), `ids`, `title`, `year`, `cited_by`, `found_via`, `screening: {status, stage, reason}`, `fulltext`, `role` — deduplicated across backends, and re-running it after a later search round preserves every screening decision already made.
+3. **Dedupe & pool** — Run `build_corpus.py` on the raw backend files; never hand-merge them. It emits one record per paper — `key` (normalized DOI, else normalized title, else a source identifier), `ids`, `title`, `year`, `cited_by` (highest any backend reported), `found_via`, `screening: {status, stage, reason}`, `fulltext`, `role` — deduplicated across backends, and re-running it after a later search round preserves every screening decision already made.
 ```bash
 uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
   --arxiv "$WS/arxiv.json" --epmc "$WS/epmc.json" --output "$WS/corpus.json"
