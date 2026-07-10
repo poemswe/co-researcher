@@ -249,12 +249,60 @@ def test_retracted_via_crossref_false_when_no_notice(monkeypatch):
   assert vc.retracted_via_crossref("10.1/x") is False
 
 
-def test_retracted_via_crossref_false_on_http_error(monkeypatch, capsys):
+def test_retracted_via_crossref_none_on_http_error(monkeypatch, capsys):
   def boom(url):
     raise vc.http_client.HttpError("down", status_code=503)
   monkeypatch.setattr(vc._CROSSREF, "fetch_json", boom)
-  assert vc.retracted_via_crossref("10.1/x") is False
+  assert vc.retracted_via_crossref("10.1/x") is None
   assert "Crossref" in capsys.readouterr().err
+
+
+def test_retracted_via_crossref_none_when_doi_has_comma(monkeypatch, capsys):
+  def fail(url):
+    raise AssertionError("must not build a filter from a comma DOI")
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", fail)
+  assert vc.retracted_via_crossref("10.1234/foo,bar") is None
+  assert "comma" in capsys.readouterr().err
+
+
+def test_unchecked_crossref_is_visible_in_result(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T", doi="10.1/a,b"))
+  result = vc.verify_one({"doi": "10.1/a,b", "title": None, "raw": "x"})
+  assert result["status"] == "verified"
+  assert result["crossref_checked"] is False
+
+
+def test_checked_crossref_is_visible_in_result(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T"))
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  result = vc.verify_one({"doi": "10.1/x", "title": None, "raw": "x"})
+  assert result["crossref_checked"] is True
+
+
+def test_main_warns_when_some_citations_unchecked(monkeypatch, tmp_path, capsys):
+  f = tmp_path / "refs.json"
+  f.write_text(json.dumps([{"doi": "10.1/a,b"}]))
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T", doi="10.1/a,b"))
+  vc.main(["--input", str(f)])
+  assert "1 not retraction-checked" in capsys.readouterr().err
+
+
+def test_main_no_unchecked_warning_when_all_checked(monkeypatch, tmp_path,
+                                                    capsys):
+  f = tmp_path / "refs.json"
+  f.write_text(json.dumps([{"doi": "10.1/x"}]))
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T"))
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  vc.main(["--input", str(f)])
+  assert "not retraction-checked" not in capsys.readouterr().err
+
+
+def test_crossref_client_honors_user_agent_env(monkeypatch):
+  assert "CO_RESEARCHER_USER_AGENT" in vc._CROSSREF_UA_ENV
 
 
 def test_crossref_catches_retraction_openalex_missed(monkeypatch):
