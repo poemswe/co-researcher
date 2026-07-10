@@ -4,9 +4,11 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**`feat/backend-integration-and-skill-consolidation` is feature-complete, pending review/merge (2026-07-09).** Version bumped to 2.3.0 everywhere; PR opened against `main` (not merged — user gates merges). Shipped on this branch: `research-synthesis`, `multi-source-investigation`, and `peer-review` now resolve scholarly sources through the literature-review backends (`source_resolution` sections), with `peer-review` gaining a reference-audit protocol step; `lateral-thinking` folded into `research-methodology` as a creative-reframing competency (skill count 15 → 14); the SessionStart hook trimmed to the three Systemic Honesty principles; command shims pruned to `/research`, `/analyze`, `/review`; `research-manager` persists cross-session state in `research/{slug}/project.json`; and new integrity gates — `verify_citations.py` (bibliography verification against OpenAlex/Europe PMC, nonzero exit as a pre-output gate, wired into `literature-review` step 8 and `academic-writing` self-audit), `read_paper.py` retraction warnings, and `prisma_counts.py` (PRISMA 2020 flow counts, exit 1 on missing exclusion reasons, wired into `systematic-review`). 79 tests passing across 8 test files.
+**v2.3.0 released and merged (2026-07-09).** 14 skills, database-backed search across the evidence-handling skills, citation integrity gates (`verify_citations.py`, `prisma_counts.py`, retraction warnings).
 
-Next open item, if picked up after merge, is the Semantic Scholar backend (see Open Threads).
+**`fix/funnel-protocol-gaps` open as PR #22 (2026-07-10, not merged — user gates merges).** Came out of the first true end-to-end funnel run against live APIs; fixes three protocol defects and adds `build_corpus.py` (the missing step-3 tool). 98 tests across 9 files. No version bump on the branch — release separately after merge.
+
+Next open item after that is the Semantic Scholar backend (see Open Threads).
 
 ## Open Threads
 
@@ -14,6 +16,8 @@ Next open item, if picked up after merge, is the Semantic Scholar backend (see O
 - Decision pending on whether to merge `literature-review` and `systematic-review` into one skill with a rigor parameter. Currently kept separate (PRISMA distinction is meaningful).
 
 ## Recent Decisions
+
+- **2026-07-10**: First true end-to-end funnel run against live APIs (search -> corpus -> screening -> full text -> snowball -> PRISMA -> verification), on "LLMs for title/abstract screening". Surfaced three protocol defects and one missing tool, all fixed on `fix/funnel-protocol-gaps` (PR #22): (1) nothing told the agent to write `read_paper`'s status into `corpus.json`'s `fulltext` field, so PRISMA reported `in_synthesis: 0` despite retrieving every paper; (2) heading guidance was vague — it is deterministic and source-dependent; (3) raw `--search` + `--sort cited_by_count:desc` ranks by fame; (4) step 3 had no tool — added `build_corpus.py`.
 
 - **2026-07-09**: `feat/backend-integration-and-skill-consolidation` marked feature-complete and PR opened against `main` (title: `feat: source-resolution integration, citation integrity gates, skill consolidation`, do not merge). Version bumped to 2.3.0 across `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, `gemini-extension.json`, `index.html`, and `KnowledgeGraph.md`. Full suite verified green: 79 tests across 8 files.
 - **2026-07-09**: PR #19 squash-merged to `main`, tagged `v2.2.0`, GitHub release published. Feature branch deleted (local + remote) after confirming zero tree diff against `main`. All 7 PR review threads resolved (2 were moot — files deleted in the MIT rewrite; 1 was already fixed — `sanitize_id` traversal guard, confirmed via test coverage before closing).
@@ -28,6 +32,9 @@ Next open item, if picked up after merge, is the Semantic Scholar backend (see O
 - OpenAlex `--search` queries cost 10x more than `--filter`. Prefer `--filter` with resolved IDs over name-based `--search` when possible.
 - Europe PMC search auto-appends `OPEN_ACCESS:y`. To search closed-access metadata, would need to modify `europepmc_api.py` (don't unless asked).
 - `http_client._resolve_url` matches on hostname, not string prefix — don't regress this back to `startswith(base_url)`, it reopens the host-prefix SSRF bypass.
+- `fulltext.md` structure depends on the retrieval route, not the paper. `source: "epmc"` (JATS) yields real `#` headings; every PDF route (`arxiv_pdf`, `oa_pdf`, `user_pdf`, `cached`) goes through `pymupdf4llm` and yields bold-only section lines with zero `#`. Grep `^\*\*` there, not `^#`.
+- `corpus.json`'s `fulltext` field is what `prisma_counts.py` reads. Leaving it `null` after retrieving a paper makes the PRISMA flow under-report silently.
+- Never pair OpenAlex `--search` with `--sort cited_by_count:desc` — it ranks by citation fame, not relevance, and floods the pool with landmark papers that merely contain the keywords.
 
 ## Smoke-Test Status
 

@@ -41,7 +41,7 @@ For each database, record verbatim:
 
 This metadata feeds the PRISMA flow diagram and the supplementary search log required for publication.
 
-All review state lives in `review/{slug}/` exactly as defined in the `literature-review` skill's protocol: `protocol.md`, `corpus.json`, `papers/{id}/`, `synthesis.md`. `corpus.json` is the source of truth for every PRISMA flow count.
+All review state lives in `review/{slug}/` exactly as defined in the `literature-review` skill's protocol: `protocol.md`, `corpus.json`, `papers/{id}/`, `synthesis.md`. `corpus.json` is the source of truth for every PRISMA flow count. Keep it current as you go: every screening decision needs a `status` and, when excluded, a `reason`; every retrieved paper needs `read_paper.py`'s `status` written into its `fulltext` field. Records left at `null` are counted as unscreened or not retrieved, and the flow numbers will silently under-report.
 </search_backend>
 
 <competencies>
@@ -64,7 +64,7 @@ All review state lives in `review/{slug}/` exactly as defined in the `literature
 1. **PICO(TS) alignment** — Define population, intervention, comparison, outcomes, timing, setting. Lock inclusion/exclusion criteria before searching.
 2. **Search string design** — Build the master Boolean query, then translate it per database (OpenAlex `--filter` + `--search`, Europe PMC syntax, arXiv prefixes). Save each verbatim to a `search_log.md`.
 3. **Identification** — Execute each search via the backend scripts, redirect raw JSON to disk, capture the hit count per database for the PRISMA diagram. Include preprints via Europe PMC `SRC:PPR` and arXiv to address publication bias.
-4. **Deduplication & screening** — Merge JSON outputs into `corpus.json`, dedupe by DOI then title fingerprint. Title/abstract screening sets `screening.status` and a mandatory exclusion `reason` per record. Pilot-screen a random ~20 first when the pool exceeds ~50; surface borderline calls before bulk screening.
+4. **Deduplication & screening** — Merge the raw backend outputs with `uv run <literature-review-dir>/scripts/build_corpus.py --openalex … --arxiv … --epmc … --output "$WS/corpus.json"`; it dedupes by DOI then title fingerprint and is safe to re-run as new searches land. Never hand-merge — the PRISMA counts depend on this exact schema. Title/abstract screening sets `screening.status` and a mandatory exclusion `reason` per record. Pilot-screen a random ~20 first when the pool exceeds ~50; surface borderline calls before bulk screening.
 5. **Full-text retrieval & extraction** — Run `read_paper.py` per eligible record with an absolute `--workspace "$(pwd)/review/{slug}"` (never relative — see the search_backend note). Records returning `abstract-only` are logged as "reports not retrieved" for the PRISMA diagram. For retrieved papers, write `notes.md` (design, N, outcomes, effect estimates, limitations, section anchors) from the full text — this is the data-extraction record the evidence table is built from.
 6. **Quality appraisal** — Apply the chosen RoB tool to every included study. Record domain-level judgments.
 7. **Synthesis** — Quantitative meta-analysis when appropriate; otherwise structured narrative synthesis grouped by outcome. Assign GRADE rating per outcome.

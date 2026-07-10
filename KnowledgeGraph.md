@@ -25,7 +25,7 @@ Domain-expert skills provide PhD-level research capabilities:
 
 ### Platform Integration
 
-**Current Version: v2.3.0**
+**Current Version: v2.4.0**
 
 The system supports three CLI platforms through unified skill definitions:
 
@@ -53,8 +53,9 @@ Three CLI search scripts ship with the `literature-review` skill, executed via `
 - **OpenAlex** (`openalex_cli.py`) — cross-disciplinary, ~250M works, citation counts and bibliometrics
 - **arXiv** (`search_arxiv.py`) — preprints for CS/physics/math/quant-bio
 - **Europe PMC** (`europepmc_api.py`) — life-science open-access full text + forward/backward citation graph
-- **Full-text acquisition** (`read_paper.py`) — any identifier (DOI/arXiv/PMCID) → markdown via a fallback chain (cached/user PDF → Europe PMC JATS → arXiv PDF → OpenAlex OA PDF → abstract-only).
-- **Citation verification** (`verify_citations.py`) — bibliography file → verified/mismatched/not_found per citation via OpenAlex + Europe PMC; nonzero exit on any failure, used as a pre-output gate by literature-review (protocol step 8) and academic-writing (self-audit).
+- **Full-text acquisition** (`read_paper.py`) — any identifier (DOI/arXiv/PMCID) → markdown via a fallback chain (cached/user PDF → Europe PMC JATS → arXiv PDF → OpenAlex OA PDF → abstract-only). The JATS route yields real `#` headings; every PDF route goes through `pymupdf4llm` and yields bold-only section lines with no `#` at all.
+- **Corpus assembly** (`build_corpus.py`) — raw OpenAlex/arXiv/EPMC result files → normalized `corpus.json`, deduplicated by DOI, else normalized title, else a source identifier, with joined `found_via` for multi-source hits and the highest `cited_by` any backend reported. Records identified by none of those are dropped with a warning, never merged into an unrelated paper. Idempotent: re-running preserves existing `screening`, `fulltext`, and `role`, so later search rounds and snowballing never discard prior work. Also ingests `get_citations`/`get_references` output with `--found-via snowball:*`.
+- **Citation verification** (`verify_citations.py`) — bibliography file → verified/mismatched/not_found/retracted per citation via OpenAlex + Europe PMC; nonzero exit on any failure, used as a pre-output gate by literature-review (protocol step 8) and academic-writing (self-audit).
 - **PRISMA counts** (`prisma_counts.py`) — corpus.json → PRISMA 2020 flow numbers (records-by-source/deduped/screened/excluded-by-reason/included/not-retrieved); exits 1 on missing exclusion reasons.
 
 Both review skills run a persistent funnel in a `review/{slug}/` workspace: `protocol.md` (query log), `corpus.json` (candidate pool + screening decisions, source of truth for PRISMA counts), `papers/{id}/` (full texts + per-paper `notes.md`), `synthesis.md`.
