@@ -129,6 +129,40 @@ def test_main_writes_corpus_and_reports(tmp_path, capsys):
   assert "2 records" in capsys.readouterr().err
 
 
+def test_load_epmc_reads_citation_and_reference_lists(tmp_path):
+  cites = _write(tmp_path, "cit.json", {"hitCount": 1, "citations": [
+      {"doi": "10.1/a", "title": "Citing Paper", "pubYear": "2024"}]})
+  refs = _write(tmp_path, "ref.json", {"hitCount": 1, "references": [
+      {"doi": "10.1/b", "title": "Referenced Paper", "pubYear": "2019"}]})
+  assert bc.load_epmc(cites)[0]["key"] == "10.1/a"
+  assert bc.load_epmc(refs)[0]["key"] == "10.1/b"
+
+
+def test_found_via_override_tags_snowball_provenance(tmp_path):
+  cites = _write(tmp_path, "cit.json", {"citations": [
+      {"doi": "10.1/a", "title": "Citing Paper"}]})
+  out = tmp_path / "corpus.json"
+  bc.main(["--epmc", cites, "--found-via", "snowball:citations",
+           "--output", str(out)])
+  corpus = json.loads(out.read_text())
+  assert corpus[0]["found_via"] == "snowball:citations"
+
+
+def test_found_via_override_joins_with_existing_source(tmp_path):
+  out = tmp_path / "corpus.json"
+  out.write_text(json.dumps([
+      {"key": "10.1/a", "ids": {"doi": "10.1/a"}, "title": "P", "year": 2024,
+       "cited_by": 0, "found_via": "openalex",
+       "screening": {"status": None, "stage": None, "reason": None},
+       "fulltext": None, "role": None}]))
+  cites = _write(tmp_path, "cit.json", {"citations": [
+      {"doi": "10.1/a", "title": "P"}]})
+  bc.main(["--epmc", cites, "--found-via", "snowball:citations",
+           "--output", str(out)])
+  corpus = json.loads(out.read_text())
+  assert corpus[0]["found_via"] == "openalex+snowball:citations"
+
+
 def test_main_resumes_from_existing_corpus(tmp_path):
   out = tmp_path / "corpus.json"
   out.write_text(json.dumps([

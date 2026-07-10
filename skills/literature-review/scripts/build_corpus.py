@@ -18,6 +18,9 @@ Papers found by several backends get a joined `found_via` (e.g.
 "openalex+epmc"). Re-running against an existing corpus.json preserves every
 screening decision, `fulltext` status, and `role` already recorded, so a
 follow-up search never discards prior work.
+
+`--epmc` also accepts `get_citations`/`get_references` output; pass
+`--found-via snowball:citations` to label those candidates' provenance.
 """
 
 # /// script
@@ -86,8 +89,11 @@ def load_arxiv(path) -> list[dict]:
 
 
 def load_epmc(path) -> list[dict]:
+  data = _read(path)
+  hits = (data.get("results") or data.get("citations")
+          or data.get("references") or [])
   records = []
-  for hit in _read(path).get("results", []):
+  for hit in hits:
     records.append(_record(
         hit.get("doi"), hit.get("title"), _int_or_none(hit.get("pubYear")),
         _int_or_none(hit.get("citedByCount")) or 0, "epmc",
@@ -129,19 +135,26 @@ def main(argv=None) -> int:
   parser.add_argument("--openalex", action="append", default=[])
   parser.add_argument("--arxiv", action="append", default=[])
   parser.add_argument("--epmc", action="append", default=[])
+  parser.add_argument("--found-via", dest="found_via",
+                      help="Override the provenance label for every input in "
+                           "this run, e.g. snowball:citations")
   parser.add_argument("--output", required=True)
   args = parser.parse_args(argv)
 
   output = pathlib.Path(args.output)
   records = _read(output) if output.exists() else []
+  incoming = []
   for path in args.openalex:
-    records.extend(load_openalex(path))
+    incoming.extend(load_openalex(path))
   for path in args.arxiv:
-    records.extend(load_arxiv(path))
+    incoming.extend(load_arxiv(path))
   for path in args.epmc:
-    records.extend(load_epmc(path))
+    incoming.extend(load_epmc(path))
+  if args.found_via:
+    for record in incoming:
+      record["found_via"] = args.found_via
 
-  corpus = merge(records)
+  corpus = merge(records + incoming)
   output.parent.mkdir(parents=True, exist_ok=True)
   output.write_text(json.dumps(corpus, indent=1), encoding="utf-8")
 
