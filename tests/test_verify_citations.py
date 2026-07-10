@@ -301,8 +301,19 @@ def test_main_no_unchecked_warning_when_all_checked(monkeypatch, tmp_path,
   assert "not retraction-checked" not in capsys.readouterr().err
 
 
-def test_crossref_client_honors_user_agent_env(monkeypatch):
-  assert "CO_RESEARCHER_USER_AGENT" in vc._CROSSREF_UA_ENV
+def test_crossref_user_agent_prefers_env_override(monkeypatch):
+  monkeypatch.setenv(vc._CROSSREF_UA_ENV, "lab-bot (mailto:pi@uni.edu)")
+  assert vc.crossref_user_agent() == "lab-bot (mailto:pi@uni.edu)"
+
+
+def test_crossref_user_agent_falls_back_to_default(monkeypatch):
+  monkeypatch.delenv(vc._CROSSREF_UA_ENV, raising=False)
+  assert vc.crossref_user_agent() == vc._DEFAULT_CROSSREF_UA
+
+
+def test_crossref_user_agent_ignores_empty_env(monkeypatch):
+  monkeypatch.setenv(vc._CROSSREF_UA_ENV, "")
+  assert vc.crossref_user_agent() == vc._DEFAULT_CROSSREF_UA
 
 
 def test_crossref_catches_retraction_openalex_missed(monkeypatch):

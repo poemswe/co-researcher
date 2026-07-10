@@ -48,12 +48,16 @@ _EPMC = http_client.HttpClient(
     referer_skill="literature-search-verify",
 )
 _CROSSREF_UA_ENV = "CO_RESEARCHER_USER_AGENT"
+_DEFAULT_CROSSREF_UA = "co-researcher (https://github.com/poemswe/co-researcher)"
+
+
+def crossref_user_agent() -> str:
+  """Crossref's polite pool needs a contact; set the env var to a mailto UA."""
+  return os.environ.get(_CROSSREF_UA_ENV) or _DEFAULT_CROSSREF_UA
+
+
 _CROSSREF = http_client.HttpClient(
-    "https://api.crossref.org/",
-    qps=2.0,
-    user_agent=os.environ.get(_CROSSREF_UA_ENV) or (
-        "co-researcher (https://github.com/poemswe/co-researcher)"),
-)
+    "https://api.crossref.org/", qps=2.0, user_agent=crossref_user_agent())
 
 _DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"'<>]+")
 _TITLE_MATCH_THRESHOLD = 0.85
