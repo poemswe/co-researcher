@@ -27,7 +27,7 @@ Domain-expert skills provide PhD-level research capabilities:
 
 **Current Version: v2.6.0**
 
-The system supports three CLI platforms through unified skill definitions:
+The system supports four CLI platforms through unified skill definitions. `skills/` is the single source of truth; each platform ships only a loader and a context file that injects the three Systemic Honesty principles:
 
 - **Claude Code**: 
   - Installation: `claude plugins install poemswe/co-researcher` or `claude plugins link .`
@@ -44,7 +44,12 @@ The system supports three CLI platforms through unified skill definitions:
   - The `.codex/co-researcher-codex` launcher reads `skills/` directly; `.codex/bootstrap.md` injects the operating rules
   - Skills available via `$` prefix (e.g., `$research`)
 
-All platforms share the same skill definitions in `skills/` but use platform-specific command wrappers.
+- **OpenCode**:
+  - Installation: `./.opencode/install.sh` (symlinks `skills/` into the OpenCode config dir)
+  - `.opencode/plugins/co-researcher.js` injects bootstrap context via a system-prompt transform
+  - Skills load through OpenCode's native `skill` tool
+
+All platforms share the same skill definitions in `skills/` but use platform-specific loaders and context files. Each context file (Claude's `hooks/session-start.sh`, `.codex/bootstrap.md`, `GEMINI.md`, and the OpenCode plugin) carries the same three principles, so no platform silently loses the honesty constraints.
 
 ### Literature Search Backend
 

@@ -6,12 +6,7 @@
  */
 
 import path from 'path';
-import fs from 'fs';
 import os from 'os';
-import { fileURLToPath } from 'url';
-import { stripFrontmatter } from '../../lib/skills-core.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Normalize a path: trim whitespace, expand ~, resolve to absolute
 const normalizePath = (p, homeDir) => {
@@ -28,9 +23,6 @@ const normalizePath = (p, homeDir) => {
 
 export const CoResearcherPlugin = async ({ client, directory }) => {
     const homeDir = os.homedir();
-    // Repo root is two levels up from .opencode/plugins/
-    const repoRoot = path.resolve(__dirname, '../../');
-    const coreSkillsDir = path.join(repoRoot, 'skills');
     const envConfigDir = normalizePath(process.env.OPENCODE_CONFIG_DIR, homeDir);
     const configDir = envConfigDir || path.join(homeDir, '.config/opencode');
 
@@ -53,6 +45,11 @@ When skills reference tools you don't have, substitute OpenCode equivalents:
         return `<EXTREMELY_IMPORTANT>
 You have **Co-Researcher Powers**. You are an expert academic research assistant with PhD-level capabilities.
 
+**Core principles:**
+1. **Systemic Honesty**: Never fabricate citations, data, or results. If you don't know, state it. Accuracy > Count.
+2. **Skill-First**: Before answering a research question, check the co-researcher skills and follow the matched skill's protocol exactly.
+3. **Methodological Rigor**: Adhere to the standards each skill defines (e.g., PRISMA for reviews, APA for citations).
+
 **Skills location:**
 Co-Researcher skills are in \`${configDir}/skills/co-researcher/\`
 Use OpenCode's native \`skill\` tool to list and load these skills.
@@ -61,6 +58,9 @@ Use OpenCode's native \`skill\` tool to list and load these skills.
 - Before ANY complex research task, examine your available skills.
 - If a relevant skill exists (e.g., \`literature-review\`, \`critical-analysis\`), you MUST use it.
 - Announce: "I am activating the [Skill Name] skill to [purpose]."
+- Never present a bibliography you have not verified. The \`literature-review\` skill ships \`scripts/verify_citations.py\`; it resolves every citation against OpenAlex, Crossref, and Europe PMC, and exits nonzero on any fabricated, mismatched, or retracted reference.
+
+**Prerequisite for the research toolchain:** the \`literature-review\` scripts run via \`uv\`. If \`uv --version\` fails, run \`bash scripts/setup.sh\` in the repo once.
 
 ${toolMapping}
 </EXTREMELY_IMPORTANT>`;
