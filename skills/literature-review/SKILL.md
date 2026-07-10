@@ -40,7 +40,7 @@ uv run scripts/openalex_cli.py filter works \
   --select "id,doi,title,publication_year,authorships,cited_by_count,abstract_inverted_index" \
   --per-page 10 > openalex.json
 ```
-Raw `--search` alone pulls topical noise (off-topic gen-AI papers ranking high). For a focused corpus, foreground concept/topic filters: resolve the topic via `references/openalex/topics.md`, then narrow with `--filter "topics.id:T<id>"` (or `concepts.id:C<id>`) and use `--search` only to rank within that slice. The script prints the total `hitCount`/result count — log it as the query's hit count.
+Raw `--search` alone pulls topical noise (off-topic gen-AI papers ranking high). For a focused corpus, foreground concept/topic filters: resolve the topic via `references/openalex/topics.md`, then narrow with `--filter "topics.id:T<id>"` (or `concepts.id:C<id>`) and use `--search` only to rank within that slice. **Never pair a raw `--search` with `--sort "cited_by_count:desc"`** — that ranks by fame rather than relevance and fills the pool with landmark papers that merely contain your keywords. Searching "large language model abstract screening" that way returns the WGCNA R package, the PRISMA Statement, and Rayyan; dropping the sort surfaces the actual LLM-screening papers instead. Sort by citations only inside an already-narrow topic filter. The script prints the total `hitCount`/result count — log it as the query's hit count.
 
 **2. arXiv** — `scripts/search_arxiv.py` (preprints: CS, physics, math, quant-bio, stat)
 Use for very recent work, ML/CS topics, and physics. Query syntax: `references/arxiv/query_syntax.md`.
