@@ -21,6 +21,13 @@ vc = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(vc)
 
 
+@pytest.fixture(autouse=True)
+def _no_live_crossref(monkeypatch):
+  """No test may reach Crossref unless it stubs the response itself."""
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json",
+                      lambda url: {"message": {"total-results": 0}})
+
+
 def _openalex_work(title, doi="10.1/x", retracted=False):
   return {"id": "https://openalex.org/W1", "title": title,
           "doi": f"https://doi.org/{doi}", "is_retracted": retracted}
@@ -226,6 +233,115 @@ def test_main_nonzero_exit_on_failures(monkeypatch, tmp_path, capsys):
   out = json.loads(capsys.readouterr().out)
   assert code == 1
   assert out["not_found"] == 1
+
+
+def _crossref(total):
+  return lambda url: {"message": {"total-results": total}}
+
+
+def test_retracted_via_crossref_true_when_retraction_notice_exists(monkeypatch):
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(1))
+  assert vc.retracted_via_crossref("10.1/x") is True
+
+
+def test_retracted_via_crossref_false_when_no_notice(monkeypatch):
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  assert vc.retracted_via_crossref("10.1/x") is False
+
+
+def test_retracted_via_crossref_none_on_http_error(monkeypatch, capsys):
+  def boom(url):
+    raise vc.http_client.HttpError("down", status_code=503)
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", boom)
+  assert vc.retracted_via_crossref("10.1/x") is None
+  assert "Crossref" in capsys.readouterr().err
+
+
+def test_retracted_via_crossref_none_when_doi_has_comma(monkeypatch, capsys):
+  def fail(url):
+    raise AssertionError("must not build a filter from a comma DOI")
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", fail)
+  assert vc.retracted_via_crossref("10.1234/foo,bar") is None
+  assert "comma" in capsys.readouterr().err
+
+
+def test_unchecked_crossref_is_visible_in_result(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T", doi="10.1/a,b"))
+  result = vc.verify_one({"doi": "10.1/a,b", "title": None, "raw": "x"})
+  assert result["status"] == "verified"
+  assert result["crossref_checked"] is False
+
+
+def test_checked_crossref_is_visible_in_result(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T"))
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  result = vc.verify_one({"doi": "10.1/x", "title": None, "raw": "x"})
+  assert result["crossref_checked"] is True
+
+
+def test_main_warns_when_some_citations_unchecked(monkeypatch, tmp_path, capsys):
+  f = tmp_path / "refs.json"
+  f.write_text(json.dumps([{"doi": "10.1/a,b"}]))
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T", doi="10.1/a,b"))
+  vc.main(["--input", str(f)])
+  assert "1 not retraction-checked" in capsys.readouterr().err
+
+
+def test_main_no_unchecked_warning_when_all_checked(monkeypatch, tmp_path,
+                                                    capsys):
+  f = tmp_path / "refs.json"
+  f.write_text(json.dumps([{"doi": "10.1/x"}]))
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T"))
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  vc.main(["--input", str(f)])
+  assert "not retraction-checked" not in capsys.readouterr().err
+
+
+def test_crossref_user_agent_prefers_env_override(monkeypatch):
+  monkeypatch.setenv(vc._CROSSREF_UA_ENV, "lab-bot (mailto:pi@uni.edu)")
+  assert vc.crossref_user_agent() == "lab-bot (mailto:pi@uni.edu)"
+
+
+def test_crossref_user_agent_falls_back_to_default(monkeypatch):
+  monkeypatch.delenv(vc._CROSSREF_UA_ENV, raising=False)
+  assert vc.crossref_user_agent() == vc._DEFAULT_CROSSREF_UA
+
+
+def test_crossref_user_agent_ignores_empty_env(monkeypatch):
+  monkeypatch.setenv(vc._CROSSREF_UA_ENV, "")
+  assert vc.crossref_user_agent() == vc._DEFAULT_CROSSREF_UA
+
+
+def test_crossref_catches_retraction_openalex_missed(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("Clean Looking Paper"))
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(1))
+  result = vc.verify_one({"doi": "10.1/x", "title": None, "raw": "x"})
+  assert result["status"] == "retracted"
+
+
+def test_crossref_not_queried_when_openalex_already_retracted(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("T", retracted=True))
+
+  def fail(url):
+    raise AssertionError("Crossref should not be queried")
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", fail)
+  assert vc.verify_one({"doi": "10.1/x", "title": None,
+                        "raw": "x"})["status"] == "retracted"
+
+
+def test_mismatch_still_wins_over_clean_crossref(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("The Actual Title"))
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  result = vc.verify_one({"doi": "10.1/x", "title": "A Fabricated Title Here",
+                          "raw": "x"})
+  assert result["status"] == "mismatched"
 
 
 def test_doi_retracted_flagged(monkeypatch):

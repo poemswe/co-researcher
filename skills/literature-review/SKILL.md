@@ -82,7 +82,7 @@ Each flag is repeatable. Papers found by several backends are merged into one re
 ```bash
 uv run scripts/verify_citations.py --input "$WS/refs.json"
 ```
-Input: JSON array (`[{"doi", "title"}]` or bare strings), BibTeX (`.bib`), or a text/markdown file with one citation per line (DOIs extracted automatically). Resolves each through OpenAlex, then Europe PMC for DOIs. Prints a JSON report; exit 0 only when every citation verifies. Run it on any bibliography before presenting it — a `mismatched` result means the DOI exists but the claimed title doesn't match it (the classic fabrication pattern), and `retracted` means the paper exists but has been withdrawn; fix or drop either before output.
+Input: JSON array (`[{"doi", "title"}]` or bare strings), BibTeX (`.bib`), or a text/markdown file with one citation per line (DOIs extracted automatically). Resolves each through OpenAlex, then Europe PMC for DOIs, then cross-checks every clean DOI against Crossref's Retraction Watch data (OpenAlex's own retraction flag misses some withdrawn papers). Set `CO_RESEARCHER_USER_AGENT="your-tool (mailto:you@example.edu)"` to use Crossref's faster polite pool. A citation the Crossref check could not reach is reported with `crossref_checked: false` rather than passed off as clean. Prints a JSON report; exit 0 only when every citation verifies. Run it on any bibliography before presenting it — a `mismatched` result means the DOI exists but the claimed title doesn't match it (the classic fabrication pattern), and `retracted` means the paper exists but has been withdrawn; fix or drop either before output.
 
 **7. PRISMA counts** — `scripts/prisma_counts.py` (corpus.json → PRISMA 2020 flow numbers)
 ```bash

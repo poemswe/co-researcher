@@ -1,4 +1,4 @@
-# Co-Researcher (v2.4.0)
+# Co-Researcher (v2.5.0)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, **OpenAI Codex**, and **OpenCode**.
 
@@ -163,7 +163,7 @@ The `literature-review` skill ships CLI backends (`skills/literature-review/scri
 | `europepmc_api.py` | Life-science full text + forward/backward citation chaining |
 | `read_paper.py` | Any DOI/arXiv ID/PMCID → markdown full text via legal open-access routes; warns on retracted papers |
 | `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; re-runs preserve screening decisions |
-| `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) and reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
+| `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) against OpenAlex, Europe PMC, and Crossref/Retraction Watch; reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
 | `prisma_counts.py` | PRISMA 2020 flow counts computed from the review workspace's `corpus.json` |
 
 One-time setup: `bash scripts/setup.sh` (installs `uv`, optionally stores an OpenAlex API key).
