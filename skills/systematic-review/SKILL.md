@@ -41,7 +41,7 @@ For each database, record verbatim:
 
 This metadata feeds the PRISMA flow diagram and the supplementary search log required for publication.
 
-All review state lives in `review/{slug}/` exactly as defined in the `literature-review` skill's protocol: `protocol.md`, `corpus.json`, `papers/{id}/`, `synthesis.md`. `corpus.json` is the source of truth for every PRISMA flow count.
+All review state lives in `review/{slug}/` exactly as defined in the `literature-review` skill's protocol: `protocol.md`, `corpus.json`, `papers/{id}/`, `synthesis.md`. `corpus.json` is the source of truth for every PRISMA flow count. Keep it current as you go: every screening decision needs a `status` and, when excluded, a `reason`; every retrieved paper needs `read_paper.py`'s `status` written into its `fulltext` field. Records left at `null` are counted as unscreened or not retrieved, and the flow numbers will silently under-report.
 </search_backend>
 
 <competencies>
