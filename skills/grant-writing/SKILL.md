@@ -1,5 +1,5 @@
 ---
-name: grant-proposal
+name: grant-writing
 description: You must use this when drafting grant proposals, refining research aims, or aligning projects with agency priorities.
 tools:
   - WebSearch

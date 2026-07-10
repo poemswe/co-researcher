@@ -46,7 +46,7 @@ python run_eval.py literature-reviewer -v            # Verbose output
 | | fallacy-detection | Medium |
 | | methodology-critique | Medium |
 | **ethics-review** | privacy-risk | Hard |
-| **grant-proposal** | grant-proposal | Medium |
+| **grant-writing** | grant-writing | Medium |
 | **hypothesis-testing** | hypothesis-formulation | Medium |
 | | unfalsifiable-claim | Hard |
 | | variable-mapping | Hard |
