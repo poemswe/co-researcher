@@ -25,7 +25,7 @@ Domain-expert skills provide PhD-level research capabilities:
 
 ### Platform Integration
 
-**Current Version: v2.6.0**
+**Current Version: v2.6.1**
 
 The system supports four CLI platforms through unified skill definitions. `skills/` is the single source of truth; each platform ships only a loader and a context file that injects the three Systemic Honesty principles:
 
