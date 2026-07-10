@@ -361,7 +361,23 @@ def test_doiless_hit_is_retraction_checked_via_epmc(monkeypatch):
   assert result["retraction_source"] == "europepmc"
 
 
-def test_epmc_backs_up_crossref_when_crossref_cannot_answer(monkeypatch):
+def test_epmc_backs_up_crossref_on_outage(monkeypatch):
+  work = {"id": "W1", "title": "T", "doi": "https://doi.org/10.1/x",
+          "is_retracted": False,
+          "ids": {"pmid": "https://pubmed.ncbi.nlm.nih.gov/9500320"}}
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json", lambda url: work)
+
+  def crossref_down(url):
+    raise vc.http_client.HttpError("down", status_code=503)
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", crossref_down)
+  monkeypatch.setattr(vc._EPMC, "fetch_json",
+                      lambda url: _epmc_article(["Retracted Publication"]))
+  result = vc.verify_one({"doi": "10.1/x", "title": None, "raw": "x"})
+  assert result["status"] == "retracted"
+  assert result["retraction_source"] == "europepmc"
+
+
+def test_epmc_backs_up_crossref_on_comma_doi(monkeypatch):
   work = {"id": "W1", "title": "T", "doi": "https://doi.org/10.1/a,b",
           "is_retracted": False,
           "ids": {"pmid": "https://pubmed.ncbi.nlm.nih.gov/9500320"}}
@@ -371,6 +387,34 @@ def test_epmc_backs_up_crossref_when_crossref_cannot_answer(monkeypatch):
   result = vc.verify_one({"doi": "10.1/a,b", "title": None, "raw": "x"})
   assert result["status"] == "retracted"
   assert result["retraction_source"] == "europepmc"
+
+
+def test_epmc_corroborates_when_crossref_says_clean(monkeypatch):
+  """Crossref missed 19 of 50 EPMC-confirmed retractions; clean is not enough."""
+  work = {"id": "W1", "title": "T", "doi": "https://doi.org/10.1/x",
+          "is_retracted": False,
+          "ids": {"pmid": "https://pubmed.ncbi.nlm.nih.gov/9500320"}}
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json", lambda url: work)
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  monkeypatch.setattr(vc._EPMC, "fetch_json",
+                      lambda url: _epmc_article(["Retracted Publication"]))
+  result = vc.verify_one({"doi": "10.1/x", "title": None, "raw": "x"})
+  assert result["status"] == "retracted"
+  assert result["retraction_source"] == "europepmc"
+
+
+def test_both_sources_clean_records_both(monkeypatch):
+  work = {"id": "W1", "title": "T", "doi": "https://doi.org/10.1/x",
+          "is_retracted": False,
+          "ids": {"pmid": "https://pubmed.ncbi.nlm.nih.gov/1"}}
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json", lambda url: work)
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", _crossref(0))
+  monkeypatch.setattr(vc._EPMC, "fetch_json",
+                      lambda url: _epmc_article(["Journal Article"]))
+  result = vc.verify_one({"doi": "10.1/x", "title": None, "raw": "x"})
+  assert result["status"] == "verified"
+  assert result["retraction_checked"] is True
+  assert result["retraction_source"] == "crossref+europepmc"
 
 
 def test_openalex_retraction_is_recorded_as_a_real_check(monkeypatch):

@@ -244,21 +244,39 @@ def resolve_title(title: str) -> dict | None:
 def _retraction_state(hit: dict) -> tuple[bool, bool, str | None]:
   """(retracted, checked, source) — checked is False only when unknowable.
 
-  OpenAlex answers first. A DOI goes to Crossref (Retraction Watch). A paper
-  with no DOI cannot be in Crossref at all, so its PubMed record answers
-  instead; the same route backs up Crossref when Crossref cannot reply.
+  No single source is complete, so a clean answer from one does not end the
+  search. OpenAlex answers first. A DOI goes to Crossref (Retraction Watch).
+  Europe PMC's PubMed record is consulted whenever a PMID exists, since it
+  reaches papers with no DOI — which cannot be in Crossref at all — and
+  answers when Crossref cannot. A retraction found by any source wins.
+
+  Measured, with the caveat that each sample is drawn from one source's own
+  positives and so scores that source at 100% by construction: sampling
+  Crossref's retracted set, OpenAlex missed 3 of 40; sampling PubMed's,
+  Crossref missed 19 of 50 while OpenAlex missed none. Both other sources
+  have measured holes, so the PubMed leg is kept as an independent third
+  opinion — though no sampled paper was caught by it alone.
   """
   if hit["retracted"]:
     return True, True, "openalex"
+
+  consulted = []
   if hit["doi"]:
     verdict = retracted_via_crossref(hit["doi"])
     if verdict is not None:
-      return verdict, True, "crossref"
+      if verdict:
+        return True, True, "crossref"
+      consulted.append("crossref")
   if hit.get("pmid"):
     verdict = retracted_via_epmc(hit["pmid"])
     if verdict is not None:
-      return verdict, True, "europepmc"
-  return False, False, None
+      if verdict:
+        return True, True, "europepmc"
+      consulted.append("europepmc")
+
+  if not consulted:
+    return False, False, None
+  return False, True, "+".join(consulted)
 
 
 def verify_one(entry: dict) -> dict:
