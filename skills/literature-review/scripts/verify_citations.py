@@ -9,15 +9,22 @@
 #
 # Original to this repository.
 
-"""Verify a bibliography against OpenAlex, Europe PMC, and Crossref.
+"""Verify a bibliography against OpenAlex, Crossref, and Europe PMC.
 
 Reads citations from a JSON array, BibTeX (.bib), or a plain-text/markdown
-file (one citation per line, DOIs extracted automatically) and resolves
-each through OpenAlex, falling back to Europe PMC for DOIs. Every resolved
-DOI that OpenAlex reports as clean is then checked against Crossref, which
-carries the Retraction Watch dataset: OpenAlex's `is_retracted` alone missed
-3 of 40 sampled retracted papers, and the cross-check caught all 40 with no
-false positives on known-good papers.
+file (one citation per line, DOIs extracted automatically) and resolves each
+through OpenAlex, falling back to Europe PMC for DOIs.
+
+Retraction is then checked down a ladder, because no single source is
+complete. OpenAlex answers first. A DOI goes to Crossref, which carries the
+Retraction Watch dataset — OpenAlex's own `is_retracted` missed 3 of 40
+sampled retracted papers that Crossref caught. A paper with no DOI cannot be
+in Crossref at all, so its PubMed record answers instead; that route also
+backs up Crossref when Crossref cannot reply (an outage, or a DOI containing
+a comma, which Crossref's filter language cannot express).
+
+Every result records `retraction_checked` and `retraction_source`. A check
+that could not run is reported as unchecked, never as clean.
 
 Prints one JSON report to stdout:
   {"total", "verified", "mismatched", "not_found", "retracted", "results": [...]}
@@ -134,12 +141,18 @@ def _doi_from_openalex(work: dict) -> str | None:
   return doi_url.removeprefix("https://doi.org/") or None
 
 
+def _pmid_from_openalex(work: dict) -> str | None:
+  pmid_url = (work.get("ids") or {}).get("pmid") or ""
+  return pmid_url.rstrip("/").rpartition("/")[2] or None
+
+
 def resolve_doi(doi: str) -> dict | None:
   try:
     work = _OPENALEX.fetch_json(
         f"https://api.openalex.org/works/https://doi.org/{doi}")
     return {"title": work.get("title"), "doi": _doi_from_openalex(work) or doi,
-            "source": "openalex", "retracted": bool(work.get("is_retracted"))}
+            "source": "openalex", "retracted": bool(work.get("is_retracted")),
+            "pmid": _pmid_from_openalex(work)}
   except http_client.HttpError as err:
     if err.status_code != 404:
       print(f"OpenAlex error for DOI {doi}: {err}", file=sys.stderr)
@@ -154,7 +167,7 @@ def resolve_doi(doi: str) -> dict | None:
   if not hits:
     return None
   return {"title": hits[0].get("title"), "doi": hits[0].get("doi") or doi,
-          "source": "epmc", "retracted": False}
+          "source": "epmc", "retracted": False, "pmid": hits[0].get("pmid")}
 
 
 def retracted_via_crossref(doi: str) -> bool | None:
@@ -182,6 +195,36 @@ def retracted_via_crossref(doi: str) -> bool | None:
   return data.get("message", {}).get("total-results", 0) > 0
 
 
+def retracted_via_epmc(pmid: str) -> bool | None:
+  """Does Europe PMC mark this PubMed record as retracted?
+
+  Covers papers with no DOI, which cannot appear in Crossref at all.
+  Europe PMC flags them two ways: a "Retracted Publication" publication
+  type, or a "Retraction in" comment-correction entry.
+
+  Returns None when the answer is unknown, never False.
+  """
+  query = urllib.parse.urlencode(
+      {"query": f"EXT_ID:{pmid}", "format": "json", "resultType": "core"})
+  try:
+    data = _EPMC.fetch_json(f"search?{query}")
+  except http_client.HttpError as err:
+    print(f"Europe PMC retraction check failed for PMID {pmid}: {err}",
+          file=sys.stderr)
+    return None
+  hits = data.get("resultList", {}).get("result", [])
+  if not hits:
+    return None
+  article = hits[0]
+  pub_types = (article.get("pubTypeList") or {}).get("pubType") or []
+  if any("retracted" in t.lower() for t in pub_types):
+    return True
+  corrections = (article.get("commentCorrectionList") or {}).get(
+      "commentCorrection") or []
+  return any((c.get("type") or "").lower() == "retraction in"
+             for c in corrections)
+
+
 def resolve_title(title: str) -> dict | None:
   query = urllib.parse.urlencode(
       {"filter": f"title.search:{title}", "per-page": 1})
@@ -194,32 +237,59 @@ def resolve_title(title: str) -> dict | None:
   if not hits or not titles_match(title, hits[0].get("title") or ""):
     return None
   return {"title": hits[0].get("title"), "doi": _doi_from_openalex(hits[0]),
-          "source": "openalex", "retracted": bool(hits[0].get("is_retracted"))}
+          "source": "openalex", "retracted": bool(hits[0].get("is_retracted")),
+          "pmid": _pmid_from_openalex(hits[0])}
 
 
-def _retraction_state(hit: dict) -> tuple[bool, bool]:
-  """(retracted, crossref_checked) — checked is False when unknown."""
+def _retraction_state(hit: dict) -> tuple[bool, bool, str | None]:
+  """(retracted, checked, source) — checked is False only when unknowable.
+
+  No single source is complete, so a clean answer from one does not end the
+  search. OpenAlex answers first. A DOI goes to Crossref (Retraction Watch).
+  Europe PMC's PubMed record is consulted whenever a PMID exists, since it
+  reaches papers with no DOI — which cannot be in Crossref at all — and
+  answers when Crossref cannot. A retraction found by any source wins.
+
+  Measured, with the caveat that each sample is drawn from one source's own
+  positives and so scores that source at 100% by construction: sampling
+  Crossref's retracted set, OpenAlex missed 3 of 40; sampling PubMed's,
+  Crossref missed 19 of 50 while OpenAlex missed none. Both other sources
+  have measured holes, so the PubMed leg is kept as an independent third
+  opinion — though no sampled paper was caught by it alone.
+  """
   if hit["retracted"]:
-    return True, False
-  if not hit["doi"]:
-    return False, False
-  verdict = retracted_via_crossref(hit["doi"])
-  if verdict is None:
-    return False, False
-  return verdict, True
+    return True, True, "openalex"
+
+  consulted = []
+  if hit["doi"]:
+    verdict = retracted_via_crossref(hit["doi"])
+    if verdict is not None:
+      if verdict:
+        return True, True, "crossref"
+      consulted.append("crossref")
+  if hit.get("pmid"):
+    verdict = retracted_via_epmc(hit["pmid"])
+    if verdict is not None:
+      if verdict:
+        return True, True, "europepmc"
+      consulted.append("europepmc")
+
+  if not consulted:
+    return False, False, None
+  return False, True, "+".join(consulted)
 
 
 def verify_one(entry: dict) -> dict:
   result = {"input": entry["raw"], "status": "not_found",
             "doi": entry.get("doi"), "matched_title": None, "source": None,
-            "crossref_checked": False}
+            "retraction_checked": False, "retraction_source": None}
   if entry.get("doi"):
     hit = resolve_doi(entry["doi"])
     if hit:
-      retracted, checked = _retraction_state(hit)
+      retracted, checked, via = _retraction_state(hit)
       result.update(status="verified", doi=hit["doi"],
                     matched_title=hit["title"], source=hit["source"],
-                    crossref_checked=checked)
+                    retraction_checked=checked, retraction_source=via)
       if retracted:
         result["status"] = "retracted"
       else:
@@ -231,10 +301,10 @@ def verify_one(entry: dict) -> dict:
   if entry.get("title"):
     hit = resolve_title(entry["title"])
     if hit:
-      retracted, checked = _retraction_state(hit)
+      retracted, checked, via = _retraction_state(hit)
       result.update(status="verified", doi=hit["doi"],
                     matched_title=hit["title"], source=hit["source"],
-                    crossref_checked=checked)
+                    retraction_checked=checked, retraction_source=via)
       if retracted:
         result["status"] = "retracted"
   return result
@@ -259,9 +329,9 @@ def main(argv=None) -> int:
           f"{counts['not_found']} not found, "
           f"{counts['retracted']} retracted (of {len(results)})")
   unchecked = sum(1 for r in results
-                  if r["status"] == "verified" and not r["crossref_checked"])
+                  if r["status"] == "verified" and not r["retraction_checked"])
   if unchecked:
-    line += f"; {unchecked} not retraction-checked against Crossref"
+    line += f"; {unchecked} not retraction-checked"
   print(line, file=sys.stderr)
   return 0 if len(results) == counts["verified"] else 1
 
