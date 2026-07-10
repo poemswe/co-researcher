@@ -207,11 +207,11 @@ Features: Model leaderboards, capability matrices, score trends, and detailed te
 
 ## Architecture
 
-- `skills/`: Specialized research skills (Markdown).
+- `skills/`: Specialized research skills (Markdown). Single source of truth for every platform.
 - `commands/`: Unified platform commands (.md for Claude, .toml for Gemini).
-- `.codex/skills/`: Native repository skills for Codex.
+- `.codex/`: Codex launcher (`co-researcher-codex`) and `bootstrap.md`; it reads `skills/` directly.
 - `evals/`: 22 test cases and Python runner.
-- manifests: `gemini-extension.json`, `AGENTS.md`, `GEMINI.md`.
+- manifests: `.claude-plugin/plugin.json`, `gemini-extension.json`, `GEMINI.md`.
 
 ## Star History
 

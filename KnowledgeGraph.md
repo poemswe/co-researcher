@@ -41,7 +41,7 @@ The system supports three CLI platforms through unified skill definitions:
 
 - **OpenAI Codex**: 
   - Installation: Link or copy repository to `~/.codex/skills/co-researcher`
-  - Repository skills in `.codex/skills/` and manifest in `AGENTS.md`
+  - The `.codex/co-researcher-codex` launcher reads `skills/` directly; `.codex/bootstrap.md` injects the operating rules
   - Skills available via `$` prefix (e.g., `$research`)
 
 All platforms share the same skill definitions in `skills/` but use platform-specific command wrappers.
