@@ -137,6 +137,20 @@ def test_find_quote_no_fallback_when_a_sentence_is_tiny():
   assert r["method"] is None
 
 
+def test_find_quote_rejects_swapped_number():
+  src = cc.normalize_text(_SOURCE)
+  q = cc.normalize_text("Thirty-day readmissions fell 28% in the treatment "
+                        "arm relative to usual care")
+  assert cc.find_quote(q, src)["method"] is None
+
+
+def test_find_quote_accepts_genuine_number_in_quote():
+  src = cc.normalize_text(_SOURCE)
+  q = cc.normalize_text("Thirty-day readmissions fell 18% in the treatment "
+                        "arm relative to usual care")
+  assert cc.find_quote(q, src)["method"] is not None
+
+
 def test_find_quote_perf_budget():
   src = cc.normalize_text(("filler sentence about methodology and cohorts. "
                            * 2000) + _SOURCE)

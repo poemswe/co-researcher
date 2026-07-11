@@ -78,19 +78,31 @@ def _best_window(quote: str, source: str) -> tuple[float, str]:
   return best_cov, best_win
 
 
+def _numbers_grounded(quote: str, window: str) -> bool:
+  quote_numbers = extract_numbers(quote)
+  if not quote_numbers:
+    return True
+  window_numbers = set(extract_numbers(window))
+  return all(n in window_numbers for n in quote_numbers)
+
+
 def find_quote(quote: str, source: str) -> dict:
   if quote in source:
     return {"coverage": 1.0, "window": quote, "method": "exact"}
   cov, window = _best_window(quote, source)
   if cov >= _QUOTE_MATCH_THRESHOLD:
-    return {"coverage": cov, "window": window, "method": "fuzzy"}
+    if _numbers_grounded(quote, window):
+      return {"coverage": cov, "window": window, "method": "fuzzy"}
+    return {"coverage": cov, "window": window, "method": None}
   sentences = [s for s in re.split(r"(?<=[.!?])\s+", quote) if s]
   if len(sentences) >= 2 and all(len(s) >= 20 for s in sentences):
     per = [find_quote(s, source) if s not in source else
            {"coverage": 1.0, "window": s} for s in sentences]
     worst_idx = min(range(len(per)), key=lambda i: per[i]["coverage"])
     worst = per[worst_idx]["coverage"]
-    if worst >= _QUOTE_MATCH_THRESHOLD:
+    grounded = all(_numbers_grounded(s, p["window"])
+                   for s, p in zip(sentences, per))
+    if worst >= _QUOTE_MATCH_THRESHOLD and grounded:
       return {"coverage": worst, "window": per[worst_idx]["window"],
               "method": "per_sentence"}
   return {"coverage": cov, "window": window, "method": None}
