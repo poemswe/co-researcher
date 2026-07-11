@@ -216,7 +216,8 @@ def check_entry(entry: dict, workspace) -> dict:
 
 
 _CITATION_RE = re.compile(
-    r"\([A-Z][^()]{0,60}\b(?:19|20)\d{2}\)|\[\d+\]|\[abstract-only\]")
+    r"\((?:[a-z]+ ){0,2}[A-Z][^()]{0,60}\b(?:19|20)\d{2}\)"
+    r"|\[\d+\]|\[abstract-only\]")
 
 _HARD_FAILS = ("source_missing", "no_quote", "quote_too_short",
                "fabricated_quote", "uncovered_claim")

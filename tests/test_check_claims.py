@@ -292,6 +292,16 @@ def test_coverage_paper_id_needs_word_boundary():
   assert cc.coverage_gaps(synthesis, claims) == []
 
 
+def test_coverage_detects_lowercase_particle_surnames():
+  synthesis = ("Outcomes improved across the cohort (van der Berg, 2020). "
+               "Readmissions fell 18% in the treatment arm of the trial "
+               "(Patel, 2022).")
+  claims = [_entry()]
+  gaps = cc.coverage_gaps(synthesis, claims)
+  assert len(gaps) == 1
+  assert "van der Berg" in gaps[0]
+
+
 def test_coverage_short_claim_cannot_blanket_cover():
   synthesis = ("Diabetes management systems in agriculture reduced costs "
                "across all surveyed farms (Wong, 2023).")
