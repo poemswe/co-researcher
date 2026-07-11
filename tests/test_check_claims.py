@@ -236,12 +236,14 @@ def test_number_free_claim_with_real_quote_is_verified(tmp_path):
 
 
 def test_title_quote_on_abstract_is_needs_review(tmp_path):
-  abs_md = ("# Effects of Structured Exercise on Hospital Readmission\n\n"
+  abs_md = ("# Effects of Structured Exercise Programs on Hospital "
+            "Readmission Rates in Adults\n\n"
             "We enrolled 814 patients and measured 30-day readmission.")
   ws = _ws(tmp_path, {"p1": {"abstract.md": abs_md}})
   r = cc.check_entry(_entry(
       claim="Exercise affects hospital readmission outcomes broadly.",
-      quote="Effects of Structured Exercise on Hospital Readmission"), ws)
+      quote="Effects of Structured Exercise Programs on Hospital "
+            "Readmission Rates in Adults"), ws)
   assert r["status"] == "needs_review"
   assert r["quote_is_title"] is True
   assert r["source_scope"] == "abstract"
