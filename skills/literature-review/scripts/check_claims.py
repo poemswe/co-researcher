@@ -94,3 +94,56 @@ def find_quote(quote: str, source: str) -> dict:
       return {"coverage": worst, "window": per[worst_idx]["window"],
               "method": "per_sentence"}
   return {"coverage": cov, "window": window, "method": None}
+
+
+_STOPWORDS = frozenset("""
+a about after all also among an and any are as at be been between both but
+by can could did do does during each few for from further had has have how
+if in into is it its more most no nor not of on or other our over same
+should so some such than that the their then there these they this those
+through to under until up very was we were what when where which while who
+will with would
+study studies results result findings finding suggests suggested data
+showed shown show analysis analyses effect effects outcome outcomes
+significant significantly participants patients group groups trial trials
+research paper authors evidence
+""".split())
+
+_NUMBER_RE = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?")
+
+
+def extract_numbers(text: str) -> list[str]:
+  numbers = []
+  for tok in _NUMBER_RE.findall(text):
+    plain = tok.replace(",", "")
+    if len(plain) == 4 and plain.isdigit() and 1900 <= int(plain) <= 2099:
+      continue
+    if plain not in numbers:
+      numbers.append(plain)
+  return numbers
+
+
+def extract_words(text: str) -> list[str]:
+  words = []
+  for word in re.findall(r"[a-z]+", normalize_text(text)):
+    if len(word) > 3 and word not in _STOPWORDS and word not in words:
+      words.append(word)
+  return words
+
+
+def sanitize_id(identifier: str) -> str:
+  safe = re.sub(r"[^A-Za-z0-9._-]", "_", identifier)
+  return re.sub(r"^\.+", "_", safe) or "_"
+
+
+def load_source(workspace: pathlib.Path, paper_id: str):
+  paper_dir = (pathlib.Path(workspace) / "papers"
+               / sanitize_id(paper_id)).resolve()
+  if not str(paper_dir).startswith(
+      str((pathlib.Path(workspace) / "papers").resolve())):
+    return None
+  for name, scope in (("fulltext.md", "fulltext"), ("abstract.md", "abstract")):
+    path = paper_dir / name
+    if path.exists():
+      return path.read_text(encoding="utf-8"), scope
+  return None
