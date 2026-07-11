@@ -116,6 +116,27 @@ def test_find_quote_per_sentence_fallback_spans_artifact():
   assert r["coverage"] >= cc._QUOTE_MATCH_THRESHOLD
 
 
+def test_find_quote_per_sentence_reports_matching_window():
+  src = cc.normalize_text(_SOURCE.replace(
+      "usual care, a difference",
+      "usual care. RUNNING HEADER PAGE 7. A difference"))
+  q = cc.normalize_text(
+      "Thirty-day readmissions fell 18% in the treatment arm relative to "
+      "usual care. Mortality did not differ between groups at 90 days.")
+  r = cc.find_quote(q, src)
+  if r["method"] == "per_sentence":
+    assert "mortality" in r["window"] or "readmissions" in r["window"]
+
+
+def test_find_quote_no_fallback_when_a_sentence_is_tiny():
+  src = cc.normalize_text(_SOURCE)
+  q = cc.normalize_text(
+      "It fell. Completely invented assertion about nurse staffing ratios "
+      "across regional county clinics in the third quarter.")
+  r = cc.find_quote(q, src)
+  assert r["method"] is None
+
+
 def test_find_quote_perf_budget():
   src = cc.normalize_text(("filler sentence about methodology and cohorts. "
                            * 2000) + _SOURCE)

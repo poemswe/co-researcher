@@ -85,10 +85,12 @@ def find_quote(quote: str, source: str) -> dict:
   if cov >= _QUOTE_MATCH_THRESHOLD:
     return {"coverage": cov, "window": window, "method": "fuzzy"}
   sentences = [s for s in re.split(r"(?<=[.!?])\s+", quote) if s]
-  if len(sentences) >= 2:
+  if len(sentences) >= 2 and all(len(s) >= 20 for s in sentences):
     per = [find_quote(s, source) if s not in source else
-           {"coverage": 1.0} for s in sentences]
-    worst = min(p["coverage"] for p in per)
+           {"coverage": 1.0, "window": s} for s in sentences]
+    worst_idx = min(range(len(per)), key=lambda i: per[i]["coverage"])
+    worst = per[worst_idx]["coverage"]
     if worst >= _QUOTE_MATCH_THRESHOLD:
-      return {"coverage": worst, "window": window, "method": "per_sentence"}
+      return {"coverage": worst, "window": per[worst_idx]["window"],
+              "method": "per_sentence"}
   return {"coverage": cov, "window": window, "method": None}
