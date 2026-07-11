@@ -114,6 +114,7 @@ When producing any research prose, follow this sequence:
 - [ ] **Specificity**: Zero instances of "various studies," "the literature," "multiple contexts," "important implications" without a concrete referent following within the same sentence.
 - [ ] **Voice**: Fewer than three instances of "it can be," "it is suggested," "it was found" per page. First person used where discipline permits.
 - [ ] **Citations verified**: If the draft cites scholarly sources, write them to a file (one per line or JSON) and run `uv run <literature-review-dir>/scripts/verify_citations.py --input refs.txt`. Exit 0 required — any `mismatched` or `not_found` citation is corrected or removed before presenting. Never present prose containing a citation the verifier could not resolve.
+- [ ] **Claims traced**: If the draft attributes specific findings to sources whose full text is in a review workspace, write `claims.json` (claim + paper_id + verbatim supporting quote each) and run `uv run <literature-review-dir>/scripts/check_claims.py --claims claims.json --workspace "$WS"`. No `fabricated_quote`, `source_missing`, `no_quote`, or `quote_too_short` before presenting; resolve every `needs_review` by reading the reported span.
 
 If any check fails, revise before presenting the output.
 
