@@ -137,10 +137,9 @@ def sanitize_id(identifier: str) -> str:
 
 
 def load_source(workspace: pathlib.Path, paper_id: str):
-  paper_dir = (pathlib.Path(workspace) / "papers"
-               / sanitize_id(paper_id)).resolve()
-  if not str(paper_dir).startswith(
-      str((pathlib.Path(workspace) / "papers").resolve())):
+  papers_dir = (pathlib.Path(workspace) / "papers").resolve()
+  paper_dir = (papers_dir / sanitize_id(paper_id)).resolve()
+  if not paper_dir.is_relative_to(papers_dir):
     return None
   for name, scope in (("fulltext.md", "fulltext"), ("abstract.md", "abstract")):
     path = paper_dir / name
