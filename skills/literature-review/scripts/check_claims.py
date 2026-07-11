@@ -146,3 +146,70 @@ def load_source(workspace: pathlib.Path, paper_id: str):
     if path.exists():
       return path.read_text(encoding="utf-8"), scope
   return None
+
+
+def _words_in(quote_words: set, word: str) -> bool:
+  return (word in quote_words or word + "s" in quote_words
+          or word.rstrip("s") in quote_words)
+
+
+def _anchor_check(claim: str, quote_norm: str) -> tuple[dict, bool]:
+  quote_numbers = set(extract_numbers(quote_norm))
+  quote_words = set(re.findall(r"[a-z]+", quote_norm))
+  numbers = extract_numbers(claim)
+  words = extract_words(claim)
+  anchors = {
+      "numbers_found": [n for n in numbers if n in quote_numbers],
+      "numbers_missing": [n for n in numbers if n not in quote_numbers],
+      "words_found": [w for w in words if _words_in(quote_words, w)],
+      "words_missing": [w for w in words if not _words_in(quote_words, w)],
+  }
+  numbers_ok = not numbers or bool(anchors["numbers_found"])
+  return anchors, numbers_ok
+
+
+def _title_of(source: str) -> str:
+  first = source.lstrip().splitlines()[0] if source.strip() else ""
+  return normalize_text(first.lstrip("# ")) if first.startswith("#") else ""
+
+
+def check_entry(entry: dict, workspace) -> dict:
+  result = {"claim": entry.get("claim"), "paper_id": entry.get("paper_id"),
+            "supporting_quote": entry.get("supporting_quote"),
+            "status": None, "source_scope": None, "quote_match_ratio": None,
+            "matched": None, "best_window": None, "quote_is_title": False,
+            "anchors": None}
+  if entry.get("role") == "background":
+    result["status"] = "background"
+    return result
+  loaded = load_source(workspace, entry.get("paper_id") or "")
+  if loaded is None:
+    result["status"] = "source_missing"
+    return result
+  source_raw, scope = loaded
+  result["source_scope"] = scope
+  quote_norm = normalize_text(entry.get("supporting_quote") or "")
+  if not quote_norm:
+    result["status"] = "no_quote"
+    return result
+  if (len(quote_norm) < _MIN_QUOTE_CHARS
+      or len(quote_norm.split()) < _MIN_QUOTE_WORDS):
+    result["status"] = "quote_too_short"
+    return result
+  source_norm = normalize_text(source_raw)
+  match = find_quote(quote_norm, source_norm)
+  result["quote_match_ratio"] = round(match["coverage"], 2)
+  result["matched"] = match["method"]
+  if match["method"] is None:
+    result["status"] = "fabricated_quote"
+    result["best_window"] = match["window"]
+    return result
+  anchors, numbers_ok = _anchor_check(entry.get("claim") or "", quote_norm)
+  result["anchors"] = anchors
+  title = _title_of(source_raw) if scope == "abstract" else ""
+  if title and find_quote(quote_norm, title)["method"] is not None:
+    result["quote_is_title"] = True
+    result["status"] = "needs_review"
+    return result
+  result["status"] = "verified" if numbers_ok else "needs_review"
+  return result
