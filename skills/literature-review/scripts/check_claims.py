@@ -235,6 +235,7 @@ def check_entry(entry: dict, workspace) -> dict:
 
 _CITATION_RE = re.compile(
     r"\((?:[a-z]+ ){0,2}[A-Z][^()]{0,60}\b(?:19|20)\d{2}\)"
+    r"|\b[A-Z][a-z]+(?:\s+et al\.?)?\s+\((?:19|20)\d{2}[a-z]?\)"
     r"|\[\d+\]|\[abstract-only\]")
 
 _HARD_FAILS = ("source_missing", "no_quote", "quote_too_short",
@@ -245,7 +246,7 @@ def coverage_gaps(synthesis: str, claims: list) -> list:
   claim_norms = [normalize_text(c.get("claim") or "") for c in claims]
   paper_ids = {c.get("paper_id") or "" for c in claims}
   gaps = []
-  for sentence in re.split(r"(?<=[.!?])\s+", synthesis):
+  for sentence in re.split(r"(?<!et al\.)(?<=[.!?])\s+", synthesis):
     cited = bool(_CITATION_RE.search(sentence)) or any(
         pid and re.search(rf"(?<![A-Za-z0-9]){re.escape(pid)}(?![A-Za-z0-9])",
                           sentence)
@@ -302,13 +303,17 @@ def main(argv=None) -> int:
   print(json.dumps({"total": len(results), **counts,
                     "coverage_checked": coverage_checked,
                     "results": results}, indent=2))
-  print(f"Claims: {counts['verified']} verified, "
-        f"{counts['needs_review']} needs review, "
-        f"{counts['background']} background, "
-        f"{counts['fabricated_quote']} fabricated, "
-        f"{counts['uncovered_claim']} uncovered (of {len(results)}); "
-        f"{abstract_verified} verified only against an abstract",
-        file=sys.stderr)
+  unresolved = (counts["source_missing"] + counts["no_quote"]
+                + counts["quote_too_short"])
+  summary = (f"Claims: {counts['verified']} verified, "
+             f"{counts['needs_review']} needs review, "
+             f"{counts['background']} background, "
+             f"{counts['fabricated_quote']} fabricated, "
+             f"{counts['uncovered_claim']} uncovered (of {len(results)}); "
+             f"{abstract_verified} verified only against an abstract")
+  if unresolved:
+    summary += f"; {unresolved} unresolved source/quote errors"
+  print(summary, file=sys.stderr)
   return 1 if any(counts[s] for s in _HARD_FAILS) else 0
 
 

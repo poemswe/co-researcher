@@ -324,6 +324,22 @@ def test_coverage_short_claim_cannot_blanket_cover():
   assert len(gaps) == 1
 
 
+def test_coverage_detects_narrative_author_year():
+  synthesis = ("Patel (2022) found readmissions fell 18% in the treatment "
+               "arm of the trial. An uncovered narrative claim here from "
+               "Lee et al. (2021).")
+  claims = [_entry(claim="Readmissions fell 18% in the treatment arm of "
+                         "the trial.")]
+  gaps = cc.coverage_gaps(synthesis, claims)
+  assert len(gaps) == 1
+  assert "Lee et al." in gaps[0]
+
+
+def test_coverage_narrative_year_only_needs_a_surname():
+  synthesis = "Adoption grew rapidly (2020) and then plateaued sharply."
+  assert cc.coverage_gaps(synthesis, [_entry()]) == []
+
+
 # --- main ---
 
 def _run_main(tmp_path, entries, synthesis=None):
@@ -363,6 +379,12 @@ def test_main_exit_one_on_uncovered_claim(tmp_path, capsys):
   assert code == 1
   assert out["uncovered_claim"] == 1
   assert out["coverage_checked"] is True
+
+
+def test_main_summary_flags_unresolved_source_quote_errors(tmp_path, capsys):
+  code = _run_main(tmp_path, [_entry(paper_id="ghost")])
+  assert code == 1
+  assert "unresolved source/quote" in capsys.readouterr().err
 
 
 def test_main_rejects_malformed_claims(tmp_path):
