@@ -213,3 +213,82 @@ def check_entry(entry: dict, workspace) -> dict:
     return result
   result["status"] = "verified" if numbers_ok else "needs_review"
   return result
+
+
+_CITATION_RE = re.compile(
+    r"\([^()]*\b(?:19|20)\d{2}\)|\[\d+\]|\[abstract-only\]")
+
+_HARD_FAILS = ("source_missing", "no_quote", "quote_too_short",
+               "fabricated_quote", "uncovered_claim")
+
+
+def coverage_gaps(synthesis: str, claims: list) -> list:
+  claim_norms = [normalize_text(c.get("claim") or "") for c in claims]
+  paper_ids = {c.get("paper_id") or "" for c in claims}
+  gaps = []
+  for sentence in re.split(r"(?<=[.!?])\s+", synthesis):
+    cited = bool(_CITATION_RE.search(sentence)) or any(
+        pid and pid in sentence for pid in paper_ids)
+    if not cited:
+      continue
+    sent_norm = normalize_text(_CITATION_RE.sub("", sentence))
+    matched = any(
+        cn and (cn in sent_norm or sent_norm in cn
+                or difflib.SequenceMatcher(
+                    None, cn, sent_norm,
+                    autojunk=False).ratio() >= _COVERAGE_MATCH_THRESHOLD)
+        for cn in claim_norms)
+    if not matched:
+      gaps.append(sentence.strip())
+  return gaps
+
+
+def main(argv=None) -> int:
+  parser = argparse.ArgumentParser(
+      description="Verify claims' supporting quotes against cited sources.")
+  parser.add_argument("--claims", required=True)
+  parser.add_argument("--workspace", required=True)
+  parser.add_argument("--synthesis")
+  args = parser.parse_args(argv)
+
+  try:
+    entries = json.loads(pathlib.Path(args.claims).read_text(encoding="utf-8"))
+  except (OSError, json.JSONDecodeError) as err:
+    sys.exit(f"Cannot read claims file {args.claims}: {err}")
+  if not isinstance(entries, list) or not all(
+      isinstance(e, dict) for e in entries):
+    sys.exit("claims.json must be a JSON array of objects")
+
+  results = [check_entry(e, args.workspace) for e in entries]
+
+  coverage_checked = args.synthesis is not None
+  if coverage_checked:
+    synthesis = pathlib.Path(args.synthesis).read_text(encoding="utf-8")
+    for sentence in coverage_gaps(synthesis, entries):
+      results.append({"claim": sentence, "paper_id": None,
+                      "supporting_quote": None, "status": "uncovered_claim",
+                      "source_scope": None, "quote_match_ratio": None,
+                      "matched": None, "best_window": None,
+                      "quote_is_title": False, "anchors": None})
+
+  counts = {s: sum(1 for r in results if r["status"] == s)
+            for s in ("verified", "needs_review", "background",
+                      "fabricated_quote", "uncovered_claim",
+                      "source_missing", "no_quote", "quote_too_short")}
+  abstract_verified = sum(1 for r in results if r["status"] == "verified"
+                          and r["source_scope"] == "abstract")
+  print(json.dumps({"total": len(results), **counts,
+                    "coverage_checked": coverage_checked,
+                    "results": results}, indent=2))
+  print(f"Claims: {counts['verified']} verified, "
+        f"{counts['needs_review']} needs review, "
+        f"{counts['background']} background, "
+        f"{counts['fabricated_quote']} fabricated, "
+        f"{counts['uncovered_claim']} uncovered (of {len(results)}); "
+        f"{abstract_verified} verified only against an abstract",
+        file=sys.stderr)
+  return 1 if any(counts[s] for s in _HARD_FAILS) else 0
+
+
+if __name__ == "__main__":
+  sys.exit(main())
