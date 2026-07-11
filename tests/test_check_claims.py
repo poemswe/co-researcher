@@ -214,6 +214,17 @@ def test_verified_when_quote_real_and_numbers_present(tmp_path):
   assert "18" in r["anchors"]["numbers_found"]
 
 
+def test_needs_review_when_claim_has_unanchored_number(tmp_path):
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": _SOURCE}})
+  r = cc.check_entry(_entry(
+      claim="The trial enrolled 814 patients and reduced readmissions by 22%.",
+      quote="We enrolled 814 adult patients across 12 regional hospitals."),
+      ws)
+  assert r["status"] == "needs_review"
+  assert "814" in r["anchors"]["numbers_found"]
+  assert "22" in r["anchors"]["numbers_missing"]
+
+
 def test_fabricated_quote_hard_fails(tmp_path):
   ws = _ws(tmp_path, {"p1": {"fulltext.md": _SOURCE}})
   r = cc.check_entry(_entry(

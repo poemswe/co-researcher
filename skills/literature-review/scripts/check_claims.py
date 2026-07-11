@@ -182,7 +182,7 @@ def _anchor_check(claim: str, quote_norm: str) -> tuple[dict, bool]:
       "words_found": [w for w in words if _words_in(quote_words, w)],
       "words_missing": [w for w in words if not _words_in(quote_words, w)],
   }
-  numbers_ok = not numbers or bool(anchors["numbers_found"])
+  numbers_ok = not numbers or not anchors["numbers_missing"]
   return anchors, numbers_ok
 
 
