@@ -216,7 +216,7 @@ def check_entry(entry: dict, workspace) -> dict:
 
 
 _CITATION_RE = re.compile(
-    r"\([^()]*\b(?:19|20)\d{2}\)|\[\d+\]|\[abstract-only\]")
+    r"\([A-Z][^()]{0,60}\b(?:19|20)\d{2}\)|\[\d+\]|\[abstract-only\]")
 
 _HARD_FAILS = ("source_missing", "no_quote", "quote_too_short",
                "fabricated_quote", "uncovered_claim")
@@ -228,12 +228,15 @@ def coverage_gaps(synthesis: str, claims: list) -> list:
   gaps = []
   for sentence in re.split(r"(?<=[.!?])\s+", synthesis):
     cited = bool(_CITATION_RE.search(sentence)) or any(
-        pid and pid in sentence for pid in paper_ids)
+        pid and re.search(rf"(?<![A-Za-z0-9]){re.escape(pid)}(?![A-Za-z0-9])",
+                          sentence)
+        for pid in paper_ids)
     if not cited:
       continue
     sent_norm = normalize_text(_CITATION_RE.sub("", sentence))
     matched = any(
-        cn and (cn in sent_norm or sent_norm in cn
+        cn and ((len(cn) >= 30 and cn in sent_norm)
+                or (len(sent_norm) >= 30 and sent_norm in cn)
                 or difflib.SequenceMatcher(
                     None, cn, sent_norm,
                     autojunk=False).ratio() >= _COVERAGE_MATCH_THRESHOLD)

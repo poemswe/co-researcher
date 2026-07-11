@@ -279,6 +279,27 @@ def test_coverage_matches_lightly_edited_claim():
   assert cc.coverage_gaps(synthesis, claims) == []
 
 
+def test_coverage_ignores_non_citation_parenthetical_years():
+  synthesis = ("Usage has grown rapidly (since 2020). Readmissions fell 18% "
+               "in the treatment arm of the trial (Patel, 2022).")
+  claims = [_entry()]
+  assert cc.coverage_gaps(synthesis, claims) == []
+
+
+def test_coverage_paper_id_needs_word_boundary():
+  synthesis = "The group1 cohort improved substantially over baseline."
+  claims = [_entry(paper_id="p1")]
+  assert cc.coverage_gaps(synthesis, claims) == []
+
+
+def test_coverage_short_claim_cannot_blanket_cover():
+  synthesis = ("Diabetes management systems in agriculture reduced costs "
+               "across all surveyed farms (Wong, 2023).")
+  claims = [_entry(claim="diabetes")]
+  gaps = cc.coverage_gaps(synthesis, claims)
+  assert len(gaps) == 1
+
+
 # --- main ---
 
 def _run_main(tmp_path, entries, synthesis=None):
