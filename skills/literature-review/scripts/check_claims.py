@@ -156,7 +156,7 @@ def _words_in(quote_words: set, word: str) -> bool:
 def _anchor_check(claim: str, quote_norm: str) -> tuple[dict, bool]:
   quote_numbers = set(extract_numbers(quote_norm))
   quote_words = set(re.findall(r"[a-z]+", quote_norm))
-  numbers = extract_numbers(claim)
+  numbers = extract_numbers(normalize_text(claim))
   words = extract_words(claim)
   anchors = {
       "numbers_found": [n for n in numbers if n in quote_numbers],
