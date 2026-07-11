@@ -79,6 +79,12 @@ def _best_window(quote: str, source: str) -> tuple[float, str]:
 
 
 def _numbers_grounded(quote: str, window: str) -> bool:
+  """Every number in the quote must appear in the matched source window.
+
+  Blocks the number-swap fabrication (a real sentence with the statistic
+  changed). Years are excluded by extract_numbers — a swapped citation year
+  is not caught here, by design; years are citation noise, not evidence.
+  """
   quote_numbers = extract_numbers(quote)
   if not quote_numbers:
     return True
