@@ -28,6 +28,7 @@ fabricated_quote, or uncovered_claim.
 # ///
 
 import argparse
+import collections
 import difflib
 import json
 import pathlib
@@ -96,20 +97,14 @@ def find_quote(quote: str, source: str) -> dict:
   if quote in source:
     return {"coverage": 1.0, "window": quote, "method": "exact"}
   cov, window = _best_window(quote, source)
-  if cov >= _QUOTE_MATCH_THRESHOLD:
-    if _numbers_grounded(quote, window):
-      return {"coverage": cov, "window": window, "method": "fuzzy"}
-    return {"coverage": cov, "window": window, "method": None}
+  if cov >= _QUOTE_MATCH_THRESHOLD and _numbers_grounded(quote, window):
+    return {"coverage": cov, "window": window, "method": "fuzzy"}
   sentences = [s for s in re.split(r"(?<=[.!?])\s+", quote) if s]
   if len(sentences) >= 2 and all(len(s) >= 20 for s in sentences):
-    per = [find_quote(s, source) if s not in source else
-           {"coverage": 1.0, "window": s} for s in sentences]
-    worst_idx = min(range(len(per)), key=lambda i: per[i]["coverage"])
-    worst = per[worst_idx]["coverage"]
-    grounded = all(_numbers_grounded(s, p["window"])
-                   for s, p in zip(sentences, per))
-    if worst >= _QUOTE_MATCH_THRESHOLD and grounded:
-      return {"coverage": worst, "window": per[worst_idx]["window"],
+    per = [find_quote(s, source) for s in sentences]
+    if all(p["method"] is not None for p in per):
+      worst = min(per, key=lambda p: p["coverage"])
+      return {"coverage": worst["coverage"], "window": worst["window"],
               "method": "per_sentence"}
   return {"coverage": cov, "window": window, "method": None}
 
@@ -171,11 +166,11 @@ def _words_in(quote_words: set, word: str) -> bool:
           or word.rstrip("s") in quote_words)
 
 
-def _anchor_check(claim: str, quote_norm: str) -> tuple[dict, bool]:
+def _anchor_check(claim_norm: str, quote_norm: str) -> tuple[dict, bool]:
   quote_numbers = set(extract_numbers(quote_norm))
   quote_words = set(re.findall(r"[a-z]+", quote_norm))
-  numbers = extract_numbers(normalize_text(claim))
-  words = extract_words(claim)
+  numbers = extract_numbers(claim_norm)
+  words = extract_words(claim_norm)
   anchors = {
       "numbers_found": [n for n in numbers if n in quote_numbers],
       "numbers_missing": [n for n in numbers if n not in quote_numbers],
@@ -191,7 +186,18 @@ def _title_of(source: str) -> str:
   return normalize_text(first.lstrip("# ")) if first.startswith("#") else ""
 
 
-def check_entry(entry: dict, workspace) -> dict:
+def _load_normalized(workspace, paper_id: str, cache):
+  """(raw, normalized, scope) for a paper, or None; memoized per run."""
+  if cache is not None and paper_id in cache:
+    return cache[paper_id]
+  loaded = load_source(workspace, paper_id)
+  entry = (loaded[0], normalize_text(loaded[0]), loaded[1]) if loaded else None
+  if cache is not None:
+    cache[paper_id] = entry
+  return entry
+
+
+def check_entry(entry: dict, workspace, source_cache=None) -> dict:
   result = {"claim": entry.get("claim"), "paper_id": entry.get("paper_id"),
             "supporting_quote": entry.get("supporting_quote"),
             "status": None, "source_scope": None, "quote_match_ratio": None,
@@ -200,11 +206,12 @@ def check_entry(entry: dict, workspace) -> dict:
   if entry.get("role") == "background":
     result["status"] = "background"
     return result
-  loaded = load_source(workspace, entry.get("paper_id") or "")
+  loaded = _load_normalized(workspace, entry.get("paper_id") or "",
+                            source_cache)
   if loaded is None:
     result["status"] = "source_missing"
     return result
-  source_raw, scope = loaded
+  source_raw, source_norm, scope = loaded
   result["source_scope"] = scope
   quote_norm = normalize_text(entry.get("supporting_quote") or "")
   if not quote_norm:
@@ -214,7 +221,6 @@ def check_entry(entry: dict, workspace) -> dict:
       or len(quote_norm.split()) < _MIN_QUOTE_WORDS):
     result["status"] = "quote_too_short"
     return result
-  source_norm = normalize_text(source_raw)
   match = find_quote(quote_norm, source_norm)
   result["quote_match_ratio"] = round(match["coverage"], 2)
   result["matched"] = match["method"]
@@ -222,7 +228,8 @@ def check_entry(entry: dict, workspace) -> dict:
     result["status"] = "fabricated_quote"
     result["best_window"] = match["window"]
     return result
-  anchors, numbers_ok = _anchor_check(entry.get("claim") or "", quote_norm)
+  anchors, numbers_ok = _anchor_check(
+      normalize_text(entry.get("claim") or ""), quote_norm)
   result["anchors"] = anchors
   title = _title_of(source_raw) if scope == "abstract" else ""
   if title and find_quote(quote_norm, title)["method"] is not None:
@@ -282,7 +289,8 @@ def main(argv=None) -> int:
       isinstance(e, dict) for e in entries):
     sys.exit("claims.json must be a JSON array of objects")
 
-  results = [check_entry(e, args.workspace) for e in entries]
+  source_cache = {}
+  results = [check_entry(e, args.workspace, source_cache) for e in entries]
 
   coverage_checked = args.synthesis is not None
   if coverage_checked:
@@ -294,10 +302,11 @@ def main(argv=None) -> int:
                       "matched": None, "best_window": None,
                       "quote_is_title": False, "anchors": None})
 
-  counts = {s: sum(1 for r in results if r["status"] == s)
-            for s in ("verified", "needs_review", "background",
-                      "fabricated_quote", "uncovered_claim",
-                      "source_missing", "no_quote", "quote_too_short")}
+  tally = collections.Counter(r["status"] for r in results)
+  counts = {s: tally[s] for s in
+            ("verified", "needs_review", "background", "fabricated_quote",
+             "uncovered_claim", "source_missing", "no_quote",
+             "quote_too_short")}
   abstract_verified = sum(1 for r in results if r["status"] == "verified"
                           and r["source_scope"] == "abstract")
   print(json.dumps({"total": len(results), **counts,
