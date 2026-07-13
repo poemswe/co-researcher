@@ -174,6 +174,22 @@ def test_numbers_grounded_ignores_unaligned_neighbor(tmp_path):
   assert cc.find_quote(q, source)["method"] is None
 
 
+def test_numbers_grounded_rejects_digit_subset_of_larger_number():
+  source = cc.normalize_text(
+      "We observed a rate of 108 percent decline across cohort members here.")
+  q = cc.normalize_text(
+      "We observed a rate of 18 percent decline across cohort members here")
+  assert cc.find_quote(q, source)["method"] is None
+
+
+def test_numbers_grounded_accepts_number_next_to_noise(tmp_path):
+  source = cc.normalize_text(
+      "We observed a rate of 18 % decline across cohort members here today.")
+  q = cc.normalize_text(
+      "We observed a rate of 18% decline across cohort members here today")
+  assert cc.find_quote(q, source)["method"] is not None
+
+
 def test_per_sentence_rejects_distant_stitched_sentences():
   source = cc.normalize_text(
       "The cohort enrolled many adult patients across regional sites here. "

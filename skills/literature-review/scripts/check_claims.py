@@ -80,25 +80,37 @@ def _best_window(quote: str, source: str) -> tuple[float, str, int]:
 
 
 def _numbers_grounded(quote: str, window: str) -> bool:
-  """Every number in the quote must appear in the text that aligns to it.
+  """Every number in the quote must sit inside one aligned source block.
 
-  Grounding is checked against the source characters that actually match the
-  quote (the SequenceMatcher blocks), not the whole window — otherwise a
-  swapped statistic (`28%` vs source `18%`) could ground against an unrelated
-  neighbouring number in the same window. Years are excluded by
-  extract_numbers; a swapped citation year is not caught here, by design.
+  Each number's full character span must fall within a single SequenceMatcher
+  matching block — so its digits appear verbatim and contiguous in the source
+  at the aligned position. This blocks the swapped statistic (`28%` vs source
+  `18%`, grounded against a neighbour) and the digit-subset case (`18` fusing
+  from a source `108` across a skipped `0`). Years are excluded — a swapped
+  citation year is not caught here, by design.
   """
-  quote_numbers = extract_numbers(quote)
-  if not quote_numbers:
+  spans = []
+  for m in _NUMBER_RE.finditer(quote):
+    plain = m.group().replace(",", "")
+    if len(plain) == 4 and plain.isdigit() and 1900 <= int(plain) <= 2099:
+      continue
+    spans.append((m.start(), m.end()))
+  if not spans:
     return True
-  matcher = difflib.SequenceMatcher(None, quote, window, autojunk=False)
-  aligned = "".join(window[b.b:b.b + b.size]
-                    for b in matcher.get_matching_blocks())
-  aligned_numbers = set(extract_numbers(aligned))
-  return all(n in aligned_numbers for n in quote_numbers)
+  blocks = difflib.SequenceMatcher(
+      None, quote, window, autojunk=False).get_matching_blocks()
+  return all(any(b.a <= qs and qe <= b.a + b.size for b in blocks)
+             for qs, qe in spans)
 
 
 def find_quote(quote: str, source: str) -> dict:
+  """Locate the quote in the source: exact, fuzzy window, or per-sentence.
+
+  Per-sentence fallback accepts a multi-sentence quote only when its sentences
+  match in source order within 3x the quote's length — generous enough for one
+  mid-quote PDF artifact (a page header, caption), tight enough to reject
+  sentences stitched from distant sections.
+  """
   idx = source.find(quote)
   if idx != -1:
     return {"coverage": 1.0, "window": quote, "method": "exact", "start": idx}
