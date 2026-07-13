@@ -58,14 +58,14 @@ def _coverage(matcher: difflib.SequenceMatcher, quote_len: int) -> float:
   return matched / quote_len if quote_len else 0.0
 
 
-def _best_window(quote: str, source: str) -> tuple[float, str]:
+def _best_window(quote: str, source: str) -> tuple[float, str, int]:
   qlen = len(quote)
   step = max(1, qlen // 2)
   wlen = qlen + step
   matcher = difflib.SequenceMatcher(autojunk=False)
   matcher.set_seq2(quote)
   prefilter = 2 * _QUOTE_MATCH_THRESHOLD * qlen / (wlen + qlen)
-  best_cov, best_win = 0.0, source[:wlen]
+  best_cov, best_win, best_start = 0.0, source[:wlen], 0
   for start in range(0, max(1, len(source) - qlen + 1), step):
     window = source[start:start + wlen]
     matcher.set_seq1(window)
@@ -75,38 +75,49 @@ def _best_window(quote: str, source: str) -> tuple[float, str]:
       continue
     cov = _coverage(matcher, qlen)
     if cov > best_cov:
-      best_cov, best_win = cov, window
-  return best_cov, best_win
+      best_cov, best_win, best_start = cov, window, start
+  return best_cov, best_win, best_start
 
 
 def _numbers_grounded(quote: str, window: str) -> bool:
-  """Every number in the quote must appear in the matched source window.
+  """Every number in the quote must appear in the text that aligns to it.
 
-  Blocks the number-swap fabrication (a real sentence with the statistic
-  changed). Years are excluded by extract_numbers — a swapped citation year
-  is not caught here, by design; years are citation noise, not evidence.
+  Grounding is checked against the source characters that actually match the
+  quote (the SequenceMatcher blocks), not the whole window — otherwise a
+  swapped statistic (`28%` vs source `18%`) could ground against an unrelated
+  neighbouring number in the same window. Years are excluded by
+  extract_numbers; a swapped citation year is not caught here, by design.
   """
   quote_numbers = extract_numbers(quote)
   if not quote_numbers:
     return True
-  window_numbers = set(extract_numbers(window))
-  return all(n in window_numbers for n in quote_numbers)
+  matcher = difflib.SequenceMatcher(None, quote, window, autojunk=False)
+  aligned = "".join(window[b.b:b.b + b.size]
+                    for b in matcher.get_matching_blocks())
+  aligned_numbers = set(extract_numbers(aligned))
+  return all(n in aligned_numbers for n in quote_numbers)
 
 
 def find_quote(quote: str, source: str) -> dict:
-  if quote in source:
-    return {"coverage": 1.0, "window": quote, "method": "exact"}
-  cov, window = _best_window(quote, source)
+  idx = source.find(quote)
+  if idx != -1:
+    return {"coverage": 1.0, "window": quote, "method": "exact", "start": idx}
+  cov, window, start = _best_window(quote, source)
   if cov >= _QUOTE_MATCH_THRESHOLD and _numbers_grounded(quote, window):
-    return {"coverage": cov, "window": window, "method": "fuzzy"}
+    return {"coverage": cov, "window": window, "method": "fuzzy",
+            "start": start}
   sentences = [s for s in re.split(r"(?<=[.!?])\s+", quote) if s]
   if len(sentences) >= 2 and all(len(s) >= 20 for s in sentences):
     per = [find_quote(s, source) for s in sentences]
     if all(p["method"] is not None for p in per):
-      worst = min(per, key=lambda p: p["coverage"])
-      return {"coverage": worst["coverage"], "window": worst["window"],
-              "method": "per_sentence"}
-  return {"coverage": cov, "window": window, "method": None}
+      starts = [p["start"] for p in per]
+      span = (max(st + len(s) for st, s in zip(starts, sentences))
+              - min(starts))
+      if starts == sorted(starts) and span <= 3 * len(quote):
+        worst = min(per, key=lambda p: p["coverage"])
+        return {"coverage": worst["coverage"], "window": worst["window"],
+                "method": "per_sentence", "start": min(starts)}
+  return {"coverage": cov, "window": window, "method": None, "start": start}
 
 
 _STOPWORDS = frozenset("""

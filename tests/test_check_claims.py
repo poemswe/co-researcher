@@ -165,6 +165,26 @@ def test_find_quote_perf_budget():
 
 # --- anchors ---
 
+def test_numbers_grounded_ignores_unaligned_neighbor(tmp_path):
+  source = cc.normalize_text(
+      "Readmissions fell 18% in the treatment arm here. "
+      "Table 2 then lists 28 baseline covariates for the cohort.")
+  q = cc.normalize_text(
+      "Readmissions fell 28% in the treatment arm here")
+  assert cc.find_quote(q, source)["method"] is None
+
+
+def test_per_sentence_rejects_distant_stitched_sentences():
+  source = cc.normalize_text(
+      "The cohort enrolled many adult patients across regional sites here. "
+      + ("intervening filler sentence about methodology and design work. " * 25)
+      + "Mortality did not differ between the two study groups at follow up.")
+  q = cc.normalize_text(
+      "The cohort enrolled many adult patients across regional sites here. "
+      "Mortality did not differ between the two study groups at follow up.")
+  assert cc.find_quote(q, source)["method"] is None
+
+
 def test_extract_numbers_keeps_stats_drops_years():
   nums = cc.extract_numbers("In 2022, 814 patients showed an 18% drop "
                             "(p<0.01)")
