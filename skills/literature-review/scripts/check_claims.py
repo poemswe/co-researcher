@@ -43,7 +43,7 @@ _MIN_QUOTE_WORDS = 8
 
 _CHAR_MAP = str.maketrans({
     "“": '"', "”": '"', "‘": "'", "’": "'",
-    "–": "-", "—": "-", "­": "",
+    "–": "-", "—": "-", "−": "-", "­": "",
 })
 
 
@@ -79,47 +79,35 @@ def _best_window(quote: str, source: str) -> tuple[float, str, int]:
   return best_cov, best_win, best_start
 
 
-def _number_token_grounded(qs: int, qe: int, blocks, window: str) -> bool:
-  """The quote number [qs, qe) aligns to a complete source number token.
+def _numbers_grounded(quote: str, source: str, locate) -> bool:
+  """Every quote number must equal the complete source token it aligns to.
 
-  It must fall inside one matching block (verbatim and contiguous in the
-  quote) AND the aligned source characters must not extend into a larger
-  number — otherwise `18` grounds against a source `118`, `181`, or the `.5`
-  of `12.5`. So the source chars bracketing the aligned number must be
-  neither a digit nor a decimal/comma joining it to more digits.
+  `locate(qs, qe)` returns the absolute source position of the quote number at
+  [qs, qe), or None if it does not align to one contiguous source region. The
+  source token spanning that position must equal the quote's number. This
+  blocks every number-fabrication class seen so far — swap, neighbour, digit
+  subset/superset (`18` vs `108`/`118`/`181`), decimal shift (`2.5` vs `12.5`,
+  `5` vs `.5`), and sign flip (`18` vs `-18`) — on both the exact and fuzzy
+  paths. Years are excluded from grounding, by design.
   """
-  for b in blocks:
-    if not (b.a <= qs and qe <= b.a + b.size):
-      continue
-    ws = b.b + (qs - b.a)
-    we = ws + (qe - qs)
-    before = window[ws - 1] if ws > 0 else ""
-    after = window[we] if we < len(window) else ""
-    if before.isdigit() or after.isdigit():
+  for qs, qe, qtok in extract_number_spans(quote, exclude_years=False):
+    pos = locate(qs, qe)
+    if pos is None or _source_number_covering(source, pos) != qtok:
       return False
-    if before in ".," and ws >= 2 and window[ws - 2].isdigit():
-      return False
-    if after in ".," and we + 1 < len(window) and window[we + 1].isdigit():
-      return False
-    return True
-  return False
+  return True
 
 
-def _numbers_grounded(quote: str, window: str) -> bool:
-  """Every number in the quote must align to a complete source number token.
-
-  Blocks the swapped statistic (`28%` vs `18%`, grounded against a neighbour),
-  the digit-subset fusion (`18` from `108` across a skipped `0`), and the
-  substring cases (`18` from `118`/`181`, `2.5` from `12.5`). Years are
-  excluded — a swapped citation year is not caught here, by design.
-  """
-  spans = extract_number_spans(quote)
-  if not spans:
-    return True
+def _window_locator(quote: str, window: str, offset: int):
+  """Map a quote span to its absolute source position via quote↔window blocks."""
   blocks = difflib.SequenceMatcher(
       None, quote, window, autojunk=False).get_matching_blocks()
-  return all(_number_token_grounded(qs, qe, blocks, window)
-             for qs, qe, _ in spans)
+
+  def locate(qs, qe):
+    for b in blocks:
+      if b.a <= qs and qe <= b.a + b.size:
+        return offset + b.b + (qs - b.a)
+    return None
+  return locate
 
 
 def find_quote(quote: str, source: str) -> dict:
@@ -131,10 +119,11 @@ def find_quote(quote: str, source: str) -> dict:
   sentences stitched from distant sections.
   """
   idx = source.find(quote)
-  if idx != -1:
+  if idx != -1 and _numbers_grounded(quote, source, lambda qs, qe: idx + qs):
     return {"coverage": 1.0, "window": quote, "method": "exact", "start": idx}
   cov, window, start = _best_window(quote, source)
-  if cov >= _QUOTE_MATCH_THRESHOLD and _numbers_grounded(quote, window):
+  if cov >= _QUOTE_MATCH_THRESHOLD and _numbers_grounded(
+      quote, source, _window_locator(quote, window, start)):
     return {"coverage": cov, "window": window, "method": "fuzzy",
             "start": start}
   sentences = [s for s in re.split(r"(?<=[.!?])\s+", quote) if s]
@@ -164,18 +153,47 @@ significant significantly participants patients group groups trial trials
 research paper authors evidence
 """.split())
 
-_NUMBER_RE = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?")
+_NUMBER_RE = re.compile(r"[-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)")
 
 
-def extract_number_spans(text: str) -> list[tuple[int, int, str]]:
-  """(start, end, comma-stripped digits) per number; 4-digit years excluded."""
+def _norm_num(token: str) -> str:
+  return token.replace(",", "")
+
+
+def extract_number_spans(text: str,
+                         exclude_years: bool = True) -> list[tuple[int, int, str]]:
+  """(start, end, normalized token) per number.
+
+  Tokens keep a leading sign and decimals (`-18`, `.5`, `12.5`) so grounding
+  compares whole numbers, not digit fragments. `exclude_years` drops 4-digit
+  years — right for the claim/anchor check (a citation year need not appear in
+  the quote), wrong for quote-vs-source grounding (a year in the quoted
+  passage must genuinely appear in the source, and a fabricated value that
+  merely falls in the year range must not be waved through).
+  """
   spans = []
   for m in _NUMBER_RE.finditer(text):
-    plain = m.group().replace(",", "")
-    if len(plain) == 4 and plain.isdigit() and 1900 <= int(plain) <= 2099:
+    plain = _norm_num(m.group())
+    digits = plain.lstrip("+-")
+    if (exclude_years and len(digits) == 4 and digits.isdigit()
+        and 1900 <= int(digits) <= 2099):
       continue
     spans.append((m.start(), m.end(), plain))
   return spans
+
+
+def _source_number_covering(source: str, pos: int) -> str | None:
+  """The complete source number token spanning position `pos`, normalized.
+
+  Uses the same tokenizer as the quote, so `18` cannot match a source `118`,
+  `-18`, or the `.5` of `12.5` — the full aligned source token must equal the
+  quote's number, not merely contain its digits.
+  """
+  lo = max(0, pos - 24)
+  for m in _NUMBER_RE.finditer(source[lo:pos + 24]):
+    if m.start() <= pos - lo < m.end():
+      return _norm_num(m.group())
+  return None
 
 
 def extract_numbers(text: str) -> list[str]:

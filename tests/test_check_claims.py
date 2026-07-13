@@ -214,6 +214,39 @@ def test_numbers_grounded_accepts_genuine_decimal():
   assert cc.find_quote(q, source)["method"] is not None
 
 
+def test_exact_path_rejects_number_substring_of_source():
+  src = cc.normalize_text(
+      "The team reported 118 percent improvement in the treated arm here now.")
+  q = cc.normalize_text(
+      "18 percent improvement in the treated arm here now")
+  assert q in src
+  assert cc.find_quote(q, src)["method"] is None
+
+
+def test_grounding_rejects_sign_flip():
+  src = cc.normalize_text(
+      "The correlation was -18 across the full study cohort measured here now.")
+  q = cc.normalize_text(
+      "The correlation was 18 across the full study cohort measured here now")
+  assert cc.find_quote(q, src)["method"] is None
+
+
+def test_grounding_accepts_matching_sign():
+  src = cc.normalize_text(
+      "The correlation was -18 across the full study cohort measured here now.")
+  q = cc.normalize_text(
+      "The correlation was -18 across the full study cohort measured here now")
+  assert cc.find_quote(q, src)["method"] is not None
+
+
+def test_grounding_rejects_leading_decimal_mismatch():
+  src = cc.normalize_text(
+      "The effect size was .5 across the full study cohort measured today here.")
+  q = cc.normalize_text(
+      "The effect size was 5 across the full study cohort measured today here")
+  assert cc.find_quote(q, src)["method"] is None
+
+
 def test_numbers_grounded_accepts_number_next_to_noise(tmp_path):
   source = cc.normalize_text(
       "We observed a rate of 18 % decline across cohort members here today.")
@@ -499,6 +532,73 @@ def test_title_quote_on_fulltext_is_needs_review(tmp_path):
             "Readmission in Adults"), ws)
   assert r["quote_is_title"] is True
   assert r["status"] == "needs_review"
+
+
+def _num_sentence(num):
+  return ("The measured outcome reached %s across the enrolled study cohort "
+          "during the follow up observation window here today now" % num)
+
+
+def _random_number(rng):
+  kind = rng.choice(["int", "int", "decimal", "signed", "comma"])
+  if kind == "int":
+    return str(rng.randint(1, 999))
+  if kind == "decimal":
+    return "%d.%d" % (rng.randint(0, 99), rng.randint(1, 9))
+  if kind == "signed":
+    return "-%d" % rng.randint(1, 99)
+  return "{:,}".format(rng.randint(1000, 9_999_999))
+
+
+def _fabricate(num, rng):
+  digits = [c for c in num if c.isdigit()]
+  for _ in range(20):
+    mut = rng.choice(["digit", "drop", "add", "sign", "dot"])
+    if mut == "digit" and digits:
+      i = rng.randrange(len(num))
+      if num[i].isdigit():
+        cand = num[:i] + str((int(num[i]) + rng.randint(1, 8)) % 10) + num[i + 1:]
+      else:
+        continue
+    elif mut == "drop" and len(digits) > 1:
+      i = next(j for j, c in enumerate(num) if c.isdigit())
+      cand = num[:i] + num[i + 1:]
+    elif mut == "add":
+      cand = str(rng.randint(1, 9)) + num
+    elif mut == "sign":
+      cand = num[1:] if num.startswith("-") else "-" + num
+    elif mut == "dot":
+      cand = num + ".%d" % rng.randint(1, 9) if "." not in num else num.replace(".", "")
+    else:
+      continue
+    if _norm(cand) != _norm(num) and any(c.isdigit() for c in cand):
+      return cand
+  return None
+
+
+def _norm(tok):
+  return tok.replace(",", "")
+
+
+def test_fuzz_number_grounding():
+  rng = __import__("random").Random(1234)
+  verified_genuine = flagged_fabricated = 0
+  for _ in range(2000):
+    num = _random_number(rng)
+    src = cc.normalize_text(_num_sentence(num))
+    genuine = cc.normalize_text(_num_sentence(num))
+    assert cc.find_quote(genuine, src)["method"] is not None, (
+        "genuine rejected: %r" % num)
+    verified_genuine += 1
+    fab = _fabricate(num, rng)
+    if fab is None:
+      continue
+    quote = cc.normalize_text(_num_sentence(fab))
+    assert cc.find_quote(quote, src)["method"] is None, (
+        "fabricated verified: source %r quote %r" % (num, fab))
+    flagged_fabricated += 1
+  assert verified_genuine == 2000
+  assert flagged_fabricated > 1500
 
 
 if __name__ == "__main__":
