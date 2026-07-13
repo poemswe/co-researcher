@@ -182,6 +182,38 @@ def test_numbers_grounded_rejects_digit_subset_of_larger_number():
   assert cc.find_quote(q, source)["method"] is None
 
 
+def test_numbers_grounded_rejects_leading_digit_in_source():
+  source = cc.normalize_text(
+      "We saw 118 percent across the enrolled cohort here today.")
+  q = cc.normalize_text(
+      "We saw 18 percent across the enrolled cohort here today")
+  assert cc.find_quote(q, source)["method"] is None
+
+
+def test_numbers_grounded_rejects_trailing_digit_in_source():
+  source = cc.normalize_text(
+      "The rate was 181 percent across the enrolled cohort now here.")
+  q = cc.normalize_text(
+      "The rate was 18 percent across the enrolled cohort now here")
+  assert cc.find_quote(q, source)["method"] is None
+
+
+def test_numbers_grounded_rejects_fractional_part_of_source_decimal():
+  source = cc.normalize_text(
+      "The score was 12.5 points across the whole study cohort today.")
+  q = cc.normalize_text(
+      "The score was 2.5 points across the whole study cohort today")
+  assert cc.find_quote(q, source)["method"] is None
+
+
+def test_numbers_grounded_accepts_genuine_decimal():
+  source = cc.normalize_text(
+      "The model reached 96.5% sensitivity across the abstract set here.")
+  q = cc.normalize_text(
+      "The model reached 96.5% sensitivity across the abstract set here")
+  assert cc.find_quote(q, source)["method"] is not None
+
+
 def test_numbers_grounded_accepts_number_next_to_noise(tmp_path):
   source = cc.normalize_text(
       "We observed a rate of 18 % decline across cohort members here today.")

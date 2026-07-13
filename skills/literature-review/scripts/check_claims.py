@@ -79,22 +79,46 @@ def _best_window(quote: str, source: str) -> tuple[float, str, int]:
   return best_cov, best_win, best_start
 
 
-def _numbers_grounded(quote: str, window: str) -> bool:
-  """Every number in the quote must sit inside one aligned source block.
+def _number_token_grounded(qs: int, qe: int, blocks, window: str) -> bool:
+  """The quote number [qs, qe) aligns to a complete source number token.
 
-  Each number's full character span must fall within a single SequenceMatcher
-  matching block — so its digits appear verbatim and contiguous in the source
-  at the aligned position. This blocks the swapped statistic (`28%` vs source
-  `18%`, grounded against a neighbour) and the digit-subset case (`18` fusing
-  from a source `108` across a skipped `0`). Years are excluded — a swapped
-  citation year is not caught here, by design.
+  It must fall inside one matching block (verbatim and contiguous in the
+  quote) AND the aligned source characters must not extend into a larger
+  number — otherwise `18` grounds against a source `118`, `181`, or the `.5`
+  of `12.5`. So the source chars bracketing the aligned number must be
+  neither a digit nor a decimal/comma joining it to more digits.
+  """
+  for b in blocks:
+    if not (b.a <= qs and qe <= b.a + b.size):
+      continue
+    ws = b.b + (qs - b.a)
+    we = ws + (qe - qs)
+    before = window[ws - 1] if ws > 0 else ""
+    after = window[we] if we < len(window) else ""
+    if before.isdigit() or after.isdigit():
+      return False
+    if before in ".," and ws >= 2 and window[ws - 2].isdigit():
+      return False
+    if after in ".," and we + 1 < len(window) and window[we + 1].isdigit():
+      return False
+    return True
+  return False
+
+
+def _numbers_grounded(quote: str, window: str) -> bool:
+  """Every number in the quote must align to a complete source number token.
+
+  Blocks the swapped statistic (`28%` vs `18%`, grounded against a neighbour),
+  the digit-subset fusion (`18` from `108` across a skipped `0`), and the
+  substring cases (`18` from `118`/`181`, `2.5` from `12.5`). Years are
+  excluded — a swapped citation year is not caught here, by design.
   """
   spans = extract_number_spans(quote)
   if not spans:
     return True
   blocks = difflib.SequenceMatcher(
       None, quote, window, autojunk=False).get_matching_blocks()
-  return all(any(b.a <= qs and qe <= b.a + b.size for b in blocks)
+  return all(_number_token_grounded(qs, qe, blocks, window)
              for qs, qe, _ in spans)
 
 
