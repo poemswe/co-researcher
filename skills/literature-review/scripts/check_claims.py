@@ -89,18 +89,13 @@ def _numbers_grounded(quote: str, window: str) -> bool:
   from a source `108` across a skipped `0`). Years are excluded — a swapped
   citation year is not caught here, by design.
   """
-  spans = []
-  for m in _NUMBER_RE.finditer(quote):
-    plain = m.group().replace(",", "")
-    if len(plain) == 4 and plain.isdigit() and 1900 <= int(plain) <= 2099:
-      continue
-    spans.append((m.start(), m.end()))
+  spans = extract_number_spans(quote)
   if not spans:
     return True
   blocks = difflib.SequenceMatcher(
       None, quote, window, autojunk=False).get_matching_blocks()
   return all(any(b.a <= qs and qe <= b.a + b.size for b in blocks)
-             for qs, qe in spans)
+             for qs, qe, _ in spans)
 
 
 def find_quote(quote: str, source: str) -> dict:
@@ -123,8 +118,8 @@ def find_quote(quote: str, source: str) -> dict:
     per = [find_quote(s, source) for s in sentences]
     if all(p["method"] is not None for p in per):
       starts = [p["start"] for p in per]
-      span = (max(st + len(s) for st, s in zip(starts, sentences))
-              - min(starts))
+      ends = [st + len(s) for st, s in zip(starts, sentences)]
+      span = max(ends) - min(starts)
       if starts == sorted(starts) and span <= 3 * len(quote):
         worst = min(per, key=lambda p: p["coverage"])
         return {"coverage": worst["coverage"], "window": worst["window"],
@@ -148,12 +143,20 @@ research paper authors evidence
 _NUMBER_RE = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?")
 
 
-def extract_numbers(text: str) -> list[str]:
-  numbers = []
-  for tok in _NUMBER_RE.findall(text):
-    plain = tok.replace(",", "")
+def extract_number_spans(text: str) -> list[tuple[int, int, str]]:
+  """(start, end, comma-stripped digits) per number; 4-digit years excluded."""
+  spans = []
+  for m in _NUMBER_RE.finditer(text):
+    plain = m.group().replace(",", "")
     if len(plain) == 4 and plain.isdigit() and 1900 <= int(plain) <= 2099:
       continue
+    spans.append((m.start(), m.end(), plain))
+  return spans
+
+
+def extract_numbers(text: str) -> list[str]:
+  numbers = []
+  for _, _, plain in extract_number_spans(text):
     if plain not in numbers:
       numbers.append(plain)
   return numbers
