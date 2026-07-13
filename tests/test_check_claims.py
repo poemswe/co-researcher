@@ -406,5 +406,32 @@ def test_main_rejects_malformed_claims(tmp_path):
     cc.main(["--claims", str(bad), "--workspace", str(ws)])
 
 
+def test_coverage_not_satisfied_by_background_claim():
+  synthesis = "The intervention cut readmissions by 18% in the arm (Patel, 2022)."
+  claims = [{"claim": "The intervention cut readmissions by 18% in the arm.",
+             "paper_id": "p1", "supporting_quote": "", "role": "background"}]
+  gaps = cc.coverage_gaps(synthesis, claims)
+  assert len(gaps) == 1
+
+
+def test_coverage_detects_parenthetical_year_suffix():
+  synthesis = ("Outcomes improved markedly overall (Smith, 2020a). "
+               "A second distinct finding was reported (Lee et al., 2021b).")
+  gaps = cc.coverage_gaps(synthesis, [])
+  assert len(gaps) == 2
+
+
+def test_title_quote_on_fulltext_is_needs_review(tmp_path):
+  ft = ("# A Controlled Study of Structured Exercise for Hospital "
+        "Readmission in Adults\n\nWe enrolled 814 patients in the trial.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": ft}})
+  r = cc.check_entry(_entry(
+      claim="Exercise affects hospital readmission outcomes broadly.",
+      quote="A Controlled Study of Structured Exercise for Hospital "
+            "Readmission in Adults"), ws)
+  assert r["quote_is_title"] is True
+  assert r["status"] == "needs_review"
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))

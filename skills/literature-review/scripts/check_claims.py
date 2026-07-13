@@ -231,7 +231,7 @@ def check_entry(entry: dict, workspace, source_cache=None) -> dict:
   anchors, numbers_ok = _anchor_check(
       normalize_text(entry.get("claim") or ""), quote_norm)
   result["anchors"] = anchors
-  title = _title_of(source_raw) if scope == "abstract" else ""
+  title = _title_of(source_raw)
   if title and find_quote(quote_norm, title)["method"] is not None:
     result["quote_is_title"] = True
     result["status"] = "needs_review"
@@ -241,7 +241,7 @@ def check_entry(entry: dict, workspace, source_cache=None) -> dict:
 
 
 _CITATION_RE = re.compile(
-    r"\((?:[a-z]+ ){0,2}[A-Z][^()]{0,60}\b(?:19|20)\d{2}\)"
+    r"\((?:[a-z]+ ){0,2}[A-Z][^()]{0,60}\b(?:19|20)\d{2}[a-z]?\)"
     r"|\b[A-Z][a-z]+(?:\s+et al\.?)?\s+\((?:19|20)\d{2}[a-z]?\)"
     r"|\[\d+\]|\[abstract-only\]")
 
@@ -250,8 +250,9 @@ _HARD_FAILS = ("source_missing", "no_quote", "quote_too_short",
 
 
 def coverage_gaps(synthesis: str, claims: list) -> list:
-  claim_norms = [normalize_text(c.get("claim") or "") for c in claims]
-  paper_ids = {c.get("paper_id") or "" for c in claims}
+  evidence = [c for c in claims if c.get("role") != "background"]
+  claim_norms = [normalize_text(c.get("claim") or "") for c in evidence]
+  paper_ids = {c.get("paper_id") or "" for c in evidence}
   gaps = []
   for sentence in re.split(r"(?<!et al\.)(?<=[.!?])\s+", synthesis):
     cited = bool(_CITATION_RE.search(sentence)) or any(
