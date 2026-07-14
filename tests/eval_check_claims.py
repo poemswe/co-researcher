@@ -190,6 +190,30 @@ def test_eval_negatives_all_caught():
   assert false_negatives == []
 
 
+KNOWN_ESCAPES_WORD_ONLY = [
+    ("We enrolled 814 adult patients across 12 regional hospitals between "
+     "March and November", "doc_a", "age/word swap class"),
+]
+
+
+def test_eval_word_only_distortion_is_a_documented_escape():
+  """A quote with one flipped content word and NO number change verifies.
+
+  This is the declared scope boundary: the gate proves the evidence is real
+  and number-specific, not that its wording is undistorted — relevance stays
+  with the agent-adjudication layer. This test pins the boundary so a future
+  change that closes it (word anchors, per-block diff) shows up as an
+  intentional flip, and so the escape is measured rather than folklore.
+  """
+  src = cc.normalize_text(FIXTURE_DOCS["doc_a"])
+  distorted = cc.normalize_text(
+      "We enrolled 814 adult weights across 12 regional hospitals between "
+      "March and November")
+  r = cc.find_quote(distorted, src)
+  assert r["method"] is not None
+  assert r["coverage"] >= 0.90
+
+
 def test_eval_anchor_fire_rates(tmp_path):
   ws = tmp_path
   for key, doc in FIXTURE_DOCS.items():
