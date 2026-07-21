@@ -349,15 +349,16 @@ def _name_aliases(name: str) -> set[str]:
   if "," in name:
     surname = _author_key(name.split(",", 1)[0])
   else:
-    words = normalized.split()
-    end = len(words)
-    if end > 1 and (len(words[-1]) <= 2 or
-                    re.fullmatch(r"[a-z](?: [a-z])?", " ".join(words[-2:]))):
+    raw_parts = name.strip().split()
+    end = len(raw_parts)
+    if end > 1 and len(_author_key(raw_parts[-1]).replace(" ", "")) <= 2:
       end -= 1
-    start = max(0, end - 1)
-    while start > 0 and words[start - 1] in _NAME_PARTICLES:
-      start -= 1
-    surname = " ".join(words[start:end])
+    surname_parts = [raw_parts[end - 1]]
+    cursor = end - 2
+    while cursor >= 0 and _author_key(raw_parts[cursor]) in _NAME_PARTICLES:
+      surname_parts.insert(0, raw_parts[cursor])
+      cursor -= 1
+    surname = _author_key(" ".join(surname_parts))
   return {normalized, surname}
 
 
@@ -528,8 +529,12 @@ _LOCATOR = r"(?:,\s*(?:pp?\.?\s*)?\d+(?:\s*[-\u2013\u2014]\s*\d+)?)?"
 _PAREN_RE = re.compile(r"\((?P<body>[^()]*)\)")
 _PAREN_AUTHOR_YEAR_RE = re.compile(
     rf"^(?P<author>.+),\s*(?P<year>{_YEAR}){_LOCATOR}$")
+_LETTER = r"[^\W\d_]"
+_NAME_TOKEN = rf"{_LETTER}+(?:['’\-]{_LETTER}+)*"
+_NAME_TOKEN_RE = re.compile(_NAME_TOKEN, re.UNICODE)
+_SURNAME_TOKEN = _NAME_TOKEN
 _SURNAME = (r"(?:(?:van|von|de|del|der|la|le|dos|da)\s+){0,2}"
-            r"[A-Z][A-Za-z'\u2019-]+")
+            rf"{_SURNAME_TOKEN}")
 _NARRATIVE_RE = re.compile(
     rf"\b(?P<author>{_SURNAME}(?:\s+et\s+al\.?|"
     rf"\s+(?:and|&)\s+{_SURNAME})?)\s+"
@@ -542,23 +547,30 @@ _HARD_FAILS = ("needs_review", "source_missing", "no_quote", "quote_too_short",
                "fabricated_quote", "uncovered_claim")
 
 
+def _name_tokens(text: str) -> list[str]:
+  return _NAME_TOKEN_RE.findall(unicodedata.normalize("NFKC", text))
+
+
 def _author_key(author: str) -> str:
-  author = author.lower().replace("&", " and ")
-  return re.sub(r"[^a-z0-9]+", " ", author).strip()
+  author = unicodedata.normalize("NFKC", author).casefold().replace(
+      "&", " and ")
+  pieces = [re.sub(r"['’\-]+", " ", token)
+            for token in _name_tokens(author)]
+  return re.sub(r"\s+", " ", " ".join(pieces)).strip()
 
 
 def _valid_author_label(author: str) -> bool:
   """Distinguish citation names from prose such as `In the final sample`."""
   allowed_lower = _NAME_PARTICLES | {"and", "et", "al"}
-  words = re.findall(r"[A-Za-z][A-Za-z'\u2019-]*", author)
-  if not words:
+  tokens = _name_tokens(author)
+  if not tokens:
     return False
   named = 0
-  for word in words:
-    clean = word.strip("-'\u2019")
-    if clean.lower() in allowed_lower:
+  for token in tokens:
+    if token.casefold() in allowed_lower:
       continue
-    if not clean[0].isupper():
+    first = next(char for char in token if char.isalpha())
+    if first.islower():
       return False
     named += 1
   return named > 0
@@ -597,6 +609,8 @@ def _citation_records(text: str) -> list[dict]:
           "start": match.start(), "end": match.end(),
       })
   for match in _NARRATIVE_RE.finditer(text):
+    if not _valid_author_label(match.group("author")):
+      continue
     records.append({
         "key": f"author:{_author_key(match.group('author'))}:"
                f"{match.group('year').lower()}",

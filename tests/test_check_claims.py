@@ -533,6 +533,35 @@ def test_citation_identity_normalizes_ampersand_and_narrative_and():
   assert cc.coverage_gaps(synthesis, claims) == []
 
 
+@pytest.mark.parametrize(("rendered", "expected"), [
+    ("García (2022)", "author:garcía:2022"),
+    ("Иванов (2022)", "author:иванов:2022"),
+    ("王 (2022)", "author:王:2022"),
+])
+def test_unicode_narrative_author_citations(rendered, expected):
+  assert cc.citation_keys(rendered) == {expected}
+
+
+@pytest.mark.parametrize(("rendered", "expected"), [
+    ("(García, 2022)", "author:garcía:2022"),
+    ("(Иванов, 2022)", "author:иванов:2022"),
+    ("(王, 2022)", "author:王:2022"),
+])
+def test_unicode_parenthetical_author_citations(rendered, expected):
+  assert cc.citation_keys(rendered) == {expected}
+
+
+@pytest.mark.parametrize(("name", "citation"), [
+    ("Mary O'Connor", "O'Connor, 2022"),
+    ("Mary Smith-Jones", "Smith-Jones, 2022"),
+    ("Ludwig van der Berg", "van der Berg, 2022"),
+])
+def test_compound_corpus_surname_binds(name, citation):
+  key = next(iter(cc.citation_keys(citation)))
+  assert cc._author_year_binding_matches(
+      key, {"authors": [name], "year": 2022})
+
+
 def test_coverage_ignores_non_citation_parenthetical_years():
   synthesis = ("Usage has grown rapidly (since 2020). Readmissions fell 18% "
                "in the treatment arm of the trial (Patel, 2022).")
