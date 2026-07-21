@@ -53,6 +53,14 @@ FIXTURE_DOCS = {
         "suggesting that screening performance depends as much on protocol "
         "clarity as on model capability."
     ),
+    "doc_unicode": (
+        "Вмешательство снизило смертность среди участников исследования."
+    ),
+    "doc_pipe": (
+        "Readmissions fell across the treatment cohort. "
+        "| treatment caused severe adverse events | "
+        "Mortality remained unchanged during follow-up."
+    ),
 }
 
 
@@ -74,7 +82,7 @@ def ligate(text):
 
 
 def inject_headers(text, every=400):
-  header = "\n\nJournal of Fixture Studies  |  Vol. 12  |  2026\n\n"
+  header = "\n\nRUNNING HEADER PAGE 7\n\n"
   chunks = [text[i:i + every] for i in range(0, len(text), every)]
   return header.join(chunks)
 
@@ -93,13 +101,13 @@ def test_ligate_substitutes_ligature_codepoints():
 
 
 def test_inject_headers_inserts_running_header():
-  assert "Journal of Fixture Studies" in inject_headers("x" * 900)
+  assert "RUNNING HEADER PAGE 7" in inject_headers("x" * 900)
 
 
 def test_apply_pdf_noise_composes_all_three():
   noised = apply_pdf_noise(FIXTURE_DOCS["doc_a"])
   assert "ﬁ" in noised or "ﬂ" in noised
-  assert "Journal of Fixture Studies" in noised
+  assert "RUNNING HEADER PAGE 7" in noised
   assert "-\n" in noised
 
 
@@ -159,6 +167,15 @@ NEGATIVE_NEAR_MISS = [
      "had included", "doc_b"),
 ]
 
+NEGATIVES = (NEGATIVE_PARAPHRASES + NEGATIVE_CROSS_DOC +
+             NEGATIVE_FABRICATIONS + NEGATIVE_NEAR_MISS + [
+                 ("Вмешательство повысило смертность среди участников исследования.",
+                  "doc_unicode"),
+                 ("Readmissions fell across the treatment cohort. "
+                  "Mortality remained unchanged during follow-up.",
+                  "doc_pipe"),
+             ])
+
 
 def _verify(quote, doc_key):
   noised = cc.normalize_text(apply_pdf_noise(FIXTURE_DOCS[doc_key]))
@@ -175,13 +192,11 @@ def test_eval_positives_all_verify_through_pdf_noise():
 
 
 def test_eval_negatives_all_caught():
-  negatives = (NEGATIVE_PARAPHRASES + NEGATIVE_CROSS_DOC +
-               NEGATIVE_FABRICATIONS + NEGATIVE_NEAR_MISS)
-  false_negatives = [(q, r["coverage"]) for q, d in negatives
+  false_negatives = [(q, r["coverage"]) for q, d in NEGATIVES
                      if (r := _verify(q, d))["method"] is not None]
-  print(f"EVAL negatives: {len(negatives)} quotes, "
+  print(f"EVAL negatives: {len(NEGATIVES)} quotes, "
         f"FN(passed fabricated)={len(false_negatives)}")
-  for q, d in negatives:
+  for q, d in NEGATIVES:
     cov = _verify(q, d)["coverage"]
     print(f"  cov={cov:.3f} {q[:60]!r}")
   for q, d in NEGATIVE_PARAPHRASES + NEGATIVE_CROSS_DOC + NEGATIVE_FABRICATIONS:

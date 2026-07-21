@@ -49,14 +49,15 @@ _CHAR_MAP = str.maketrans({
     "–": "-", "—": "-", "−": "-", "­": "",
 })
 
-_MEANINGFUL_RE = re.compile(r"[a-z0-9%<>=\u2264\u2265\u00b1]")
+_MEANINGFUL_SYMBOLS = frozenset("%<>=≤≥±")
 _GAP_POLARITY_RE = re.compile(
     r"\b(?:not|no|never|neither|without|increase[ds]?|decrease[ds]?|"
     r"reduce[ds]?|raise[ds]?|lower(?:ed|s)?|improve[ds]?|worsen(?:ed|s)?)\b"
     r"|[%<>=\u2264\u2265\u00b1]")
+_PAGE_GAP_RE = re.compile(
+    r"(?:running\s+header\s+)?(?:page\s+)?\d+(?:\s+of\s+\d+)?$")
 _AUTHOR_HEADER_RE = re.compile(
-    r"(?:[a-z][a-z'\u2019.-]*\s+){0,6}et al\.?\s+"
-    r"(?:19|20)\d{2}(?:\s+\d+)?$")
+    r"(?P<author>.+?\bet\s+al\.?)\s+(?:19|20)\d{2}(?:\s+\d+)?$")
 
 
 def normalize_text(text: str) -> str:
@@ -124,22 +125,20 @@ def _window_locator(quote: str, window: str, offset: int):
   return locate
 
 
-def _allowed_source_gap(text: str) -> bool:
-  """Accept punctuation/spacing or a tightly structured PDF artifact."""
-  gap = text.strip(" \t\n.,;:()[]{}-\u2013\u2014")
-  if not _MEANINGFUL_RE.search(gap):
+def _has_meaningful_text(text: str) -> bool:
+  return any(char.isalnum() or char in _MEANINGFUL_SYMBOLS for char in text)
+
+
+def _is_structured_artifact_gap(text: str) -> bool:
+  gap = text.strip(" \t\n.,;:()[]{}-–—")
+  if not _has_meaningful_text(gap):
     return True
-  if _GAP_POLARITY_RE.search(gap) or len(gap) > 180:
+  if "|" in gap or len(gap) > 180 or _GAP_POLARITY_RE.search(gap):
     return False
-  if "|" in gap:
+  if _PAGE_GAP_RE.fullmatch(gap):
     return True
-  if re.fullmatch(r"(?:page\s+)?\d+(?:\s+of\s+\d+)?", gap):
-    return True
-  if re.search(r"\b(?:header|page|journal|vol(?:ume)?|doi|copyright|preprint|"
-               r"arxiv|pmc)\b",
-               gap) and len(gap.split()) <= 20:
-    return True
-  return bool(_AUTHOR_HEADER_RE.fullmatch(gap))
+  header = _AUTHOR_HEADER_RE.fullmatch(gap)
+  return bool(header and _valid_author_label(header.group("author").title()))
 
 
 def _aligned_source_span(quote: str, window: str, offset: int) -> tuple[int, int]:
@@ -170,10 +169,10 @@ def _authentic_alignment(quote: str, window: str) -> bool:
       continue
     quote_gap = quote[q1:q2]
     source_gap = window[s1:s2]
-    if _MEANINGFUL_RE.search(quote_gap):
+    if _has_meaningful_text(quote_gap):
       return False
-    if source_start < s2 and s1 < source_end and not _allowed_source_gap(
-        source_gap):
+    if (source_start < s2 and s1 < source_end
+        and not _is_structured_artifact_gap(source_gap)):
       return False
   return True
 
@@ -205,8 +204,10 @@ def find_quote(quote: str, source: str) -> dict:
       ends = [p["end"] for p in per]
       span = max(ends) - min(starts)
       gaps = [source[ends[i]:starts[i + 1]] for i in range(len(per) - 1)]
-      if (starts == sorted(starts) and span <= 3 * len(quote)
-          and all(_allowed_source_gap(gap) for gap in gaps)):
+      non_overlapping = all(ends[i] <= starts[i + 1]
+                            for i in range(len(per) - 1))
+      if (non_overlapping and span <= 3 * len(quote)
+          and all(_is_structured_artifact_gap(gap) for gap in gaps)):
         worst = min(per, key=lambda p: p["coverage"])
         return {"coverage": worst["coverage"],
                 "window": source[min(starts):max(ends)],

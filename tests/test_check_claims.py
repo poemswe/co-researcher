@@ -176,6 +176,35 @@ def test_find_quote_rejects_word_substitution():
   assert cc.find_quote(q, src)["method"] is None
 
 
+@pytest.mark.parametrize(("source", "quote"), [
+    ("The café intervention reduced admissions across the cohort.",
+     "The cafè intervention reduced admissions across the cohort."),
+    ("Вмешательство снизило смертность среди участников исследования.",
+     "Вмешательство повысило смертность среди участников исследования."),
+])
+def test_find_quote_rejects_unicode_alphanumeric_edits(source, quote):
+  result = cc.find_quote(cc.normalize_text(quote), cc.normalize_text(source))
+  assert result["method"] is None
+
+
+def test_find_quote_rejects_substantive_pipe_gap():
+  source = cc.normalize_text(
+      "Readmissions fell across the treatment cohort. "
+      "| treatment caused severe adverse events | "
+      "Mortality remained unchanged during follow-up.")
+  quote = cc.normalize_text(
+      "Readmissions fell across the treatment cohort. "
+      "Mortality remained unchanged during follow-up.")
+  assert cc.find_quote(quote, source)["method"] is None
+
+
+def test_per_sentence_match_cannot_reuse_one_source_span():
+  sentence = "Readmissions fell across the treatment cohort at follow-up."
+  source = cc.normalize_text(sentence)
+  quote = cc.normalize_text(f"{sentence} {sentence}")
+  assert cc.find_quote(quote, source)["method"] is None
+
+
 def test_find_quote_perf_budget():
   src = cc.normalize_text(("filler sentence about methodology and cohorts. "
                            * 2000) + _SOURCE)
