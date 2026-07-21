@@ -695,10 +695,18 @@ def _split_sentences(text: str) -> list[str]:
           re.split(r"(?<=[.!?])\s+", protected)]
 
 
-def coverage_gaps(synthesis: str, claims: list) -> list:
-  claim_data = [(normalize_text(c.get("claim") or ""),
-                 citation_keys(c.get("citation") or ""))
-                for c in claims]
+def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
+  claim_data = []
+  for claim, result in zip(claims, results):
+    if result.get("status") not in ("verified", "background"):
+      continue
+    claim_norm = normalize_text(claim.get("claim") or "")
+    claim_data.append({
+        "text": claim_norm,
+        "keys": citation_keys(claim.get("citation") or ""),
+        "role": claim.get("role", "evidence"),
+        "numbers": set(extract_numbers(claim_norm)),
+    })
   gaps = []
   for sentence in _split_sentences(synthesis):
     records = _citation_records(sentence)
@@ -706,12 +714,23 @@ def coverage_gaps(synthesis: str, claims: list) -> list:
     if not sentence_keys:
       continue
     sent_norm = normalize_text(_strip_citations(sentence, records))
-    covered_keys = set()
-    for claim_norm, claim_keys in claim_data:
-      if _claim_text_matches(claim_norm, sent_norm):
-        covered_keys.update(claim_keys & sentence_keys)
-    if not sentence_keys.issubset(covered_keys):
-      gaps.append(sentence.strip())
+    sentence_numbers = set(extract_numbers(sent_norm))
+    for key in sorted(sentence_keys):
+      matching = [item for item in claim_data
+                  if key in item["keys"]
+                  and _claim_text_matches(item["text"], sent_norm)]
+      if not matching:
+        reason = "coverage_identity_missing"
+      elif sentence_numbers and any(item["role"] == "background"
+                                    for item in matching):
+        reason = "coverage_role_invalid"
+      elif sentence_numbers - set().union(
+          *(item["numbers"] for item in matching)):
+        reason = "coverage_number_missing"
+      else:
+        continue
+      gaps.append({"sentence": sentence.strip(), "citation_key": key,
+                   "reason_code": reason})
   return gaps
 
 
@@ -813,10 +832,11 @@ def main(argv=None) -> int:
       sys.exit("synthesis file must not be empty")
     if not _citation_records(synthesis):
       sys.exit("synthesis file contains no supported citation identities")
-    for sentence in coverage_gaps(synthesis, entries):
-      results.append({"claim": sentence, "paper_id": None,
-                      "citation": None,
+    for gap in coverage_gaps(synthesis, entries, results):
+      results.append({"claim": gap["sentence"], "paper_id": None,
+                      "citation": gap["citation_key"],
                       "supporting_quote": None, "status": "uncovered_claim",
+                      "reason_code": gap["reason_code"],
                       "source_scope": None, "quote_match_ratio": None,
                       "matched": None, "best_window": None,
                       "quote_is_title": False, "context_risks": [],
