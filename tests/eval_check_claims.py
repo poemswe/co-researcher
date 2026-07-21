@@ -190,28 +190,13 @@ def test_eval_negatives_all_caught():
   assert false_negatives == []
 
 
-KNOWN_ESCAPES_WORD_ONLY = [
-    ("We enrolled 814 adult patients across 12 regional hospitals between "
-     "March and November", "doc_a", "age/word swap class"),
-]
-
-
-def test_eval_word_only_distortion_is_a_documented_escape():
-  """A quote with one flipped content word and NO number change verifies.
-
-  This is the declared scope boundary: the gate proves the evidence is real
-  and number-specific, not that its wording is undistorted — relevance stays
-  with the agent-adjudication layer. This test pins the boundary so a future
-  change that closes it (word anchors, per-block diff) shows up as an
-  intentional flip, and so the escape is measured rather than folklore.
-  """
+def test_eval_word_only_distortion_is_rejected():
   src = cc.normalize_text(FIXTURE_DOCS["doc_a"])
   distorted = cc.normalize_text(
       "We enrolled 814 adult weights across 12 regional hospitals between "
       "March and November")
   r = cc.find_quote(distorted, src)
-  assert r["method"] is not None
-  assert r["coverage"] >= 0.90
+  assert r["method"] is None
 
 
 def test_eval_anchor_fire_rates(tmp_path):
@@ -223,21 +208,25 @@ def test_eval_anchor_fire_rates(tmp_path):
   on_target = [
       {"claim": "Readmissions fell 18% in the treatment arm.",
        "paper_id": "doc_a",
+       "citation": "Patel, 2022",
        "supporting_quote": "Thirty-day readmissions fell 18% in the "
                            "treatment arm relative to usual care"},
       {"claim": "The best model reached 96% sensitivity on abstracts.",
        "paper_id": "doc_b",
+       "citation": "Lee, 2023",
        "supporting_quote": "The best-performing model achieved 96% "
                            "sensitivity and 89% specificity"},
   ]
   off_target = [
       {"claim": "Mortality dropped 40% among 512 enrolled veterans.",
        "paper_id": "doc_a",
+       "citation": "Patel, 2022",
        "supporting_quote": "Mortality did not differ between groups at 90 "
                            "days. Adherence to the exercise protocol "
                            "averaged 71%"},
       {"claim": "Screening 9000 abstracts cost 62 dollars in total.",
        "paper_id": "doc_b",
+       "citation": "Lee, 2023",
        "supporting_quote": "Model errors clustered in reviews with vague "
                            "eligibility criteria, suggesting that screening"},
   ]

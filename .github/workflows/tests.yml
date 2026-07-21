@@ -1,0 +1,25 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install test dependencies
+        run: python -m pip install pytest pymupdf4llm python-dotenv
+
+      - name: Run unit tests
+        run: python -m pytest -q
+
+      - name: Run claim-verification evaluations
+        run: python -m pytest -q tests/eval_check_claims.py

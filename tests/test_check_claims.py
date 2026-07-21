@@ -40,11 +40,12 @@ def _ws(tmp_path, papers):
 
 def _entry(claim="Readmissions fell 18% in the treatment arm of the trial.",
            paper_id="p1",
+           citation="Patel, 2022",
            quote="Thirty-day readmissions fell 18% in the treatment arm "
                  "relative to usual care",
            **kw):
   return {"claim": claim, "paper_id": paper_id,
-          "supporting_quote": quote, **kw}
+          "citation": citation, "supporting_quote": quote, **kw}
 
 
 # --- normalize_text ---
@@ -105,8 +106,8 @@ def test_find_quote_reports_best_window_on_failure():
 
 def test_find_quote_per_sentence_fallback_spans_artifact():
   broken = _SOURCE.replace(
-      "usual care, a difference",
-      "usual care. RUNNING HEADER PAGE 7. A difference")
+      "usual care, a difference that persisted after adjustment. Mortality",
+      "usual care. RUNNING HEADER PAGE 7. Mortality")
   src = cc.normalize_text(broken)
   q = cc.normalize_text(
       "Thirty-day readmissions fell 18% in the treatment arm relative to "
@@ -118,8 +119,8 @@ def test_find_quote_per_sentence_fallback_spans_artifact():
 
 def test_find_quote_per_sentence_reports_matching_window():
   src = cc.normalize_text(_SOURCE.replace(
-      "usual care, a difference",
-      "usual care. RUNNING HEADER PAGE 7. A difference"))
+      "usual care, a difference that persisted after adjustment. Mortality",
+      "usual care. RUNNING HEADER PAGE 7. Mortality"))
   q = cc.normalize_text(
       "Thirty-day readmissions fell 18% in the treatment arm relative to "
       "usual care. Mortality did not differ between groups at 90 days.")
@@ -149,6 +150,30 @@ def test_find_quote_accepts_genuine_number_in_quote():
   q = cc.normalize_text("Thirty-day readmissions fell 18% in the treatment "
                         "arm relative to usual care")
   assert cc.find_quote(q, src)["method"] is not None
+
+
+def test_find_quote_rejects_deleted_negation():
+  src = cc.normalize_text(
+      "Mortality did not differ between groups at 90 days in the cohort.")
+  q = cc.normalize_text(
+      "Mortality did differ between groups at 90 days in the cohort.")
+  assert cc.find_quote(q, src)["method"] is None
+
+
+def test_find_quote_rejects_deleted_percent_sign():
+  src = cc.normalize_text(
+      "The rate was 18% among treated patients across the entire cohort.")
+  q = cc.normalize_text(
+      "The rate was 18 among treated patients across the entire cohort.")
+  assert cc.find_quote(q, src)["method"] is None
+
+
+def test_find_quote_rejects_word_substitution():
+  src = cc.normalize_text(
+      "We enrolled 814 adult patients across 12 regional hospitals.")
+  q = cc.normalize_text(
+      "We enrolled 814 adult weights across 12 regional hospitals.")
+  assert cc.find_quote(q, src)["method"] is None
 
 
 def test_find_quote_perf_budget():
@@ -266,6 +291,35 @@ def test_per_sentence_rejects_distant_stitched_sentences():
   assert cc.find_quote(q, source)["method"] is None
 
 
+def test_per_sentence_rejects_nearby_substantive_omission():
+  source = cc.normalize_text(
+      "Readmissions fell across the enrolled treatment cohort at follow up. "
+      "The apparent difference disappeared after covariate adjustment. "
+      "Mortality did not differ between the two study groups at follow up.")
+  q = cc.normalize_text(
+      "Readmissions fell across the enrolled treatment cohort at follow up. "
+      "Mortality did not differ between the two study groups at follow up.")
+  assert cc.find_quote(q, source)["method"] is None
+
+
+def test_artifact_marker_cannot_hide_substantive_negation():
+  source = cc.normalize_text(
+      "The intervention journal did not reduce mortality across the cohort.")
+  q = cc.normalize_text(
+      "The intervention reduce mortality across the cohort")
+  assert cc.find_quote(q, source)["method"] is None
+
+
+def test_author_year_running_header_is_accepted():
+  source = cc.normalize_text(
+      "The intervention reduced hos Smith et al. 2026 pital readmissions "
+      "among adult patients across all regional sites.")
+  q = cc.normalize_text(
+      "The intervention reduced hospital readmissions among adult patients "
+      "across all regional sites.")
+  assert cc.find_quote(q, source)["method"] == "fuzzy"
+
+
 def test_extract_numbers_keeps_stats_drops_years():
   nums = cc.extract_numbers("In 2022, 814 patients showed an 18% drop "
                             "(p<0.01)")
@@ -346,8 +400,8 @@ def test_needs_review_when_claim_numbers_absent_from_quote(tmp_path):
   ws = _ws(tmp_path, {"p1": {"fulltext.md": _SOURCE}})
   r = cc.check_entry(_entry(
       claim="Readmissions dropped 42% among 300 enrolled veterans.",
-      quote="Mortality did not differ between groups at 90 days and "
-            "adherence declined over follow-up"), ws)
+      quote="Mortality did not differ between groups at 90 days. Adherence "
+            "averaged 71% and declined over the follow-up period."), ws)
   assert r["status"] == "needs_review"
   assert "42" in r["anchors"]["numbers_missing"]
 
@@ -359,6 +413,18 @@ def test_number_free_claim_with_real_quote_is_verified(tmp_path):
       quote="Adherence averaged 71% and declined over the follow-up period"),
       ws)
   assert r["status"] == "verified"
+
+
+def test_boundary_negation_is_needs_review(tmp_path):
+  source = ("The intervention did not reduce mortality among adults across "
+            "the full follow-up period in this regional cohort.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim="The intervention reduced mortality among adults.",
+      quote="reduce mortality among adults across the full follow-up period "
+            "in this regional cohort"), ws)
+  assert r["status"] == "needs_review"
+  assert r["context_risks"] == ["leading_negation_context"]
 
 
 def test_title_quote_on_abstract_is_needs_review(tmp_path):
@@ -375,10 +441,20 @@ def test_title_quote_on_abstract_is_needs_review(tmp_path):
   assert r["source_scope"] == "abstract"
 
 
-def test_background_role_skips_quote_check(tmp_path):
+def test_background_role_verifies_real_quote(tmp_path):
   ws = _ws(tmp_path, {"p1": {"fulltext.md": _SOURCE}})
-  r = cc.check_entry(_entry(quote="", role="background"), ws)
+  r = cc.check_entry(_entry(role="background"), ws)
   assert r["status"] == "background"
+  assert r["matched"] == "exact"
+
+
+def test_background_role_does_not_skip_source_or_quote_failures(tmp_path):
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": _SOURCE}})
+  assert cc.check_entry(_entry(quote="", role="background"), ws)["status"] == (
+      "no_quote")
+  assert cc.check_entry(
+      _entry(paper_id="ghost", role="background"), ws)["status"] == (
+          "source_missing")
 
 
 def test_source_missing_hard_fails(tmp_path):
@@ -402,6 +478,29 @@ def test_coverage_flags_uncited_claimless_sentence():
 def test_coverage_matches_lightly_edited_claim():
   synthesis = "Thirty-day readmissions fell by 18% in the arm (Patel, 2022)."
   claims = [_entry(claim="Readmissions fell by 18% in the arm.")]
+  assert cc.coverage_gaps(synthesis, claims) == []
+
+
+def test_coverage_requires_claim_citation_to_match_sentence_source():
+  synthesis = ("Readmissions fell 18% in the treatment arm of the trial "
+               "(DifferentAuthor, 2024).")
+  assert cc.coverage_gaps(synthesis, [_entry()]) == [synthesis]
+
+
+def test_coverage_requires_trace_for_each_source_in_multi_citation():
+  synthesis = ("Readmissions fell 18% in the treatment arm of the trial "
+               "(Patel, 2022; Lee, 2021).")
+  assert cc.coverage_gaps(synthesis, [_entry()]) == [synthesis]
+  claims = [_entry(), _entry(citation="Lee, 2021")]
+  assert cc.coverage_gaps(synthesis, claims) == []
+
+
+def test_citation_identity_normalizes_ampersand_and_narrative_and():
+  synthesis = ("Smith and Jones (2020) found readmissions fell 18% in the "
+               "treatment arm of the trial.")
+  claims = [_entry(
+      claim="Readmissions fell 18% in the treatment arm of the trial.",
+      citation="Smith & Jones, 2020")]
   assert cc.coverage_gaps(synthesis, claims) == []
 
 
@@ -452,10 +551,50 @@ def test_coverage_narrative_year_only_needs_a_surname():
   assert cc.coverage_gaps(synthesis, [_entry()]) == []
 
 
+def test_coverage_detects_citation_with_page_locator():
+  synthesis = "A distinct unsupported finding appears here (Smith, 2020, p. 4)."
+  assert cc.coverage_gaps(synthesis, []) == [synthesis]
+
+
+@pytest.mark.parametrize("rendered, expected", [
+    ("[1, 2]", {"number:1", "number:2"}),
+    ("[1-3]", {"number:1", "number:2", "number:3"}),
+    ("[1\u20133]", {"number:1", "number:2", "number:3"}),
+])
+def test_grouped_numeric_citations_expand(rendered, expected):
+  assert cc.citation_keys(rendered) == expected
+  synthesis = f"An unsupported grouped finding appears in this sentence {rendered}."
+  assert cc.coverage_gaps(synthesis, []) == [synthesis]
+
+
+def test_grouped_numeric_citation_requires_every_source_trace():
+  synthesis = ("Readmissions fell 18% in the treatment arm of the trial "
+               "[1, 2].")
+  claims = [_entry(citation="[1]")]
+  assert cc.coverage_gaps(synthesis, claims) == [synthesis]
+  claims.append(_entry(citation="[2]"))
+  assert cc.coverage_gaps(synthesis, claims) == []
+
+
+def test_coverage_ignores_capitalized_non_citation_year_parenthetical():
+  synthesis = "The sample was assembled in stages (Data collected in 2020)."
+  assert cc.coverage_gaps(synthesis, []) == []
+
+
+def test_coverage_ignores_comma_year_prose_parenthetical():
+  synthesis = "Enrollment closed after the final wave (In the final sample, 2020)."
+  assert cc.coverage_gaps(synthesis, []) == []
+
+
 # --- main ---
 
-def _run_main(tmp_path, entries, synthesis=None):
+def _run_main(tmp_path, entries, synthesis=None, corpus=None, references=None):
   ws = _ws(tmp_path, {"p1": {"fulltext.md": _SOURCE}})
+  if corpus is None:
+    corpus = [{"key": "paper-one", "ids": {"pmcid": "p1"},
+               "title": "A Paper", "authors": ["Priya Patel"], "year": 2022,
+               "role": "evidence"}]
+  (ws / "corpus.json").write_text(json.dumps(corpus))
   claims_file = tmp_path / "claims.json"
   claims_file.write_text(json.dumps(entries))
   argv = ["--claims", str(claims_file), "--workspace", str(ws)]
@@ -463,6 +602,10 @@ def _run_main(tmp_path, entries, synthesis=None):
     syn = tmp_path / "synthesis.md"
     syn.write_text(synthesis)
     argv += ["--synthesis", str(syn)]
+  if references is not None:
+    refs = tmp_path / "refs.json"
+    refs.write_text(json.dumps(references))
+    argv += ["--references", str(refs)]
   return cc.main(argv)
 
 
@@ -482,6 +625,13 @@ def test_main_exit_one_on_fabrication(tmp_path, capsys):
   assert json.loads(capsys.readouterr().out)["fabricated_quote"] == 1
 
 
+def test_main_exit_one_on_needs_review(tmp_path, capsys):
+  code = _run_main(tmp_path, [_entry(
+      claim="Readmissions fell 23% in the treatment arm of the trial.")])
+  assert code == 1
+  assert json.loads(capsys.readouterr().out)["needs_review"] == 1
+
+
 def test_main_exit_one_on_uncovered_claim(tmp_path, capsys):
   code = _run_main(tmp_path, [_entry()],
                    synthesis="An uncovered cited finding here (Lee, 2021). "
@@ -491,6 +641,12 @@ def test_main_exit_one_on_uncovered_claim(tmp_path, capsys):
   assert code == 1
   assert out["uncovered_claim"] == 1
   assert out["coverage_checked"] is True
+
+
+@pytest.mark.parametrize("synthesis", ["", "No citations appear in this draft."])
+def test_main_rejects_empty_or_citation_free_synthesis(tmp_path, synthesis):
+  with pytest.raises(SystemExit, match="synthesis file"):
+    _run_main(tmp_path, [_entry()], synthesis=synthesis)
 
 
 def test_main_summary_flags_unresolved_source_quote_errors(tmp_path, capsys):
@@ -507,12 +663,76 @@ def test_main_rejects_malformed_claims(tmp_path):
     cc.main(["--claims", str(bad), "--workspace", str(ws)])
 
 
-def test_coverage_not_satisfied_by_background_claim():
+@pytest.mark.parametrize("entries", [
+    [],
+    [{"claim": "x"}],
+    [{"claim": 42, "paper_id": "p1", "citation": "Patel, 2022",
+      "supporting_quote": "a sufficiently long supporting quotation here"}],
+])
+def test_main_rejects_empty_or_incomplete_claims(tmp_path, entries):
+  with pytest.raises(SystemExit):
+    _run_main(tmp_path, entries)
+
+
+def test_main_rejects_author_year_that_does_not_match_paper(tmp_path):
+  with pytest.raises(SystemExit, match="does not match"):
+    _run_main(tmp_path, [_entry(citation="DifferentAuthor, 2024")])
+
+
+def test_main_rejects_legacy_corpus_without_authors(tmp_path):
+  corpus = [{"key": "paper-one", "ids": {"pmcid": "p1"},
+             "title": "A Paper", "year": 2022, "role": "evidence"}]
+  with pytest.raises(SystemExit, match="has no authors"):
+    _run_main(tmp_path, [_entry()], corpus=corpus)
+
+
+def test_main_binds_numeric_citation_through_ordered_references(tmp_path):
+  corpus = [
+      {"key": "paper-one", "ids": {"pmcid": "p1", "doi": "10.1/one"},
+       "title": "A Paper", "authors": ["Priya Patel"], "year": 2022,
+       "role": "evidence"},
+      {"key": "paper-two", "ids": {"pmcid": "p2", "doi": "10.1/two"},
+       "title": "Other Paper", "authors": ["Laura Lee"], "year": 2021,
+       "role": "evidence"},
+  ]
+  refs = [{"doi": "10.1/one", "title": "A Paper"},
+          {"doi": "10.1/two", "title": "Other Paper"}]
+  assert _run_main(tmp_path, [_entry(citation="[1]")],
+                   corpus=corpus, references=refs) == 0
+  with pytest.raises(SystemExit, match="numeric citation does not match"):
+    _run_main(tmp_path / "bad", [_entry(citation="[2]")],
+              corpus=corpus, references=refs)
+
+
+def test_main_requires_references_for_numeric_citation(tmp_path):
+  with pytest.raises(SystemExit, match="--references"):
+    _run_main(tmp_path, [_entry(citation="[1]")])
+
+
+def test_coverage_is_satisfied_by_verified_background_trace():
   synthesis = "The intervention cut readmissions by 18% in the arm (Patel, 2022)."
   claims = [{"claim": "The intervention cut readmissions by 18% in the arm.",
-             "paper_id": "p1", "supporting_quote": "", "role": "background"}]
+             "paper_id": "p1", "citation": "Patel, 2022",
+             "supporting_quote": "A real supporting passage long enough here",
+             "role": "background"}]
   gaps = cc.coverage_gaps(synthesis, claims)
-  assert len(gaps) == 1
+  assert gaps == []
+
+
+def test_main_rejects_role_that_disagrees_with_corpus(tmp_path):
+  with pytest.raises(SystemExit, match="role does not match"):
+    _run_main(tmp_path, [_entry(role="background")])
+
+
+def test_main_accepts_verified_background_trace(tmp_path, capsys):
+  corpus = [{"key": "paper-one", "ids": {"pmcid": "p1"},
+             "title": "A Paper", "authors": ["Priya Patel"], "year": 2022,
+             "role": "background"}]
+  synthesis = ("Readmissions fell 18% in the treatment arm of the trial "
+               "(Patel, 2022).")
+  assert _run_main(tmp_path, [_entry(role="background")], synthesis=synthesis,
+                   corpus=corpus) == 0
+  assert json.loads(capsys.readouterr().out)["background"] == 1
 
 
 def test_coverage_detects_parenthetical_year_suffix():
@@ -525,6 +745,32 @@ def test_coverage_detects_parenthetical_year_suffix():
 def test_title_quote_on_fulltext_is_needs_review(tmp_path):
   ft = ("# A Controlled Study of Structured Exercise for Hospital "
         "Readmission in Adults\n\nWe enrolled 814 patients in the trial.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": ft}})
+  r = cc.check_entry(_entry(
+      claim="Exercise affects hospital readmission outcomes broadly.",
+      quote="A Controlled Study of Structured Exercise for Hospital "
+            "Readmission in Adults"), ws)
+  assert r["quote_is_title"] is True
+  assert r["status"] == "needs_review"
+
+
+def test_bold_pdf_title_quote_is_needs_review(tmp_path):
+  ft = ("**A Controlled Study of Structured Exercise for Hospital "
+        "Readmission in Adults**\n\nWe enrolled 814 patients in the trial.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": ft}})
+  r = cc.check_entry(_entry(
+      claim="Exercise affects hospital readmission outcomes broadly.",
+      quote="A Controlled Study of Structured Exercise for Hospital "
+            "Readmission in Adults"), ws)
+  assert r["quote_is_title"] is True
+  assert r["status"] == "needs_review"
+
+
+def test_multiline_bold_pdf_title_after_frontmatter_is_needs_review(tmp_path):
+  ft = ("Downloaded from publisher.example\n\n"
+        "**A Controlled Study of Structured Exercise for\n"
+        "Hospital Readmission in Adults**\n\n"
+        "We enrolled 814 patients in the trial.")
   ws = _ws(tmp_path, {"p1": {"fulltext.md": ft}})
   r = cc.check_entry(_entry(
       claim="Exercise affects hospital readmission outcomes broadly.",
