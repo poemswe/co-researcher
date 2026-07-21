@@ -542,6 +542,18 @@ def test_unicode_narrative_author_citations(rendered, expected):
   assert cc.citation_keys(rendered) == {expected}
 
 
+def test_decomposed_unicode_narrative_citation_preserves_original_span():
+  rendered = "Garci\u0301a (2022)"
+  records = cc._citation_records(rendered)
+  assert [record["key"] for record in records] == ["author:garcía:2022"]
+  assert rendered[records[0]["start"]:records[0]["end"]] == rendered
+
+
+def test_capitalized_particle_narrative_author_citation():
+  assert cc.citation_keys("Van der Berg (2022)") == {
+      "author:van der berg:2022"}
+
+
 @pytest.mark.parametrize(("rendered", "expected"), [
     ("(García, 2022)", "author:garcía:2022"),
     ("(Иванов, 2022)", "author:иванов:2022"),
@@ -557,6 +569,16 @@ def test_unicode_parenthetical_author_citations(rendered, expected):
     ("Ludwig van der Berg", "van der Berg, 2022"),
 ])
 def test_compound_corpus_surname_binds(name, citation):
+  key = next(iter(cc.citation_keys(citation)))
+  assert cc._author_year_binding_matches(
+      key, {"authors": [name], "year": 2022})
+
+
+@pytest.mark.parametrize(("name", "citation"), [
+    ("Mei Li", "Li, 2022"),
+    ("Mei 王", "王, 2022"),
+])
+def test_short_corpus_surname_binds(name, citation):
   key = next(iter(cc.citation_keys(citation)))
   assert cc._author_year_binding_matches(
       key, {"authors": [name], "year": 2022})

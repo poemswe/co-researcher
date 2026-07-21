@@ -339,6 +339,17 @@ def _record_for_paper_id(records: list[dict], paper_id: str) -> dict | None:
 
 _NAME_PARTICLES = frozenset(
     "al da de del della der di dos du la le van von".split())
+_NAME_SUFFIXES = frozenset("jr sr ii iii iv v".split())
+
+
+def _is_name_suffix(part: str) -> bool:
+  key = _author_key(part).replace(" ", "")
+  if key in _NAME_SUFFIXES:
+    return True
+  letters = [char for char in unicodedata.normalize("NFKC", part)
+             if char.isalpha()]
+  return (len(letters) == 1
+          and (letters[0].isupper() or letters[0].islower()))
 
 
 def _name_aliases(name: str) -> set[str]:
@@ -351,7 +362,7 @@ def _name_aliases(name: str) -> set[str]:
   else:
     raw_parts = name.strip().split()
     end = len(raw_parts)
-    if end > 1 and len(_author_key(raw_parts[-1]).replace(" ", "")) <= 2:
+    if end > 1 and _is_name_suffix(raw_parts[-1]):
       end -= 1
     surname_parts = [raw_parts[end - 1]]
     cursor = end - 2
@@ -533,7 +544,7 @@ _LETTER = r"[^\W\d_]"
 _NAME_TOKEN = rf"{_LETTER}+(?:['’\-]{_LETTER}+)*"
 _NAME_TOKEN_RE = re.compile(_NAME_TOKEN, re.UNICODE)
 _SURNAME_TOKEN = _NAME_TOKEN
-_SURNAME = (r"(?:(?:van|von|de|del|der|la|le|dos|da)\s+){0,2}"
+_SURNAME = (r"(?:(?i:van|von|de|del|der|la|le|dos|da)\s+){0,2}"
             rf"{_SURNAME_TOKEN}")
 _NARRATIVE_RE = re.compile(
     rf"\b(?P<author>{_SURNAME}(?:\s+et\s+al\.?|"
@@ -576,6 +587,21 @@ def _valid_author_label(author: str) -> bool:
   return named > 0
 
 
+def _nfkc_shadow(text: str) -> tuple[str, list[tuple[int, int]]]:
+  """Normalize combining sequences while retaining their original spans."""
+  pieces = []
+  spans = []
+  start = 0
+  for end in range(1, len(text) + 1):
+    if end < len(text) and unicodedata.category(text[end]).startswith("M"):
+      continue
+    piece = unicodedata.normalize("NFKC", text[start:end])
+    pieces.append(piece)
+    spans.extend((start, end) for _ in piece)
+    start = end
+  return "".join(pieces), spans
+
+
 def _numeric_keys(body: str) -> list[str]:
   numbers = []
   for part in re.split(r"\s*,\s*", body):
@@ -608,13 +634,15 @@ def _citation_records(text: str) -> list[dict]:
                  f"{parsed.group('year').lower()}",
           "start": match.start(), "end": match.end(),
       })
-  for match in _NARRATIVE_RE.finditer(text):
+  narrative_text, narrative_spans = _nfkc_shadow(text)
+  for match in _NARRATIVE_RE.finditer(narrative_text):
     if not _valid_author_label(match.group("author")):
       continue
     records.append({
         "key": f"author:{_author_key(match.group('author'))}:"
                f"{match.group('year').lower()}",
-        "start": match.start(), "end": match.end(),
+        "start": narrative_spans[match.start()][0],
+        "end": narrative_spans[match.end() - 1][1],
     })
   for match in _NUMERIC_CITATION_RE.finditer(text):
     for key in _numeric_keys(match.group("body")):
