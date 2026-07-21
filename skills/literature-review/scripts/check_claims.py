@@ -747,10 +747,6 @@ def validate_entries(entries) -> None:
     for field in required:
       if not isinstance(entry.get(field), str) or not entry[field].strip():
         sys.exit(f"claims.json entry {index} requires non-empty {field!r}")
-    keys = citation_keys(entry["citation"])
-    if len(keys) != 1:
-      sys.exit(f"claims.json entry {index} citation must identify exactly "
-               "one author-year or numeric citation")
 
 
 def _invalid_binding(entry: dict, reason_code: str) -> dict:
@@ -770,6 +766,10 @@ def validate_citation_bindings(entries: list[dict], workspace,
   numeric = _numeric_reference_map(references, records)
   results = []
   for index, entry in enumerate(entries):
+    keys = citation_keys(entry["citation"])
+    if len(keys) != 1:
+      results.append(_invalid_binding(entry, "citation_unparseable"))
+      continue
     paper_matches = [record for record in records
                      if sanitize_id(entry["paper_id"]) in _record_ids(record)]
     if len(paper_matches) > 1:

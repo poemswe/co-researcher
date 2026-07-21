@@ -829,6 +829,13 @@ def test_main_rejects_author_year_that_does_not_match_paper(tmp_path):
   assert code == 1
 
 
+def test_main_reports_unparseable_citation_as_invalid_binding(tmp_path, capsys):
+  assert _run_main(tmp_path, [_entry(citation="not a citation")]) == 1
+  report = json.loads(capsys.readouterr().out)
+  assert report["invalid_binding"] == 1
+  assert report["results"][0]["reason_code"] == "citation_unparseable"
+
+
 def test_main_rejects_legacy_corpus_without_authors(tmp_path):
   corpus = [{"key": "paper-one", "ids": {"pmcid": "p1"},
              "title": "A Paper", "year": 2022, "role": "evidence"}]
