@@ -755,15 +755,14 @@ def test_main_rejects_empty_or_incomplete_claims(tmp_path, entries):
 
 
 def test_main_rejects_author_year_that_does_not_match_paper(tmp_path):
-  with pytest.raises(SystemExit, match="does not match"):
-    _run_main(tmp_path, [_entry(citation="DifferentAuthor, 2024")])
+  code = _run_main(tmp_path, [_entry(citation="DifferentAuthor, 2024")])
+  assert code == 1
 
 
 def test_main_rejects_legacy_corpus_without_authors(tmp_path):
   corpus = [{"key": "paper-one", "ids": {"pmcid": "p1"},
              "title": "A Paper", "year": 2022, "role": "evidence"}]
-  with pytest.raises(SystemExit, match="has no authors"):
-    _run_main(tmp_path, [_entry()], corpus=corpus)
+  assert _run_main(tmp_path, [_entry()], corpus=corpus) == 1
 
 
 def test_main_binds_numeric_citation_through_ordered_references(tmp_path):
@@ -779,14 +778,12 @@ def test_main_binds_numeric_citation_through_ordered_references(tmp_path):
           {"doi": "10.1/two", "title": "Other Paper"}]
   assert _run_main(tmp_path, [_entry(citation="[1]")],
                    corpus=corpus, references=refs) == 0
-  with pytest.raises(SystemExit, match="numeric citation does not match"):
-    _run_main(tmp_path / "bad", [_entry(citation="[2]")],
-              corpus=corpus, references=refs)
+  assert _run_main(tmp_path / "bad", [_entry(citation="[2]")],
+                   corpus=corpus, references=refs) == 1
 
 
 def test_main_requires_references_for_numeric_citation(tmp_path):
-  with pytest.raises(SystemExit, match="--references"):
-    _run_main(tmp_path, [_entry(citation="[1]")])
+  assert _run_main(tmp_path, [_entry(citation="[1]")]) == 1
 
 
 def test_coverage_is_satisfied_by_verified_background_trace():
@@ -800,8 +797,24 @@ def test_coverage_is_satisfied_by_verified_background_trace():
 
 
 def test_main_rejects_role_that_disagrees_with_corpus(tmp_path):
-  with pytest.raises(SystemExit, match="role does not match"):
-    _run_main(tmp_path, [_entry(role="background")])
+  assert _run_main(tmp_path, [_entry(role="background")]) == 1
+
+
+def test_formatted_reference_binds_by_embedded_title(tmp_path):
+  refs = ["Patel, P. (2022). A Paper. Journal of Evidence, 4(2), 1-9."]
+  assert _run_main(tmp_path, [_entry(citation="[1]")], references=refs) == 0
+
+
+def test_unmatched_doi_does_not_fall_back_to_title(tmp_path, capsys):
+  refs = [{"doi": "10.9/wrong", "title": "A Paper"}]
+  assert _run_main(tmp_path, [_entry(citation="[1]")], references=refs) == 1
+  assert json.loads(capsys.readouterr().out)["results"][0]["reason_code"] == "reference_not_found"
+
+
+def test_ambiguous_reference_title_is_invalid_binding(tmp_path, capsys):
+  corpus = [{"key": "one", "ids": {"pmcid": "p1"}, "title": "A Paper", "authors": ["Priya Patel"], "year": 2022, "role": "evidence"}, {"key": "two", "ids": {"pmcid": "p2"}, "title": "A Paper", "authors": ["Priya Patel"], "year": 2022, "role": "evidence"}]
+  assert _run_main(tmp_path, [_entry(citation="[1]")], corpus=corpus, references=["Patel (2022). A Paper."]) == 1
+  assert json.loads(capsys.readouterr().out)["results"][0]["reason_code"] == "reference_ambiguous"
 
 
 def test_main_accepts_verified_background_trace(tmp_path, capsys):

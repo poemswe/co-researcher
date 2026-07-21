@@ -332,8 +332,6 @@ def _corpus_records(workspace) -> list[dict]:
 def _record_for_paper_id(records: list[dict], paper_id: str) -> dict | None:
   matches = [record for record in records
              if sanitize_id(paper_id) in _record_ids(record)]
-  if len(matches) > 1:
-    sys.exit(f"paper_id {paper_id!r} matches multiple corpus records")
   return matches[0] if matches else None
 
 
@@ -389,7 +387,20 @@ def _normalize_bib_title(title: str) -> str:
   return re.sub(r"[^a-z0-9]+", "", title.lower())
 
 
-def _reference_record(item, records: list[dict]) -> dict | None:
+def _normalized_tokens(text: str) -> str:
+  folded = unicodedata.normalize("NFKC", text).casefold()
+  return " ".join("".join(char if char.isalnum() else " " for char in folded).split())
+
+
+def _unique_match(matches: list[dict]) -> tuple[dict | None, str | None]:
+  if not matches:
+    return None, "reference_not_found"
+  if len(matches) != 1:
+    return None, "reference_ambiguous"
+  return matches[0], None
+
+
+def _reference_record(item, records: list[dict]) -> tuple[dict | None, str | None]:
   doi = title = None
   if isinstance(item, dict):
     doi, title = item.get("doi"), item.get("title")
@@ -399,15 +410,15 @@ def _reference_record(item, records: list[dict]) -> dict | None:
     title = None if doi else item
   if doi:
     needle = doi.removeprefix("https://doi.org/").lower()
-    for record in records:
-      if (record.get("ids") or {}).get("doi", "").lower() == needle:
-        return record
+    return _unique_match([record for record in records
+      if (record.get("ids") or {}).get("doi", "").lower() == needle])
   if title:
-    needle = _normalize_bib_title(title)
-    for record in records:
-      if needle and _normalize_bib_title(record.get("title") or "") == needle:
-        return record
-  return None
+    reference = f" {_normalized_tokens(title)} "
+    matches = [record for record in records
+      if (needle := _normalized_tokens(record.get("title") or ""))
+      and f" {needle} " in reference]
+    return _unique_match(matches)
+  return None, "reference_not_found"
 
 
 def _numeric_reference_map(path: str | None,
@@ -419,10 +430,8 @@ def _numeric_reference_map(path: str | None,
     sys.exit("references JSON must be an ordered array")
   mapping = {}
   for index, item in enumerate(items, 1):
-    record = _reference_record(item, records)
-    if record is None:
-      sys.exit(f"reference {index} does not match a corpus record")
-    mapping[f"number:{index}"] = record
+    record, reason = _reference_record(item, records)
+    mapping[f"number:{index}"] = record if record is not None else {"_binding_error": reason}
   return mapping
 
 
@@ -555,7 +564,7 @@ _NUMERIC_CITATION_RE = re.compile(
 _ABSTRACT_TAG_RE = re.compile(r"\[abstract-only\]", re.IGNORECASE)
 
 _HARD_FAILS = ("needs_review", "source_missing", "no_quote", "quote_too_short",
-               "fabricated_quote", "uncovered_claim")
+               "fabricated_quote", "uncovered_claim", "invalid_binding")
 
 
 def _name_tokens(text: str) -> list[str]:
@@ -725,35 +734,52 @@ def validate_entries(entries) -> None:
                "one author-year or numeric citation")
 
 
+def _invalid_binding(entry: dict, reason_code: str) -> dict:
+  return {"claim": entry.get("claim"), "paper_id": entry.get("paper_id"),
+          "citation": entry.get("citation"),
+          "supporting_quote": entry.get("supporting_quote"),
+          "status": "invalid_binding", "reason_code": reason_code,
+          "source_scope": None, "quote_match_ratio": None,
+          "matched": None, "best_window": None, "quote_is_title": False,
+          "context_risks": [], "anchors": None}
+
+
 def validate_citation_bindings(entries: list[dict], workspace,
-                               references: str | None = None) -> None:
+                               references: str | None = None) -> list[dict | None]:
   """Bind every declared citation to trusted corpus/reference metadata."""
   records = _corpus_records(workspace)
   numeric = _numeric_reference_map(references, records)
+  results = []
   for index, entry in enumerate(entries):
+    paper_matches = [record for record in records
+                     if sanitize_id(entry["paper_id"]) in _record_ids(record)]
+    if len(paper_matches) > 1:
+      results.append(_invalid_binding(entry, "paper_ambiguous")); continue
     record = _record_for_paper_id(records, entry["paper_id"])
     if record is None:
       if load_source(workspace, entry["paper_id"]) is None:
-        continue  # check_entry reports the existing source_missing hard failure
-      sys.exit(f"claims.json entry {index} paper_id is absent from corpus.json")
+        results.append(None); continue
+      results.append(_invalid_binding(entry, "paper_not_in_corpus")); continue
     trusted_role = record.get("role")
     declared_role = entry.get("role", "evidence")
-    if trusted_role in ("evidence", "background") and declared_role != trusted_role:
-      sys.exit(f"claims.json entry {index} role does not match corpus.json")
+    if trusted_role not in ("evidence", "background"):
+      results.append(_invalid_binding(entry, "corpus_metadata_missing")); continue
+    if declared_role != trusted_role:
+      results.append(_invalid_binding(entry, "role_mismatch")); continue
     key = next(iter(citation_keys(entry["citation"])))
     if key.startswith("author:"):
       if not record.get("authors"):
-        sys.exit(f"corpus metadata for {entry['paper_id']!r} has no authors; "
-                 "re-run build_corpus.py on the saved search results")
+        results.append(_invalid_binding(entry, "corpus_metadata_missing")); continue
       if not _author_year_binding_matches(key, record):
-        sys.exit(f"claims.json entry {index} citation does not match its "
-                 "paper_id's corpus author/year")
-    elif key not in numeric:
-      sys.exit(f"claims.json entry {index} uses numeric citation {key[7:]}; "
-               "pass the ordered refs.json with --references")
+        results.append(_invalid_binding(entry, "citation_identity_mismatch")); continue
+    elif key not in numeric or numeric.get(key) is None:
+      results.append(_invalid_binding(entry, "reference_not_found")); continue
+    elif "_binding_error" in numeric[key]:
+      results.append(_invalid_binding(entry, numeric[key]["_binding_error"])); continue
     elif numeric[key].get("key") != record.get("key"):
-      sys.exit(f"claims.json entry {index} numeric citation does not match "
-               "its paper_id's corpus record")
+      results.append(_invalid_binding(entry, "citation_identity_mismatch")); continue
+    results.append(None)
+  return results
 
 
 def main(argv=None) -> int:
@@ -771,10 +797,11 @@ def main(argv=None) -> int:
   except (OSError, json.JSONDecodeError) as err:
     sys.exit(f"Cannot read claims file {args.claims}: {err}")
   validate_entries(entries)
-  validate_citation_bindings(entries, args.workspace, args.references)
+  bindings = validate_citation_bindings(entries, args.workspace, args.references)
 
   source_cache = {}
-  results = [check_entry(e, args.workspace, source_cache) for e in entries]
+  results = [binding if binding is not None else check_entry(e, args.workspace, source_cache)
+             for e, binding in zip(entries, bindings)]
 
   coverage_checked = args.synthesis is not None
   if coverage_checked:
@@ -799,7 +826,7 @@ def main(argv=None) -> int:
   counts = {s: tally[s] for s in
             ("verified", "needs_review", "background", "fabricated_quote",
              "uncovered_claim", "source_missing", "no_quote",
-             "quote_too_short")}
+             "quote_too_short", "invalid_binding")}
   abstract_verified = sum(1 for r in results if r["status"] == "verified"
                           and r["source_scope"] == "abstract")
   print(json.dumps({"total": len(results), **counts,
