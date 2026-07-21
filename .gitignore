@@ -25,3 +25,4 @@ evals/results/
 # to allow the dashboard to work out-of-the-box.
 .claude/
 .worktrees/
+.superpowers/
