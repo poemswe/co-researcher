@@ -619,6 +619,12 @@ def test_compound_corpus_surname_binds(name, citation):
       key, {"authors": [name], "year": 2022})
 
 
+def test_author_binding_rejects_unseparated_extra_surname_tokens():
+  key = next(iter(cc.citation_keys("Smith Jones, 2022")))
+  assert not cc._author_year_binding_matches(
+      key, {"authors": ["John Smith"], "year": 2022})
+
+
 @pytest.mark.parametrize(("name", "citation"), [
     ("Mei Li", "Li, 2022"),
     ("Mei 王", "王, 2022"),
@@ -801,8 +807,10 @@ def test_main_rejects_empty_or_citation_free_synthesis(tmp_path, synthesis):
 
 def test_main_summary_flags_unresolved_source_quote_errors(tmp_path, capsys):
   code = _run_main(tmp_path, [_entry(paper_id="ghost")])
+  out = json.loads(capsys.readouterr().out)
   assert code == 1
-  assert "unresolved source/quote" in capsys.readouterr().err
+  assert out["invalid_binding"] == 1
+  assert out["results"][0]["reason_code"] == "paper_not_in_corpus"
 
 
 def test_main_rejects_malformed_claims(tmp_path):
@@ -834,6 +842,13 @@ def test_main_reports_unparseable_citation_as_invalid_binding(tmp_path, capsys):
   report = json.loads(capsys.readouterr().out)
   assert report["invalid_binding"] == 1
   assert report["results"][0]["reason_code"] == "citation_unparseable"
+
+
+def test_main_rejects_source_not_in_corpus_as_invalid_binding(tmp_path, capsys):
+  assert _run_main(tmp_path, [_entry()], corpus=[]) == 1
+  report = json.loads(capsys.readouterr().out)
+  assert report["invalid_binding"] == 1
+  assert report["results"][0]["reason_code"] == "paper_not_in_corpus"
 
 
 def test_main_rejects_legacy_corpus_without_authors(tmp_path):

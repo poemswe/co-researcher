@@ -379,8 +379,15 @@ def _author_year_binding_matches(key: str, record: dict) -> bool:
   if not authors:
     return False
   aliases = _name_aliases(authors[0])
-  return any(author == alias or author.startswith(alias + " ")
-             for alias in aliases)
+  for alias in aliases:
+    if author == alias:
+      return True
+    if not author.startswith(alias + " "):
+      continue
+    suffix = author[len(alias):].strip()
+    if suffix == "et al" or suffix.startswith("and "):
+      return True
+  return False
 
 
 def _normalize_bib_title(title: str) -> str:
@@ -776,8 +783,6 @@ def validate_citation_bindings(entries: list[dict], workspace,
       results.append(_invalid_binding(entry, "paper_ambiguous")); continue
     record = _record_for_paper_id(records, entry["paper_id"])
     if record is None:
-      if load_source(workspace, entry["paper_id"]) is None:
-        results.append(None); continue
       results.append(_invalid_binding(entry, "paper_not_in_corpus")); continue
     trusted_role = record.get("role")
     declared_role = entry.get("role", "evidence")
