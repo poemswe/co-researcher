@@ -17,6 +17,20 @@ COMPOUND_SURNAMES = (
     ("Sánchez Vicario", "author:sánchez vicario:2022"),
     ("王 小明", "author:王 小明:2022"),
 )
+NARRATIVE_PROSE_PREFIXES = (
+    "As",
+    "See",
+    "Unlike",
+    "Both",
+    "But",
+    "While",
+    "When",
+    "Whereas",
+    "By",
+    "From",
+    "To",
+    "With",
+)
 
 
 def test_inventory_is_complete_ordered_and_unicode_aware():
@@ -154,6 +168,64 @@ def test_narrative_author_excludes_preceding_prose(synthesis, identity):
   units = enumerate_coverage_units(synthesis)
   assert [unit.citation_identity for unit in units] == [identity]
   assert synthesis[units[0].start:units[0].end] == units[0].sentence
+
+
+@pytest.mark.parametrize("prefix", NARRATIVE_PROSE_PREFIXES)
+def test_narrative_reserved_prose_prefix_retries_at_surname(prefix):
+  synthesis = f"{prefix} García (2022) reported stable results."
+  units = enumerate_coverage_units(synthesis)
+  assert [unit.citation_identity for unit in units] == [
+      "author:garcía:2022"
+  ]
+  assert synthesis[units[0].start:units[0].end] == units[0].sentence
+
+
+@pytest.mark.parametrize("prefix", ["According to", "Compared with"])
+def test_narrative_multiword_prose_prefix_retries_at_surname(prefix):
+  synthesis = f"{prefix} García (2022), results were stable."
+  units = enumerate_coverage_units(synthesis)
+  assert [unit.citation_identity for unit in units] == [
+      "author:garcía:2022"
+  ]
+
+
+@pytest.mark.parametrize("control", ["And", "Et"])
+def test_narrative_leading_group_control_retries_at_surname(control):
+  units = enumerate_coverage_units(
+      f"{control} Smith (2021) reported stable results."
+  )
+  assert [unit.citation_identity for unit in units] == [
+      "author:smith:2021"
+  ]
+
+
+def test_narrative_registered_al_particle_is_not_treated_as_prose():
+  units = enumerate_coverage_units(
+      "al Hassan (2021) reported stable results."
+  )
+  assert [unit.citation_identity for unit in units] == [
+      "author:al hassan:2021"
+  ]
+
+
+def test_chained_narrative_citations_do_not_include_connector():
+  synthesis = "García (2022) and Smith (2021) reported stable results."
+  units = enumerate_coverage_units(synthesis)
+  assert [unit.citation_identity for unit in units] == [
+      "author:garcía:2022",
+      "author:smith:2021",
+  ]
+  assert all(
+      synthesis[unit.start:unit.end] == unit.sentence
+      for unit in units
+  )
+
+
+def test_parenthetical_author_label_validation_is_unchanged_by_narrative_rule():
+  units = enumerate_coverage_units("Results changed (As García, 2022).")
+  assert [unit.citation_identity for unit in units] == [
+      "author:as garcía:2022"
+  ]
 
 
 @pytest.mark.parametrize(

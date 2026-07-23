@@ -32,6 +32,12 @@ _NAME_PARTICLES = frozenset(
     "al da de del della den der di dos du la le van von".split())
 _AUTHOR_CONTROL_WORDS = _NAME_PARTICLES | {"and", "et", "al"}
 _INTERNAL_NAME_PUNCTUATION = frozenset({"'", "’", "-"})
+# Frozen narrative-interface rule: a two-token candidate whose first token is
+# one of these group controls or common English prose prefixes retries at its
+# suffix. Parenthetical author labels do not use this reserved set.
+NARRATIVE_RESERVED_PREFIXES = frozenset(
+    "and as both but by et from see to unlike whereas when while with".split()
+)
 
 
 class CoverageEnumerationError(ValueError):
@@ -139,6 +145,13 @@ def _valid_author_label(author: str) -> bool:
   return named > 0
 
 
+def _valid_narrative_author_label(author: str) -> bool:
+  if not _valid_author_label(author):
+    return False
+  tokens = _name_tokens(author)
+  return bool(tokens) and tokens[0].casefold() not in NARRATIVE_RESERVED_PREFIXES
+
+
 def _nfkc_shadow(text: str) -> tuple[str, list[tuple[int, int]]]:
   pieces: list[str] = []
   spans: list[tuple[int, int]] = []
@@ -194,7 +207,7 @@ def _citation_keys(sentence: str) -> set[str]:
     original_author = sentence[
         spans[author_start][0]:spans[author_end - 1][1]
     ]
-    if _valid_author_label(original_author):
+    if _valid_narrative_author_label(original_author):
       keys.add(
           f"author:{_author_key(original_author)}:"
           f"{match.group('year').lower()}")
