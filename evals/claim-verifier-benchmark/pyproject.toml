@@ -7,6 +7,12 @@ dependencies = [
   "rfc8785==0.1.4",
 ]
 
+[project.scripts]
+claim-benchmark-core = "claim_verifier_benchmark.cli:main"
+
+[tool.uv]
+package = true
+
 [dependency-groups]
 dev = [
   "pytest==9.0.3",
