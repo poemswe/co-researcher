@@ -115,3 +115,11 @@ def test_missing_operational_input_returns_two_with_no_success_json(tmp_path, ca
   captured = capsys.readouterr()
   assert captured.out == ""
   assert captured.err.startswith("error: ")
+
+
+@pytest.mark.parametrize("arguments", [[], ["not-a-command"]])
+def test_argument_parse_errors_return_two_with_no_success_json(arguments, capsys):
+  assert main(arguments) == 2
+  captured = capsys.readouterr()
+  assert captured.out == ""
+  assert captured.err

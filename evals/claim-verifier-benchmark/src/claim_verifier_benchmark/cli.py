@@ -111,7 +111,10 @@ def _commit_mapping(path: pathlib.Path, salt_hex: str) -> dict:
 
 
 def main(argv: list[str] | None = None) -> int:
-  args = _parser().parse_args(argv)
+  try:
+    args = _parser().parse_args(argv)
+  except SystemExit as exc:
+    return exc.code if isinstance(exc.code, int) else 2
   try:
     if args.command == "check-split-vector":
       output = _check_split_vector(args.vector_json)
