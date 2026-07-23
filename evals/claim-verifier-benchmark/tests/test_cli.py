@@ -18,6 +18,40 @@ def test_enumerate_coverage_prints_machine_readable_json(tmp_path, capsys):
   assert output["units"][0]["citation_identity"] == "author:garcía:2022"
 
 
+@pytest.mark.parametrize(
+    ("synthesis_text", "expected_identities"),
+    [
+        (
+            "van den Berg (2021) reported change.",
+            ["author:van den berg:2021"],
+        ),
+        ("Results held (Smith ৴, 2022).", []),
+    ],
+)
+def test_enumerate_coverage_handles_international_and_malformed_authors(
+    tmp_path, capsys, synthesis_text, expected_identities,
+):
+  synthesis = tmp_path / "synthesis.md"
+  synthesis.write_text(synthesis_text, encoding="utf-8")
+  assert main(["enumerate-coverage", str(synthesis)]) == 0
+  output = json.loads(capsys.readouterr().out)
+  assert [
+      unit["citation_identity"] for unit in output["units"]
+  ] == expected_identities
+
+
+@pytest.mark.parametrize("citation", ["[4-3]", "[1-102]"])
+def test_enumerate_coverage_rejects_invalid_numeric_ranges_without_success_json(
+    tmp_path, capsys, citation,
+):
+  synthesis = tmp_path / "synthesis.md"
+  synthesis.write_text(f"Results cite {citation}.", encoding="utf-8")
+  assert main(["enumerate-coverage", str(synthesis)]) == 2
+  captured = capsys.readouterr()
+  assert captured.out == ""
+  assert captured.err.startswith("error: numeric citation range")
+
+
 def test_manifest_command_reports_digest(tmp_path, capsys):
   (tmp_path / "a.txt").write_text("alpha", encoding="utf-8")
   assert main(["manifest", str(tmp_path), "a.txt"]) == 0

@@ -37,3 +37,42 @@ def test_mapping_commitment_fails_closed_on_mapping_or_salt_change():
 def test_mapping_commitment_requires_32_byte_salt(salt):
     with pytest.raises(CommitmentError):
         mapping_commitment({}, salt)
+
+
+@pytest.mark.parametrize(
+    "malformed",
+    [
+        lambda expected: expected.upper(),
+        lambda expected: expected[:-1],
+        lambda expected: expected + "0",
+        lambda expected: "g" + expected[1:],
+        lambda expected: "０" + expected[1:],
+        lambda expected: expected.encode("ascii"),
+        lambda expected: None,
+        lambda expected: 0,
+    ],
+)
+def test_mapping_verification_requires_exact_lowercase_ascii_digest(malformed):
+    mapping = {"review_1": "case-1"}
+    salt = bytes(range(32))
+    expected = mapping_commitment(mapping, salt)
+    assert not verify_mapping_commitment(mapping, salt, malformed(expected))
+
+
+@pytest.mark.parametrize(
+    ("mapping", "salt"),
+    [
+        ({"review_1": object()}, bytes(range(32))),
+        (["not", "a", "mapping"], bytes(range(32))),
+        ({"review_1": "case-1"}, None),
+        ({"review_1": "case-1"}, "x" * 32),
+        ({"review_1": "case-1"}, bytearray(32)),
+    ],
+)
+def test_mapping_verification_returns_false_for_invalid_mapping_or_salt(
+    mapping, salt,
+):
+    expected = mapping_commitment(
+        {"review_1": "case-1"}, bytes(range(32))
+    )
+    assert not verify_mapping_commitment(mapping, salt, expected)

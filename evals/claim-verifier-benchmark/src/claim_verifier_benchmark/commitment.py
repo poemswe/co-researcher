@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from .canonical import canonical_bytes, sha256_hex
 
 _KIND_RE = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
+_COMMITMENT_RE = re.compile(r"^[0-9a-f]{64}$", re.ASCII)
 _MAPPING_PREFIX = b"review-mapping-v1\0"
 _ORDER_PREFIX = b"review-order-v1\0"
 
@@ -53,14 +54,18 @@ def review_order(values: Iterable[str], seed: bytes) -> tuple[str, ...]:
 
 
 def mapping_commitment(mapping: dict, salt: bytes) -> str:
-    if len(salt) != 32:
+    if type(mapping) is not dict:
+        raise CommitmentError("review mapping must be a dictionary")
+    if type(salt) is not bytes or len(salt) != 32:
         raise CommitmentError("mapping salt must contain exactly 32 bytes")
     return sha256_hex(_MAPPING_PREFIX + canonical_bytes(mapping) + salt)
 
 
 def verify_mapping_commitment(mapping: dict, salt: bytes, expected: str) -> bool:
+    if type(expected) is not str or _COMMITMENT_RE.fullmatch(expected) is None:
+        return False
     try:
         actual = mapping_commitment(mapping, salt)
-    except CommitmentError:
+    except Exception:
         return False
-    return hmac.compare_digest(actual, expected.lower())
+    return hmac.compare_digest(actual, expected)
