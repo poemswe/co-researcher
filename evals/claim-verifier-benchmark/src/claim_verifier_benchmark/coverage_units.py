@@ -18,7 +18,7 @@ _NAME_TOKEN_RE = re.compile(_NAME_TOKEN, re.UNICODE)
 _PARTICLE = r"(?i:al|da|de|del|della|den|der|di|dos|du|la|le|van|von)"
 _SURNAME = (
     rf"(?:{_PARTICLE}\s+){{0,3}}"
-    rf"{_NAME_TOKEN}"
+    rf"{_NAME_TOKEN}(?:\s+{_NAME_TOKEN})?"
 )
 _NARRATIVE_RE = re.compile(
     rf"\b(?P<author>{_SURNAME}(?:\s+et\s+al\.?|"
@@ -185,9 +185,11 @@ def _citation_keys(sentence: str) -> set[str]:
             f"author:{_author_key(parsed.group('author'))}:"
             f"{parsed.group('year').lower()}")
   shadow, spans = _nfkc_shadow(sentence)
-  for match in _NARRATIVE_RE.finditer(shadow):
+  narrative_start = 0
+  while match := _NARRATIVE_RE.search(shadow, narrative_start):
     author_start, author_end = match.span("author")
     if not spans or author_start == author_end:
+      narrative_start = match.end()
       continue
     original_author = sentence[
         spans[author_start][0]:spans[author_end - 1][1]
@@ -196,6 +198,9 @@ def _citation_keys(sentence: str) -> set[str]:
       keys.add(
           f"author:{_author_key(original_author)}:"
           f"{match.group('year').lower()}")
+      narrative_start = match.end()
+    else:
+      narrative_start = author_start + 1
   for match in _NUMERIC_RE.finditer(sentence):
     keys.update(_numeric_keys(match.group("body")))
   return keys
