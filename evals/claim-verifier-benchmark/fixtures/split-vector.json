@@ -1,0 +1,20 @@
+{
+  "output_value": "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F",
+  "construction_archive_sha256": "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+  "expected_split_key": "70b2cbdd3264a4de0a95985c09ba6a5bf8fe8366bcf0ca5babda2faf73aa82e0",
+  "domain": "medicine",
+  "paper_ids": [
+    "10.0000/alpha",
+    "10.0000/beta",
+    "10.0000/gamma",
+    "10.0000/delta",
+    "10.0000/epsilon"
+  ],
+  "expected_order": [
+    "10.0000/alpha",
+    "10.0000/delta",
+    "10.0000/gamma",
+    "10.0000/epsilon",
+    "10.0000/beta"
+  ]
+}
