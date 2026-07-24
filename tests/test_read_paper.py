@@ -13,6 +13,7 @@ import pathlib
 import sys
 import urllib.parse
 
+import pymupdf
 import pytest
 
 _SCRIPTS = (pathlib.Path(__file__).resolve().parent.parent
@@ -89,6 +90,24 @@ def test_user_pdf_is_extracted(tmp_path, capsys, monkeypatch):
   assert out["status"] == "fulltext"
   assert out["source"] == "user_pdf"
   assert (d / "fulltext.md").read_text(encoding="utf-8") == "# extracted"
+
+
+def test_extract_pdf_runs_real_pymupdf_pipeline(tmp_path):
+  pdf = tmp_path / "fixture.pdf"
+  document = pymupdf.open()
+  page = document.new_page()
+  page.insert_text((72, 72), "A Genuine PDF Fixture", fontsize=16)
+  page.insert_text(
+      (72, 104),
+      "The intervention did not reduce readmissions by 18 percent.",
+      fontsize=11)
+  document.save(pdf)
+  document.close()
+
+  markdown = read_paper.extract_pdf(pdf)
+
+  assert "A Genuine PDF Fixture" in markdown
+  assert "did not reduce readmissions by 18 percent" in markdown
 
 
 def test_corrupt_user_pdf_falls_through(tmp_path, capsys, monkeypatch):

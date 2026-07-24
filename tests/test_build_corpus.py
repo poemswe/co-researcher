@@ -40,12 +40,14 @@ def test_load_openalex_shapes_records(tmp_path):
   path = _write(tmp_path, "oa.json", {"results": [
       {"id": "https://openalex.org/W1",
        "doi": "https://doi.org/10.1/x",
-       "title": "A Paper", "publication_year": 2024, "cited_by_count": 7}]})
+       "title": "A Paper", "publication_year": 2024, "cited_by_count": 7,
+       "authorships": [{"author": {"display_name": "Alice Smith"}}]}]})
   recs = bc.load_openalex(path)
   assert len(recs) == 1
   r = recs[0]
   assert r["key"] == "10.1/x"
   assert r["title"] == "A Paper"
+  assert r["authors"] == ["Alice Smith"]
   assert r["year"] == 2024
   assert r["cited_by"] == 7
   assert r["found_via"] == "openalex"
@@ -57,11 +59,13 @@ def test_load_openalex_shapes_records(tmp_path):
 def test_load_arxiv_shapes_records(tmp_path):
   path = _write(tmp_path, "ax.json", {"papers": [
       {"id": "1706.03762v1", "title": "Attention Is All You Need",
-       "published": "2017-06-12T00:00:00Z"}]})
+       "published": "2017-06-12T00:00:00Z",
+       "authors": ["Ashish Vaswani", "Noam Shazeer"]}]})
   recs = bc.load_arxiv(path)
   r = recs[0]
   assert r["key"] == "attentionisallyouneed"
   assert r["year"] == 2017
+  assert r["authors"] == ["Ashish Vaswani", "Noam Shazeer"]
   assert r["found_via"] == "arxiv"
   assert r["ids"]["arxiv"] == "1706.03762v1"
 
@@ -69,13 +73,22 @@ def test_load_arxiv_shapes_records(tmp_path):
 def test_load_epmc_shapes_records(tmp_path):
   path = _write(tmp_path, "ep.json", {"results": [
       {"doi": "10.2/y", "title": "Bio Paper", "pubYear": "2021",
-       "pmid": "123", "pmcid": "PMC9", "citedByCount": 4}]})
+       "pmid": "123", "pmcid": "PMC9", "citedByCount": 4,
+       "authorList": {"author": [{"fullName": "Jane Doe"}]}}]})
   r = bc.load_epmc(path)[0]
   assert r["key"] == "10.2/y"
   assert r["year"] == 2021
   assert r["cited_by"] == 4
+  assert r["authors"] == ["Jane Doe"]
   assert r["ids"]["pmcid"] == "PMC9"
   assert r["found_via"] == "epmc"
+
+
+def test_load_epmc_falls_back_to_author_string(tmp_path):
+  path = _write(tmp_path, "ep.json", {"results": [
+      {"doi": "10.2/y", "title": "Bio Paper", "pubYear": "2021",
+       "authorString": "Jane Doe; John Roe"}]})
+  assert bc.load_epmc(path)[0]["authors"] == ["Jane Doe", "John Roe"]
 
 
 def test_merge_dedupes_and_joins_found_via():
@@ -110,6 +123,17 @@ def test_merge_preserves_existing_screening_and_fulltext():
   assert r["fulltext"] == "fulltext"
   assert r["role"] == "evidence"
   assert r["cited_by"] == 9
+
+
+def test_merge_backfills_authors_into_legacy_record():
+  existing = [{"key": "10.1/x", "ids": {"doi": "10.1/x"}, "title": "T",
+               "year": 2024, "cited_by": 5, "found_via": "openalex",
+               "screening": {"status": "included", "stage": "title_abstract",
+                             "reason": None},
+               "fulltext": "fulltext", "role": "evidence"}]
+  fresh = [{**existing[0], "authors": ["Alice Smith"],
+            "screening": {"status": None, "stage": None, "reason": None}}]
+  assert bc.merge(existing + fresh)[0]["authors"] == ["Alice Smith"]
 
 
 def test_main_writes_corpus_and_reports(tmp_path, capsys):

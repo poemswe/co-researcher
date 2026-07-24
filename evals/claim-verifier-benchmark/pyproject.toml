@@ -1,0 +1,23 @@
+[project]
+name = "claim-verifier-benchmark"
+version = "1.0.0"
+description = "Deterministic protocol tooling for the claim-verifier benchmark"
+requires-python = ">=3.11"
+dependencies = [
+  "rfc8785==0.1.4",
+]
+
+[project.scripts]
+claim-benchmark-core = "claim_verifier_benchmark.cli:main"
+
+[tool.uv]
+package = true
+
+[dependency-groups]
+dev = [
+  "pytest==9.0.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

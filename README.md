@@ -162,9 +162,10 @@ The `literature-review` skill ships CLI backends (`skills/literature-review/scri
 | `search_arxiv.py` | Preprint search (CS, physics, math, quant-bio) |
 | `europepmc_api.py` | Life-science full text + forward/backward citation chaining |
 | `read_paper.py` | Any DOI/arXiv ID/PMCID → markdown full text via legal open-access routes; warns on retracted papers |
-| `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; re-runs preserve screening decisions |
+| `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; retains trusted author metadata and preserves screening decisions on re-runs |
 | `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) against OpenAlex, Europe PMC, and Crossref/Retraction Watch; reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
 | `prisma_counts.py` | PRISMA 2020 flow counts computed from the review workspace's `corpus.json` |
+| `check_claims.py` | Claim-to-source gate — verifies evidence/background quotes and binds author-year or ordered numeric citations to trusted corpus records; catches invented evidence, wrong-source attribution, and omissions |
 
 One-time setup: `bash scripts/setup.sh` (installs `uv`, optionally stores an OpenAlex API key).
 
