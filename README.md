@@ -162,11 +162,34 @@ The `literature-review` skill ships CLI backends (`skills/literature-review/scri
 | `search_arxiv.py` | Preprint search (CS, physics, math, quant-bio) |
 | `europepmc_api.py` | Life-science full text + forward/backward citation chaining |
 | `read_paper.py` | Any DOI/arXiv ID/PMCID → markdown full text via legal open-access routes; warns on retracted papers |
-| `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; re-runs preserve screening decisions |
+| `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; retains trusted author metadata and preserves screening decisions on re-runs |
 | `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) against OpenAlex, Europe PMC, and Crossref/Retraction Watch; reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
 | `prisma_counts.py` | PRISMA 2020 flow counts computed from the review workspace's `corpus.json` |
+| `check_claims.py` | Claim-to-source gate — verifies evidence/background quotes and binds author-year or ordered numeric citations to trusted corpus records; catches invented evidence, wrong-source attribution, and omissions |
 
 One-time setup: `bash scripts/setup.sh` (installs `uv`, optionally stores an OpenAlex API key).
+
+## Research Smoke Tests
+
+Run the deterministic smoke locally or in CI:
+
+```bash
+uv run pytest tests/test_research_smoke.py
+```
+
+It uses fixture data only, runs offline, and exercises claim verification,
+PRISMA counting, and the resumable research scaffold contract. It is separate
+from the scored evaluation suite.
+
+The real Codex integration smoke is opt-in and requires an authenticated Codex
+CLI. It performs no live literature retrieval:
+
+```bash
+CO_RESEARCHER_CODEX_SMOKE=1 uv run scripts/codex_smoke_research.py
+```
+
+Use `--keep-workdir` to retain its temporary project for debugging. The Codex
+smoke is slower and environment-dependent; it does not replace scored evals.
 
 ## Evaluation Framework
 

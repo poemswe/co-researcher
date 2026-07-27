@@ -1,0 +1,35 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install test dependencies
+        run: python -m pip install pytest pymupdf4llm python-dotenv
+
+      - name: Run unit tests
+        run: python -m pytest -q tests
+
+      - name: Run claim-verification evaluations
+        run: python -m pytest -q tests/eval_check_claims.py
+
+      - name: Run claim-verifier benchmark protocol-core tests
+        run: |
+          python -m pip install uv==0.10.9
+          uv sync --project evals/claim-verifier-benchmark --locked
+          uv run --project evals/claim-verifier-benchmark pytest \
+            evals/claim-verifier-benchmark/tests -q
+          uv run --project evals/claim-verifier-benchmark \
+            claim-benchmark-core check-split-vector \
+            evals/claim-verifier-benchmark/fixtures/split-vector.json

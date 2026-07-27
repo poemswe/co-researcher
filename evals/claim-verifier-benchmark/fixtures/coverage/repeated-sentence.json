@@ -1,0 +1,7 @@
+{
+  "synthesis": "Admissions fell (García, 2022). Admissions fell (García, 2022).",
+  "units": [
+    {"unit_id": "coverage:0:0", "sentence_ordinal": 0, "start": 0, "end": 31, "sentence": "Admissions fell (García, 2022).", "citation_identity": "author:garcía:2022", "occurrence_ordinal": 1},
+    {"unit_id": "coverage:1:0", "sentence_ordinal": 1, "start": 32, "end": 63, "sentence": "Admissions fell (García, 2022).", "citation_identity": "author:garcía:2022", "occurrence_ordinal": 2}
+  ]
+}
