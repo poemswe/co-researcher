@@ -667,6 +667,61 @@ def test_witness_registration_failure_closes_every_descriptor_once(
   assert len(opened) == len(closed)
 
 
+@pytest.mark.parametrize("failure_call", [1, 2])
+def test_registration_cleanup_is_allocation_free_and_preserves_original_abort(
+    tmp_path, monkeypatch, failure_call,
+):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001",))
+  real_open = os.open
+  real_close = os.close
+  real_close_helper = committed_manifest_audit._close
+  opened = []
+  closed = []
+  registrations = 0
+
+  def recording_open(path, flags, mode=0o777, *, dir_fd=None):
+    descriptor = real_open(path, flags, mode, dir_fd=dir_fd)
+    opened.append(descriptor)
+    return descriptor
+
+  def recording_close(descriptor):
+    closed.append(descriptor)
+    return real_close(descriptor)
+
+  def append_then_abort(collection, witness):
+    nonlocal registrations
+    registrations += 1
+    if registrations == failure_call:
+      collection.append(witness)
+      raise MemoryError("original registration allocation failure")
+    collection.append(witness)
+
+  def allocation_sensitive_close(descriptors, context):
+    if context.startswith("unregistered") and isinstance(descriptors, list):
+      raise MemoryError("nested cleanup allocation failure")
+    result = real_close_helper(descriptors, context)
+    if context.startswith("unregistered"):
+      raise RuntimeError("synthetic post-close cleanup failure")
+    return result
+
+  monkeypatch.setattr(os, "open", recording_open)
+  monkeypatch.setattr(os, "close", recording_close)
+  monkeypatch.setattr(
+      committed_manifest_audit, "_append_witness", append_then_abort)
+  monkeypatch.setattr(
+      committed_manifest_audit, "_close", allocation_sensitive_close)
+
+  with pytest.raises(ManifestAuditError) as raised:
+    audit_committed_manifests(case_root)
+
+  assert isinstance(raised.value.__cause__, MemoryError)
+  assert str(raised.value.__cause__) == (
+      "original registration allocation failure")
+  assert sorted(opened) == sorted(closed)
+  assert len(opened) == len(closed)
+
+
 def test_successful_audit_closes_every_descriptor_once(tmp_path, monkeypatch):
   case_root = tmp_path / "runtime-supplied"
   _write_case_set(case_root, ("case-001", "case-002"))

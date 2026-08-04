@@ -9,6 +9,7 @@ import pathlib
 import re
 import stat
 import unicodedata
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 
@@ -98,7 +99,7 @@ def _open_root_directory(
     raise ManifestAuditError("cannot securely open manifest root") from exc
 
 
-def _close(descriptors: list[int], context: str) -> None:
+def _close(descriptors: Sequence[int], context: str) -> None:
   error = None
   for descriptor in reversed(descriptors):
     try:
@@ -328,7 +329,11 @@ def _register_witness(
     _append_witness(witnesses, witness)
   except BaseException:
     del witnesses[original_length:]
-    _close(list(witness.descriptors), f"unregistered {witness.context}")
+    try:
+      _close(witness.descriptors, f"unregistered {witness.context}")
+    except BaseException:
+      # Cleanup is best-effort under an active abort; preserve its identity.
+      pass
     raise
 
 
