@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "literature-review-integrity",
+  "case_id": "synthetic-valid",
+  "prompt": "Create a complete literature-review workspace that synthesizes evidence about whether structured reading logs improve undergraduate source evaluation. Use only clearly synthetic example studies and mark them as synthetic.",
+  "domain": "undergraduate information literacy",
+  "fixture_paths": [],
+  "quality_rubric_id": "literature-review-v1"
+}
+

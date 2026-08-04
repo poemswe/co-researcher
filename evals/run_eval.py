@@ -20,6 +20,7 @@ EVALS_DIR = Path(__file__).parent
 TEST_CASES_DIR = EVALS_DIR / "test-cases"
 RESULTS_DIR = EVALS_DIR / "results"
 PRINT_LOCK = threading.Lock()
+INTEGRITY_CAPABILITY = "literature-review-integrity"
 
 
 def run_test(agent: str, test: str, model: str, verbose: bool = False):
@@ -119,12 +120,47 @@ def list_tests():
     for agent_dir in sorted(TEST_CASES_DIR.iterdir()):
         if not agent_dir.is_dir() or agent_dir.name.startswith("."):
             continue
-        tests = [f.stem.replace("test-", "") for f in sorted(agent_dir.glob("test-*.md"))]
+        if agent_dir.name == INTEGRITY_CAPABILITY:
+            tests = [
+                path.name for path in sorted(agent_dir.iterdir())
+                if path.is_dir() and (path / "case.json").is_file()
+            ]
+        else:
+            tests = [f.stem.replace("test-", "") for f in sorted(agent_dir.glob("test-*.md"))]
         if tests:
             print(f"  {agent_dir.name}")
             for test in tests:
                 print(f"    - {test}")
             print()
+
+
+def run_literature_integrity(model: str):
+    from lib.literature_integrity import (
+        LiteratureIntegrityRunner,
+        ProductionModelExecutor,
+        ProductionQualityJudge,
+        load_cases,
+    )
+
+    cases = load_cases(TEST_CASES_DIR / INTEGRITY_CAPABILITY)
+    timestamp = datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S_%f")
+    run_directory = RESULTS_DIR / INTEGRITY_CAPABILITY / timestamp
+    runner = LiteratureIntegrityRunner(
+        ProductionModelExecutor(model, EVALS_DIR.parent),
+        ProductionQualityJudge(model),
+    )
+    results = runner.run_cases(cases, run_directory)
+    for case, result in zip(cases, results):
+        final = result.system_final
+        quality = final.quality.quality_score
+        quality_text = "ERROR" if quality is None else f"{quality:.1f}"
+        print(
+            f"{case.case_id}: integrity={final.integrity.integrity_score:.1f} "
+            f"status={final.integrity.status.value} quality={quality_text} "
+            f"repairs={len(result.repair_rounds)}"
+        )
+    print(f"Run artifacts: {run_directory}")
+    return results
 
 
 def generate_run_id() -> str:
@@ -293,7 +329,10 @@ def save_benchmark_v2(reports, model: str, run_id: str):
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("args", nargs="*", help="[list|all|agent|agent test]")
+    parser.add_argument(
+        "args", nargs="*",
+        help="[list|all|literature-review-integrity|agent|agent test]",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("-m", "--model", default="claude", help="Model (default: claude)")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Parallel jobs (default: 1)")
@@ -327,6 +366,8 @@ def main():
     
     if command == "list":
         list_tests()
+    elif command == INTEGRITY_CAPABILITY:
+        run_literature_integrity(args.model)
     elif command == "all":
         run_id = generate_run_id()
         reports = run_all_tests(args.model, args.verbose, args.jobs)

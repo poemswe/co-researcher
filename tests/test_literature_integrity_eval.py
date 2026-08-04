@@ -1,0 +1,282 @@
+import json
+import pathlib
+import subprocess
+import sys
+
+import pytest
+
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "evals"))
+
+from lib.literature_integrity import (  # noqa: E402
+    CaseDefinition,
+    IntegrityEvalResult,
+    LiteratureIntegrityRunner,
+    ModelUsage,
+    QualityResult,
+    load_cases,
+)
+
+
+def _write_workspace(workspace: pathlib.Path, state: int) -> None:
+  """Write deterministic passes that improve twice but stay invalid."""
+  payloads = {
+      "protocol.md": "" if state == 0 else "# Synthetic protocol\n",
+      "corpus.json": [],
+      "claims.json": [],
+      "synthesis.md": "" if state < 2 else f"final synthesis {state}\n",
+      "refs.json": [],
+      "project.json": {"project": "synthetic-eval"},
+  }
+  for relative_path, payload in payloads.items():
+    destination = workspace / relative_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(payload, str):
+      destination.write_text(payload, encoding="utf-8")
+    else:
+      destination.write_text(json.dumps(payload), encoding="utf-8")
+
+
+class FakeExecutor:
+  def __init__(self):
+    self.workspaces = []
+    self.initial_contents = []
+    self.feedback = []
+    self.state_by_workspace = {}
+
+  @staticmethod
+  def _usage(*, cost: float) -> ModelUsage:
+    return ModelUsage(
+        duration_seconds=0.25,
+        input_tokens=10,
+        output_tokens=20,
+        estimated_cost_usd=cost,
+        executor_version="fake-1",
+        prompt_version="fake-prompt-1",
+        prompt_sha256="a" * 64,
+    )
+
+  def first_pass(self, case, workspace):
+    self.workspaces.append(workspace)
+    self.initial_contents.append(tuple(workspace.iterdir()))
+    self.state_by_workspace[workspace] = 0
+    _write_workspace(workspace, 0)
+    return self._usage(cost=0.4)
+
+  def repair(self, feedback, workspace):
+    self.feedback.append(feedback)
+    assert set(feedback) == {
+        "reason_codes", "affected_artifacts", "findings"}
+    state = self.state_by_workspace[workspace] + 1
+    self.state_by_workspace[workspace] = state
+    _write_workspace(workspace, state)
+    return self._usage(cost=0.1)
+
+
+class RecordingJudge:
+  def __init__(self, *, fail_on=None):
+    self.syntheses = []
+    self.fail_on = fail_on
+
+  def score(self, case, synthesis):
+    self.syntheses.append(synthesis)
+    if synthesis == self.fail_on:
+      raise RuntimeError("synthetic judge failure")
+    score = 11.0 if not synthesis else 89.0
+    return QualityResult(
+        quality_score=score,
+        scores={
+            "research-quality": score,
+            "analytical-quality": score,
+            "output-structure": score,
+        },
+        error=None,
+    )
+
+
+def _case(tmp_path, case_id="synthetic-case", expected_status="invalid"):
+  case_dir = tmp_path / "cases" / case_id
+  case_dir.mkdir(parents=True)
+  fixture = case_dir / "fixture.txt"
+  fixture.write_text("synthetic public input\n", encoding="utf-8")
+  (case_dir / "case.json").write_text(json.dumps({
+      "schema_version": "1.0.0",
+      "capability": "literature-review-integrity",
+      "case_id": case_id,
+      "prompt": "Create a synthetic review workspace.",
+      "domain": "testing",
+      "fixture_paths": ["fixture.txt"],
+      "quality_rubric_id": "literature-review-v1",
+  }), encoding="utf-8")
+  (case_dir / "expected.json").write_text(json.dumps({
+      "schema_version": "1.0.0",
+      "final_status": expected_status,
+      "minimum_repair_rounds": 0,
+      "maximum_repair_rounds": 3,
+  }), encoding="utf-8")
+  return load_cases(case_dir.parent)[0]
+
+
+def _runner(tmp_path, executor=None, judge=None):
+  return LiteratureIntegrityRunner(
+      executor or FakeExecutor(), judge or RecordingJudge(),
+      workspace_parent=tmp_path / "workspaces")
+
+
+def test_integrity_mode_is_listed_by_cli():
+  result = subprocess.run(
+      [sys.executable, str(ROOT / "evals/run_eval.py"), "list"],
+      check=False, capture_output=True, text=True, timeout=10)
+
+  assert result.returncode == 0
+  assert "literature-review-integrity" in result.stdout
+  help_result = subprocess.run(
+      [sys.executable, str(ROOT / "evals/run_eval.py"), "--help"],
+      check=False, capture_output=True, text=True, timeout=10)
+  assert "literature-review-integrity" in help_result.stdout
+
+
+def test_eval_uses_isolated_workspace_per_case(tmp_path):
+  executor = FakeExecutor()
+  runner = _runner(tmp_path, executor=executor)
+
+  runner.run_case(_case(tmp_path, "one"))
+  runner.run_case(_case(tmp_path, "two"))
+
+  assert len(set(executor.workspaces)) == 2
+  assert executor.initial_contents == [(), ()]
+  assert all("cases" not in workspace.parts for workspace in executor.workspaces)
+
+
+def test_first_pass_is_immutable_after_repairs(tmp_path):
+  executor = FakeExecutor()
+  judge = RecordingJudge()
+
+  result = _runner(tmp_path, executor, judge).run_case(_case(tmp_path))
+
+  assert result.model_first_pass.quality.quality_score == 11.0
+  assert result.model_first_pass.integrity.manifest_sha256 == (
+      result.model_first_pass.workspace_manifest_sha256)
+  assert result.system_final.workspace_manifest_sha256 != (
+      result.model_first_pass.workspace_manifest_sha256)
+  assert result.model_first_pass.integrity.to_dict() == (
+      result.repair_rounds[0].previous_integrity.to_dict())
+  with pytest.raises(TypeError):
+    result.model_first_pass.quality.scores["research-quality"] = 100.0
+
+
+def test_quality_judge_receives_first_and_final_synthesis_from_matching_snapshots(
+    tmp_path,
+):
+  judge = RecordingJudge()
+
+  result = _runner(tmp_path, judge=judge).run_case(_case(tmp_path))
+
+  assert judge.syntheses == ["", "final synthesis 3\n"]
+  assert result.model_first_pass.quality.quality_score == 11.0
+  assert result.system_final.quality.quality_score == 89.0
+  assert result.system_final.workspace_manifest_sha256 == (
+      result.system_final.integrity.manifest_sha256)
+
+
+def test_eval_stops_after_three_repairs(tmp_path):
+  executor = FakeExecutor()
+
+  result = _runner(tmp_path, executor=executor).run_case(_case(tmp_path))
+
+  assert len(result.repair_rounds) == 3
+  assert len(executor.feedback) == 3
+  assert result.repair_rounds[-1].action == "stop_invalid"
+  assert result.repair_cost.rounds == 3
+  assert result.repair_cost.estimated_cost_usd == pytest.approx(0.3)
+
+
+def test_eval_marks_unresolved_critical_case_invalid(tmp_path):
+  result = _runner(tmp_path).run_case(_case(tmp_path))
+
+  assert result.system_final.integrity.status.value == "invalid"
+  assert result.robustness.observed_final_status == "invalid"
+  assert result.robustness.expectation_met is True
+
+
+def test_quality_and_integrity_scores_are_not_blended(tmp_path):
+  result = _runner(tmp_path).run_case(_case(tmp_path))
+  serialized = result.to_dict()
+
+  assert serialized["model_first_pass"]["quality"]["quality_score"] == 11.0
+  assert serialized["model_first_pass"]["integrity"]["integrity_score"] != 11.0
+  assert "overall_score" not in serialized
+  assert set(serialized) == {
+      "schema_version", "model_first_pass", "repair_rounds",
+      "system_final", "repair_cost", "robustness",
+  }
+
+
+def test_eval_result_round_trips_with_a_closed_schema(tmp_path):
+  result = _runner(tmp_path).run_case(_case(tmp_path))
+
+  assert IntegrityEvalResult.from_dict(result.to_dict()) == result
+  with pytest.raises(ValueError, match="unknown fields"):
+    IntegrityEvalResult.from_dict({**result.to_dict(), "overall_score": 50})
+
+
+def test_eval_result_rejects_rewritten_first_pass_chain(tmp_path):
+  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  serialized["repair_rounds"][0]["previous_integrity"] = (
+      serialized["system_final"]["integrity"])
+
+  with pytest.raises(ValueError, match="previous integrity"):
+    IntegrityEvalResult.from_dict(serialized)
+
+
+def test_eval_result_rejects_repair_cost_that_does_not_match_usage(tmp_path):
+  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  serialized["repair_cost"]["estimated_cost_usd"] = 99.0
+
+  with pytest.raises(ValueError, match="repair_cost"):
+    IntegrityEvalResult.from_dict(serialized)
+
+
+def test_quality_failure_is_explicit_and_does_not_change_integrity(tmp_path):
+  judge = RecordingJudge(fail_on="final synthesis 3\n")
+
+  result = _runner(tmp_path, judge=judge).run_case(_case(tmp_path))
+
+  assert result.system_final.quality.quality_score is None
+  assert result.system_final.quality.error == "synthetic judge failure"
+  assert result.system_final.integrity.status.value == "invalid"
+  with pytest.raises(TypeError):
+    result.system_final.quality.scores["research-quality"] = 0.0
+
+
+def test_case_loader_rejects_unknown_or_secret_fields(tmp_path):
+  case_dir = tmp_path / "bad"
+  case_dir.mkdir()
+  payload = {
+      "schema_version": "1.0.0",
+      "capability": "literature-review-integrity",
+      "case_id": "bad",
+      "prompt": "prompt",
+      "domain": "testing",
+      "fixture_paths": [],
+      "quality_rubric_id": "literature-review-v1",
+      "answer_key": "must not be accepted",
+  }
+  (case_dir / "case.json").write_text(json.dumps(payload), encoding="utf-8")
+
+  with pytest.raises(ValueError, match="unknown fields"):
+    load_cases(tmp_path)
+
+
+def test_case_sidecars_never_enter_workspace_or_quality_input(tmp_path):
+  executor = FakeExecutor()
+  judge = RecordingJudge()
+  case = _case(tmp_path)
+
+  _runner(tmp_path, executor, judge).run_case(case)
+
+  assert executor.initial_contents == [()]
+  assert all("expected" not in synthesis for synthesis in judge.syntheses)
+  assert all("final_status" not in json.dumps(item)
+             for item in executor.feedback)
