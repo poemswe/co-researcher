@@ -141,16 +141,25 @@ def run_literature_integrity(model: str):
         ProductionQualityJudge,
         load_cases,
     )
+    from lib.run_reports import CombinedRunResult, write_run_report
 
     cases = load_cases(TEST_CASES_DIR / INTEGRITY_CAPABILITY)
-    timestamp = datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S_%f")
-    run_directory = RESULTS_DIR / INTEGRITY_CAPABILITY / timestamp
+    run_id = generate_run_id()
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     runner = LiteratureIntegrityRunner(
         ProductionModelExecutor(model, EVALS_DIR.parent),
         ProductionQualityJudge(model),
         scorecard_directory=TEST_CASES_DIR / INTEGRITY_CAPABILITY,
     )
-    results = runner.run_cases(cases, run_directory)
+    results = tuple(runner.run_case(case) for case in cases)
+    combined = CombinedRunResult.from_results(
+        run_id=run_id,
+        timestamp=timestamp,
+        model=model,
+        results=tuple(
+            (case.case_id, result) for case, result in zip(cases, results)),
+    )
+    run_directory = write_run_report(combined, RESULTS_DIR)
     for case, result in zip(cases, results):
         final = result.system_final
         quality = final.quality.quality_score
@@ -165,8 +174,8 @@ def run_literature_integrity(model: str):
 
 
 def generate_run_id() -> str:
-    """Generate unique run ID: run_YYYYMMDD_HHMMSS"""
-    return datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S")
+    """Generate unique run ID: run_YYYYMMDD_HHMMSS_microseconds."""
+    return datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S_%f")
 
 
 def extract_model_version(model: str) -> str:

@@ -10,6 +10,7 @@ python run_eval.py all            # Run all tests (default model: claude)
 python run_eval.py all -j 4       # Run with 4 parallel jobs
 python run_eval.py literature-reviewer  # Run all tests for an agent
 python run_eval.py literature-reviewer zero-results  # Run specific test
+python run_eval.py literature-review-integrity       # Paired integrity run
 ```
 
 ## CLI Usage
@@ -24,6 +25,7 @@ python run_eval.py critical-analyzer -j 4            # Run all analyst tests
 python run_eval.py all --model "codex:gpt-5.2 high" # Use GPT-5.2 with high reasoning
 python run_eval.py critical-analyzer fallacy-detection  # Run specific test
 python run_eval.py literature-reviewer -v            # Verbose output
+python run_eval.py literature-review-integrity --model "codex:gpt-5.2-codex high"
 ```
 
 ## Model Options
@@ -84,6 +86,38 @@ The framework uses specialized rubrics based on the agent's task domain:
 **Passing**: ≥70/100 overall (Hard tests: ≥80)
 
 ## Results & Benchmarking
+
+### Paired literature-review integrity runs
+
+`literature-review-integrity` writes one append-only directory per run:
+
+```text
+results/runs/
+├── index.json
+└── <run_id>/
+    ├── summary.md
+    ├── result.json
+    ├── artifacts/
+    │   └── <case_id>.json
+    └── repair-rounds/
+        └── <case_id>-round-<number>.json
+```
+
+`result.json` keeps `quality_score`, `integrity_score`, and integrity `status`
+in separate fields for the model's first pass and the system's final snapshot.
+The two views retain their Task 8 workspace digests, so a dashboard cannot pair
+quality from one snapshot with integrity from another. Empty repair and attack
+breakdowns are omitted.
+
+Every artifact link is relative to its run directory and carries a SHA-256
+digest. The writer rejects unsafe run IDs, symlinks, and existing run
+directories. `index.json` gives the static dashboard a closed list of known
+runs; selecting one run never scans `results/latest` or combines another run's
+cases.
+
+The 26-case broad benchmark predates integrity evaluation. Its dashboard rows
+are labeled **Quality-only historical run — not integrity evaluated**. A broad
+quality pass does not imply an integrity pass.
 
 ### Test Results
 
