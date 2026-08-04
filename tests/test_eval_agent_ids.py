@@ -1,3 +1,4 @@
+import json
 import pathlib
 import sys
 from types import SimpleNamespace
@@ -8,6 +9,7 @@ import pytest
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evals"))
 
+from lib import core  # noqa: E402
 from lib.core import parse_test_case  # noqa: E402
 import run_eval  # noqa: E402
 
@@ -48,6 +50,65 @@ Example task.
 
   with pytest.raises(ValueError, match="Capability.*does not match"):
     parse_test_case(path)
+
+
+@pytest.mark.parametrize(
+    ("metadata", "error"),
+    [
+        ("- **Implementation Skill**: research-methodology", "Capability"),
+        ("- **Capability**: lateral-thinking", "Implementation Skill"),
+    ],
+)
+def test_repository_test_cases_require_both_explicit_metadata_fields(
+    tmp_path, monkeypatch, metadata, error,
+):
+  monkeypatch.setattr(core, "EVALS_DIR", tmp_path)
+  path = tmp_path / "test-cases" / "lateral-thinking" / "test-example.md"
+  path.parent.mkdir(parents=True)
+  path.write_text(f"""# Test Case: Example
+
+## Metadata
+{metadata}
+
+## Rubric Profile
+- **Primary**: analytical-quality (100%)
+
+## Task Prompt
+```
+Example task.
+```
+""", encoding="utf-8")
+
+  with pytest.raises(ValueError, match=error):
+    parse_test_case(path)
+
+
+def test_external_legacy_cases_may_use_agent_metadata(tmp_path):
+  path = tmp_path / "legacy-cases" / "lateral-thinking" / "test-example.md"
+  path.parent.mkdir(parents=True)
+  path.write_text("""# Test Case: Example
+
+## Metadata
+- **Agent**: research-methodology
+
+## Rubric Profile
+- **Primary**: analytical-quality (100%)
+
+## Task Prompt
+```
+Example task.
+```
+""", encoding="utf-8")
+
+  test_case = parse_test_case(path)
+  assert test_case.agent == "lateral-thinking"
+  assert test_case.implementation_skill == "research-methodology"
+
+
+def test_benchmark_overview_total_matches_run_entries():
+  overview = json.loads(
+      (ROOT / "evals" / "benchmark_overview.json").read_text(encoding="utf-8"))
+  assert overview["summary_stats"]["total_runs"] == len(overview["runs"])
 
 
 def test_runner_executes_implementation_skill_not_capability(

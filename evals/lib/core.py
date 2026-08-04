@@ -89,17 +89,34 @@ def canonical_benchmark_capability(agent: str) -> str:
     return BENCHMARK_CAPABILITY_ALIASES.get(agent, agent)
 
 
+def is_repository_test_case(path: Path) -> bool:
+    """Return whether path is a tracked test case governed by this schema."""
+    try:
+        path.resolve().relative_to((EVALS_DIR / "test-cases").resolve())
+    except ValueError:
+        return False
+    return True
+
+
 def parse_test_case(path: Path) -> TestCase:
     content = path.read_text()
     capability = canonical_benchmark_capability(path.parent.name)
     declared_capability = rx(r"\*\*Capability\*\*:\s*([\w-]+)", content)
+    declared_implementation_skill = rx(
+        r"\*\*Implementation Skill\*\*:\s*([\w-]+)", content)
+    repository_case = is_repository_test_case(path)
+    if repository_case and not declared_capability:
+        raise ValueError(f"{path.name}: Missing required **Capability** metadata")
+    if repository_case and not declared_implementation_skill:
+        raise ValueError(
+            f"{path.name}: Missing required **Implementation Skill** metadata")
     if declared_capability and declared_capability != capability:
         raise ValueError(
             f"Capability {declared_capability!r} does not match "
             f"test directory capability {capability!r}"
         )
     implementation_skill = (
-        rx(r"\*\*Implementation Skill\*\*:\s*([\w-]+)", content)
+        declared_implementation_skill
         or rx(r"\*\*Agent\*\*:\s*([\w-]+)", content)
         or path.parent.name
     )
