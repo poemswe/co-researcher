@@ -44,9 +44,22 @@ class WorkspaceError(ValueError):
   def __init__(
       self, message: str,
       reason_code: ReasonCode = ReasonCode.ARTIFACT_MALFORMED,
+      artifact: str = ".",
   ):
     super().__init__(message)
     self.reason_code = ReasonCode(reason_code)
+    self.artifact = artifact
+
+
+def _filesystem_reason(exc: OSError) -> ReasonCode:
+  """Classify operating-system failures without interpreting messages."""
+  if exc.errno == errno.ENOENT:
+    return ReasonCode.ARTIFACT_MISSING
+  if exc.errno == errno.ELOOP:
+    return ReasonCode.ARTIFACT_SYMLINK
+  if exc.errno == errno.ENOTDIR:
+    return ReasonCode.ARTIFACT_TYPE_INVALID
+  return ReasonCode.VALIDATOR_INCOMPLETE
 
 
 def _valid_unicode(value: str, field_name: str) -> str:
@@ -66,7 +79,7 @@ def _canonical_relative_path(raw: object) -> str:
       or ".." in path.parts or path.as_posix() != value):
     raise WorkspaceError(
         f"artifact path is not canonical and relative: {value!r}",
-        ReasonCode.ARTIFACT_TRAVERSAL)
+        ReasonCode.ARTIFACT_TRAVERSAL, value)
   return value
 
 
@@ -283,28 +296,46 @@ def _open_root(root: pathlib.Path) -> int:
     current = os.open(os.path.sep, _secure_open_flags(directory=True))
     try:
       for component in absolute.parts[1:]:
+        try:
+          metadata = os.stat(component, dir_fd=current, follow_symlinks=False)
+        except OSError as exc:
+          raise WorkspaceError(
+              f"cannot inspect workspace root component: {exc}",
+              _filesystem_reason(exc), ".") from exc
+        if stat.S_ISLNK(metadata.st_mode):
+          raise WorkspaceError(
+              "workspace root must not contain symlinks",
+              ReasonCode.ARTIFACT_SYMLINK, ".")
+        if not stat.S_ISDIR(metadata.st_mode):
+          raise WorkspaceError(
+              "workspace root is not a directory",
+              ReasonCode.ARTIFACT_TYPE_INVALID, ".")
         child = os.open(
             component, _secure_open_flags(directory=True), dir_fd=current)
         try:
           if not stat.S_ISDIR(os.fstat(child).st_mode):
-            raise WorkspaceError("workspace root is not a directory")
+            raise WorkspaceError(
+                "workspace root is not a directory",
+                ReasonCode.ARTIFACT_TYPE_INVALID, ".")
         except Exception:
           os.close(child)
           raise
         os.close(current)
         current = child
       if not stat.S_ISDIR(os.fstat(current).st_mode):
-        raise WorkspaceError("workspace root is not a directory")
+        raise WorkspaceError(
+            "workspace root is not a directory",
+            ReasonCode.ARTIFACT_TYPE_INVALID, ".")
       return current
     except Exception:
       os.close(current)
       raise
   except WorkspaceError:
     raise
-  except Exception as exc:
+  except OSError as exc:
     raise WorkspaceError(
-        f"cannot securely open workspace root (symlinks are forbidden): {exc}",
-        ReasonCode.ARTIFACT_SYMLINK,
+        f"cannot securely open workspace root: {exc}",
+        _filesystem_reason(exc), ".",
     ) from exc
 
 
@@ -314,20 +345,41 @@ def _read_member(root_descriptor: int, relative_path: str) -> bytes:
   try:
     parent = root_descriptor
     for component in path.parts[:-1]:
+      metadata = os.stat(component, dir_fd=parent, follow_symlinks=False)
+      if stat.S_ISLNK(metadata.st_mode):
+        raise WorkspaceError(
+            f"artifact path contains a symlink: {relative_path}",
+            ReasonCode.ARTIFACT_SYMLINK, relative_path)
+      if not stat.S_ISDIR(metadata.st_mode):
+        raise WorkspaceError(
+            f"artifact path component is not a directory: {relative_path}",
+            ReasonCode.ARTIFACT_TYPE_INVALID, relative_path)
       descriptor = os.open(
           component, _secure_open_flags(directory=True), dir_fd=parent)
       descriptors.append(descriptor)
       if not stat.S_ISDIR(os.fstat(descriptor).st_mode):
         raise WorkspaceError(
-            f"artifact path component is not a directory: {relative_path}")
+            f"artifact path component is not a directory: {relative_path}",
+            ReasonCode.ARTIFACT_TYPE_INVALID, relative_path)
       parent = descriptor
+    metadata = os.stat(
+        path.parts[-1], dir_fd=parent, follow_symlinks=False)
+    if stat.S_ISLNK(metadata.st_mode):
+      raise WorkspaceError(
+          f"artifact is a symlink: {relative_path}",
+          ReasonCode.ARTIFACT_SYMLINK, relative_path)
+    if not stat.S_ISREG(metadata.st_mode):
+      raise WorkspaceError(
+          f"artifact is not a regular file: {relative_path}",
+          ReasonCode.ARTIFACT_TYPE_INVALID, relative_path)
     leaf = os.open(
         path.parts[-1], _secure_open_flags(directory=False), dir_fd=parent)
     descriptors.append(leaf)
     metadata = os.fstat(leaf)
     if not stat.S_ISREG(metadata.st_mode):
       raise WorkspaceError(
-          f"artifact is not a regular file: {relative_path}")
+          f"artifact is not a regular file: {relative_path}",
+          ReasonCode.ARTIFACT_TYPE_INVALID, relative_path)
     if metadata.st_size < 0 or metadata.st_size > MAX_ARTIFACT_BYTES:
       raise WorkspaceError(
           f"artifact exceeds size limit ({MAX_ARTIFACT_BYTES} bytes): "
@@ -382,13 +434,14 @@ class _SnapshotReader:
       return None
     except WorkspaceError:
       raise
-    except Exception as exc:
-      reason = (ReasonCode.ARTIFACT_SYMLINK
-                if isinstance(exc, OSError) and exc.errno == errno.ELOOP
-                else ReasonCode.ARTIFACT_TYPE_INVALID)
+    except OSError as exc:
       raise WorkspaceError(
           f"cannot securely read artifact {relative_path}: {exc}",
-          reason) from exc
+          _filesystem_reason(exc), relative_path) from exc
+    except Exception as exc:
+      raise WorkspaceError(
+          f"cannot securely read artifact {relative_path}: {exc}",
+          ReasonCode.VALIDATOR_INCOMPLETE, relative_path) from exc
     self.total_size += len(payload)
     if self.total_size > MAX_TOTAL_ARTIFACT_BYTES:
       raise WorkspaceError(
@@ -402,7 +455,7 @@ class _SnapshotReader:
     if payload is None:
       raise WorkspaceError(
           f"required artifact is missing: {relative_path}",
-          ReasonCode.ARTIFACT_MISSING)
+          ReasonCode.ARTIFACT_MISSING, relative_path)
     return payload
 
 

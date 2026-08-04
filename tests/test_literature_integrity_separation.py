@@ -43,6 +43,9 @@ def test_public_cases_and_fixtures_do_not_serialize_scorer_material():
   for case_path in ATTACKS.glob("*/case.json"):
     public = json.loads(case_path.read_text())
     assert set(public) == PUBLIC_FIELDS
+    assert case_path.parent.name == public["case_id"]
+    assert public["case_id"].startswith("integrity-case-")
+    assert public["fixture_paths"] == ["input.json"]
     serialized = "\n".join(_walk(public)).casefold()
     assert not any(marker in serialized for marker in PRIVATE_MARKERS)
     for relative in public["fixture_paths"]:
@@ -91,6 +94,43 @@ def test_fixture_loader_rejects_symlinked_case_collection(tmp_path):
 
   with pytest.raises(ValueError, match="symlink"):
     load_cases(linked)
+
+
+def test_case_discovery_rejects_nested_directory_symlink(tmp_path):
+  outside = tmp_path / "outside"
+  outside.mkdir()
+  collection = tmp_path / "collection"
+  collection.mkdir()
+  (collection / "linked").symlink_to(outside, target_is_directory=True)
+
+  with pytest.raises(ValueError, match="symlink"):
+    load_cases(collection)
+
+
+def test_case_discovery_rejects_case_file_symlink_to_outside(tmp_path):
+  outside = tmp_path / "outside-case.json"
+  outside.write_text("{}")
+  collection = tmp_path / "collection"
+  case_dir = collection / "integrity-case-001"
+  case_dir.mkdir(parents=True)
+  (case_dir / "case.json").symlink_to(outside)
+
+  with pytest.raises(ValueError, match="symlink"):
+    load_cases(collection)
+
+
+def test_case_discovery_rejects_hardlink_aliases(tmp_path):
+  collection = tmp_path / "collection"
+  first = collection / "integrity-case-001"
+  second = collection / "integrity-case-002"
+  first.mkdir(parents=True)
+  second.mkdir(parents=True)
+  payload = first / "case.json"
+  payload.write_text("{}")
+  (second / "case.json").hardlink_to(payload)
+
+  with pytest.raises(ValueError, match="alias|hard|duplicate"):
+    load_cases(collection)
 
 
 @pytest.mark.parametrize("relative", ["../outside.json", "/tmp/outside.json"])

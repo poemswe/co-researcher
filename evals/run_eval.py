@@ -137,6 +137,7 @@ def list_tests():
 def run_literature_integrity(model: str):
     from lib.literature_integrity import (
         LiteratureIntegrityRunner,
+        OperationalIntegrityEvalResult,
         ProductionModelExecutor,
         ProductionQualityJudge,
         load_adversarial_scores,
@@ -167,6 +168,15 @@ def run_literature_integrity(model: str):
     )
     run_directory = write_run_report(combined, RESULTS_DIR)
     for case, result in zip(cases, results):
+        if isinstance(result, OperationalIntegrityEvalResult):
+            failure = result.operational_failure
+            print(
+                f"{case.case_id}: integrity=N/A status=invalid quality=N/A "
+                f"repairs={len(result.repair_rounds)} "
+                f"operational_failure={failure.reason_code.value} "
+                f"artifact={failure.artifact}"
+            )
+            continue
         final = result.system_final
         quality = final.quality.quality_score
         quality_text = "ERROR" if quality is None else f"{quality:.1f}"

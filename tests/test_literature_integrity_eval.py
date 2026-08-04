@@ -26,6 +26,7 @@ from lib.literature_integrity import (  # noqa: E402
 )
 from lib import literature_integrity  # noqa: E402
 from review_integrity.models import IntegrityRunReport  # noqa: E402
+from review_integrity.repair import safe_repair_feedback  # noqa: E402
 
 
 def _write_workspace(workspace: pathlib.Path, state: int) -> None:
@@ -124,7 +125,8 @@ def _case(tmp_path, case_id="synthetic-case", expected_status="invalid"):
       "minimum_repair_rounds": 0,
       "maximum_repair_rounds": 3,
   }), encoding="utf-8")
-  return load_cases(case_dir.parent)[0]
+  return next(
+      case for case in load_cases(case_dir.parent) if case.case_id == case_id)
 
 
 def _runner(tmp_path, executor=None, judge=None):
@@ -349,16 +351,78 @@ def test_case_scoring_material_is_not_reachable_by_executor_or_judge(tmp_path):
       observed.extend(_reachable_strings((case, synthesis)))
       return super().score(case, synthesis)
 
-  case = _case(tmp_path, expected_status="valid_with_warnings")
-  _runner(
-      tmp_path, IntrospectionExecutor(), IntrospectionJudge()).run_case(case)
+  case = _case(
+      tmp_path, case_id="integrity-case-800",
+      expected_status="valid_with_warnings")
+  scorecard = tmp_path / "cases" / case.case_id / "expected.json"
+  scorecard.write_text(json.dumps({
+      "schema_version": "1.0.0", "final_status": "valid_with_warnings",
+      "minimum_repair_rounds": 0, "maximum_repair_rounds": 3,
+      "attack_family": "unicode-substitution",
+      "reason_expectations": [{
+          "reason_code": "fabricated_quote", "present": True,
+          "unit": {"artifact": "claims.json", "context_key": "result_index",
+                   "context_value": 0},
+      }],
+  }))
+  executor = IntrospectionExecutor()
+  result = _runner(
+      tmp_path, executor, IntrospectionJudge()).run_case(case)
   reachable = "\n".join(observed)
 
   assert "expected.json" not in reachable
   assert "valid_with_warnings" not in reachable
+  assert "unicode-substitution" not in reachable
   assert str(tmp_path / "cases") not in reachable
   assert not any("score" in definition.name.lower()
                  for definition in fields(case))
+  assert executor.feedback[0] == safe_repair_feedback(
+      result.model_first_pass.integrity)
+
+
+def test_runner_records_unsafe_case_and_continues_to_next_case(tmp_path):
+  first = _case(tmp_path, case_id="integrity-case-801")
+  second = _case(tmp_path, case_id="integrity-case-802")
+
+  class SequenceExecutor(FakeExecutor):
+    def first_pass(self, case, workspace):
+      usage = super().first_pass(case, workspace)
+      if len(self.workspaces) == 1:
+        (workspace / "refs.json").unlink()
+      return usage
+
+  runner = _runner(tmp_path, executor=SequenceExecutor())
+  results = runner.run_cases((first, second), tmp_path / "run")
+
+  assert len(results) == 2
+  first_wire = results[0].to_dict()
+  assert first_wire["operational_failure"]["reason_code"] == "artifact_missing"
+  assert first_wire["operational_failure"]["status"] == "invalid"
+  assert results[1].model_first_pass.workspace_manifest_sha256
+  assert (tmp_path / "run" / "integrity-case-801.json").is_file()
+  assert (tmp_path / "run" / "integrity-case-802.json").is_file()
+
+
+@pytest.mark.parametrize("bad_attack", [
+    {"attack_family": "", "reason_expectations": []},
+    {"attack_family": "unicode-substitution", "reason_expectations": [{
+        "reason_code": "not-a-reason", "present": True,
+        "unit": {"artifact": "claims.json", "context_key": None,
+                 "context_value": None}}]},
+])
+def test_invalid_adversarial_scorecard_is_an_explicit_scorer_error(
+    tmp_path, bad_attack,
+):
+  case = _case(tmp_path, case_id="integrity-case-803")
+  scorecard = tmp_path / "cases" / case.case_id / "expected.json"
+  payload = json.loads(scorecard.read_text())
+  payload.update(bad_attack)
+  scorecard.write_text(json.dumps(payload))
+
+  result = _runner(tmp_path).run_case(case)
+
+  assert result.robustness.expectation_met is None
+  assert result.robustness.error
 
 
 def test_scorecard_is_loaded_after_both_quality_judgments(tmp_path):
@@ -422,6 +486,20 @@ def test_claude_executor_can_create_and_repair_workspace(
     assert "expected.json" not in prompt
     assert "final_status" not in prompt
     assert str(tmp_path / "cases") not in prompt
+    assert str(ROOT) not in prompt
+    assert "unicode-substitution" not in prompt
+    if index == 0:
+      assert str(case.fixture_paths[0]) not in prompt
+      skill_line = next(
+          line for line in prompt.splitlines() if line.startswith("Skill path:"))
+      fixture_line = next(
+          line for line in prompt.splitlines() if line.startswith("- /"))
+      staged_paths = [
+          pathlib.Path(skill_line.split(": ", 1)[1]),
+          pathlib.Path(fixture_line.removeprefix("- ")),
+      ]
+      assert all("synthetic-attacks" not in str(path) for path in staged_paths)
+      assert all(not path.exists() for path in staged_paths)
 
 
 @pytest.mark.parametrize("provider", ["codex", "gemini"])

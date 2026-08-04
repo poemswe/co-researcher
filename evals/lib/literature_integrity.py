@@ -6,8 +6,10 @@ import atexit
 import hashlib
 import json
 import math
+import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -32,11 +34,12 @@ from review_integrity.models import (  # noqa: E402
     PassReport,
     ReasonCode,
     RepairRecord,
+    Severity,
 )
 from review_integrity.repair import RepairController  # noqa: E402
 from review_integrity.scoring import score_integrity  # noqa: E402
 from review_integrity.validators import validate_snapshot  # noqa: E402
-from review_integrity.workspace import load_workspace  # noqa: E402
+from review_integrity.workspace import WorkspaceError, load_workspace  # noqa: E402
 
 
 SCHEMA_VERSION = "1.0.0"
@@ -580,6 +583,139 @@ class IntegrityEvalResult:
     )
 
 
+@dataclass(frozen=True, slots=True)
+class OperationalFailure:
+  phase: str
+  attempt: int
+  reason_code: ReasonCode
+  artifact: str
+  message: str
+  model_usage: ModelUsage
+
+  def __post_init__(self) -> None:
+    if self.phase not in {"initial_load", "repair_load"}:
+      raise ValueError("operational failure phase is invalid")
+    if (isinstance(self.attempt, bool) or not isinstance(self.attempt, int)
+        or not 0 <= self.attempt <= 3):
+      raise ValueError("operational failure attempt must be between zero and three")
+    if (self.phase == "initial_load") != (self.attempt == 0):
+      raise ValueError("operational failure phase and attempt disagree")
+    object.__setattr__(self, "reason_code", ReasonCode(self.reason_code))
+    _text(self.artifact, "operational failure artifact")
+    _text(self.message, "operational failure message")
+    if not isinstance(self.model_usage, ModelUsage):
+      raise ValueError("operational failure model_usage is invalid")
+
+  def to_dict(self) -> dict:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "phase": self.phase,
+        "attempt": self.attempt,
+        "reason_code": self.reason_code.value,
+        "artifact": self.artifact,
+        "message": self.message,
+        "model_usage": self.model_usage.to_dict(),
+        "status": "invalid",
+        "workspace_manifest_sha256": None,
+        "quality": None,
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> "OperationalFailure":
+    data = _wire_object(value, {
+        "phase", "attempt", "reason_code", "artifact", "message",
+        "model_usage", "status", "workspace_manifest_sha256", "quality",
+    }, "operational failure")
+    if (data["status"] != "invalid"
+        or data["workspace_manifest_sha256"] is not None
+        or data["quality"] is not None):
+      raise ValueError("operational failure derived fields are invalid")
+    return cls(
+        phase=data["phase"], attempt=data["attempt"],
+        reason_code=data["reason_code"], artifact=data["artifact"],
+        message=data["message"],
+        model_usage=ModelUsage.from_dict(data["model_usage"]),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class OperationalIntegrityEvalResult:
+  model_first_pass: SnapshotEvaluation | None
+  repair_rounds: tuple[RepairRound, ...]
+  operational_failure: OperationalFailure
+  repair_cost: RepairCost
+  robustness: RobustnessResult
+
+  def __post_init__(self) -> None:
+    if self.model_first_pass is not None and not isinstance(
+        self.model_first_pass, SnapshotEvaluation):
+      raise ValueError("model_first_pass must be a SnapshotEvaluation or null")
+    if not isinstance(self.repair_rounds, tuple) or not all(
+        isinstance(item, RepairRound) for item in self.repair_rounds):
+      raise ValueError("repair_rounds must contain RepairRound values")
+    if any(item.attempt != index for index, item in enumerate(
+        self.repair_rounds, 1)):
+      raise ValueError("repair rounds must be contiguous")
+    if not isinstance(self.operational_failure, OperationalFailure):
+      raise ValueError("operational_failure must be an OperationalFailure")
+    if self.operational_failure.phase == "initial_load":
+      if self.model_first_pass is not None or self.repair_rounds:
+        raise ValueError("initial load failure cannot retain trusted snapshots")
+    else:
+      if self.model_first_pass is None:
+        raise ValueError("repair load failure requires a trusted first pass")
+      if self.operational_failure.attempt != len(self.repair_rounds) + 1:
+        raise ValueError("repair failure attempt must follow successful rounds")
+    if self.repair_cost != RepairCost.from_rounds(self.repair_rounds):
+      raise ValueError("repair_cost must match successful repair_rounds")
+    if (not isinstance(self.robustness, RobustnessResult)
+        or self.robustness.observed_final_status != "invalid"):
+      raise ValueError("operational robustness must report invalid")
+
+  def to_dict(self) -> dict:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "model_first_pass": (
+            None if self.model_first_pass is None
+            else self.model_first_pass.to_dict()),
+        "repair_rounds": [item.to_dict() for item in self.repair_rounds],
+        "operational_failure": self.operational_failure.to_dict(),
+        "repair_cost": self.repair_cost.to_dict(),
+        "robustness": self.robustness.to_dict(),
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> "OperationalIntegrityEvalResult":
+    data = _wire_object(value, {
+        "model_first_pass", "repair_rounds", "operational_failure",
+        "repair_cost", "robustness",
+    }, "operational integrity eval result")
+    if not isinstance(data["repair_rounds"], list):
+      raise ValueError("repair_rounds must be a list")
+    return cls(
+        model_first_pass=(
+            None if data["model_first_pass"] is None
+            else SnapshotEvaluation.from_dict(data["model_first_pass"])),
+        repair_rounds=tuple(
+            RepairRound.from_dict(item) for item in data["repair_rounds"]),
+        operational_failure=OperationalFailure.from_dict(
+            data["operational_failure"]),
+        repair_cost=RepairCost.from_dict(data["repair_cost"]),
+        robustness=RobustnessResult.from_dict(data["robustness"]),
+    )
+
+
+IntegrityResult = IntegrityEvalResult | OperationalIntegrityEvalResult
+
+
+def decode_integrity_result(value: dict) -> IntegrityResult:
+  if not isinstance(value, dict):
+    raise ValueError("integrity result must be a JSON object")
+  if "operational_failure" in value:
+    return OperationalIntegrityEvalResult.from_dict(value)
+  return IntegrityEvalResult.from_dict(value)
+
+
 class ModelExecutor(Protocol):
   def first_pass(
       self, case: CaseDefinition, workspace: Path,
@@ -638,7 +774,7 @@ def _load_case(path: Path) -> CaseDefinition:
   fixtures = []
   if sources:
     staging = Path(tempfile.mkdtemp(
-        prefix=f"{data['case_id']}-fixtures-",
+        prefix="literature-fixtures-",
         dir=Path(tempfile.gettempdir()).resolve(),
     )).resolve()
     _FIXTURE_STAGING_ROOTS.append(staging)
@@ -656,6 +792,49 @@ def _load_case(path: Path) -> CaseDefinition:
   )
 
 
+def _discover_named_paths(root: Path, filename: str) -> tuple[Path, ...]:
+  """Walk a collection without following links or inode aliases."""
+  discovered: list[Path] = []
+  seen_directories: set[tuple[int, int]] = set()
+  seen_files: set[tuple[int, int]] = set()
+
+  def walk(directory: Path) -> None:
+    try:
+      metadata = directory.stat(follow_symlinks=False)
+    except OSError as exc:
+      raise ValueError(f"cannot inspect collection directory: {exc}") from exc
+    if not stat.S_ISDIR(metadata.st_mode):
+      raise ValueError("collection path must be a directory")
+    identity = (metadata.st_dev, metadata.st_ino)
+    if identity in seen_directories:
+      raise ValueError("case directory contains a duplicate inode alias")
+    seen_directories.add(identity)
+    try:
+      entries = sorted(os.scandir(directory), key=lambda item: item.name)
+    except OSError as exc:
+      raise ValueError(f"cannot inspect case directory: {exc}") from exc
+    for entry in entries:
+      try:
+        entry_metadata = entry.stat(follow_symlinks=False)
+      except OSError as exc:
+        raise ValueError(f"cannot inspect case entry: {exc}") from exc
+      if entry.is_symlink():
+        raise ValueError(f"case collection contains a symlink: {entry.path}")
+      path = Path(entry.path)
+      if entry.is_dir(follow_symlinks=False):
+        walk(path)
+      elif entry.is_file(follow_symlinks=False):
+        file_identity = (entry_metadata.st_dev, entry_metadata.st_ino)
+        if file_identity in seen_files or entry_metadata.st_nlink != 1:
+          raise ValueError("case collection contains a hardlink or inode alias")
+        seen_files.add(file_identity)
+        if entry.name == filename:
+          discovered.append(path)
+
+  walk(root)
+  return tuple(discovered)
+
+
 def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
   supplied = Path(directory)
   if supplied.is_symlink():
@@ -663,7 +842,7 @@ def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
   root = supplied.resolve()
   if not root.is_dir():
     raise ValueError("case directory must exist")
-  paths = sorted(root.glob("**/case.json"))
+  paths = _discover_named_paths(root, "case.json")
   cases = tuple(_load_case(path) for path in paths)
   if not cases:
     raise ValueError("case directory does not contain case definitions")
@@ -686,10 +865,10 @@ class _ScorecardStore:
     if self._directory is None:
       raise ValueError("scorecard directory was not supplied")
     matches = [
-        path for path in self._directory.glob("**/expected.json")
-        if path.parent.name == case_id
-    ]
-    if len(matches) != 1 or matches[0].is_symlink():
+        path for path in _discover_named_paths(
+            self._directory, "expected.json")
+        if path.parent.name == case_id]
+    if len(matches) != 1:
       raise ValueError(f"scorecard lookup is not unique: {case_id}")
     return _read_json(matches[0], "scorecard")
 
@@ -727,6 +906,9 @@ def _score_robustness(
     data = _scorecard_object(scorecards.load(case_id))
     if data["schema_version"] != SCHEMA_VERSION:
       raise ValueError("unsupported scorecard schema_version")
+    if "attack_family" in data:
+      _text(data["attack_family"], "attack_family")
+      _attack_expectations(data["reason_expectations"])
     expected = data["final_status"]
     if expected not in {"valid", "valid_with_warnings", "invalid"}:
       raise ValueError("scorecard final_status is invalid")
@@ -834,6 +1016,11 @@ class AdversarialCaseScore:
           else ReasonMetric.from_dict(metric))
     if not metrics:
       raise ValueError("reason metrics must not be empty")
+    for field in ("true_positive", "false_positive", "false_negative"):
+      if sum(getattr(metric, field) for metric in metrics.values()) != (
+          frozen_confusion[field]):
+        raise ValueError(
+            "adversarial confusion does not reconcile with reason metrics")
     object.__setattr__(self, "confusion", MappingProxyType(frozen_confusion))
     object.__setattr__(
         self, "reason_metrics", MappingProxyType(dict(sorted(metrics.items()))))
@@ -868,6 +1055,15 @@ class AdversarialCaseScore:
 def _observed_findings(value: object) -> tuple[Finding, ...]:
   if isinstance(value, IntegrityEvalResult):
     return value.model_first_pass.integrity.findings
+  if isinstance(value, OperationalIntegrityEvalResult):
+    failure = value.operational_failure
+    return (Finding(
+        reason_code=failure.reason_code,
+        severity=Severity.CRITICAL,
+        artifact=failure.artifact,
+        message=failure.message,
+        context={},
+    ),)
   if not isinstance(value, Iterable) or isinstance(value, (str, bytes, dict)):
     raise ValueError("observed attack findings must be an iterable")
   findings = []
@@ -885,6 +1081,7 @@ def _attack_expectations(value: object) -> tuple[dict, ...]:
   if not isinstance(value, list) or not value:
     raise ValueError("reason_expectations must be a nonempty list")
   expectations = []
+  units = set()
   for item in value:
     data = _closed_object(
         item, {"reason_code", "present", "unit"}, "reason expectation")
@@ -903,6 +1100,11 @@ def _attack_expectations(value: object) -> tuple[dict, ...]:
     elif (key not in {"result_index", "synthesis_sentence_index"}
           or type(context_value) is not int or context_value < 0):
       raise ValueError("reason expectation context unit is invalid")
+    identity = (reason.value, artifact, key, context_value)
+    if identity in units:
+      raise ValueError(
+          "reason expectations contain a duplicate or contradictory unit")
+    units.add(identity)
     expectations.append({
         "reason_code": reason, "present": data["present"],
         "artifact": artifact, "context_key": key,
@@ -933,15 +1135,20 @@ def load_adversarial_scores(
         "true_positive", "false_positive", "true_negative", "false_negative"
     ), 0)
     reason_counts: dict[str, dict[str, int]] = {}
+    unmatched = list(range(len(findings)))
     for expectation in expectations:
       code = expectation["reason_code"].value
-      matched = any(
-          finding.reason_code is expectation["reason_code"]
-          and finding.artifact == expectation["artifact"]
+      matching = next((
+          index for index in unmatched
+          if findings[index].reason_code is expectation["reason_code"]
+          and findings[index].artifact == expectation["artifact"]
           and (expectation["context_key"] is None
-               or finding.context.get(expectation["context_key"])
+               or findings[index].context.get(expectation["context_key"])
                == expectation["context_value"])
-          for finding in findings)
+      ), None)
+      matched = matching is not None
+      if matching is not None:
+        unmatched.remove(matching)
       if expectation["present"]:
         outcome = "true_positive" if matched else "false_negative"
       else:
@@ -951,6 +1158,12 @@ def load_adversarial_scores(
           "true_positive": 0, "false_positive": 0, "false_negative": 0})
       if outcome in counts:
         counts[outcome] += 1
+    for index in unmatched:
+      code = findings[index].reason_code.value
+      confusion["false_positive"] += 1
+      counts = reason_counts.setdefault(code, {
+          "true_positive": 0, "false_positive": 0, "false_negative": 0})
+      counts["false_positive"] += 1
     scores[case_id] = AdversarialCaseScore(
         attack_family=family,
         confusion=confusion,
@@ -992,18 +1205,44 @@ class LiteratureIntegrityRunner:
     findings = validate_snapshot(snapshot)
     return score_integrity(snapshot, findings)
 
-  def run_case(self, case: CaseDefinition) -> IntegrityEvalResult:
+  def _operational_result(
+      self, case: CaseDefinition, *, phase: str, attempt: int,
+      error: WorkspaceError, usage: ModelUsage,
+      first: SnapshotEvaluation | None = None,
+      rounds: tuple[RepairRound, ...] = (),
+  ) -> OperationalIntegrityEvalResult:
+    robustness = _score_robustness(
+        self._scorecards, case.case_id, "invalid", len(rounds))
+    return OperationalIntegrityEvalResult(
+        model_first_pass=first,
+        repair_rounds=rounds,
+        operational_failure=OperationalFailure(
+            phase=phase, attempt=attempt, reason_code=error.reason_code,
+            artifact=error.artifact,
+            message=str(error).strip() or error.__class__.__name__,
+            model_usage=usage,
+        ),
+        repair_cost=RepairCost.from_rounds(rounds),
+        robustness=robustness,
+    )
+
+  def run_case(self, case: CaseDefinition) -> IntegrityResult:
     if not isinstance(case, CaseDefinition):
       raise ValueError("case must be a CaseDefinition")
     self._workspace_parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(
-        prefix=f"{case.case_id}-", dir=self._workspace_parent,
+        prefix="literature-run-", dir=self._workspace_parent,
     ) as temporary:
       workspace = Path(temporary).resolve()
       first_usage = self._executor.first_pass(case, workspace)
       if not isinstance(first_usage, ModelUsage):
         raise ValueError("executor returned invalid first-pass usage")
-      first_snapshot = load_workspace(workspace)
+      try:
+        first_snapshot = load_workspace(workspace)
+      except WorkspaceError as exc:
+        return self._operational_result(
+            case, phase="initial_load", attempt=0, error=exc,
+            usage=first_usage)
 
       # The quality judge sees retained first-pass text before any finding or
       # repair feedback exists.
@@ -1027,7 +1266,13 @@ class LiteratureIntegrityRunner:
         usage = self._executor.repair(decision.repair_feedback, workspace)
         if not isinstance(usage, ModelUsage):
           raise ValueError("executor returned invalid repair usage")
-        current_snapshot = load_workspace(workspace)
+        try:
+          current_snapshot = load_workspace(workspace)
+        except WorkspaceError as exc:
+          return self._operational_result(
+              case, phase="repair_load", attempt=len(rounds) + 1,
+              error=exc, usage=usage, first=first,
+              rounds=tuple(rounds))
         current_integrity = self._integrity(current_snapshot)
         decision = controller.record(current_integrity, current_snapshot)
         rounds.append(RepairRound(
@@ -1068,7 +1313,7 @@ class LiteratureIntegrityRunner:
 
   def run_cases(
       self, cases: tuple[CaseDefinition, ...], run_directory: Path | str,
-  ) -> tuple[IntegrityEvalResult, ...]:
+  ) -> tuple[IntegrityResult, ...]:
     destination = Path(run_directory)
     destination.mkdir(parents=True, exist_ok=False)
     results = []
@@ -1202,20 +1447,37 @@ class ProductionModelExecutor:
   def first_pass(
       self, case: CaseDefinition, workspace: Path,
   ) -> ModelUsage:
-    skill_path = self._repository_root / "skills/literature-review/SKILL.md"
-    fixtures = "\n".join(f"- {path}" for path in case.fixture_paths) or "- none"
-    prompt = (
-        f"{CAPTURE_INSTRUCTION}\n"
-        f"Skill path: {skill_path}\n"
-        f"Domain: {case.domain}\n"
-        f"Public synthetic fixtures:\n{fixtures}\n\n"
-        f"Task:\n{case.prompt}\n")
-    return self._run(
-        prompt, workspace,
-        prompt_version=CAPTURE_PROMPT_VERSION,
-        prompt_sha256=CAPTURE_PROMPT_SHA256,
-        allow_research=True,
-    )
+    source_skill = self._repository_root / "skills/literature-review"
+    with tempfile.TemporaryDirectory(prefix="literature-input-") as temporary:
+      staging = Path(temporary).resolve()
+      for path in source_skill.rglob("*"):
+        if path.is_symlink():
+          raise ValueError("literature-review skill bundle contains a symlink")
+      shutil.copytree(source_skill, staging / "skill")
+      skill_path = staging / "skill/SKILL.md"
+      fixture_paths = []
+      for index, source in enumerate(case.fixture_paths, 1):
+        metadata = source.stat(follow_symlinks=False)
+        if source.is_symlink() or not source.is_file() or metadata.st_nlink != 1:
+          raise ValueError("public fixture must be a regular single-link file")
+        suffix = source.suffix if source.suffix else ".bin"
+        destination = staging / f"fixture-{index:03d}{suffix}"
+        destination.write_bytes(source.read_bytes())
+        fixture_paths.append(destination)
+      fixtures = "\n".join(
+          f"- {path}" for path in fixture_paths) or "- none"
+      prompt = (
+          f"{CAPTURE_INSTRUCTION}\n"
+          f"Skill path: {skill_path}\n"
+          f"Domain: {case.domain}\n"
+          f"Public synthetic fixtures:\n{fixtures}\n\n"
+          f"Task:\n{case.prompt}\n")
+      return self._run(
+          prompt, workspace,
+          prompt_version=CAPTURE_PROMPT_VERSION,
+          prompt_sha256=CAPTURE_PROMPT_SHA256,
+          allow_research=True,
+      )
 
   def repair(self, feedback: dict, workspace: Path) -> ModelUsage:
     prompt = (
@@ -1233,9 +1495,10 @@ class ProductionModelExecutor:
 __all__ = [
     "AdversarialCaseScore", "CAPABILITY", "CAPTURE_PROMPT_SHA256",
     "CAPTURE_PROMPT_VERSION", "CaseDefinition", "IntegrityEvalResult",
-    "LiteratureIntegrityRunner",
+    "IntegrityResult", "LiteratureIntegrityRunner", "OperationalFailure",
+    "OperationalIntegrityEvalResult",
     "ModelExecutor", "ModelUsage", "ProductionModelExecutor",
     "ProductionQualityJudge", "QualityJudge", "QualityResult", "RepairCost",
     "ReasonMetric", "RepairRound", "RobustnessResult", "SnapshotEvaluation",
-    "load_adversarial_scores", "load_cases",
+    "decode_integrity_result", "load_adversarial_scores", "load_cases",
 ]

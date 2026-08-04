@@ -21,7 +21,10 @@ from .literature_integrity import (
     AdversarialCaseScore,
     CAPABILITY,
     IntegrityEvalResult,
+    IntegrityResult,
+    OperationalIntegrityEvalResult,
     ReasonMetric,
+    decode_integrity_result,
 )
 
 
@@ -286,8 +289,7 @@ class CombinedCaseResult:
   """One case whose quality and integrity refer to Task 8 snapshots."""
 
   case_id: str
-  evaluation: IntegrityEvalResult | dict
-  attack_family: str | None = None
+  evaluation: IntegrityResult | dict
   adversarial_score: AdversarialCaseScore | dict | None = None
 
   def __post_init__(self) -> None:
@@ -296,13 +298,14 @@ class CombinedCaseResult:
       raise ValueError("case_id must be a lowercase hyphenated identifier")
     evaluation = self.evaluation
     if isinstance(evaluation, dict):
-      evaluation = IntegrityEvalResult.from_dict(evaluation)
-    elif isinstance(evaluation, IntegrityEvalResult):
+      evaluation = decode_integrity_result(evaluation)
+    elif isinstance(evaluation, (IntegrityEvalResult,
+                                 OperationalIntegrityEvalResult)):
       # Round-trip through the strict Task 8 decoder. This prevents callers
       # from smuggling an unchecked dict-like payload into a report.
-      evaluation = IntegrityEvalResult.from_dict(evaluation.to_dict())
+      evaluation = decode_integrity_result(evaluation.to_dict())
     else:
-      raise ValueError("evaluation must be an IntegrityEvalResult")
+      raise ValueError("evaluation must be an integrity result")
     object.__setattr__(self, "evaluation", evaluation)
     adversarial = self.adversarial_score
     if isinstance(adversarial, dict):
@@ -312,21 +315,17 @@ class CombinedCaseResult:
       raise ValueError(
           "adversarial_score must be an AdversarialCaseScore or null")
     object.__setattr__(self, "adversarial_score", adversarial)
-    if self.attack_family is not None:
-      _text(self.attack_family, "attack_family")
-    if adversarial is not None:
-      if (self.attack_family is not None
-          and self.attack_family != adversarial.attack_family):
-        raise ValueError("attack_family does not match adversarial_score")
-      object.__setattr__(self, "attack_family", adversarial.attack_family)
+
+  @property
+  def attack_family(self) -> str | None:
+    return (None if self.adversarial_score is None
+            else self.adversarial_score.attack_family)
 
   def to_dict(self) -> dict:
     value = {
         "case_id": self.case_id,
         "evaluation": self.evaluation.to_dict(),
     }
-    if self.attack_family is not None:
-      value["attack_family"] = self.attack_family
     if self.adversarial_score is not None:
       value["adversarial_score"] = self.adversarial_score.to_dict()
     return value
@@ -335,11 +334,10 @@ class CombinedCaseResult:
   def from_dict(cls, value: dict) -> "CombinedCaseResult":
     data = _closed_object(
         value, {"case_id", "evaluation"}, "combined case",
-        optional={"attack_family", "adversarial_score"})
+        optional={"adversarial_score"})
     return cls(
         case_id=data["case_id"],
         evaluation=data["evaluation"],
-        attack_family=data.get("attack_family"),
         adversarial_score=data.get("adversarial_score"),
     )
 
@@ -375,8 +373,8 @@ class CombinedRunResult:
   @classmethod
   def from_results(
       cls, *, run_id: str, timestamp: str, model: str,
-      results: Mapping[str, IntegrityEvalResult] | Sequence[
-          tuple[str, IntegrityEvalResult]],
+      results: Mapping[str, IntegrityResult] | Sequence[
+          tuple[str, IntegrityResult]],
       adversarial_scores: Mapping[str, AdversarialCaseScore] | None = None,
   ) -> "CombinedRunResult":
     pairs = results.items() if isinstance(results, Mapping) else results
@@ -428,6 +426,15 @@ def _snapshot_view(snapshot) -> dict:
   }
 
 
+def _operational_view() -> dict:
+  return {
+      "quality_score": None,
+      "integrity_score": None,
+      "status": "invalid",
+      "workspace_manifest_sha256": None,
+  }
+
+
 def _repair_round_view(repair_round, path: str, sha256: str) -> dict:
   return {
       "attempt": repair_round.attempt,
@@ -445,7 +452,11 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
   family_confusion: dict[str, dict[str, int]] = {}
   reason_counts: dict[str, dict[str, int]] = {}
   for case in cases:
-    counts[case.evaluation.system_final.integrity.status.value] += 1
+    status = (
+        "invalid" if isinstance(
+            case.evaluation, OperationalIntegrityEvalResult)
+        else case.evaluation.system_final.integrity.status.value)
+    counts[status] += 1
     if case.attack_family is not None:
       attack_families[case.attack_family] = (
           attack_families.get(case.attack_family, 0) + 1)
@@ -481,17 +492,22 @@ def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
     first = case["first_pass"]
     final = case["final"]
     quality_first = (
-        "ERROR" if first["quality_score"] is None
+        "N/A" if first is None
+        else "ERROR" if first["quality_score"] is None
         else f"{first['quality_score']:.1f}")
     quality_final = (
         "ERROR" if final["quality_score"] is None
         else f"{final['quality_score']:.1f}")
     artifact = case["artifact"]
+    first_integrity = (
+        "N/A" if first is None or first["integrity_score"] is None
+        else f"{first['integrity_score']:.1f} ({first['status']})")
+    final_integrity = (
+        "N/A (invalid)" if final["integrity_score"] is None
+        else f"{final['integrity_score']:.1f} ({final['status']})")
     rows.append(
         f"| {case['case_id']} | {quality_first} | "
-        f"{first['integrity_score']:.1f} ({first['status']}) | "
-        f"{quality_final} | {final['integrity_score']:.1f} "
-        f"({final['status']}) | "
+        f"{first_integrity} | {quality_final} | {final_integrity} | "
         f"[{artifact['path']}]({artifact['path']}) "
         f"`{artifact['sha256']}` |")
   return (
@@ -684,13 +700,26 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
     artifact_path = f"artifacts/{case.case_id}.json"
     artifact_payload = _json_bytes(case.evaluation.to_dict())
     artifact_payloads[f"{case.case_id}.json"] = artifact_payload
-    view = {
-        "case_id": case.case_id,
-        "first_pass": _snapshot_view(case.evaluation.model_first_pass),
-        "final": _snapshot_view(case.evaluation.system_final),
-        "artifact": {
-            "path": artifact_path, "sha256": _digest(artifact_payload)},
-    }
+    if isinstance(case.evaluation, OperationalIntegrityEvalResult):
+      view = {
+          "case_id": case.case_id,
+          "first_pass": (
+              None if case.evaluation.model_first_pass is None
+              else _snapshot_view(case.evaluation.model_first_pass)),
+          "final": _operational_view(),
+          "operational_failure": (
+              case.evaluation.operational_failure.to_dict()),
+          "artifact": {
+              "path": artifact_path, "sha256": _digest(artifact_payload)},
+      }
+    else:
+      view = {
+          "case_id": case.case_id,
+          "first_pass": _snapshot_view(case.evaluation.model_first_pass),
+          "final": _snapshot_view(case.evaluation.system_final),
+          "artifact": {
+              "path": artifact_path, "sha256": _digest(artifact_payload)},
+      }
     if case.attack_family is not None:
       view["attack_family"] = case.attack_family
     if case.adversarial_score is not None:
@@ -782,7 +811,7 @@ def _validate_and_sync_staging(
     payload = _read_owned_file(destination / reference["path"], "case artifact")
     if _digest(payload) != reference["sha256"]:
       raise ValueError("staged case artifact digest mismatch")
-    IntegrityEvalResult.from_dict(json.loads(payload))
+    decode_integrity_result(json.loads(payload))
     for round_view in case.get("repair_rounds", []):
       payload = _read_owned_file(
           destination / round_view["path"], "repair round artifact")
@@ -1041,7 +1070,7 @@ def _validate_snapshot_view(value: object, snapshot, label: str) -> dict:
 
 
 def _validate_repair_views(
-    value: object, evaluation: IntegrityEvalResult, run_descriptor: int,
+    value: object, evaluation: IntegrityResult, run_descriptor: int,
     case_id: str,
 ) -> list[dict]:
   if not isinstance(value, list):
@@ -1148,7 +1177,8 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
         case = _closed_object(value, {
             "case_id", "first_pass", "final", "artifact",
         }, "run case", optional={
-            "attack_family", "adversarial_score", "repair_rounds"})
+            "attack_family", "adversarial_score", "repair_rounds",
+            "operational_failure"})
         case_id = case["case_id"]
         if (not isinstance(case_id, str) or not _CASE_ID_RE.fullmatch(case_id)
             or case_id in seen):
@@ -1159,14 +1189,32 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
             run_descriptor, case["artifact"], "case artifact",
             expected_artifact)
         expected_artifacts.add(f"{case_id}.json")
-        evaluation = IntegrityEvalResult.from_dict(parsed)
+        evaluation = decode_integrity_result(parsed)
         strict = CombinedCaseResult(
             case_id=case_id, evaluation=evaluation,
-            attack_family=case.get("attack_family"),
             adversarial_score=case.get("adversarial_score"))
-        _validate_snapshot_view(
-            case["first_pass"], evaluation.model_first_pass, "first_pass")
-        _validate_snapshot_view(case["final"], evaluation.system_final, "final")
+        if case.get("attack_family") != strict.attack_family:
+          raise ValueError("attack_family does not match adversarial_score")
+        if isinstance(evaluation, OperationalIntegrityEvalResult):
+          expected_first = (
+              None if evaluation.model_first_pass is None
+              else _snapshot_view(evaluation.model_first_pass))
+          if case["first_pass"] != expected_first:
+            raise ValueError("first_pass does not match trusted snapshot")
+          if case["final"] != _operational_view():
+            raise ValueError("final does not match operational failure")
+          if case.get("operational_failure") != (
+              evaluation.operational_failure.to_dict()):
+            raise ValueError(
+                "operational failure view does not match its artifact")
+        else:
+          if "operational_failure" in case:
+            raise ValueError(
+                "successful evaluation cannot have operational_failure")
+          _validate_snapshot_view(
+              case["first_pass"], evaluation.model_first_pass, "first_pass")
+          _validate_snapshot_view(
+              case["final"], evaluation.system_final, "final")
         has_rounds = bool(evaluation.repair_rounds)
         if has_rounds != ("repair_rounds" in case):
           raise ValueError("repair_rounds presence does not match Task 8 result")

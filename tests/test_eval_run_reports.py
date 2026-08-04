@@ -17,10 +17,14 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evals"))
 
 from lib.literature_integrity import (  # noqa: E402
+    AdversarialCaseScore,
     IntegrityEvalResult,
     ModelUsage,
+    OperationalFailure,
+    OperationalIntegrityEvalResult,
     QualityResult,
     RepairCost,
+    ReasonMetric,
     RobustnessResult,
     SnapshotEvaluation,
 )
@@ -31,7 +35,7 @@ from lib.run_reports import (  # noqa: E402
     load_dashboard_data,
     write_run_report,
 )
-from review_integrity.models import IntegrityRunReport  # noqa: E402
+from review_integrity.models import IntegrityRunReport, ReasonCode  # noqa: E402
 import run_eval  # noqa: E402
 from lib import literature_integrity  # noqa: E402
 from lib import run_reports  # noqa: E402
@@ -89,6 +93,46 @@ def _run(run_id: str, *quality_scores: float) -> CombinedRunResult:
           for index, score in enumerate(quality_scores, 1)
       ),
   )
+
+
+def _operational_evaluation() -> OperationalIntegrityEvalResult:
+  usage = ModelUsage(
+      duration_seconds=1.0, input_tokens=10, output_tokens=20,
+      estimated_cost_usd=0.03, executor_version="test-executor-v1",
+      prompt_version="test-prompt-v1", prompt_sha256="b" * 64)
+  return OperationalIntegrityEvalResult(
+      model_first_pass=None,
+      repair_rounds=(),
+      operational_failure=OperationalFailure(
+          phase="initial_load", attempt=0,
+          reason_code=ReasonCode.ARTIFACT_MISSING,
+          artifact="refs.json", message="required artifact is missing",
+          model_usage=usage),
+      repair_cost=RepairCost.from_rounds(()),
+      robustness=RobustnessResult(
+          expected_final_status="invalid", observed_final_status="invalid",
+          minimum_repair_rounds=0, maximum_repair_rounds=0,
+          expectation_met=True, error=None),
+  )
+
+
+def test_operational_failure_round_trips_through_report_and_dashboard(tmp_path):
+  run = CombinedRunResult(
+      run_id="run-operational", timestamp="2026-08-04T12:00:00Z",
+      model="codex:test", cases=(CombinedCaseResult(
+          case_id="case-one", evaluation=_operational_evaluation()),))
+
+  run_path = write_run_report(run, tmp_path)
+  selected = load_dashboard_data(tmp_path, "run-operational")
+  case = selected["cases"][0]
+
+  assert selected["summary"]["integrity_status_counts"]["invalid"] == 1
+  assert case["first_pass"] is None
+  assert case["final"] == {
+      "quality_score": None, "integrity_score": None, "status": "invalid",
+      "workspace_manifest_sha256": None}
+  assert case["operational_failure"]["reason_code"] == "artifact_missing"
+  assert "N/A" in (run_path / "summary.md").read_text()
 
 
 def test_two_runs_do_not_share_result_files(tmp_path):
@@ -750,6 +794,13 @@ def test_empty_optional_breakdowns_are_omitted(tmp_path):
 
 
 def test_attack_family_breakdown_is_written_only_when_present(tmp_path):
+  score = AdversarialCaseScore(
+      attack_family="citation-substitution",
+      confusion={
+          "true_positive": 1, "false_positive": 0,
+          "true_negative": 0, "false_negative": 0},
+      reason_metrics={
+          "citation_identity_mismatch": ReasonMetric(1, 0, 0)})
   run = CombinedRunResult(
       run_id="run-attacks",
       timestamp="2026-08-04T12:00:00Z",
@@ -757,10 +808,10 @@ def test_attack_family_breakdown_is_written_only_when_present(tmp_path):
       cases=(
           CombinedCaseResult(
               case_id="case-one", evaluation=_evaluation(81.0),
-              attack_family="citation-substitution"),
+              adversarial_score=score),
           CombinedCaseResult(
               case_id="case-two", evaluation=_evaluation(82.0),
-              attack_family="citation-substitution"),
+              adversarial_score=score),
       ),
   )
 
@@ -771,6 +822,20 @@ def test_attack_family_breakdown_is_written_only_when_present(tmp_path):
       "citation-substitution": 2}
   assert json.loads((run_path / "result.json").read_text())["cases"][0][
       "attack_family"] == "citation-substitution"
+
+
+def test_combined_case_rejects_caller_supplied_attack_family():
+  with pytest.raises(TypeError):
+    CombinedCaseResult(
+        case_id="case-one", evaluation=_evaluation(81.0),
+        attack_family="citation-substitution")
+
+  serialized = {
+      "case_id": "case-one", "evaluation": _evaluation(81.0).to_dict(),
+      "attack_family": "citation-substitution",
+  }
+  with pytest.raises(ValueError, match="unknown fields"):
+    CombinedCaseResult.from_dict(serialized)
 
 
 def test_integrity_cli_mode_uses_the_isolated_report_writer(

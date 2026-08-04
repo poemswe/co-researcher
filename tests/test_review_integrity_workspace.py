@@ -1,4 +1,5 @@
 import hashlib
+import errno
 import json
 import os
 import pathlib
@@ -13,6 +14,7 @@ SCRIPTS = (pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SCRIPTS))
 
 from review_integrity import workspace  # noqa: E402
+from review_integrity.models import ReasonCode  # noqa: E402
 from review_integrity.workspace import (  # noqa: E402
     Artifact,
     CANONICALIZATION,
@@ -93,8 +95,52 @@ def test_workspace_requires_protocol_corpus_claims_synthesis_and_refs(
   root = _write_project_workspace(tmp_path / "review")
   (root / missing).unlink()
 
-  with pytest.raises(WorkspaceError, match=missing):
+  with pytest.raises(WorkspaceError, match=missing) as captured:
     load_workspace(root)
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_MISSING
+  assert captured.value.artifact == missing
+
+
+def test_missing_workspace_root_is_classified_without_message_parsing(tmp_path):
+  missing = tmp_path / "missing-root"
+
+  with pytest.raises(WorkspaceError) as captured:
+    load_workspace(missing)
+
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_MISSING
+  assert captured.value.artifact == "."
+
+
+def test_non_directory_workspace_root_is_type_invalid(tmp_path):
+  parent_file = tmp_path / "not-a-directory"
+  parent_file.write_text("x")
+
+  with pytest.raises(WorkspaceError) as captured:
+    load_workspace(parent_file / "child")
+
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_TYPE_INVALID
+  assert captured.value.artifact == "."
+
+
+def test_workspace_root_permission_error_is_validator_incomplete(
+    monkeypatch, tmp_path,
+):
+  root = tmp_path / "permission-root"
+  root.mkdir()
+  real_open = workspace.os.open
+
+  def denied(path, flags, *args, **kwargs):
+    if path == root.name and kwargs.get("dir_fd") is not None:
+      raise PermissionError(errno.EACCES, "permission denied", path)
+    return real_open(path, flags, *args, **kwargs)
+
+  monkeypatch.setattr(workspace.os, "open", denied)
+
+  with pytest.raises(WorkspaceError) as captured:
+    load_workspace(root)
+
+  assert captured.value.reason_code is ReasonCode.VALIDATOR_INCOMPLETE
+  assert captured.value.artifact == "."
 
 
 def test_workspace_requires_project_link_or_run_manifest(tmp_path):
@@ -130,8 +176,10 @@ def test_workspace_rejects_symlinked_root(tmp_path):
   link = tmp_path / "review"
   link.symlink_to(target, target_is_directory=True)
 
-  with pytest.raises(WorkspaceError, match="root|symlink"):
+  with pytest.raises(WorkspaceError, match="root|symlink") as captured:
     load_workspace(link)
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_SYMLINK
+  assert captured.value.artifact == "."
 
 
 def test_workspace_rejects_symlinked_artifact(tmp_path):
@@ -141,8 +189,10 @@ def test_workspace_rejects_symlinked_artifact(tmp_path):
   (root / "claims.json").unlink()
   (root / "claims.json").symlink_to(external)
 
-  with pytest.raises(WorkspaceError, match="claims.json"):
+  with pytest.raises(WorkspaceError, match="claims.json") as captured:
     load_workspace(root)
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_SYMLINK
+  assert captured.value.artifact == "claims.json"
 
 
 def test_workspace_rejects_symlinked_intermediate_directory(tmp_path):
@@ -181,6 +231,23 @@ def test_workspace_rejects_fifo_leaf_without_blocking(tmp_path):
 
   assert result.returncode == 0, result.stderr
 
+  with pytest.raises(WorkspaceError) as captured:
+    load_workspace(root)
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_TYPE_INVALID
+  assert captured.value.artifact == "claims.json"
+
+
+def test_workspace_rejects_directory_artifact_as_type_invalid(tmp_path):
+  root = _write_project_workspace(tmp_path / "review")
+  (root / "claims.json").unlink()
+  (root / "claims.json").mkdir()
+
+  with pytest.raises(WorkspaceError) as captured:
+    load_workspace(root)
+
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_TYPE_INVALID
+  assert captured.value.artifact == "claims.json"
+
 
 @pytest.mark.parametrize("bad", [
     "../claims.json", "papers/../claims.json", "/absolute/claims.json",
@@ -196,8 +263,10 @@ def test_workspace_rejects_parent_traversal_and_noncanonical_paths(
   root = _write_manifest_workspace(tmp_path / "review",
                                    artifacts=required + [bad])
 
-  with pytest.raises(WorkspaceError, match="path|artifact"):
+  with pytest.raises(WorkspaceError, match="path|artifact") as captured:
     load_workspace(root)
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_TRAVERSAL
+  assert captured.value.artifact == bad
 
 
 def test_run_manifest_rejects_missing_extra_and_duplicate_fields(tmp_path):
