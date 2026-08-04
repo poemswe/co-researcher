@@ -94,17 +94,23 @@ The paired `--official-cases-dir PATH --dry-run-manifest-audit` options are
 available only for `literature-review-integrity`. The dry run performs a
 descriptor-safe audit of `commitment-index.json` and its listed manifest bytes,
 then writes one deterministic JSON object to stdout. It does not open the
-public-input paths committed by those manifests, read scorer annotations,
-construct an executor or judge, use the network, or create result files.
+public-input paths committed by those manifests, use path-based directory
+scans, read scorer annotations, construct an executor or judge, use the network,
+or create result files. Every supplied-root and manifest-path component is
+opened descriptor-relatively without following symlinks. Regular-file identity,
+mode, owner, link count, size, modification time, and change time must remain
+stable across each bounded read, and a nofollow reopen must resolve to the same
+file before the audit accepts it.
 
 The index schema is closed and uses `schema_version: "1.0.0"` plus `cases`.
 Each case entry contains exactly `case_id`, `manifest_path`, and
 `manifest_sha256`. Each listed manifest uses the same schema version and
 contains exactly `case_id` and `public_inputs`; every public-input entry contains
 exactly `input_id`, `path`, `size`, and `sha256`. IDs are lowercase opaque IDs,
-paths are canonical relative POSIX paths, and hashes are lowercase SHA-256.
-Labels, expected outcomes, reason codes, attack-family data, and annotations do
-not belong in these manifests.
+paths are NFC-normalized canonical relative POSIX paths, aliases use normalized
+Unicode case folding, and hashes are lowercase SHA-256. Labels, expected
+outcomes, reason codes, attack-family data, and annotations do not belong in
+these manifests.
 
 ### Paired literature-review integrity runs
 

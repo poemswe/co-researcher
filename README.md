@@ -286,11 +286,15 @@ python3 evals/run_eval.py literature-review-integrity \
   --dry-run-manifest-audit
 ```
 
-This read-only dry run reads file bytes only from `commitment-index.json` and
-the manifests it lists. It does not open committed inputs, load annotations,
-construct a model executor or judge, use the network, or write evaluation
-results. Supplying the directory without the dry-run flag is rejected because
-prospective-case execution is not implemented by this interface.
+This read-only dry run traverses every supplied-root and manifest-path component
+with descriptor-relative nofollow opens. It reads file bytes only from
+`commitment-index.json` and the manifests it lists, verifies stable file
+metadata and pathname identity around each bounded read, and requires NFC
+Unicode paths. It does not open committed inputs, scan the directory, load
+annotations, construct a model executor or judge, use the network, or write
+evaluation results. Supplying the directory without the dry-run flag is
+rejected because prospective-case execution is not implemented by this
+interface.
 
 ### Features
 - **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag

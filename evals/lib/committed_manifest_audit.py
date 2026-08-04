@@ -8,6 +8,7 @@ import os
 import pathlib
 import re
 import stat
+import unicodedata
 
 
 INDEX_NAME = "commitment-index.json"
@@ -45,6 +46,37 @@ def _open_flags(*, directory: bool) -> int:
   return flags
 
 
+def _open_root_directory(root: pathlib.Path) -> int:
+  """Open every absolute root component without following a symlink."""
+  raw_root = os.fspath(root)
+  if type(raw_root) is not str:
+    raise ManifestAuditError("manifest root path must be text")
+  absolute = os.path.abspath(raw_root)
+  components = pathlib.PurePath(absolute).parts
+  descriptors: list[int] = []
+  try:
+    descriptor = os.open(os.path.sep, _open_flags(directory=True))
+    descriptors.append(descriptor)
+    for component in components[1:]:
+      descriptor = os.open(
+          component, _open_flags(directory=True), dir_fd=descriptor)
+      descriptors.append(descriptor)
+      if not stat.S_ISDIR(os.fstat(descriptor).st_mode):
+        raise ManifestAuditError("manifest root component is not a directory")
+    root_descriptor = descriptors.pop()
+    ancestors = descriptors
+    descriptors = [root_descriptor]
+    _close(ancestors, "manifest root ancestors")
+    descriptors = []
+    return root_descriptor
+  except ManifestAuditError:
+    _close(descriptors, "manifest root")
+    raise
+  except Exception as exc:
+    _close(descriptors, "manifest root")
+    raise ManifestAuditError("cannot securely open manifest root") from exc
+
+
 def _close(descriptors: list[int], context: str) -> None:
   error = None
   for descriptor in reversed(descriptors):
@@ -64,6 +96,8 @@ def _safe_relative_path(value: object, context: str) -> pathlib.PurePosixPath:
   except UnicodeEncodeError as exc:
     raise ManifestAuditError(
         f"{context} path must contain valid Unicode scalar values") from exc
+  if unicodedata.normalize("NFC", value) != value:
+    raise ManifestAuditError(f"{context} path must use canonical NFC Unicode")
   path = pathlib.PurePosixPath(value)
   if (
       not value
@@ -76,6 +110,25 @@ def _safe_relative_path(value: object, context: str) -> pathlib.PurePosixPath:
   ):
     raise ManifestAuditError(f"{context} path is not canonical and relative")
   return path
+
+
+def _path_alias(value: str) -> str:
+  return unicodedata.normalize(
+      "NFC", unicodedata.normalize("NFC", value).casefold())
+
+
+def _stable_file_metadata(value: os.stat_result) -> tuple[int, ...]:
+  return (
+      value.st_dev,
+      value.st_ino,
+      value.st_mode,
+      value.st_nlink,
+      value.st_uid,
+      value.st_gid,
+      value.st_size,
+      value.st_mtime_ns,
+      value.st_ctime_ns,
+  )
 
 
 def _read_regular_file(
@@ -120,11 +173,19 @@ def _read_regular_file(
         raise ManifestAuditError(f"{context} exceeds the size limit")
 
     after = os.fstat(descriptor)
+    if _stable_file_metadata(before) != _stable_file_metadata(after):
+      raise ManifestAuditError(f"{context} changed while it was read")
+    if after.st_nlink != 1 or after.st_size != total:
+      raise ManifestAuditError(f"{context} changed while it was read")
+
+    current_descriptor = os.open(
+        relative_path.parts[-1], _open_flags(directory=False),
+        dir_fd=parent_descriptor)
+    descriptors.append(current_descriptor)
+    current = os.fstat(current_descriptor)
     if (
-        (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino)
-        or after.st_nlink != 1
-        or after.st_size != total
-        or before.st_size != after.st_size
+        not stat.S_ISREG(current.st_mode)
+        or _stable_file_metadata(after) != _stable_file_metadata(current)
     ):
       raise ManifestAuditError(f"{context} changed while it was read")
     return b"".join(chunks)
@@ -216,7 +277,7 @@ def _load_manifest(payload: bytes, expected_case_id: str) -> tuple[int, set[str]
     input_ids.add(input_id)
     input_id_aliases.add(alias)
     path = _safe_relative_path(item["path"], f"public input {offset}").as_posix()
-    path_alias = path.casefold()
+    path_alias = _path_alias(path)
     if path_alias in input_paths:
       raise ManifestAuditError("case manifest contains duplicate input path aliases")
     input_paths.add(path_alias)
@@ -232,7 +293,7 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
   _require_secure_descriptor_support()
   root_descriptor = None
   try:
-    root_descriptor = os.open(os.fspath(root), _open_flags(directory=True))
+    root_descriptor = _open_root_directory(root)
     if not stat.S_ISDIR(os.fstat(root_descriptor).st_mode):
       raise ManifestAuditError("manifest root is not a directory")
     index_payload = _read_regular_file(
@@ -266,7 +327,7 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
       manifest_path = _safe_relative_path(
           entry["manifest_path"],
           f"commitment index case {offset} manifest").as_posix()
-      path_alias = manifest_path.casefold()
+      path_alias = _path_alias(manifest_path)
       if path_alias in manifest_paths:
         raise ManifestAuditError("commitment index contains duplicate manifest path aliases")
       manifest_paths.add(path_alias)

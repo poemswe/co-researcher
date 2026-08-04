@@ -1,8 +1,12 @@
+import builtins
 import hashlib
+import importlib
+import io
 import json
 import os
 import pathlib
 import socket
+import subprocess
 import sys
 
 import pytest
@@ -43,6 +47,9 @@ def _write_case_set(root, case_ids=("case-002", "case-001")):
     destination = root / manifest_path
     destination.parent.mkdir(exist_ok=True)
     destination.write_bytes(payload)
+    public_input = root / f"inputs/{case_id}.tar"
+    public_input.parent.mkdir(exist_ok=True)
+    public_input.write_bytes(b"x" * 123)
     entries.append({
         "case_id": case_id,
         "manifest_path": manifest_path,
@@ -116,17 +123,19 @@ def test_audit_is_deterministic_and_reads_only_index_and_listed_manifests(
           },
       ],
   }
-  assert opened[1:] == [
-      "commitment-index.json",
-      "manifests",
-      "case-002.json",
-      "manifests",
-      "case-001.json",
-  ]
   assert not any("annotation" in path or "gold" in path for path in opened)
   assert not any(
       "annotation" in path or "gold" in path
       for _, path in descriptor_operations)
+  assert [
+      path for operation, path in descriptor_operations
+      if operation == "read"
+  ] == [
+      "commitment-index.json", "commitment-index.json",
+      "case-002.json", "case-002.json",
+      "case-001.json", "case-001.json",
+  ]
+  assert not any(path.endswith(".tar") for path in opened)
   assert "path" not in json.dumps(audit)
 
 
@@ -144,15 +153,52 @@ def test_cli_dry_run_never_constructs_execution_or_network_dependencies(
   monkeypatch.setattr(literature_integrity, "ProductionQualityJudge", forbidden)
   monkeypatch.setattr(literature_integrity, "load_cases", forbidden)
   monkeypatch.setattr(literature_integrity, "load_adversarial_scores", forbidden)
-  monkeypatch.setattr(socket, "socket", forbidden)
   monkeypatch.setattr(run_eval, "RESULTS_DIR", tmp_path / "results")
+  workspace = importlib.import_module("review_integrity.workspace")
+  monkeypatch.setattr(workspace, "load_workspace", forbidden)
   before = set(tmp_path.rglob("*"))
 
-  assert run_eval.main([
-      "literature-review-integrity",
-      "--official-cases-dir", str(case_root),
-      "--dry-run-manifest-audit",
-  ]) == 0
+  real_import = builtins.__import__
+  protected_roots = (
+      os.path.abspath(case_root), os.path.abspath(tmp_path / "results"))
+
+  def guarded_import(name, *args, **kwargs):
+    if name in {"lib.literature_integrity", "review_integrity.workspace"}:
+      raise AssertionError(f"execution module imported: {name}")
+    return real_import(name, *args, **kwargs)
+
+  def guarded_path_call(real_operation):
+    def guarded(path, *args, **kwargs):
+      if isinstance(path, (str, bytes, os.PathLike)):
+        rendered = os.path.abspath(os.fsdecode(os.fspath(path)))
+        if any(
+            rendered == root or rendered.startswith(root + os.sep)
+            for root in protected_roots
+        ):
+          raise AssertionError(f"path API touched protected root: {rendered}")
+      return real_operation(path, *args, **kwargs)
+    return guarded
+
+  with monkeypatch.context() as isolation:
+    isolation.setattr(builtins, "open", guarded_path_call(builtins.open))
+    isolation.setattr(builtins, "__import__", guarded_import)
+    isolation.setattr(io, "open", guarded_path_call(io.open))
+    isolation.setattr(socket, "socket", forbidden)
+    isolation.setattr(os, "stat", guarded_path_call(os.stat))
+    isolation.setattr(os, "lstat", guarded_path_call(os.lstat))
+    isolation.setattr(os, "listdir", guarded_path_call(os.listdir))
+    isolation.setattr(os, "scandir", guarded_path_call(os.scandir))
+    isolation.setattr(os, "walk", guarded_path_call(os.walk))
+    isolation.setattr(pathlib.Path, "mkdir", forbidden)
+    isolation.setattr(subprocess, "Popen", forbidden)
+    isolation.setattr(subprocess, "run", forbidden)
+    isolation.setattr(subprocess, "check_output", forbidden)
+
+    assert run_eval.main([
+        "literature-review-integrity",
+        "--official-cases-dir", str(case_root),
+        "--dry-run-manifest-audit",
+    ]) == 0
 
   captured = capsys.readouterr()
   assert json.loads(captured.out)["case_count"] == 1
@@ -289,6 +335,130 @@ def test_manifest_rejects_non_unicode_scalar_paths(tmp_path):
 
   with pytest.raises(ManifestAuditError, match="Unicode"):
     audit_committed_manifests(case_root)
+
+
+def test_same_size_in_place_mutation_during_read_fails_closed(
+    tmp_path, monkeypatch,
+):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001",))
+  manifest_path = case_root / "manifests/case-001.json"
+  original = manifest_path.read_bytes()
+  mutated = original.replace(b"review-input", b"review-jnput")
+  assert len(mutated) == len(original) and mutated != original
+
+  real_open = os.open
+  real_read = os.read
+  manifest_descriptor = None
+  mutated_once = False
+
+  def recording_open(path, flags, mode=0o777, *, dir_fd=None):
+    nonlocal manifest_descriptor
+    descriptor = real_open(path, flags, mode, dir_fd=dir_fd)
+    if os.fspath(path) == "case-001.json":
+      manifest_descriptor = descriptor
+    return descriptor
+
+  def mutating_read(descriptor, size):
+    nonlocal mutated_once
+    payload = real_read(descriptor, size)
+    if descriptor == manifest_descriptor and payload and not mutated_once:
+      mutated_once = True
+      with builtins.open(manifest_path, "r+b") as stream:
+        stream.write(mutated)
+        stream.flush()
+        os.fsync(stream.fileno())
+      before = manifest_path.stat()
+      os.utime(
+          manifest_path,
+          ns=(before.st_atime_ns, before.st_mtime_ns + 1_000_000_000),
+      )
+    return payload
+
+  monkeypatch.setattr(os, "open", recording_open)
+  monkeypatch.setattr(os, "read", mutating_read)
+
+  with pytest.raises(ManifestAuditError, match="changed while it was read"):
+    audit_committed_manifests(case_root)
+
+
+def test_manifest_path_replacement_after_leaf_open_fails_closed(
+    tmp_path, monkeypatch,
+):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001",))
+  manifest_path = case_root / "manifests/case-001.json"
+  original = manifest_path.read_bytes()
+  replacement = original.replace(b"review-input", b"review-jnput")
+  assert len(replacement) == len(original) and replacement != original
+  real_open = os.open
+  swapped = False
+
+  def swapping_open(path, flags, mode=0o777, *, dir_fd=None):
+    nonlocal swapped
+    descriptor = real_open(path, flags, mode, dir_fd=dir_fd)
+    if os.fspath(path) == "case-001.json" and not swapped:
+      swapped = True
+      manifest_path.rename(manifest_path.with_suffix(".old"))
+      manifest_path.write_bytes(replacement)
+    return descriptor
+
+  monkeypatch.setattr(os, "open", swapping_open)
+  with pytest.raises(ManifestAuditError, match="changed while it was read"):
+    audit_committed_manifests(case_root)
+
+
+def test_symlinked_root_ancestor_and_final_root_fail_closed(tmp_path):
+  real_parent = tmp_path / "real-parent"
+  case_root = real_parent / "runtime-supplied"
+  real_parent.mkdir()
+  _write_case_set(case_root, ("case-001",))
+  linked_parent = tmp_path / "linked-parent"
+  linked_parent.symlink_to(real_parent, target_is_directory=True)
+  linked_root = tmp_path / "linked-root"
+  linked_root.symlink_to(case_root, target_is_directory=True)
+
+  with pytest.raises(ManifestAuditError, match="manifest root"):
+    audit_committed_manifests(linked_parent / "runtime-supplied")
+  with pytest.raises(ManifestAuditError, match="manifest root"):
+    audit_committed_manifests(linked_root)
+
+
+def test_public_input_paths_require_nfc_and_allow_canonical_unicode(tmp_path):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001",))
+  index_path = case_root / "commitment-index.json"
+  index = json.loads(index_path.read_bytes())
+  manifest_path = case_root / "manifests/case-001.json"
+  manifest = json.loads(manifest_path.read_bytes())
+  manifest["public_inputs"] = [
+      {
+          "input_id": "review-one",
+          "path": "inputs/caf\u00e9.tar",
+          "size": 1,
+          "sha256": "a" * 64,
+      },
+      {
+          "input_id": "review-two",
+          "path": "inputs/cafe\u0301.tar",
+          "size": 1,
+          "sha256": "b" * 64,
+      },
+  ]
+  payload = _json_bytes(manifest)
+  manifest_path.write_bytes(payload)
+  index["cases"][0]["manifest_sha256"] = hashlib.sha256(payload).hexdigest()
+  index_path.write_bytes(_json_bytes(index))
+
+  with pytest.raises(ManifestAuditError, match="NFC|alias"):
+    audit_committed_manifests(case_root)
+
+  manifest["public_inputs"] = manifest["public_inputs"][:1]
+  payload = _json_bytes(manifest)
+  manifest_path.write_bytes(payload)
+  index["cases"][0]["manifest_sha256"] = hashlib.sha256(payload).hexdigest()
+  index_path.write_bytes(_json_bytes(index))
+  assert audit_committed_manifests(case_root)["public_input_count"] == 1
 
 
 def test_manifest_tamper_symlink_hardlink_and_oversize_are_rejected(tmp_path):
