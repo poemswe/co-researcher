@@ -8,6 +8,7 @@ import pathlib
 import socket
 import subprocess
 import sys
+import tempfile
 
 import pytest
 
@@ -159,13 +160,29 @@ def test_cli_dry_run_never_constructs_execution_or_network_dependencies(
   before = set(tmp_path.rglob("*"))
 
   real_import = builtins.__import__
+  real_import_module = importlib.import_module
   protected_roots = (
       os.path.abspath(case_root), os.path.abspath(tmp_path / "results"))
 
   def guarded_import(name, *args, **kwargs):
-    if name in {"lib.literature_integrity", "review_integrity.workspace"}:
+    if (
+        name == "lib.literature_integrity"
+        or name.startswith("lib.literature_integrity.")
+        or name == "review_integrity"
+        or name.startswith("review_integrity.")
+    ):
       raise AssertionError(f"execution module imported: {name}")
     return real_import(name, *args, **kwargs)
+
+  def guarded_import_module(name, *args, **kwargs):
+    if (
+        name == "lib.literature_integrity"
+        or name.startswith("lib.literature_integrity.")
+        or name == "review_integrity"
+        or name.startswith("review_integrity.")
+    ):
+      raise AssertionError(f"execution module imported: {name}")
+    return real_import_module(name, *args, **kwargs)
 
   def guarded_path_call(real_operation):
     def guarded(path, *args, **kwargs):
@@ -182,6 +199,7 @@ def test_cli_dry_run_never_constructs_execution_or_network_dependencies(
   with monkeypatch.context() as isolation:
     isolation.setattr(builtins, "open", guarded_path_call(builtins.open))
     isolation.setattr(builtins, "__import__", guarded_import)
+    isolation.setattr(importlib, "import_module", guarded_import_module)
     isolation.setattr(io, "open", guarded_path_call(io.open))
     isolation.setattr(socket, "socket", forbidden)
     isolation.setattr(os, "stat", guarded_path_call(os.stat))
@@ -189,10 +207,22 @@ def test_cli_dry_run_never_constructs_execution_or_network_dependencies(
     isolation.setattr(os, "listdir", guarded_path_call(os.listdir))
     isolation.setattr(os, "scandir", guarded_path_call(os.scandir))
     isolation.setattr(os, "walk", guarded_path_call(os.walk))
+    isolation.setattr(os, "mkdir", guarded_path_call(os.mkdir))
+    isolation.setattr(os, "makedirs", guarded_path_call(os.makedirs))
     isolation.setattr(pathlib.Path, "mkdir", forbidden)
     isolation.setattr(subprocess, "Popen", forbidden)
     isolation.setattr(subprocess, "run", forbidden)
     isolation.setattr(subprocess, "check_output", forbidden)
+    isolation.setattr(tempfile, "mkdtemp", forbidden)
+    isolation.setattr(tempfile, "NamedTemporaryFile", forbidden)
+    isolation.setattr(tempfile, "TemporaryDirectory", forbidden)
+
+    with pytest.raises(AssertionError, match="execution module imported"):
+      importlib.import_module("lib.literature_integrity")
+    with pytest.raises(AssertionError, match="execution dependency"):
+      tempfile.mkdtemp(dir=case_root)
+    with pytest.raises(AssertionError, match="protected root"):
+      os.mkdir(case_root / "unexpected-workspace")
 
     assert run_eval.main([
         "literature-review-integrity",
@@ -405,6 +435,75 @@ def test_manifest_path_replacement_after_leaf_open_fails_closed(
 
   monkeypatch.setattr(os, "open", swapping_open)
   with pytest.raises(ManifestAuditError, match="changed while it was read"):
+    audit_committed_manifests(case_root)
+
+
+def test_manifest_intermediate_directory_replacement_fails_closed(
+    tmp_path, monkeypatch,
+):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001",))
+  manifests = case_root / "manifests"
+  original_manifest = manifests / "case-001.json"
+  original_payload = original_manifest.read_bytes()
+  real_read = os.read
+  replaced = False
+  manifest_descriptor = None
+  real_open = os.open
+
+  def recording_open(path, flags, mode=0o777, *, dir_fd=None):
+    nonlocal manifest_descriptor
+    descriptor = real_open(path, flags, mode, dir_fd=dir_fd)
+    if os.fspath(path) == "case-001.json" and manifest_descriptor is None:
+      manifest_descriptor = descriptor
+    return descriptor
+
+  def replacing_read(descriptor, size):
+    nonlocal replaced
+    payload = real_read(descriptor, size)
+    if descriptor == manifest_descriptor and payload and not replaced:
+      replaced = True
+      manifests.rename(case_root / "detached-manifests")
+      manifests.mkdir()
+      (manifests / "case-001.json").write_bytes(original_payload)
+    return payload
+
+  monkeypatch.setattr(os, "open", recording_open)
+  monkeypatch.setattr(os, "read", replacing_read)
+  with pytest.raises(ManifestAuditError, match="changed while it was read"):
+    audit_committed_manifests(case_root)
+
+
+def test_supplied_root_path_replacement_before_completion_fails_closed(
+    tmp_path, monkeypatch,
+):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001",))
+  detached_root = tmp_path / "detached-root"
+  real_read = os.read
+  real_open = os.open
+  manifest_descriptor = None
+  replaced = False
+
+  def recording_open(path, flags, mode=0o777, *, dir_fd=None):
+    nonlocal manifest_descriptor
+    descriptor = real_open(path, flags, mode, dir_fd=dir_fd)
+    if os.fspath(path) == "case-001.json" and manifest_descriptor is None:
+      manifest_descriptor = descriptor
+    return descriptor
+
+  def replacing_read(descriptor, size):
+    nonlocal replaced
+    payload = real_read(descriptor, size)
+    if descriptor == manifest_descriptor and payload and not replaced:
+      replaced = True
+      case_root.rename(detached_root)
+      case_root.mkdir()
+    return payload
+
+  monkeypatch.setattr(os, "open", recording_open)
+  monkeypatch.setattr(os, "read", replacing_read)
+  with pytest.raises(ManifestAuditError, match="manifest root|changed"):
     audit_committed_manifests(case_root)
 
 

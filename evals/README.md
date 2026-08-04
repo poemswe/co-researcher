@@ -99,8 +99,12 @@ scans, read scorer annotations, construct an executor or judge, use the network,
 or create result files. Every supplied-root and manifest-path component is
 opened descriptor-relatively without following symlinks. Regular-file identity,
 mode, owner, link count, size, modification time, and change time must remain
-stable across each bounded read, and a nofollow reopen must resolve to the same
-file before the audit accepts it.
+stable across each bounded read. Held in-root directory components must also
+remain stable. Before accepting, the audit reopens each complete manifest chain
+from the held root and the complete supplied-root chain from the filesystem
+anchor; every component must have the same observed identity at that final
+verification point. This is a fail-closed point-in-time audit, not a filesystem
+lock against mutations after the command returns.
 
 The index schema is closed and uses `schema_version: "1.0.0"` plus `cases`.
 Each case entry contains exactly `case_id`, `manifest_path`, and

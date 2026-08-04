@@ -289,12 +289,14 @@ python3 evals/run_eval.py literature-review-integrity \
 This read-only dry run traverses every supplied-root and manifest-path component
 with descriptor-relative nofollow opens. It reads file bytes only from
 `commitment-index.json` and the manifests it lists, verifies stable file
-metadata and pathname identity around each bounded read, and requires NFC
-Unicode paths. It does not open committed inputs, scan the directory, load
-annotations, construct a model executor or judge, use the network, or write
-evaluation results. Supplying the directory without the dry-run flag is
-rejected because prospective-case execution is not implemented by this
-interface.
+metadata around each bounded read, and requires NFC Unicode paths. Before it
+returns, it reopens every complete manifest chain from the held root descriptor
+and the complete supplied-root chain from the filesystem anchor, rejecting any
+component identity change observed at that verification point. It does not open
+committed inputs, scan the directory, load annotations, construct a model
+executor or judge, use the network, or write evaluation results. Supplying the
+directory without the dry-run flag is rejected because prospective-case
+execution is not implemented by this interface.
 
 ### Features
 - **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag

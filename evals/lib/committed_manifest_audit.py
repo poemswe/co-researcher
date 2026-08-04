@@ -46,7 +46,13 @@ def _open_flags(*, directory: bool) -> int:
   return flags
 
 
-def _open_root_directory(root: pathlib.Path) -> int:
+def _component_identity(value: os.stat_result) -> tuple[int, int, int]:
+  return value.st_dev, value.st_ino, value.st_mode
+
+
+def _open_root_directory(
+    root: pathlib.Path,
+) -> tuple[int, str, tuple[tuple[int, int, int], ...]]:
   """Open every absolute root component without following a symlink."""
   raw_root = os.fspath(root)
   if type(raw_root) is not str:
@@ -54,21 +60,25 @@ def _open_root_directory(root: pathlib.Path) -> int:
   absolute = os.path.abspath(raw_root)
   components = pathlib.PurePath(absolute).parts
   descriptors: list[int] = []
+  identities = []
   try:
     descriptor = os.open(os.path.sep, _open_flags(directory=True))
     descriptors.append(descriptor)
+    identities.append(_component_identity(os.fstat(descriptor)))
     for component in components[1:]:
       descriptor = os.open(
           component, _open_flags(directory=True), dir_fd=descriptor)
       descriptors.append(descriptor)
-      if not stat.S_ISDIR(os.fstat(descriptor).st_mode):
+      metadata = os.fstat(descriptor)
+      if not stat.S_ISDIR(metadata.st_mode):
         raise ManifestAuditError("manifest root component is not a directory")
+      identities.append(_component_identity(metadata))
     root_descriptor = descriptors.pop()
     ancestors = descriptors
     descriptors = [root_descriptor]
     _close(ancestors, "manifest root ancestors")
     descriptors = []
-    return root_descriptor
+    return root_descriptor, absolute, tuple(identities)
   except ManifestAuditError:
     _close(descriptors, "manifest root")
     raise
@@ -139,6 +149,7 @@ def _read_regular_file(
     context: str,
 ) -> bytes:
   descriptors: list[int] = []
+  directory_metadata = []
   try:
     parent_descriptor = root_descriptor
     for component in relative_path.parts[:-1]:
@@ -146,8 +157,10 @@ def _read_regular_file(
           component, _open_flags(directory=True), dir_fd=parent_descriptor)
       descriptors.append(descriptor)
       parent_descriptor = descriptor
-      if not stat.S_ISDIR(os.fstat(descriptor).st_mode):
+      metadata = os.fstat(descriptor)
+      if not stat.S_ISDIR(metadata.st_mode):
         raise ManifestAuditError(f"{context} parent is not a directory")
+      directory_metadata.append(metadata)
 
     descriptor = os.open(
         relative_path.parts[-1], _open_flags(directory=False),
@@ -178,15 +191,33 @@ def _read_regular_file(
     if after.st_nlink != 1 or after.st_size != total:
       raise ManifestAuditError(f"{context} changed while it was read")
 
+    for held_descriptor, expected in zip(
+        descriptors[:len(directory_metadata)], directory_metadata):
+      if _stable_file_metadata(os.fstat(held_descriptor)) != (
+          _stable_file_metadata(expected)):
+        raise ManifestAuditError(f"{context} changed while it was read")
+
+    reopened_parent = root_descriptor
+    for component, expected in zip(
+        relative_path.parts[:-1], directory_metadata):
+      reopened = os.open(
+          component, _open_flags(directory=True), dir_fd=reopened_parent)
+      descriptors.append(reopened)
+      current = os.fstat(reopened)
+      if (
+          not stat.S_ISDIR(current.st_mode)
+          or _stable_file_metadata(current) != _stable_file_metadata(expected)
+      ):
+        raise ManifestAuditError(f"{context} changed while it was read")
+      reopened_parent = reopened
+
     current_descriptor = os.open(
         relative_path.parts[-1], _open_flags(directory=False),
-        dir_fd=parent_descriptor)
+        dir_fd=reopened_parent)
     descriptors.append(current_descriptor)
     current = os.fstat(current_descriptor)
-    if (
-        not stat.S_ISREG(current.st_mode)
-        or _stable_file_metadata(after) != _stable_file_metadata(current)
-    ):
+    if not stat.S_ISREG(current.st_mode) or (
+        _stable_file_metadata(after) != _stable_file_metadata(current)):
       raise ManifestAuditError(f"{context} changed while it was read")
     return b"".join(chunks)
   except ManifestAuditError:
@@ -195,6 +226,30 @@ def _read_regular_file(
     raise ManifestAuditError(f"cannot securely open {context}: {exc}") from exc
   finally:
     _close(descriptors, context)
+
+
+def _verify_root_directory(
+    root_descriptor: int,
+    root_absolute: str,
+    expected_chain: tuple[tuple[int, int, int], ...],
+    root_before: os.stat_result,
+) -> None:
+  root_after = os.fstat(root_descriptor)
+  if _stable_file_metadata(root_before) != _stable_file_metadata(root_after):
+    raise ManifestAuditError("manifest root changed during audit")
+  reopened_descriptor = None
+  try:
+    reopened_descriptor, _, current_chain = _open_root_directory(
+        pathlib.Path(root_absolute))
+    current = os.fstat(reopened_descriptor)
+    if (
+        current_chain != expected_chain
+        or _stable_file_metadata(current) != _stable_file_metadata(root_after)
+    ):
+      raise ManifestAuditError("manifest root path changed during audit")
+  finally:
+    if reopened_descriptor is not None:
+      _close([reopened_descriptor], "reopened manifest root")
 
 
 def _reject_constant(value: str):
@@ -293,8 +348,9 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
   _require_secure_descriptor_support()
   root_descriptor = None
   try:
-    root_descriptor = _open_root_directory(root)
-    if not stat.S_ISDIR(os.fstat(root_descriptor).st_mode):
+    root_descriptor, root_absolute, root_chain = _open_root_directory(root)
+    root_before = os.fstat(root_descriptor)
+    if not stat.S_ISDIR(root_before.st_mode):
       raise ManifestAuditError("manifest root is not a directory")
     index_payload = _read_regular_file(
         root_descriptor, pathlib.PurePosixPath(INDEX_NAME),
@@ -351,13 +407,16 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
           "public_input_count": input_count,
       })
 
-    return {
+    audit = {
         "schema_version": SCHEMA_VERSION,
         "index_sha256": hashlib.sha256(index_payload).hexdigest(),
         "case_count": len(audit_cases),
         "public_input_count": total_inputs,
         "cases": sorted(audit_cases, key=lambda item: item["case_id"]),
     }
+    _verify_root_directory(
+        root_descriptor, root_absolute, root_chain, root_before)
+    return audit
   except ManifestAuditError:
     raise
   except Exception as exc:
