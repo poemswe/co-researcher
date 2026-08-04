@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+import math
+import re
 from typing import Callable
 
 import check_claims
 import prisma_counts
+import verify_citations
 
 from .models import Finding, ReasonCode, Severity
 from .workspace import WorkspaceSnapshot
@@ -47,16 +51,83 @@ def _claim_finding(
   )
 
 
+_CLAIM_STATUSES = (
+    "verified", "needs_review", "background", "fabricated_quote",
+    "uncovered_claim", "source_missing", "no_quote", "quote_too_short",
+    "invalid_binding",
+)
+
+
+def _count(value) -> bool:
+  return not isinstance(value, bool) and isinstance(value, int) and value >= 0
+
+
+def _optional_string(value) -> bool:
+  return value is None or isinstance(value, str)
+
+
+def _valid_claim_result(result: object) -> bool:
+  required = {
+      "claim", "paper_id", "citation", "supporting_quote", "status",
+      "source_scope", "quote_match_ratio", "matched", "best_window",
+      "quote_is_title", "context_risks", "anchors",
+  }
+  if not isinstance(result, dict) or not required <= set(result):
+    return False
+  if result["status"] not in _CLAIM_STATUSES:
+    return False
+  if not all(_optional_string(result[field]) for field in (
+      "claim", "paper_id", "citation", "supporting_quote", "source_scope",
+      "matched", "best_window",
+  )):
+    return False
+  ratio = result["quote_match_ratio"]
+  if (ratio is not None and (isinstance(ratio, bool)
+      or not isinstance(ratio, (int, float)) or not math.isfinite(ratio)
+      or not 0 <= ratio <= 1)):
+    return False
+  if not isinstance(result["quote_is_title"], bool):
+    return False
+  if (not isinstance(result["context_risks"], list)
+      or not all(isinstance(item, str) for item in result["context_risks"])):
+    return False
+  if result["anchors"] is not None and not isinstance(result["anchors"], dict):
+    return False
+  if result["status"] in {"verified", "background"}:
+    if result["source_scope"] not in {"abstract", "fulltext"}:
+      return False
+  if result["status"] in {"invalid_binding", "uncovered_claim"}:
+    if not isinstance(result.get("reason_code"), str):
+      return False
+  return True
+
+
+def _valid_claim_report(report: object) -> bool:
+  required = {"total", "coverage_checked", "results", *_CLAIM_STATUSES}
+  if not isinstance(report, dict) or not required <= set(report):
+    return False
+  if not isinstance(report["coverage_checked"], bool):
+    return False
+  if not all(_count(report[status]) for status in _CLAIM_STATUSES):
+    return False
+  results = report["results"]
+  if not isinstance(results, list) or not all(
+      _valid_claim_result(result) for result in results):
+    return False
+  if (not _count(report["total"]) or report["total"] != len(results)
+      or sum(report[status] for status in _CLAIM_STATUSES) != len(results)):
+    return False
+  actual = {status: 0 for status in _CLAIM_STATUSES}
+  for result in results:
+    actual[result["status"]] += 1
+  return all(report[status] == actual[status] for status in _CLAIM_STATUSES)
+
+
 def claim_findings(report: dict) -> tuple[Finding, ...]:
   """Map a claim-checker report into closed, stable findings."""
-  if not isinstance(report, dict) or not isinstance(report.get("results"), list):
+  if not _valid_claim_report(report):
     return (_incomplete("claim", "claims.json"),)
   results = report["results"]
-  if ("total" in report
-      and (isinstance(report["total"], bool)
-           or not isinstance(report["total"], int)
-           or report["total"] != len(results))):
-    return (_incomplete("claim", "claims.json"),)
   findings = []
   coverage_reasons = {
       "coverage_number_missing": ReasonCode.COVERAGE_NUMBER_MISSING,
@@ -123,7 +194,7 @@ def claim_findings(report: dict) -> tuple[Finding, ...]:
 def _citation_context(result: dict, index: int) -> dict:
   context = {"result_index": index}
   for key in ("status", "input", "doi", "matched_title", "source",
-              "retraction_source"):
+              "retraction_source", "resolution_status", "retraction_status"):
     value = result.get(key)
     if isinstance(value, (str, int, bool)) or value is None:
       context[key] = value
@@ -146,28 +217,133 @@ def _citation_finding(
   )
 
 
-def citation_findings(report: dict | None) -> tuple[Finding, ...]:
+_CITATION_STATUSES = (
+    "verified", "mismatched", "not_found", "retracted", "unavailable",
+)
+_SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
+
+
+def _aware_utc_timestamp(value: object) -> bool:
+  if not isinstance(value, str) or not value.endswith("Z"):
+    return False
+  try:
+    parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+  except ValueError:
+    return False
+  return parsed.tzinfo is not None and parsed.utcoffset() == timezone.utc.utcoffset(parsed)
+
+
+def _valid_citation_result(result: object, entry: dict, index: int) -> bool:
+  required = {
+      "input", "status", "doi", "matched_title", "source",
+      "retraction_checked", "retraction_source", "retraction_status",
+      "resolution_status", "entry_index", "input_identity",
+  }
+  if not isinstance(result, dict) or not required <= set(result):
+    return False
+  if result["status"] not in _CITATION_STATUSES:
+    return False
+  if not isinstance(result["input"], str) or result["input"] != entry["raw"]:
+    return False
+  if not all(_optional_string(result[field]) for field in (
+      "doi", "matched_title", "source", "retraction_source",
+  )):
+    return False
+  if not isinstance(result["retraction_checked"], bool):
+    return False
+  if result["retraction_status"] not in {
+      "complete", "partial", "unavailable", "not_applicable",
+  }:
+    return False
+  if result["resolution_status"] not in {"complete", "partial", "unavailable"}:
+    return False
+  if (isinstance(result["entry_index"], bool)
+      or result["entry_index"] != index):
+    return False
+  identity = result["input_identity"]
+  if (not isinstance(identity, str) or not _SHA256_RE.fullmatch(identity)
+      or identity != verify_citations.citation_input_identity(entry)):
+    return False
+  status = result["status"]
+  audit = result["retraction_status"]
+  if status in {"not_found", "unavailable"}:
+    expected_audit = "not_applicable" if status == "not_found" else "unavailable"
+    expected_resolution = "complete" if status == "not_found" else "unavailable"
+    if (audit != expected_audit or result["retraction_checked"]
+        or result["resolution_status"] != expected_resolution):
+      return False
+  elif status == "retracted":
+    if audit != "complete" or not result["retraction_checked"]:
+      return False
+  elif result["retraction_checked"] != (audit == "complete"):
+    return False
+  return True
+
+
+def _expected_response_status(results: list[dict]) -> str:
+  unavailable = sum(result["status"] == "unavailable" for result in results)
+  if results and unavailable == len(results):
+    return "unavailable"
+  if unavailable or any(
+      result["status"] in {"verified", "mismatched"}
+      and result["retraction_status"] in {"partial", "unavailable"}
+      for result in results
+  ) or any(result["resolution_status"] in {"partial", "unavailable"}
+           for result in results):
+    return "partial"
+  return "complete"
+
+
+def _valid_citation_report(report: object, bibliography: object) -> tuple[bool, list]:
+  required = {
+      "total", *_CITATION_STATUSES, "resolver", "checked_at",
+      "response_status", "bibliography_sha256", "results",
+  }
+  if not isinstance(report, dict) or not required <= set(report):
+    return False, []
+  try:
+    entries = verify_citations.normalize_citation_entries(bibliography)
+  except (TypeError, ValueError):
+    return False, []
+  if not isinstance(report["resolver"], str) or not report["resolver"]:
+    return False, entries
+  if not _aware_utc_timestamp(report["checked_at"]):
+    return False, entries
+  if report["response_status"] not in {"complete", "partial", "unavailable"}:
+    return False, entries
+  digest = report["bibliography_sha256"]
+  if (not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest)
+      or digest != verify_citations.bibliography_sha256(entries)):
+    return False, entries
+  if not all(_count(report[status]) for status in _CITATION_STATUSES):
+    return False, entries
+  results = report["results"]
+  if (not isinstance(results, list) or len(results) != len(entries)
+      or not all(_valid_citation_result(result, entry, index)
+                 for index, (result, entry) in enumerate(zip(results, entries)))):
+    return False, entries
+  if (not _count(report["total"]) or report["total"] != len(results)
+      or sum(report[status] for status in _CITATION_STATUSES) != len(results)):
+    return False, entries
+  for status in _CITATION_STATUSES:
+    if report[status] != sum(result["status"] == status for result in results):
+      return False, entries
+  if report["response_status"] != _expected_response_status(results):
+    return False, entries
+  return True, entries
+
+
+def citation_findings(
+    report: dict | None, bibliography: list | None = None,
+) -> tuple[Finding, ...]:
   """Map an explicit citation report without constructing a resolver."""
   if report is None:
-    return (Finding(
-        reason_code=ReasonCode.CITATION_RESOLUTION_UNAVAILABLE,
-        severity=Severity.WARNING,
-        artifact="refs.json",
-        message="citation resolution report was not supplied",
-        context={"response_status": "unavailable"},
-    ),)
-  if not isinstance(report, dict) or not isinstance(report.get("results"), list):
+    return (_incomplete("citation", "refs.json"),)
+  valid, _entries = _valid_citation_report(report, bibliography)
+  if not valid:
     return (_incomplete("citation", "refs.json"),)
   results = report["results"]
-  response_status = report.get("response_status", "complete")
-  if (not isinstance(response_status, str)
-      or response_status not in {"complete", "partial", "unavailable"}):
-    return (_incomplete("citation", "refs.json"),)
-  if ("total" in report
-      and (isinstance(report["total"], bool)
-           or not isinstance(report["total"], int)
-           or report["total"] != len(results))):
-    return (_incomplete("citation", "refs.json"),)
+  response_status = report["response_status"]
   findings = []
   has_resolution_warning = False
   for index, result in enumerate(results):
@@ -194,9 +370,6 @@ def citation_findings(report: dict | None) -> tuple[Finding, ...]:
           "citation resolver could not provide an authoritative answer",
           result, index))
     elif status == "verified":
-      if not isinstance(result.get("retraction_checked"), bool):
-        findings.append(_incomplete("citation", "refs.json"))
-        continue
       if not result["retraction_checked"]:
         has_resolution_warning = True
         findings.append(_citation_finding(
@@ -225,13 +398,30 @@ def citation_findings(report: dict | None) -> tuple[Finding, ...]:
 
 def prisma_findings(report: dict) -> tuple[Finding, ...]:
   """Map PRISMA output into stable completeness findings."""
-  if not isinstance(report, dict) or not isinstance(report.get("excluded"), dict):
+  required = {
+      "records_by_source", "after_dedup", "screened", "excluded",
+      "included", "not_retrieved", "in_synthesis",
+  }
+  if not isinstance(report, dict) or not required <= set(report):
     return (_incomplete("prisma", "corpus.json"),)
+  records_by_source = report["records_by_source"]
   excluded = report["excluded"]
-  if not all(isinstance(reason, str)
-             and not isinstance(count, bool)
-             and isinstance(count, int) and count >= 0
-             for reason, count in excluded.items()):
+  if (not isinstance(records_by_source, dict) or not isinstance(excluded, dict)
+      or not all(isinstance(source, str) and _count(count)
+                 for source, count in records_by_source.items())
+      or not all(isinstance(reason, str) and _count(count)
+                 for reason, count in excluded.items())
+      or not all(_count(report[field]) for field in (
+          "after_dedup", "screened", "included", "not_retrieved",
+          "in_synthesis",
+      ))):
+    return (_incomplete("prisma", "corpus.json"),)
+  if (sum(records_by_source.values()) != report["after_dedup"]
+      or report["screened"] > report["after_dedup"]
+      or sum(excluded.values()) + report["included"] > report["screened"]
+      or report["not_retrieved"] > report["included"]
+      or report["in_synthesis"]
+      != report["included"] - report["not_retrieved"]):
     return (_incomplete("prisma", "corpus.json"),)
   count = excluded.get("unspecified", 0)
   if not count:
@@ -294,8 +484,9 @@ def artifact_findings(snapshot: WorkspaceSnapshot) -> tuple[Finding, ...]:
   return tuple(findings)
 
 
-def _source_texts(snapshot: WorkspaceSnapshot) -> check_claims.SourceTexts:
-  texts = check_claims.SourceTexts()
+def _snapshot_sources(snapshot: WorkspaceSnapshot) -> tuple[dict[str, str], dict[str, str]]:
+  texts = {}
+  scopes = {}
   for artifact in snapshot.files:
     if not artifact.preferred_for_claims:
       continue
@@ -304,9 +495,9 @@ def _source_texts(snapshot: WorkspaceSnapshot) -> check_claims.SourceTexts:
       continue
     paper_id = parts[1]
     texts[paper_id] = snapshot.read_text(artifact.relative_path)
-    texts.scopes[paper_id] = (
+    scopes[paper_id] = (
         "abstract" if parts[2] == "abstract.md" else "fulltext")
-  return texts
+  return texts, scopes
 
 
 def validate_snapshot(
@@ -332,12 +523,18 @@ def validate_snapshot(
     corpus = snapshot.read_json("corpus.json")
     references = snapshot.read_json("refs.json")
     synthesis = snapshot.read_text("synthesis.md")
+    source_texts, source_scopes = _snapshot_sources(snapshot)
+    corpus = check_claims.corpus_with_source_scopes(corpus, source_scopes)
     report = check_claims.check_claims_document(
-        entries, corpus, _source_texts(snapshot), synthesis, references)
+        entries, corpus, source_texts, synthesis, references)
     return claim_findings(report)
 
   run("claim", "claims.json", claims)
-  run("citation", "refs.json", lambda: citation_findings(citation_report))
+  def citations() -> tuple[Finding, ...]:
+    references = snapshot.read_json("refs.json")
+    return citation_findings(citation_report, references)
+
+  run("citation", "refs.json", citations)
 
   def prisma() -> tuple[Finding, ...]:
     records = snapshot.read_json("corpus.json")

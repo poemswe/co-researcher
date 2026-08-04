@@ -899,23 +899,17 @@ def validate_citation_bindings(entries: list[dict], workspace,
     sys.exit(str(exc))
 
 
-class SourceTexts(dict):
-  """Text mapping with optional source-scope metadata for pure validation."""
-
-  def __init__(self, *args, scopes=None, **kwargs):
-    super().__init__(*args, **kwargs)
-    self.scopes = dict(scopes or {})
-
-
-def _source_scope(paper_id: str, records: list[dict], source_texts) -> str:
-  safe_id = sanitize_id(paper_id)
-  scopes = getattr(source_texts, "scopes", {})
-  if safe_id in scopes:
-    return scopes[safe_id]
+def _source_scope(paper_id: str, records: list[dict]) -> str:
   record = _record_for_paper_id(records, paper_id)
-  if record and record.get("fulltext") in ("abstract", "abstract-only"):
+  if record is None:
+    raise ValueError("source scope requires a unique trusted corpus record")
+  marker = record.get("fulltext")
+  if marker in ("abstract", "abstract-only"):
     return "abstract"
-  return "fulltext"
+  if marker == "fulltext":
+    return "fulltext"
+  raise ValueError(
+      "corpus fulltext metadata must identify fulltext or abstract-only scope")
 
 
 def _check_entry_from_source_texts(
@@ -924,8 +918,24 @@ def _check_entry_from_source_texts(
   paper_id = entry.get("paper_id") or ""
   raw = source_texts.get(sanitize_id(paper_id))
   loaded = None if raw is None else (
-      raw, normalize_text(raw), _source_scope(paper_id, records, source_texts))
+      raw, normalize_text(raw), _source_scope(paper_id, records))
   return _check_entry_loaded(entry, loaded)
+
+
+def corpus_with_source_scopes(
+    records: list[dict], source_scopes: dict[str, str],
+) -> list[dict]:
+  """Copy corpus records with loader-observed source scope made explicit."""
+  enriched = []
+  for record in records:
+    copied = dict(record)
+    matching = _record_ids(record) & set(source_scopes)
+    if len(matching) == 1:
+      scope = source_scopes[next(iter(matching))]
+      copied["fulltext"] = (
+          "abstract-only" if scope == "abstract" else "fulltext")
+    enriched.append(copied)
+  return enriched
 
 
 def check_claims_document(
@@ -994,7 +1004,8 @@ def main(argv=None) -> int:
   references = None
   if args.references is not None:
     references = _read_json(pathlib.Path(args.references), "references")
-  source_texts = SourceTexts()
+  source_texts = {}
+  source_scopes = {}
   for entry in entries:
     paper_id = entry.get("paper_id") or ""
     safe_id = sanitize_id(paper_id)
@@ -1003,7 +1014,8 @@ def main(argv=None) -> int:
     loaded = load_source(pathlib.Path(args.workspace), paper_id)
     if loaded is not None:
       source_texts[safe_id] = loaded[0]
-      source_texts.scopes[safe_id] = loaded[1]
+      source_scopes[safe_id] = loaded[1]
+  corpus_records = corpus_with_source_scopes(corpus_records, source_scopes)
 
   synthesis = None
   if args.synthesis is not None:
