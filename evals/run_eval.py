@@ -41,7 +41,8 @@ def _execute_single_test(tc, model: str, verbose: bool):
         with PRINT_LOCK:
             print(f"[{tc.agent}] {tc.name} started...")
 
-        result = execute_agent(tc.agent, tc.task_prompt, tc.timeout, model)
+        result = execute_agent(
+            tc.implementation_skill, tc.task_prompt, tc.timeout, model)
         
         if not result.success:
             with PRINT_LOCK:
@@ -196,6 +197,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
         test_result = {
             "id": test_id,
             "agent": rpt.test_case.agent,
+            "implementation_skill": rpt.test_case.implementation_skill,
             "test_case": rpt.test_case.name.lower().replace(" ", "-"),
             "test_name": rpt.test_case.name,
             "difficulty": extract_difficulty(rpt.test_case.file_path),

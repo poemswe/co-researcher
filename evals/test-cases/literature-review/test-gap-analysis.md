@@ -1,7 +1,8 @@
 # Test Case: Research Gap Identification
 
 ## Metadata
-- **Agent**: literature-review
+- **Capability**: literature-review
+- **Implementation Skill**: literature-review
 - **Difficulty**: Medium
 - **Focus**: Gap analysis and synthesis
 

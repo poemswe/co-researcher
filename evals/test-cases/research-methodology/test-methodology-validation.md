@@ -1,7 +1,8 @@
 # Test Case: Methodology Validation & Design Critique
 
 ## Metadata
-- **Agent**: research-methodology
+- **Capability**: research-methodology
+- **Implementation Skill**: research-methodology
 - **Difficulty**: Medium
 - **Focus**: Evaluating whether a proposed research design fits the research question and identifying design flaws
 

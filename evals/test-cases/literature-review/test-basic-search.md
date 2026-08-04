@@ -1,7 +1,8 @@
 # Test Case: Basic Literature Search
 
 ## Metadata
-- **Agent**: literature-review
+- **Capability**: literature-review
+- **Implementation Skill**: literature-review
 - **Difficulty**: Easy
 - **Focus**: Search strategy and source retrieval
 

@@ -1,7 +1,8 @@
 # Test Case: Leading Questions Detection
 
 ## Metadata
-- **Agent**: qualitative-research
+- **Capability**: qualitative-research
+- **Implementation Skill**: qualitative-research
 - **Difficulty**: Hard
 - **Focus**: Methodological bias identification in interview protocols
 

@@ -1,7 +1,8 @@
 # Test Case: Effect Size Interpretation
 
 ## Metadata
-- **Agent**: quantitative-analysis
+- **Capability**: quantitative-analysis
+- **Implementation Skill**: quantitative-analysis
 - **Difficulty**: Medium
 - **Focus**: Interpreting effect sizes and practical significance
 

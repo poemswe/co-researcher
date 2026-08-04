@@ -1,7 +1,8 @@
 # Test Case: Thematic Analysis
 
 ## Metadata
-- **Agent**: qualitative-research
+- **Capability**: qualitative-research
+- **Implementation Skill**: qualitative-research
 - **Difficulty**: Medium
 - **Focus**: Conducting thematic analysis on text data
 

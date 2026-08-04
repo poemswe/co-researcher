@@ -1,7 +1,8 @@
 # Test Case: Methodology Critique
 
 ## Metadata
-- **Agent**: critical-analysis
+- **Capability**: critical-analysis
+- **Implementation Skill**: critical-analysis
 - **Difficulty**: Medium
 - **Focus**: Evaluating research methodology
 
