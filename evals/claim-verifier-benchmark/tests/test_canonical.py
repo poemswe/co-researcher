@@ -1,5 +1,7 @@
 import hashlib
 import os
+import pathlib
+import sys
 
 import pytest
 
@@ -10,12 +12,33 @@ from claim_verifier_benchmark.canonical import (
     manifest_digest,
 )
 
+PLUGIN_SCRIPTS = (pathlib.Path(__file__).resolve().parents[3]
+                  / "skills/literature-review/scripts")
+sys.path.insert(0, str(PLUGIN_SCRIPTS))
+
+from review_integrity.workspace import (  # noqa: E402
+    CANONICALIZATION,
+    canonical_manifest_bytes,
+)
+
 
 def test_rfc8785_bytes_are_canonical():
     value = {"z": [3, 2, 1], "a": {"truth": True, "empty": None}}
     assert canonical_bytes(value) == (
         b'{"a":{"empty":null,"truth":true},"z":[3,2,1]}'
     )
+
+
+def test_restricted_plugin_manifest_bytes_match_rfc8785():
+    manifest = {
+        "canonicalization": CANONICALIZATION,
+        "files": [{
+            "path": "papers/café/fulltext.md",
+            "sha256": "a" * 64,
+            "size": 17,
+        }],
+    }
+    assert canonical_manifest_bytes(manifest) == canonical_bytes(manifest)
 
 
 def test_manifest_sorts_paths_and_hashes_exact_bytes(tmp_path):
