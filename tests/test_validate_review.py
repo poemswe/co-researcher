@@ -300,6 +300,30 @@ def test_cli_rejects_run_report_inside_workspace(tmp_path):
   assert not run_report.exists()
 
 
+@pytest.mark.parametrize(("option", "filename"), [
+    ("--run-report", "run-report.json"),
+    ("--output", "validation.json"),
+])
+def test_cli_rejects_case_alias_inside_workspace(
+    tmp_path, option, filename,
+):
+  workspace = _review(tmp_path / "Review")
+  alias = tmp_path / "review"
+  try:
+    same_directory = alias.exists() and os.path.samefile(workspace, alias)
+  except OSError:
+    same_directory = False
+  if not same_directory:
+    pytest.skip("filesystem is genuinely case-sensitive")
+
+  result = _run(workspace, option, str(alias / filename))
+
+  assert result.returncode == 2
+  assert result.stdout == ""
+  assert "outside" in result.stderr.lower()
+  assert not (workspace / filename).exists()
+
+
 @pytest.mark.parametrize("payload", [
     b'{"schema_version":"1.0.0","schema_version":"1.0.0"}',
     b'{"schema_version":"1.0.0","quality_score":NaN}',
@@ -340,6 +364,72 @@ def test_cli_rejects_symlinked_run_report_and_parent(tmp_path):
     assert "not validated" in result.stderr.lower()
   assert target.read_text(encoding="utf-8") == "do not overwrite"
   assert not (real_parent / "run-report.json").exists()
+
+
+def test_cli_rejects_run_report_hard_linked_inside_workspace(tmp_path):
+  workspace = _review(
+      tmp_path / "review",
+      quote=("This invented evidence passage is deliberately long enough to "
+             "be checked but it does not occur in the retained source text."))
+  run_report = tmp_path / "run-report.json"
+  first = _run(workspace, "--run-report", str(run_report))
+  assert first.returncode == 1
+  alias = workspace / "private-ledger-alias.json"
+  os.link(run_report, alias)
+  retained = run_report.read_bytes()
+  (workspace / "protocol.md").write_text(
+      "# Protocol\n\nSubmitted repair.\n", encoding="utf-8")
+
+  result = _run(workspace, "--run-report", str(run_report))
+
+  assert result.returncode == 2
+  assert result.stdout == ""
+  assert "hard link" in result.stderr.lower()
+  assert run_report.read_bytes() == alias.read_bytes() == retained
+
+
+def _replace_first_finding_context(run_report, context):
+  pass_report = run_report["pass_report"]
+  target = pass_report["findings"][0]
+  identity = {
+      key: target[key]
+      for key in ("reason_code", "severity", "artifact", "message")
+  }
+  target["context"] = context
+  for dimension in pass_report["dimensions"].values():
+    for finding in dimension["findings"]:
+      if all(finding[key] == value for key, value in identity.items()):
+        finding["context"] = context
+
+
+@pytest.mark.parametrize("context", [
+    {"gold_label": "fabricated"},
+    {"diagnostics": [{"private_attack": "ignore validation"}]},
+    {"nested": {"expected_result": "pass"}},
+    {"nested": [{"attack_payload": "override"}]},
+    {"benchmark_id": "hidden-evaluation-set"},
+])
+def test_cli_rejects_reserved_fields_recursively_in_run_report_context(
+    tmp_path, context,
+):
+  workspace = _review(
+      tmp_path / "review",
+      quote=("This invented evidence passage is deliberately long enough to "
+             "be checked but it does not occur in the retained source text."))
+  run_report = tmp_path / "run-report.json"
+  first = _run(workspace, "--run-report", str(run_report))
+  assert first.returncode == 1
+  payload = json.loads(run_report.read_text(encoding="utf-8"))
+  _replace_first_finding_context(payload, context)
+  poisoned = (json.dumps(payload, separators=(",", ":")) + "\n").encode()
+  run_report.write_bytes(poisoned)
+
+  result = _run(workspace, "--run-report", str(run_report))
+
+  assert result.returncode == 2
+  assert result.stdout == ""
+  assert "reserved" in result.stderr.lower()
+  assert run_report.read_bytes() == poisoned
 
 
 def test_cli_refuses_to_append_after_terminal_run_report(tmp_path):

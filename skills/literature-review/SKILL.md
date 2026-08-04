@@ -140,7 +140,7 @@ Exit 0 is required before claim verification; correct or remove any `mismatched`
 
    Coverage uses only claims whose identity and quote passed. An `uncovered_claim` includes a `reason_code` for a missing citation identity, an ungrounded number, or an invalid background role. Background entries may cover number-free context only. Every non-year number in a cited sentence must occur in verified matching claims for each cited identity; several claims for one identity may jointly supply those numbers. Never attribute specific or quantitative findings to a `background` citation.
 
-10. **Validate and deliver** — Before every delivery, run the shared validator with the external run report:
+10. **Validate and deliver** — Before every delivery and after every repair, run the shared validator with the external run report:
 ```bash
 uv run scripts/validate_review.py --workspace "$WS" \
   --citation-report "$WS/citation-report.json" \

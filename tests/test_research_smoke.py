@@ -18,6 +18,11 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 CHECK_CLAIMS = ROOT / "skills/literature-review/scripts/check_claims.py"
 PRISMA_COUNTS = ROOT / "skills/literature-review/scripts/prisma_counts.py"
 VALIDATE_REVIEW = ROOT / "skills/literature-review/scripts/validate_review.py"
+LITERATURE_REVIEW_SKILL = ROOT / "skills/literature-review/SKILL.md"
+INVALID_WARNING = (
+    "INVALID EVIDENCE — This draft contains unresolved evidence-integrity "
+    "failures\nand must not be treated as verified research."
+)
 
 
 def _run(script, *args):
@@ -146,3 +151,53 @@ def test_literature_review_delivery_validation_smoke(tmp_path):
   ledger = json.loads(run_report.read_text(encoding="utf-8"))
   assert ledger["action"] == "pass"
   assert ledger["repairs"] == []
+
+
+def test_literature_review_invalid_repair_sequence_smoke(tmp_path):
+  workspace, claims, synthesis, _corpus = _write_fixture(tmp_path)
+  claims_payload = json.loads(claims.read_text(encoding="utf-8"))
+  claims_payload[0]["supporting_quote"] = (
+      "This invented supporting passage is long enough for validation but "
+      "does not occur anywhere in the retained source text.")
+  (workspace / "protocol.md").write_text("# Protocol\n", encoding="utf-8")
+  (workspace / "claims.json").write_text(
+      json.dumps(claims_payload), encoding="utf-8")
+  (workspace / "synthesis.md").write_bytes(synthesis.read_bytes())
+  (workspace / "refs.json").write_text("[]", encoding="utf-8")
+  (workspace / "project.json").write_text(
+      json.dumps({"project": "smoke"}), encoding="utf-8")
+  run_report = tmp_path / "literature-review-run.json"
+
+  actions = []
+  for index in range(3):
+    if index:
+      (workspace / "protocol.md").write_text(
+          f"# Protocol\n\nRepair {index} changed files but not evidence.\n",
+          encoding="utf-8")
+    result = _run(
+        VALIDATE_REVIEW, "--workspace", workspace,
+        "--run-report", run_report)
+    assert result.returncode == 1, result.stderr
+    actions.append(json.loads(result.stdout)["action"])
+
+  assert actions == ["repair", "repair", "stop_invalid"]
+  ledger = json.loads(run_report.read_text(encoding="utf-8"))
+  assert len(ledger["repairs"]) == 2
+  assert ledger["action"] == "repair"
+  assert ledger["repairs"][-1]["action"] == "stop_invalid"
+
+
+def test_literature_review_skill_pins_delivery_repair_contract():
+  skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
+
+  assert 'validate_review.py --workspace "$WS"' in skill
+  assert '--run-report "$RUN_REPORT"' in skill
+  assert "Before every delivery" in skill
+  assert "after every repair" in skill
+  assert "only the emitted `repair_feedback` object" in skill
+  assert "Obey its `action` field" in skill
+  assert "outside `$WS`" in skill
+  assert INVALID_WARNING in skill
+  assert "unresolved `reason_codes` and `affected_artifacts`" in skill
+  assert "not verified or publication-ready" in skill
+  assert "do not describe it with either label" in skill

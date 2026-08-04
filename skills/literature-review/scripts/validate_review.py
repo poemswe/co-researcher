@@ -13,6 +13,7 @@ import re
 import stat
 import subprocess
 import sys
+from collections.abc import Mapping
 from typing import Optional
 
 
@@ -48,6 +49,10 @@ from review_integrity.workspace import (  # noqa: E402
 
 _READ_SIZE = 1024 * 1024
 _COMMIT_RE = re.compile(r"[0-9a-f]{40}\Z")
+_CAMEL_BOUNDARY_RE = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+_RESERVED_EVALUATOR_TOKENS = frozenset({
+    "attack", "benchmark", "expected", "gold", "private",
+})
 
 
 class ValidationInputError(ValueError):
@@ -314,7 +319,7 @@ class _RunReportDestination:
       self,
       parent_descriptor: int,
       name: str,
-      existing_identity: tuple[int, int, int, int] | None,
+      existing_identity: tuple[int, int, int, int, int] | None,
       existing_sha256: str | None,
       existing_report: IntegrityRunReport | None,
   ):
@@ -330,20 +335,46 @@ class _RunReportDestination:
       self.parent_descriptor = -1
 
 
-def _require_outside_workspace(
-    absolute: pathlib.Path,
+def _same_directory(left: os.stat_result, right: os.stat_result) -> bool:
+  return left.st_dev == right.st_dev and left.st_ino == right.st_ino
+
+
+def _directory_is_within(
+    directory_descriptor: int,
+    ancestor_descriptor: int,
+) -> bool:
+  """Compare directory ancestry by retained device/inode identities."""
+  ancestor = os.fstat(ancestor_descriptor)
+  current = os.dup(directory_descriptor)
+  try:
+    while True:
+      current_metadata = os.fstat(current)
+      if _same_directory(current_metadata, ancestor):
+        return True
+      parent = os.open("..", _secure_flags(directory=True), dir_fd=current)
+      parent_metadata = os.fstat(parent)
+      if _same_directory(parent_metadata, current_metadata):
+        os.close(parent)
+        return False
+      os.close(current)
+      current = parent
+  finally:
+    os.close(current)
+
+
+def _reject_workspace_ancestry(
+    parent_descriptor: int,
     workspace: os.PathLike[str] | str,
     label: str,
 ) -> None:
   workspace_absolute = _text_absolute_path(workspace, "workspace")
+  workspace_descriptor = _open_directory(workspace_absolute, "workspace")
   try:
-    common = os.path.commonpath((absolute, workspace_absolute))
-  except ValueError as exc:
-    raise ValidationInputError(
-        f"cannot compare {label} and workspace paths") from exc
-  if common == os.fspath(workspace_absolute):
-    raise ValidationInputError(
-        f"{label} must be outside the submitted workspace")
+    if _directory_is_within(parent_descriptor, workspace_descriptor):
+      raise ValidationInputError(
+          f"{label} must be outside the submitted workspace")
+  finally:
+    os.close(workspace_descriptor)
 
 
 def _prepare_output(
@@ -354,9 +385,9 @@ def _prepare_output(
   suffix = absolute.suffix
   if suffix not in {".json", ".md"}:
     raise ValidationInputError("output suffix must be .json or .md")
-  _require_outside_workspace(absolute, workspace, "output")
   parent = _open_directory(absolute.parent, "output path")
   try:
+    _reject_workspace_ancestry(parent, workspace, "output")
     try:
       os.stat(absolute.name, dir_fd=parent, follow_symlinks=False)
     except FileNotFoundError:
@@ -394,11 +425,43 @@ def _read_descriptor_bytes(descriptor: int, label: str) -> bytes:
   return b"".join(chunks)
 
 
-def _file_identity(metadata: os.stat_result) -> tuple[int, int, int, int]:
+def _file_identity(
+    metadata: os.stat_result,
+) -> tuple[int, int, int, int, int]:
   return (
       metadata.st_dev, metadata.st_ino, metadata.st_size,
-      metadata.st_mtime_ns,
+      metadata.st_mtime_ns, metadata.st_nlink,
   )
+
+
+def _has_reserved_evaluator_key(key: str) -> bool:
+  if key.startswith("_"):
+    return True
+  separated = _CAMEL_BOUNDARY_RE.sub("_", key).casefold()
+  tokens = re.findall(r"[a-z0-9]+", separated)
+  return any(token in _RESERVED_EVALUATOR_TOKENS for token in tokens)
+
+
+def _reject_reserved_evaluator_fields(value: object) -> None:
+  if isinstance(value, Mapping):
+    for key, item in value.items():
+      if _has_reserved_evaluator_key(key):
+        raise ValidationInputError(
+            "run report contains a reserved evaluator field")
+      _reject_reserved_evaluator_fields(item)
+  elif isinstance(value, (list, tuple)):
+    for item in value:
+      _reject_reserved_evaluator_fields(item)
+
+
+def _validate_external_run_contexts(run_report: IntegrityRunReport) -> None:
+  pass_reports = (
+      run_report.pass_report,
+      *(repair.pass_report for repair in run_report.repairs),
+  )
+  for pass_report in pass_reports:
+    for finding in pass_report.findings:
+      _reject_reserved_evaluator_fields(finding.context)
 
 
 def _prepare_run_report(
@@ -408,16 +471,18 @@ def _prepare_run_report(
   absolute = _text_absolute_path(path, "run report path")
   if absolute.suffix != ".json":
     raise ValidationInputError("run report suffix must be .json")
-  _require_outside_workspace(absolute, workspace, "run report")
   parent = _open_directory(absolute.parent, "run report path")
   descriptor = -1
   try:
+    _reject_workspace_ancestry(parent, workspace, "run report")
     try:
       descriptor = os.open(
           absolute.name, _secure_flags(directory=False), dir_fd=parent)
     except FileNotFoundError:
       return _RunReportDestination(parent, absolute.name, None, None, None)
     metadata = os.fstat(descriptor)
+    if metadata.st_nlink != 1:
+      raise ValidationInputError("run report must not have hard links")
     payload = _read_descriptor_bytes(descriptor, "run report")
     try:
       parsed = decode_json_bytes(payload, "run report")
@@ -427,6 +492,7 @@ def _prepare_run_report(
       run_report = IntegrityRunReport.from_dict(parsed)
     except ValueError as exc:
       raise ValidationInputError(f"invalid run report: {exc}") from exc
+    _validate_external_run_contexts(run_report)
     if run_report.quality_score is not None:
       raise ValidationInputError(
           "production run report quality_score must be null")
