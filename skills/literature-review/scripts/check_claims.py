@@ -787,7 +787,7 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
         "numbers": set(extract_numbers(claim_norm)),
     })
   gaps = []
-  for sentence in _split_sentences(synthesis):
+  for sentence_index, sentence in enumerate(_split_sentences(synthesis)):
     records = _citation_records(sentence)
     sentence_keys = {r["key"] for r in records}
     if not sentence_keys:
@@ -808,8 +808,12 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
         reason = "coverage_number_missing"
       else:
         continue
-      gaps.append({"sentence": sentence.strip(), "citation_key": key,
-                   "reason_code": reason})
+      gaps.append({
+          "sentence": sentence.strip(),
+          "synthesis_sentence_index": sentence_index,
+          "citation_key": key,
+          "reason_code": reason,
+      })
   return gaps
 
 
@@ -978,6 +982,8 @@ def check_claims_document(
     for gap in coverage_gaps(synthesis, entries, results):
       results.append({"claim": gap["sentence"], "paper_id": None,
                       "citation": gap["citation_key"],
+                      "synthesis_sentence_index":
+                          gap["synthesis_sentence_index"],
                       "supporting_quote": None, "status": "uncovered_claim",
                       "reason_code": gap["reason_code"],
                       "source_scope": None, "quote_match_ratio": None,

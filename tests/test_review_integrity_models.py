@@ -20,16 +20,23 @@ from review_integrity.models import (  # noqa: E402
 )
 
 
+def _complete_dimension():
+  return DimensionResult(
+      name="citation_binding", score=100.0, applicable=True,
+      evaluated_units=1, passed_units=1, nominal_weight=20.0,
+      effective_weight=100.0, findings=[])
+
+
 def test_critical_finding_forces_invalid_status():
   report = PassReport(
-      integrity_score=97.0,
+      integrity_score=100.0,
       findings=[Finding(
           reason_code="fabricated_quote",
           severity=Severity.CRITICAL,
           artifact="claims.json",
           message="quote does not authenticate",
       )],
-      dimensions={},
+      dimensions={"citation_binding": _complete_dimension()},
       manifest_sha256="a" * 64,
   )
   assert report.status is IntegrityStatus.INVALID
@@ -44,12 +51,7 @@ def test_run_report_round_trips_without_unknown_fields():
 
 def test_quality_score_is_none_without_a_quality_judge():
   report = IntegrityRunReport(
-      pass_report=PassReport(
-          integrity_score=100.0,
-          findings=[],
-          dimensions={},
-          manifest_sha256="b" * 64,
-      ),
+      pass_report=IntegrityRunReport.example_valid().pass_report,
       quality_score=None,
       repairs=[],
   )
@@ -100,12 +102,7 @@ def test_scores_must_be_finite_and_within_0_to_100(value):
         effective_weight=100.0, findings=[])
   with pytest.raises(ValueError, match="score"):
     IntegrityRunReport(
-        pass_report=PassReport(
-            integrity_score=100.0,
-            findings=[],
-            dimensions={},
-            manifest_sha256="d" * 64,
-        ),
+        pass_report=IntegrityRunReport.example_valid().pass_report,
         quality_score=value,
         repairs=[],
     )
@@ -116,12 +113,7 @@ def test_scores_must_be_finite_and_within_0_to_100(value):
     ("manifest_sha256", "not-a-sha256"),
 ])
 def test_pass_report_rejects_invalid_wire_values(field, value):
-  report = PassReport(
-      integrity_score=100.0,
-      findings=[],
-      dimensions={},
-      manifest_sha256="e" * 64,
-  ).to_dict()
+  report = IntegrityRunReport.example_valid().pass_report.to_dict()
   report[field] = value
   with pytest.raises(ValueError):
     PassReport.from_dict(report)
@@ -220,3 +212,29 @@ def test_finding_context_rejects_non_json_safe_values(context):
         message="claim requires review",
         context=context,
     )
+
+
+def test_pass_report_rejects_zero_applicable_dimensions():
+  with pytest.raises(ValueError, match="applicable|denominator"):
+    PassReport(
+        integrity_score=100.0,
+        findings=[],
+        dimensions={},
+        manifest_sha256="9" * 64,
+    )
+
+
+def test_pass_report_rejects_forged_wire_with_no_applicable_dimension():
+  report = IntegrityRunReport.example_valid().pass_report.to_dict()
+  for dimension in report["dimensions"].values():
+    dimension.update({
+        "score": None,
+        "applicable": False,
+        "evaluated_units": 0,
+        "passed_units": 0,
+        "effective_weight": 0.0,
+    })
+  report["integrity_score"] = 100.0
+
+  with pytest.raises(ValueError, match="applicable|denominator"):
+    PassReport.from_dict(report)

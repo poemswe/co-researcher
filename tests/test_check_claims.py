@@ -537,6 +537,16 @@ def test_unverified_result_cannot_cover_synthesis_sentence():
   assert gaps[0]["reason_code"] == "coverage_identity_missing"
 
 
+def test_repeated_identical_sentences_have_distinct_coverage_occurrences():
+  sentence = "An unsupported finding appears here (Lee, 2021)."
+
+  gaps = cc.coverage_gaps(
+      f"{sentence} {sentence}", [], _trusted_results([]))
+
+  assert [gap["sentence"] for gap in gaps] == [sentence, sentence]
+  assert [gap["synthesis_sentence_index"] for gap in gaps] == [0, 1]
+
+
 def test_coverage_flags_uncited_claimless_sentence():
   synthesis = ("Readmissions fell 18% in the treatment arm (Patel, 2022). "
                "Mortality was unchanged at 90 days [2]. "
@@ -800,6 +810,7 @@ def test_main_exit_one_on_uncovered_claim(tmp_path, capsys):
                if result["status"] == "uncovered_claim"][0]
   assert uncovered["reason_code"] == "coverage_identity_missing"
   assert uncovered["citation"] == "author:lee:2021"
+  assert uncovered["synthesis_sentence_index"] == 0
 
 
 def test_main_reports_coverage_number_reason_and_identity(tmp_path, capsys):

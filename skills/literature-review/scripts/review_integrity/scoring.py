@@ -138,6 +138,13 @@ def _artifact_dependencies(relative_path: str) -> tuple[str, ...]:
   return dependencies.get(relative_path, ())
 
 
+def _strict_index(value: object, upper_bound: int) -> int | None:
+  """Return an in-range unit index; booleans are never integer indices."""
+  if type(value) is not int or not 0 <= value < upper_bound:
+    return None
+  return value
+
+
 def score_integrity(
     snapshot: WorkspaceSnapshot, findings: tuple[Finding, ...],
 ) -> PassReport:
@@ -189,18 +196,22 @@ def score_integrity(
     _ensure_incomplete(all_findings, "claim", "claims.json")
 
   synthesis = ""
-  coverage_units: set[tuple[str, str]] = set()
+  coverage_sentences: list[tuple[str, frozenset[str]]] = []
+  coverage_units: set[tuple[int, str]] = set()
   synthesis_valid = False
   try:
     synthesis = snapshot.read_text("synthesis.md")
     if not synthesis.strip():
       raise ValueError("empty synthesis")
-    for sentence in check_claims._split_sentences(synthesis):
+    for sentence_index, sentence in enumerate(
+        check_claims._split_sentences(synthesis)):
       stripped = sentence.strip()
-      for identity in sorted({
+      identities = frozenset({
           record["key"] for record in check_claims._citation_records(sentence)
-      }):
-        coverage_units.add((stripped, identity))
+      })
+      coverage_sentences.append((stripped, identities))
+      for identity in identities:
+        coverage_units.add((sentence_index, identity))
     if not coverage_units:
       raise ValueError("synthesis has no supported citations")
     synthesis_valid = True
@@ -289,8 +300,10 @@ def score_integrity(
 
     if reason is ReasonCode.VALIDATOR_INCOMPLETE:
       validator = context.get("validator")
-      result_index = context.get("result_index")
-      if validator == "claim" and isinstance(result_index, int):
+      has_result_index = "result_index" in context
+      result_index = _strict_index(
+          context.get("result_index"), len(claims))
+      if validator == "claim" and has_result_index and result_index is not None:
         mapped |= fail_unit("quote_authenticity", result_index, finding)
         for unit in numeric_units:
           if unit[0] == result_index:
@@ -312,9 +325,10 @@ def score_integrity(
             zero(name, finding)
           mapped = True
 
-    result_index = context.get("result_index")
+    has_result_index = "result_index" in context
+    result_index = _strict_index(context.get("result_index"), len(claims))
     if (finding.artifact == "claims.json"
-        and isinstance(result_index, int) and not isinstance(result_index, bool)):
+        and result_index is not None):
       if reason in _QUOTE_REASONS | {ReasonCode.VALIDATOR_INCOMPLETE}:
         mapped |= fail_unit("quote_authenticity", result_index, finding)
       if reason in _BINDING_REASONS:
@@ -333,28 +347,53 @@ def score_integrity(
           if unit[0] == result_index:
             mapped |= fail_unit("quantitative_grounding", unit, finding)
 
-    if reason in _QUOTE_REASONS and finding.artifact == "claims.json" and not mapped:
+    if (reason in _QUOTE_REASONS
+        and finding.artifact == "claims.json" and not mapped):
       zero("quote_authenticity", finding)
+      if reason is ReasonCode.FABRICATED_QUOTE:
+        zero("quantitative_grounding", finding)
       mapped = True
 
-    if reason in _BINDING_REASONS and finding.artifact == "claims.json" and not mapped:
+    if (reason in _BINDING_REASONS
+        and finding.artifact == "claims.json" and not mapped):
       zero("citation_binding", finding)
+      mapped = True
+
+    if (reason is ReasonCode.VALIDATOR_INCOMPLETE
+        and finding.artifact == "claims.json" and has_result_index
+        and result_index is None and not mapped):
+      for name in _CLAIM_DIMENSIONS:
+        zero(name, finding)
       mapped = True
 
     if reason in _COVERAGE_REASONS:
       sentence = context.get("synthesis_sentence")
       identity = context.get("citation_identity")
-      if isinstance(sentence, str) and isinstance(identity, str):
+      sentence_index = _strict_index(
+          context.get("synthesis_sentence_index"), len(coverage_sentences))
+      context_matches = (
+          sentence_index is not None
+          and isinstance(sentence, str)
+          and isinstance(identity, str)
+          and coverage_sentences[sentence_index][0] == sentence
+          and identity in coverage_sentences[sentence_index][1]
+      )
+      if context_matches:
         mapped |= fail_unit(
-            "synthesis_coverage", (sentence, identity), finding)
+            "synthesis_coverage", (sentence_index, identity), finding)
       if not mapped:
         zero("synthesis_coverage", finding)
         mapped = True
 
     if finding.artifact == "refs.json":
-      if isinstance(result_index, int) and not isinstance(result_index, bool):
+      bibliography_index = _strict_index(
+          context.get("result_index"), len(bibliography_units))
+      if bibliography_index is not None:
         mapped |= fail_unit(
-            "bibliography_verification", result_index, finding)
+            "bibliography_verification", bibliography_index, finding)
+      elif "result_index" in context:
+        zero("bibliography_verification", finding)
+        mapped = True
       elif finding.severity is Severity.CRITICAL:
         zero("bibliography_verification", finding)
         mapped = True
@@ -371,9 +410,18 @@ def score_integrity(
             and record["screening"].get("status") == "excluded"
             and not record["screening"].get("reason")
         ]
-      for index in indices:
-        mapped |= fail_unit(
-            "prisma_artifact_completeness", ("decision", index), finding)
+      valid_decisions = {
+          unit[1] for unit in artifact_units if unit[0] == "decision"}
+      parsed_indices = [
+          _strict_index(index, len(corpus)) for index in indices]
+      if (any(index is None for index in parsed_indices)
+          or any(index not in valid_decisions for index in parsed_indices)):
+        zero("prisma_artifact_completeness", finding)
+        mapped = True
+      else:
+        for index in parsed_indices:
+          mapped |= fail_unit(
+              "prisma_artifact_completeness", ("decision", index), finding)
       if not mapped:
         zero("prisma_artifact_completeness", finding)
         mapped = True

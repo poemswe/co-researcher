@@ -29,6 +29,7 @@ def _result_context(result: dict, index: int) -> dict:
   if result.get("status") == "uncovered_claim":
     context = {
         "synthesis_sentence": result.get("claim"),
+        "synthesis_sentence_index": result.get("synthesis_sentence_index"),
         "citation_identity": result.get("citation"),
     }
   else:
@@ -111,6 +112,10 @@ def _valid_claim_result(result: object) -> bool:
       return False
   if result["status"] in {"invalid_binding", "uncovered_claim"}:
     if not isinstance(result.get("reason_code"), str):
+      return False
+  if result["status"] == "uncovered_claim":
+    sentence_index = result.get("synthesis_sentence_index")
+    if (type(sentence_index) is not int or sentence_index < 0):
       return False
   return True
 

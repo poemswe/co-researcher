@@ -84,6 +84,7 @@ def test_claim_statuses_map_to_stable_findings(status, reason, severity):
   result = _claim_result(status)
   if status == "uncovered_claim":
     result["reason_code"] = "coverage_number_missing"
+    result["synthesis_sentence_index"] = 0
   elif status == "invalid_binding":
     result["reason_code"] = "citation_identity_mismatch"
 
@@ -93,6 +94,7 @@ def test_claim_statuses_map_to_stable_findings(status, reason, severity):
           for finding in findings] == [(reason, severity)]
   if status == "uncovered_claim":
     assert findings[0].context["synthesis_sentence"] == "submitted claim"
+    assert findings[0].context["synthesis_sentence_index"] == 0
     assert findings[0].context["citation_identity"] == "Patel, 2022"
     assert "result_index" not in findings[0].context
   else:
@@ -130,8 +132,19 @@ def test_ambiguous_binding_maps_to_distinct_stable_reason():
 def test_other_coverage_reasons_map_stably(validator_reason, stable_reason):
   validators = _validators()
   finding = validators.claim_findings(_claim_report([_claim_result(
-      "uncovered_claim", reason_code=validator_reason)]))[0]
+      "uncovered_claim", reason_code=validator_reason,
+      synthesis_sentence_index=0)]))[0]
   assert finding.reason_code is stable_reason
+  assert finding.severity is Severity.CRITICAL
+
+
+@pytest.mark.parametrize("index", [True, False, -1, "0", None])
+def test_coverage_occurrence_index_must_be_nonnegative_integer(index):
+  finding = _validators().claim_findings(_claim_report([_claim_result(
+      "uncovered_claim", reason_code="coverage_identity_missing",
+      synthesis_sentence_index=index)]))[0]
+
+  assert finding.reason_code is ReasonCode.VALIDATOR_INCOMPLETE
   assert finding.severity is Severity.CRITICAL
 
 

@@ -366,26 +366,27 @@ class PassReport:
     object.__setattr__(self, "dimensions", dimensions)
     applicable = [dimension for dimension in dimensions.values()
                   if dimension.applicable]
-    if applicable:
-      nominal_total = sum(dimension.nominal_weight for dimension in applicable)
-      for dimension in dimensions.values():
-        expected_weight = (dimension.nominal_weight * 100.0 / nominal_total
-                           if dimension.applicable else 0.0)
-        if not math.isclose(
-            dimension.effective_weight, expected_weight,
-            rel_tol=0.0, abs_tol=1e-12,
-        ):
-          raise ValueError(
-              "effective_weight does not match applicable nominal weights")
-      expected_score = sum(
-          dimension.nominal_weight * (dimension.unrounded_score or 0.0)
-          for dimension in applicable) / nominal_total
+    if not applicable:
+      raise ValueError("PassReport requires at least one applicable dimension")
+    nominal_total = sum(dimension.nominal_weight for dimension in applicable)
+    for dimension in dimensions.values():
+      expected_weight = (dimension.nominal_weight * 100.0 / nominal_total
+                         if dimension.applicable else 0.0)
       if not math.isclose(
-          actual_score, expected_score, rel_tol=0.0, abs_tol=1e-12,
+          dimension.effective_weight, expected_weight,
+          rel_tol=0.0, abs_tol=1e-12,
       ):
         raise ValueError(
-            "integrity_score does not match dimension counts and weights")
-      actual_score = expected_score
+            "effective_weight does not match applicable nominal weights")
+    expected_score = sum(
+        dimension.nominal_weight * (dimension.unrounded_score or 0.0)
+        for dimension in applicable) / nominal_total
+    if not math.isclose(
+        actual_score, expected_score, rel_tol=0.0, abs_tol=1e-12,
+    ):
+      raise ValueError(
+          "integrity_score does not match dimension counts and weights")
+    actual_score = expected_score
     object.__setattr__(self, "integrity_score", actual_score)
     if not isinstance(self.manifest_sha256, str) or not _SHA256_RE.fullmatch(
         self.manifest_sha256):
@@ -404,7 +405,7 @@ class PassReport:
     applicable = [dimension for dimension in self.dimensions.values()
                   if dimension.applicable]
     if not applicable:
-      return self.integrity_score
+      raise ValueError("PassReport requires at least one applicable dimension")
     nominal_total = sum(dimension.nominal_weight for dimension in applicable)
     return sum(
         dimension.nominal_weight * (dimension.unrounded_score or 0.0)
@@ -457,17 +458,16 @@ class PassReport:
       dimensions[name] = DimensionResult.from_dict(copied)
     applicable = [dimension for dimension in dimensions.values()
                   if dimension.applicable]
-    if applicable:
-      expected_integrity = sum(
-          dimension.nominal_weight * (dimension.unrounded_score or 0.0)
-          for dimension in applicable) / sum(
-              dimension.nominal_weight for dimension in applicable)
-      wire_integrity = _score(data["integrity_score"], "integrity_score")
-      if wire_integrity != round(expected_integrity, 1):
-        raise ValueError(
-            "integrity_score does not match dimension counts and weights")
-    else:
-      expected_integrity = data["integrity_score"]
+    if not applicable:
+      raise ValueError("PassReport requires at least one applicable dimension")
+    expected_integrity = sum(
+        dimension.nominal_weight * (dimension.unrounded_score or 0.0)
+        for dimension in applicable) / sum(
+            dimension.nominal_weight for dimension in applicable)
+    wire_integrity = _score(data["integrity_score"], "integrity_score")
+    if wire_integrity != round(expected_integrity, 1):
+      raise ValueError(
+          "integrity_score does not match dimension counts and weights")
     report = cls(
         integrity_score=expected_integrity,
         findings=data["findings"],

@@ -2,6 +2,8 @@ import json
 import pathlib
 import sys
 
+import pytest
+
 
 SCRIPTS = (pathlib.Path(__file__).resolve().parents[1]
            / "skills/literature-review/scripts")
@@ -202,6 +204,83 @@ def test_binding_and_coverage_enumerate_each_claim_and_sentence_identity(
   assert report.dimensions["synthesis_coverage"].evaluated_units == 3
 
 
+def _coverage_finding(sentence, index):
+  return _finding(
+      ReasonCode.COVERAGE_CLAIM_MISSING,
+      severity=Severity.CRITICAL,
+      context={
+          "synthesis_sentence": sentence,
+          "synthesis_sentence_index": index,
+          "citation_identity": "author:lee:2021",
+      },
+  )
+
+
+def test_repeated_identical_coverage_occurrences_fail_independently(tmp_path):
+  sentence = "An unsupported finding appears here (Lee, 2021)."
+  synthesis = f"{sentence} {sentence}"
+  snapshot = _snapshot(tmp_path, synthesis=synthesis)
+
+  one = score_integrity(snapshot, (_coverage_finding(sentence, 0),))
+  both = score_integrity(snapshot, (
+      _coverage_finding(sentence, 1), _coverage_finding(sentence, 0)))
+
+  one_dimension = one.dimensions["synthesis_coverage"]
+  both_dimension = both.dimensions["synthesis_coverage"]
+  assert (one_dimension.evaluated_units, one_dimension.passed_units) == (2, 1)
+  assert one_dimension.score == 50.0
+  assert (both_dimension.evaluated_units, both_dimension.passed_units) == (2, 0)
+  assert both_dimension.score == 0.0
+
+
+def test_repeated_coverage_findings_are_order_independent(tmp_path):
+  sentence = "An unsupported finding appears here (Lee, 2021)."
+  snapshot = _snapshot(tmp_path, synthesis=f"{sentence} {sentence}")
+  first = _coverage_finding(sentence, 0)
+  second = _coverage_finding(sentence, 1)
+
+  assert score_integrity(snapshot, (first, second)).to_dict() == (
+      score_integrity(snapshot, (second, first)).to_dict())
+
+
+@pytest.mark.parametrize("index", [True, False, -1, 2, "0", None])
+def test_malformed_coverage_occurrence_fails_dimension_closed(tmp_path, index):
+  sentence = "An unsupported finding appears here (Lee, 2021)."
+  snapshot = _snapshot(tmp_path, synthesis=f"{sentence} {sentence}")
+
+  report = score_integrity(snapshot, (_coverage_finding(sentence, index),))
+
+  assert report.dimensions["synthesis_coverage"].score == 0.0
+
+
+def test_mismatched_coverage_occurrence_context_fails_dimension_closed(tmp_path):
+  sentence = "An unsupported finding appears here (Lee, 2021)."
+  snapshot = _snapshot(tmp_path, synthesis=f"{sentence} {sentence}")
+  finding = _coverage_finding("Different sentence (Lee, 2021).", 0)
+
+  report = score_integrity(snapshot, (finding,))
+
+  assert report.dimensions["synthesis_coverage"].score == 0.0
+
+
+def test_mismatched_coverage_identity_context_fails_dimension_closed(tmp_path):
+  sentence = "An unsupported finding appears here (Lee, 2021)."
+  snapshot = _snapshot(tmp_path, synthesis=f"{sentence} {sentence}")
+  finding = _finding(
+      ReasonCode.COVERAGE_CLAIM_MISSING,
+      severity=Severity.CRITICAL,
+      context={
+          "synthesis_sentence": sentence,
+          "synthesis_sentence_index": 0,
+          "citation_identity": "author:patel:2022",
+      },
+  )
+
+  report = score_integrity(snapshot, (finding,))
+
+  assert report.dimensions["synthesis_coverage"].score == 0.0
+
+
 def test_zero_numeric_claims_are_not_applicable_and_weights_renormalize(
     tmp_path,
 ):
@@ -243,6 +322,43 @@ def test_global_claim_incomplete_scores_all_dependent_dimensions_zero(
   assert report.dimensions["bibliography_verification"].score == 100.0
 
 
+@pytest.mark.parametrize("index", [True, False, -1, 2, "0", None])
+def test_malformed_claim_index_uses_dependent_dimension_fail_safe(
+    tmp_path, index,
+):
+  incomplete = _finding(
+      ReasonCode.VALIDATOR_INCOMPLETE,
+      severity=Severity.CRITICAL,
+      context={"validator": "claim", "result_index": index},
+  )
+  snapshot = _snapshot(tmp_path, claims=[_claim(), _claim()])
+
+  report = score_integrity(snapshot, (incomplete,))
+
+  for name in (
+      "quote_authenticity", "citation_binding", "quantitative_grounding",
+      "synthesis_coverage",
+  ):
+    assert report.dimensions[name].score == 0.0
+
+
+def test_malformed_claim_level_incomplete_index_cannot_partially_target(tmp_path):
+  incomplete = _finding(
+      ReasonCode.VALIDATOR_INCOMPLETE,
+      severity=Severity.CRITICAL,
+      context={"result_index": True},
+  )
+  snapshot = _snapshot(tmp_path, claims=[_claim(), _claim()])
+
+  report = score_integrity(snapshot, (incomplete,))
+
+  for name in (
+      "quote_authenticity", "citation_binding", "quantitative_grounding",
+      "synthesis_coverage",
+  ):
+    assert report.dimensions[name].score == 0.0
+
+
 def test_unknown_critical_finding_fails_all_applicable_dimensions(tmp_path):
   unknown = _finding(
       ReasonCode.ARTIFACT_TYPE_INVALID,
@@ -276,6 +392,24 @@ def test_high_score_cannot_override_critical_invalid_status(tmp_path):
   assert report.status is IntegrityStatus.INVALID
 
 
+@pytest.mark.parametrize("index", [True, False, -1, 2, "0", None])
+def test_malformed_bibliography_index_fails_dimension_closed(tmp_path, index):
+  refs = [
+      {"doi": "10.1/example", "title": "Example Study"},
+      {"doi": "10.1/other", "title": "Other Study"},
+  ]
+  retracted = _finding(
+      ReasonCode.CITATION_RETRACTED,
+      severity=Severity.CRITICAL,
+      artifact="refs.json",
+      context={"result_index": index},
+  )
+
+  report = score_integrity(_snapshot(tmp_path, refs=refs), (retracted,))
+
+  assert report.dimensions["bibliography_verification"].score == 0.0
+
+
 def test_unscreened_record_fails_artifact_prisma_dimension_closed(tmp_path):
   corpus = [_record(), _record(
       key="paper-two", paper_id="p2", status=None, role="other")]
@@ -291,6 +425,27 @@ def test_unscreened_record_fails_artifact_prisma_dimension_closed(tmp_path):
   dimension = report.dimensions["prisma_artifact_completeness"]
   assert dimension.applicable is True
   assert dimension.score == 0.0
+
+
+@pytest.mark.parametrize("index", [True, False, -1, 2, "0"])
+def test_malformed_prisma_decision_index_fails_dimension_closed(
+    tmp_path, index,
+):
+  corpus = [
+      _record(),
+      _record(key="excluded", paper_id="p2", status="excluded",
+              role="other"),
+  ]
+  missing_reason = _finding(
+      ReasonCode.PRISMA_EXCLUSION_REASON_MISSING,
+      artifact="corpus.json",
+      context={"decision_indices": [index], "count": 1},
+  )
+
+  report = score_integrity(
+      _snapshot(tmp_path, corpus=corpus), (missing_reason,))
+
+  assert report.dimensions["prisma_artifact_completeness"].score == 0.0
 
 
 def test_report_round_trip_is_strict_and_recomputes_unrounded_values(tmp_path):
