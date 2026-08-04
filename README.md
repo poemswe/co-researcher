@@ -277,6 +277,21 @@ directory is supplied separately by its owner and must not be added to the
 repository or CI. Each integrity run writes its auditable result bundle to
 `evals/results/runs/<run_id>/`.
 
+Before a prospective pilot, its owner can verify the runtime-supplied manifest
+commitments without executing or scoring any case:
+
+```bash
+python3 evals/run_eval.py literature-review-integrity \
+  --official-cases-dir PATH \
+  --dry-run-manifest-audit
+```
+
+This read-only dry run reads file bytes only from `commitment-index.json` and
+the manifests it lists. It does not open committed inputs, load annotations,
+construct a model executor or judge, use the network, or write evaluation
+results. Supplying the directory without the dry-run flag is rejected because
+prospective-case execution is not implemented by this interface.
+
 ### Features
 - **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag
 - **Dynamic Rubrics**: 6 specialized rubrics matched to agent skills

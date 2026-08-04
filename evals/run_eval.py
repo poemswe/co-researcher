@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-import argparse
 import sys
+
+# Evaluation entrypoints are read-only until a selected command explicitly
+# publishes output; imports must not create cache artifacts during an audit.
+sys.dont_write_bytecode = True
+
+import argparse
 import json
 import concurrent.futures
 import threading
@@ -353,7 +358,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
         print(f"   Score trend: {prev['average_score']:.1f} {trend} {run_entry['average_score']:.1f} ({delta:+.1f})")
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         "args", nargs="*",
@@ -364,8 +369,36 @@ def main():
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Parallel jobs (default: 1)")
     parser.add_argument("--check-prompts", action="store_true", help="Validate all agent prompt files exist")
     parser.add_argument("--no-benchmark", action="store_true", help="Skip saving to benchmark_history.json")
+    parser.add_argument(
+        "--official-cases-dir", type=Path, metavar="PATH",
+        help=("Runtime-supplied committed cases (literature integrity "
+              "manifest audit only)"),
+    )
+    parser.add_argument(
+        "--dry-run-manifest-audit", action="store_true",
+        help="Verify committed manifests without executing or scoring cases",
+    )
     
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+
+    audit_requested = (
+        args.official_cases_dir is not None or args.dry_run_manifest_audit)
+    if audit_requested:
+        if (
+            args.check_prompts
+            or len(args.args) != 1
+            or args.args[0] != INTEGRITY_CAPABILITY
+        ):
+            parser.error(
+                "official manifest audit options are only valid for "
+                "literature-review-integrity")
+        if args.official_cases_dir is None:
+            parser.error(
+                "--dry-run-manifest-audit requires --official-cases-dir PATH")
+        if not args.dry_run_manifest_audit:
+            parser.error(
+                "--official-cases-dir requires --dry-run-manifest-audit; "
+                "runtime-supplied case execution is not implemented")
     
     if args.check_prompts:
         agents = [d.name for d in TEST_CASES_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")]
@@ -389,6 +422,21 @@ def main():
         return
     
     command = args.args[0]
+
+    if audit_requested:
+        from lib.committed_manifest_audit import (
+            ManifestAuditError,
+            audit_committed_manifests,
+        )
+        try:
+            audit = audit_committed_manifests(args.official_cases_dir)
+        except ManifestAuditError as exc:
+            print(f"manifest audit failed: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(
+            audit, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False))
+        return 0
     
     if command == "list":
         list_tests()
@@ -415,4 +463,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

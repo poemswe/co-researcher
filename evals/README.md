@@ -26,6 +26,7 @@ python run_eval.py all --model "codex:gpt-5.2 high" # Use GPT-5.2 with high reas
 python run_eval.py critical-analyzer fallacy-detection  # Run specific test
 python run_eval.py literature-reviewer -v            # Verbose output
 python run_eval.py literature-review-integrity --model "codex:gpt-5.2-codex high"
+python run_eval.py literature-review-integrity --official-cases-dir PATH --dry-run-manifest-audit
 ```
 
 ## Model Options
@@ -86,6 +87,24 @@ The framework uses specialized rubrics based on the agent's task domain:
 **Passing**: ≥70/100 overall (Hard tests: ≥80)
 
 ## Results & Benchmarking
+
+### Prospective manifest audit (no execution)
+
+The paired `--official-cases-dir PATH --dry-run-manifest-audit` options are
+available only for `literature-review-integrity`. The dry run performs a
+descriptor-safe audit of `commitment-index.json` and its listed manifest bytes,
+then writes one deterministic JSON object to stdout. It does not open the
+public-input paths committed by those manifests, read scorer annotations,
+construct an executor or judge, use the network, or create result files.
+
+The index schema is closed and uses `schema_version: "1.0.0"` plus `cases`.
+Each case entry contains exactly `case_id`, `manifest_path`, and
+`manifest_sha256`. Each listed manifest uses the same schema version and
+contains exactly `case_id` and `public_inputs`; every public-input entry contains
+exactly `input_id`, `path`, `size`, and `sha256`. IDs are lowercase opaque IDs,
+paths are canonical relative POSIX paths, and hashes are lowercase SHA-256.
+Labels, expected outcomes, reason codes, attack-family data, and annotations do
+not belong in these manifests.
 
 ### Paired literature-review integrity runs
 
