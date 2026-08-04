@@ -28,10 +28,10 @@ INVALID_WARNING = (
 )
 
 
-def _run(script, *args):
+def _run(script, *args, cwd=ROOT):
   return subprocess.run(
       [sys.executable, str(script), *map(str, args)],
-      cwd=ROOT,
+      cwd=cwd,
       capture_output=True,
       text=True,
       check=False,
@@ -185,16 +185,27 @@ def test_literature_review_delivery_validation_smoke(tmp_path):
 def test_literature_review_altered_number_smoke_is_invalid(tmp_path):
   workspace = _write_public_altered_number_fixture(tmp_path)
   run_report = tmp_path / "altered-number-run.json"
+  assert not (workspace / "expected.json").exists()
 
   result = _run(
       VALIDATE_REVIEW, "--workspace", workspace,
-      "--run-report", run_report)
+      "--run-report", run_report, cwd=tmp_path)
 
   assert result.returncode == 1, result.stderr
   report = json.loads(result.stdout)
   assert report["status"] == "invalid"
-  assert "coverage_number_missing" in {
-      finding["reason_code"] for finding in report["findings"]}
+  assert [finding["reason_code"] for finding in report["findings"]] == [
+      "coverage_number_missing"]
+  critical_findings = [
+      finding for finding in report["findings"]
+      if finding["severity"] == "critical"]
+  assert len(critical_findings) == 1
+  critical = critical_findings[0]
+  assert (critical["reason_code"], critical["severity"], critical["artifact"]) == (
+      "coverage_number_missing", "critical", "claims.json")
+  assert critical["context"]["synthesis_sentence_index"] == 0
+  assert critical["context"]["citation"] == "author:lumen:2024"
+  assert critical["context"]["validator_reason"] == "coverage_number_missing"
 
 
 def test_literature_review_invalid_repair_sequence_smoke(tmp_path):

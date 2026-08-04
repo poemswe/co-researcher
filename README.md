@@ -224,6 +224,17 @@ It uses fixture data only, runs offline, and exercises claim verification,
 PRISMA counting, and the resumable research scaffold contract. It is separate
 from the scored evaluation suite.
 
+For the canonical, self-contained full-root verification, use the cached
+isolated environment below. It requires that the cache has already been
+populated with these public packages; it does not use ambient Python packages
+or network access:
+
+```bash
+UV_CACHE_DIR=/private/tmp/co-researcher-uv-cache \
+  uv run --offline --with pytest --with pymupdf4llm --with python-dotenv \
+  python -B -m pytest -q -p no:cacheprovider tests
+```
+
 The real Codex integration smoke is opt-in and requires an authenticated Codex
 CLI. It performs no live literature retrieval:
 
