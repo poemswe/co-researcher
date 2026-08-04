@@ -364,6 +364,18 @@ class PassReport:
         self.findings, Finding, "findings"))
     dimensions = _dimensions(self.dimensions)
     object.__setattr__(self, "dimensions", dimensions)
+    if any(finding in self.findings[:index]
+           for index, finding in enumerate(self.findings)):
+      raise ValueError("PassReport top-level findings must be unique")
+    nested_findings = tuple(
+        finding
+        for dimension in dimensions.values()
+        for finding in dimension.findings)
+    if (any(finding not in self.findings for finding in nested_findings)
+        or any(finding not in nested_findings for finding in self.findings)):
+      raise ValueError(
+          "top-level findings and dimension findings must be semantically "
+          "consistent")
     applicable = [dimension for dimension in dimensions.values()
                   if dimension.applicable]
     if not applicable:

@@ -257,7 +257,8 @@ def _valid_citation_result(result: object, entry: dict, index: int) -> bool:
       "retraction_checked", "retraction_source", "retraction_status",
       "resolution_status", "entry_index", "input_identity",
   }
-  if not isinstance(result, dict) or not required <= set(result):
+  if (not isinstance(result, dict)
+      or set(result) not in (required, required | {"error"})):
     return False
   if result["status"] not in _CITATION_STATUSES:
     return False
@@ -283,6 +284,10 @@ def _valid_citation_result(result: object, entry: dict, index: int) -> bool:
       or identity != verify_citations.citation_input_identity(entry)):
     return False
   status = result["status"]
+  if "error" in result and (status != "unavailable"
+                            or not isinstance(result["error"], str)
+                            or not result["error"]):
+    return False
   audit = result["retraction_status"]
   if status in {"not_found", "unavailable"}:
     expected_audit = "not_applicable" if status == "not_found" else "unavailable"
@@ -319,7 +324,7 @@ def _valid_citation_report(report: object, bibliography: object) -> tuple[bool, 
       "total", *_CITATION_STATUSES, "resolver", "checked_at",
       "response_status", "bibliography_sha256", "results",
   }
-  if not isinstance(report, dict) or not required <= set(report):
+  if not isinstance(report, dict) or set(report) != required:
     return False, []
   if not isinstance(bibliography, list):
     return False, []

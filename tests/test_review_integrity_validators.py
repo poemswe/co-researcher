@@ -310,6 +310,26 @@ def test_malformed_validator_output_is_critical():
     assert finding.severity is Severity.CRITICAL
 
 
+@pytest.mark.parametrize(("location", "unknown_field"), [
+    ("report", "gold_label"),
+    ("result", "private_notes"),
+])
+def test_citation_report_and_results_reject_unknown_fields(
+    location, unknown_field,
+):
+  entries = [{"doi": "10.1/x", "title": None, "raw": "citation"}]
+  report = _citation_report(entries, _StaticResolver())
+  if location == "report":
+    report[unknown_field] = "must not cross the validation boundary"
+  else:
+    report["results"][0][unknown_field] = "private benchmark metadata"
+
+  finding = _validators().citation_findings(report, entries)[0]
+
+  assert finding.reason_code is ReasonCode.VALIDATOR_INCOMPLETE
+  assert finding.severity is Severity.CRITICAL
+
+
 @pytest.mark.parametrize(("adapter_name", "report"), [
     ("claim_findings", {"results": [{"status": ["verified"]}]}),
     ("claim_findings", {"results": [{"status": "verified"}]}),

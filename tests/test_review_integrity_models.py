@@ -28,15 +28,26 @@ def _complete_dimension():
 
 
 def test_critical_finding_forces_invalid_status():
+  finding = Finding(
+      reason_code="fabricated_quote",
+      severity=Severity.CRITICAL,
+      artifact="claims.json",
+      message="quote does not authenticate",
+  )
+  dimension = _complete_dimension()
+  dimension = DimensionResult(
+      name=dimension.name, score=dimension.score,
+      applicable=dimension.applicable,
+      evaluated_units=dimension.evaluated_units,
+      passed_units=dimension.passed_units,
+      nominal_weight=dimension.nominal_weight,
+      effective_weight=dimension.effective_weight,
+      findings=[finding],
+  )
   report = PassReport(
       integrity_score=100.0,
-      findings=[Finding(
-          reason_code="fabricated_quote",
-          severity=Severity.CRITICAL,
-          artifact="claims.json",
-          message="quote does not authenticate",
-      )],
-      dimensions={"citation_binding": _complete_dimension()},
+      findings=[finding],
+      dimensions={"citation_binding": dimension},
       manifest_sha256="a" * 64,
   )
   assert report.status is IntegrityStatus.INVALID

@@ -394,6 +394,9 @@ def score_integrity(
       elif "result_index" in context:
         zero("bibliography_verification", finding)
         mapped = True
+      elif reason is ReasonCode.CITATION_RESOLUTION_UNAVAILABLE:
+        zero("bibliography_verification", finding)
+        mapped = True
       elif finding.severity is Severity.CRITICAL:
         zero("bibliography_verification", finding)
         mapped = True

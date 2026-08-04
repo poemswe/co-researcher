@@ -24,12 +24,13 @@ VALIDATOR_VERSIONS = {
     "artifact_scoring": ARTIFACT_SCORING_VERSION,
 }
 
-_TOP_LEVEL_FIELDS = {
+_TOP_LEVEL_ORDER = (
     "schema_version", "engine_version", "quality_score", "target_commit",
     "target_dirty", "validator_versions", "manifest_sha256",
     "workspace_manifest_sha256", "citation_report_sha256", "dimensions",
     "findings", "integrity_score", "status", "citation_resolution",
-}
+)
+_TOP_LEVEL_FIELDS = frozenset(_TOP_LEVEL_ORDER)
 _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
 _COMMIT_RE = re.compile(r"[0-9a-f]{40}\Z")
 _INVALID_WARNING = (
@@ -37,6 +38,14 @@ _INVALID_WARNING = (
     "failures\nand must not be treated as verified research."
 )
 _SYNTHESIS_EXCERPT_LIMIT = 2000
+_FINDING_ORDER = (
+    "schema_version", "reason_code", "severity", "artifact", "message",
+    "context",
+)
+_DIMENSION_FIELD_ORDER = (
+    "schema_version", "name", "score", "applicable", "evaluated_units",
+    "passed_units", "nominal_weight", "effective_weight", "findings",
+)
 
 
 def _require_hash(value: object, field: str, *, nullable: bool = False) -> None:
@@ -148,11 +157,47 @@ def validate_report(report: object) -> dict:
   return report
 
 
+def _stable_json_value(value: object) -> object:
+  if isinstance(value, Mapping):
+    return {
+        key: _stable_json_value(value[key])
+        for key in sorted(value)
+    }
+  if isinstance(value, (list, tuple)):
+    return [_stable_json_value(item) for item in value]
+  return value
+
+
+def _ordered_finding(finding: Mapping[str, object]) -> dict:
+  result = {key: finding[key] for key in _FINDING_ORDER}
+  result["context"] = _stable_json_value(finding["context"])
+  return result
+
+
+def _ordered_dimension(dimension: Mapping[str, object]) -> dict:
+  result = {key: dimension[key] for key in _DIMENSION_FIELD_ORDER}
+  result["findings"] = [
+      _ordered_finding(finding) for finding in dimension["findings"]]
+  return result
+
+
 def render_json(report: Mapping[str, object]) -> str:
   """Render exactly one compact JSON report followed by one newline."""
   value = validate_report(dict(report))
+  ordered = {key: value[key] for key in _TOP_LEVEL_ORDER}
+  ordered["validator_versions"] = {
+      key: value["validator_versions"][key] for key in VALIDATOR_VERSIONS}
+  ordered["dimensions"] = {
+      name: _ordered_dimension(value["dimensions"][name])
+      for name in DIMENSION_ORDER}
+  ordered["findings"] = [
+      _ordered_finding(finding) for finding in value["findings"]]
+  ordered["citation_resolution"] = {
+      key: value["citation_resolution"][key]
+      for key in ("source", "resolver", "checked_at", "response_status")
+  }
   return json.dumps(
-      value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+      ordered, ensure_ascii=False, sort_keys=False, separators=(",", ":"),
       allow_nan=False) + "\n"
 
 
@@ -166,6 +211,28 @@ def _display(value: object) -> str:
 
 def _one_line(value: object) -> str:
   return _display(value).replace("|", "\\|").replace("\n", " ")
+
+
+_MARKDOWN_ESCAPES = frozenset("\\`*{}[]()<>#+-.!_|")
+_INLINE_BREAKS = {
+    "\r": "\\r", "\n": "\\n", "\u0085": "\\u0085",
+    "\u2028": "\\u2028", "\u2029": "\\u2029",
+}
+
+
+def _markdown_inline(value: object) -> str:
+  """Render an untrusted value without permitting Markdown structure."""
+  result = []
+  for character in _display(value):
+    if character in _INLINE_BREAKS:
+      result.append(_INLINE_BREAKS[character])
+    elif character in _MARKDOWN_ESCAPES:
+      result.append("\\" + character)
+    elif character == "&":
+      result.append("&amp;")
+    else:
+      result.append(character)
+  return "".join(result)
 
 
 def render_markdown(
@@ -194,8 +261,8 @@ def render_markdown(
   lines.extend([
       "## Citation resolution", "",
       f"- Provenance: `{citation['source']}`",
-      f"- Resolver: {_display(citation['resolver'])}",
-      f"- Checked at: {_display(citation['checked_at'])}",
+      f"- Resolver: {_markdown_inline(citation['resolver'])}",
+      f"- Checked at: {_markdown_inline(citation['checked_at'])}",
       f"- Response status: `{citation['response_status']}`", "",
       "## Dimensions", "",
       "| Dimension | Applicable | Score | Evaluated units | Passed units | "
@@ -220,9 +287,9 @@ def render_markdown(
       lines.extend([
           f"### {index}. `{finding['reason_code']}`", "",
           f"- Severity: `{finding['severity']}`",
-          f"- Artifact: `{finding['artifact']}`",
-          f"- Message: {finding['message']}",
-          f"- Context: `{context}`", "",
+          f"- Artifact: {_markdown_inline(finding['artifact'])}",
+          f"- Message: {_markdown_inline(finding['message'])}",
+          f"- Context: {_markdown_inline(context)}", "",
       ])
   excerpt = synthesis_text[:_SYNTHESIS_EXCERPT_LIMIT]
   lines.extend(["## Synthesis excerpt", ""])

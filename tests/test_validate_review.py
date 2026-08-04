@@ -5,6 +5,7 @@ import os
 import pathlib
 import subprocess
 import sys
+from copy import deepcopy
 from datetime import datetime, timezone
 
 import pytest
@@ -165,6 +166,10 @@ def test_cli_without_report_is_offline_unresolved_warning_not_incomplete(
       "citation_resolution_unavailable"]
   assert report["findings"][0]["severity"] == "warning"
   assert report["findings"][0]["context"]["response_status"] == "unavailable"
+  bibliography = report["dimensions"]["bibliography_verification"]
+  assert (bibliography["evaluated_units"], bibliography["passed_units"]) == (
+      1, 0)
+  assert bibliography["score"] == 0.0
 
 
 def test_empty_bibliography_without_report_is_not_applicable(tmp_path):
@@ -253,6 +258,56 @@ def test_json_stdout_and_output_are_exactly_identical(tmp_path):
   assert output.read_bytes() == result.stdout.encode("utf-8")
 
 
+def test_emitted_json_round_trips_through_strict_report_validation(tmp_path):
+  workspace = _review(tmp_path / "review")
+  module = _load_cli_module()
+  report, _ = module.run_validation(workspace, None)
+
+  parsed = json.loads(module.render_json(report))
+
+  assert module.validate_report(parsed) is parsed
+  assert tuple(parsed["dimensions"]) == (
+      "quote_authenticity", "citation_binding", "quantitative_grounding",
+      "synthesis_coverage", "bibliography_verification",
+      "prisma_artifact_completeness",
+  )
+
+
+def test_json_render_is_independent_of_mapping_insertion_order(tmp_path):
+  workspace = _review(
+      tmp_path / "review",
+      quote=("This invented evidence passage is deliberately long enough to "
+             "be checked but it does not occur in the retained source text."))
+  module = _load_cli_module()
+  report, _ = module.run_validation(workspace, None)
+  reordered = {key: deepcopy(report[key]) for key in reversed(report)}
+  for finding in reordered["findings"]:
+    finding["context"] = dict(reversed(tuple(finding["context"].items())))
+  for dimension in reordered["dimensions"].values():
+    for finding in dimension["findings"]:
+      finding["context"] = dict(reversed(tuple(finding["context"].items())))
+
+  assert module.render_json(reordered) == module.render_json(report)
+
+
+def test_strict_report_rejects_nested_findings_hidden_from_top_level(tmp_path):
+  workspace = _review(
+      tmp_path / "review",
+      quote=("This invented evidence passage is deliberately long enough to "
+             "be checked but it does not occur in the retained source text."))
+  module = _load_cli_module()
+  report, _ = module.run_validation(workspace, None)
+  assert any(
+      finding["severity"] == "critical"
+      for dimension in report["dimensions"].values()
+      for finding in dimension["findings"])
+  report["findings"] = []
+  report["status"] = "valid"
+
+  with pytest.raises(ValueError, match="finding|consistent|dimension"):
+    module.validate_report(report)
+
+
 def test_combined_manifest_hash_commits_to_citation_report_or_null(tmp_path):
   refs = [{"doi": "10.1/example", "title": "Example Study"}]
   workspace = _review(tmp_path / "review", refs=refs)
@@ -328,6 +383,35 @@ def test_markdown_places_exact_invalid_warning_before_synthesis(tmp_path):
   assert "publication-ready" not in markdown.lower()
   assert "Integrity score" in markdown and "Quality score" in markdown
   assert "Effective weight" in markdown and "Context" in markdown
+
+
+def test_markdown_escapes_untrusted_inline_heading_injection(tmp_path):
+  refs = [{"doi": "10.1/example", "title": "Example Study"}]
+  workspace = _review(
+      tmp_path / "review", refs=refs,
+      quote=("This invented evidence passage is deliberately long enough to "
+             "be checked but it does not occur in the retained source text."))
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, refs)
+  module = _load_cli_module()
+  report, synthesis = module.run_validation(workspace, citation_path)
+  injection = "trusted\n## INJECTED HEADING"
+  report["citation_resolution"]["resolver"] = injection
+  report["citation_resolution"]["checked_at"] = injection
+  for finding in report["findings"]:
+    finding["artifact"] = injection
+    finding["message"] = injection
+    finding["context"] = {"private": injection}
+  for dimension in report["dimensions"].values():
+    for finding in dimension["findings"]:
+      finding["artifact"] = injection
+      finding["message"] = injection
+      finding["context"] = {"private": injection}
+
+  markdown = module.render_markdown(report, synthesis)
+
+  assert "\n## INJECTED HEADING" not in markdown
+  assert "trusted\\n\\#\\# INJECTED HEADING" in markdown
 
 
 @pytest.mark.parametrize("suffix", [".txt", ".JSON", ""])
@@ -438,3 +522,14 @@ def test_argparse_and_unsafe_workspace_exit_two_say_not_validated(tmp_path):
   assert missing.returncode == 2
   assert missing.stdout == ""
   assert "not validated" in missing.stderr.lower()
+
+
+def test_help_exits_two_on_stderr_without_non_json_stdout():
+  result = subprocess.run(
+      [sys.executable, "-B", str(CLI), "--help"],
+      capture_output=True, text=True, check=False, timeout=10)
+
+  assert result.returncode == 2
+  assert result.stdout == ""
+  assert "usage:" in result.stderr.lower()
+  assert "not validated" in result.stderr.lower()

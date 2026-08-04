@@ -50,6 +50,17 @@ class ValidationInputError(ValueError):
 
 
 class _ValidationArgumentParser(argparse.ArgumentParser):
+  def print_help(self, file=None):
+    super().print_help(file=sys.stderr if file is None else file)
+
+  def exit(self, status=0, message=None):
+    if status == 0:
+      status = 2
+      message = (
+          (message or "")
+          + "NOT VALIDATED: help requested; result is not validated\n")
+    super().exit(status, message)
+
   def error(self, message):
     self.print_usage(sys.stderr)
     self.exit(2, f"{self.prog}: error: {message}; result is not validated\n")
