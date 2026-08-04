@@ -800,7 +800,7 @@ def test_attack_family_breakdown_is_written_only_when_present(tmp_path):
           "true_positive": 1, "false_positive": 0,
           "true_negative": 0, "false_negative": 0},
       reason_metrics={
-          "citation_identity_mismatch": ReasonMetric(1, 0, 0)})
+          "citation_identity_mismatch": ReasonMetric(1, 0, 0, 0)})
   run = CombinedRunResult(
       run_id="run-attacks",
       timestamp="2026-08-04T12:00:00Z",

@@ -403,6 +403,77 @@ def test_runner_records_unsafe_case_and_continues_to_next_case(tmp_path):
   assert (tmp_path / "run" / "integrity-case-802.json").is_file()
 
 
+def test_repair_load_failure_counts_failed_submitted_attempt_in_cost_and_bounds(
+    tmp_path,
+):
+  case = _case(tmp_path, case_id="integrity-case-805")
+  scorecard = tmp_path / "cases" / case.case_id / "expected.json"
+  scorecard.write_text(json.dumps({
+      "schema_version": "1.0.0", "final_status": "invalid",
+      "minimum_repair_rounds": 1, "maximum_repair_rounds": 1,
+  }))
+
+  class SymlinkRepairExecutor(FakeExecutor):
+    def repair(self, feedback, workspace):
+      usage = super().repair(feedback, workspace)
+      outside = workspace.parent / "outside-refs.json"
+      outside.write_text("[]")
+      (workspace / "refs.json").unlink()
+      (workspace / "refs.json").symlink_to(outside)
+      return usage
+
+  result = _runner(
+      tmp_path, executor=SymlinkRepairExecutor()).run_case(case)
+
+  assert result.operational_failure.phase == "repair_load"
+  assert result.operational_failure.attempt == 1
+  assert result.repair_rounds == ()
+  assert result.repair_cost.rounds == 1
+  assert result.repair_cost.input_tokens == 10
+  assert result.repair_cost.output_tokens == 20
+  assert result.repair_cost.estimated_cost_usd == 0.1
+  assert result.robustness.expectation_met is True
+
+
+def test_operational_result_rejects_forged_attempt_cost_and_expectation(tmp_path):
+  case = _case(tmp_path, case_id="integrity-case-806")
+
+  class MissingRepairExecutor(FakeExecutor):
+    def repair(self, feedback, workspace):
+      usage = super().repair(feedback, workspace)
+      (workspace / "refs.json").unlink()
+      return usage
+
+  result = _runner(tmp_path, executor=MissingRepairExecutor()).run_case(case)
+  serialized = result.to_dict()
+
+  forged_cost = json.loads(json.dumps(serialized))
+  forged_cost["repair_cost"]["rounds"] = 0
+  with pytest.raises(ValueError, match="cost|attempt"):
+    literature_integrity.decode_integrity_result(forged_cost)
+
+  forged_expectation = json.loads(json.dumps(serialized))
+  forged_expectation["robustness"]["expectation_met"] = not (
+      serialized["robustness"]["expectation_met"])
+  with pytest.raises(ValueError, match="robustness|expectation"):
+    literature_integrity.decode_integrity_result(forged_expectation)
+
+  forged_bounds = json.loads(json.dumps(serialized))
+  forged_bounds["robustness"]["minimum_repair_rounds"] = 2
+  with pytest.raises(ValueError, match="robustness|expectation"):
+    literature_integrity.decode_integrity_result(forged_bounds)
+
+  forged_status = json.loads(json.dumps(serialized))
+  forged_status["robustness"]["observed_final_status"] = "valid"
+  with pytest.raises(ValueError, match="robustness|invalid"):
+    literature_integrity.decode_integrity_result(forged_status)
+
+  forged_error = json.loads(json.dumps(serialized))
+  forged_error["robustness"]["error"] = "forged scorer error"
+  with pytest.raises(ValueError, match="error|robustness"):
+    literature_integrity.decode_integrity_result(forged_error)
+
+
 @pytest.mark.parametrize("bad_attack", [
     {"attack_family": "", "reason_expectations": []},
     {"attack_family": "unicode-substitution", "reason_expectations": [{
@@ -518,6 +589,48 @@ def test_non_claude_executor_commands_keep_provider_write_mode(
   assert kwargs["input"]
   assert ("--full-auto" in command) if provider == "codex" else (
       "--yolo" in command)
+
+
+@pytest.mark.parametrize(("provider", "credential", "config_home"), [
+    ("claude", "ANTHROPIC_API_KEY", "CLAUDE_CONFIG_DIR"),
+    ("codex", "OPENAI_API_KEY", "CODEX_HOME"),
+    ("gemini", "GEMINI_API_KEY", "GEMINI_CLI_HOME"),
+])
+def test_production_executor_uses_closed_gold_isolated_child_environment(
+    monkeypatch, tmp_path, provider, credential, config_home,
+):
+  calls = _capture_executor_calls(monkeypatch)
+  case = _case(tmp_path, case_id="integrity-case-804")
+  case_root = tmp_path / "cases"
+  monkeypatch.setenv(credential, "credential-value")
+  monkeypatch.setenv(config_home, str(ROOT / ".private-model-config"))
+  monkeypatch.setenv("PYTHONPATH", str(ROOT))
+  monkeypatch.setenv("VIRTUAL_ENV", str(ROOT / ".venv"))
+  monkeypatch.setenv("OLDPWD", str(case_root))
+  monkeypatch.setenv("TASK10_CASE_ROOT", str(case_root))
+  monkeypatch.setenv("TASK10_FAMILY", "unicode-substitution")
+  monkeypatch.setenv("TASK10_EXPECTED", str(case_root / "expected.json"))
+  monkeypatch.setenv("UNRELATED_SECRET", "must-not-be-inherited")
+  workspace = tmp_path / f"{provider}-workspace"
+  workspace.mkdir()
+
+  ProductionModelExecutor(provider, ROOT).first_pass(case, workspace)
+
+  child = calls[0][1]["env"]
+  serialized = "\n".join(f"{key}={value}" for key, value in child.items())
+  assert child["PWD"] == str(workspace.resolve())
+  assert child[credential] == "credential-value"
+  assert child["PATH"] == (
+      "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+  assert not ({
+      "OLDPWD", "PYTHONPATH", "VIRTUAL_ENV", "TASK10_CASE_ROOT",
+      "TASK10_FAMILY", "TASK10_EXPECTED", "UNRELATED_SECRET",
+      config_home,
+  } & set(child))
+  assert str(ROOT) not in serialized
+  assert str(case_root) not in serialized
+  assert "unicode-substitution" not in serialized
+  assert "expected.json" not in serialized
 
 
 def _legacy_quality_report(output):

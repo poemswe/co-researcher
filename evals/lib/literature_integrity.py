@@ -24,6 +24,7 @@ from .core import AgentResult, CLI_CONFIG, TestCase, evaluate_output, find_cli
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+_SAFE_TEMP_ROOT = Path("/tmp").resolve()
 REVIEW_SCRIPTS = REPOSITORY_ROOT / "skills/literature-review/scripts"
 if str(REVIEW_SCRIPTS) not in sys.path:
   sys.path.insert(0, str(REVIEW_SCRIPTS))
@@ -43,6 +44,7 @@ from review_integrity.workspace import WorkspaceError, load_workspace  # noqa: E
 
 
 SCHEMA_VERSION = "1.0.0"
+ADVERSARIAL_SCHEMA_VERSION = "2.0.0"
 CAPABILITY = "literature-review-integrity"
 QUALITY_RUBRIC_ID = "literature-review-v1"
 QUALITY_DIMENSIONS = (
@@ -72,6 +74,48 @@ _CLAUDE_CAPTURE_TOOLS = (
     "WebSearch,WebFetch,Read,Grep,Glob,Write,Edit,Bash")
 _CLAUDE_REPAIR_TOOLS = "Read,Grep,Glob,Write,Edit,Bash"
 _FIXTURE_STAGING_ROOTS: list[Path] = []
+_SAFE_SYSTEM_PATH = (
+    "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
+_COMMON_CHILD_ENV = frozenset({
+    "ALL_PROXY", "CURL_CA_BUNDLE", "HOME", "HTTPS_PROXY", "HTTP_PROXY",
+    "LANG", "LC_ALL", "LC_CTYPE", "LOGNAME", "NO_PROXY",
+    "NODE_EXTRA_CA_CERTS", "REQUESTS_CA_BUNDLE", "SHELL", "SSL_CERT_DIR",
+    "SSL_CERT_FILE", "TERM", "TZ", "USER", "XDG_CACHE_HOME",
+    "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "all_proxy",
+    "http_proxy", "https_proxy", "no_proxy",
+})
+_PATH_CHILD_ENV = frozenset({
+    "AWS_CONFIG_FILE", "AWS_SHARED_CREDENTIALS_FILE", "CLAUDE_CONFIG_DIR",
+    "CODEX_HOME", "GEMINI_CLI_HOME", "GOOGLE_APPLICATION_CREDENTIALS",
+    "HOME", "NODE_EXTRA_CA_CERTS", "REQUESTS_CA_BUNDLE", "SSL_CERT_DIR",
+    "SSL_CERT_FILE", "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
+    "XDG_STATE_HOME", "CURL_CA_BUNDLE",
+})
+_PROVIDER_CHILD_ENV = {
+    "claude": frozenset({
+        "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
+        "ANTHROPIC_VERTEX_PROJECT_ID",
+        "AWS_ACCESS_KEY_ID", "AWS_CONFIG_FILE", "AWS_DEFAULT_REGION",
+        "AWS_PROFILE", "AWS_REGION", "AWS_SECRET_ACCESS_KEY",
+        "AWS_SESSION_TOKEN", "AWS_SHARED_CREDENTIALS_FILE",
+        "CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_CODE_USE_BEDROCK",
+        "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CONFIG_DIR",
+        "CLOUD_ML_REGION", "GOOGLE_APPLICATION_CREDENTIALS",
+        "GOOGLE_CLOUD_PROJECT",
+    }),
+    "codex": frozenset({
+        "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_API_VERSION",
+        "AZURE_OPENAI_ENDPOINT", "CODEX_HOME", "OPENAI_API_KEY",
+        "OPENAI_API_BASE", "OPENAI_BASE_URL", "OPENAI_ORG_ID",
+        "OPENAI_PROJECT_ID",
+    }),
+    "gemini": frozenset({
+        "GEMINI_API_KEY", "GEMINI_CLI_HOME", "GOOGLE_API_KEY",
+        "GOOGLE_APPLICATION_CREDENTIALS", "GOOGLE_CLOUD_LOCATION",
+        "GOOGLE_CLOUD_PROJECT", "GOOGLE_GENAI_USE_GCA",
+        "GOOGLE_GENAI_USE_VERTEXAI",
+    }),
+}
 
 
 def _cleanup_fixture_staging() -> None:
@@ -386,7 +430,13 @@ class RepairCost:
 
   @classmethod
   def from_rounds(cls, rounds: tuple[RepairRound, ...]) -> "RepairCost":
-    usages = tuple(item.model_usage for item in rounds)
+    return cls.from_usages(tuple(item.model_usage for item in rounds))
+
+  @classmethod
+  def from_usages(cls, usages: tuple[ModelUsage, ...]) -> "RepairCost":
+    if not isinstance(usages, tuple) or not all(
+        isinstance(item, ModelUsage) for item in usages):
+      raise ValueError("repair usages must contain ModelUsage values")
 
     def optional_sum(attribute: str) -> int | float | None:
       values = tuple(getattr(usage, attribute) for usage in usages)
@@ -395,7 +445,7 @@ class RepairCost:
       return sum(values)
 
     return cls(
-        rounds=len(rounds),
+        rounds=len(usages),
         duration_seconds=sum(usage.duration_seconds for usage in usages),
         input_tokens=optional_sum("input_tokens"),
         output_tokens=optional_sum("output_tokens"),
@@ -661,16 +711,29 @@ class OperationalIntegrityEvalResult:
     if self.operational_failure.phase == "initial_load":
       if self.model_first_pass is not None or self.repair_rounds:
         raise ValueError("initial load failure cannot retain trusted snapshots")
+      expected_usages = ()
     else:
       if self.model_first_pass is None:
         raise ValueError("repair load failure requires a trusted first pass")
       if self.operational_failure.attempt != len(self.repair_rounds) + 1:
         raise ValueError("repair failure attempt must follow successful rounds")
-    if self.repair_cost != RepairCost.from_rounds(self.repair_rounds):
-      raise ValueError("repair_cost must match successful repair_rounds")
+      expected_usages = tuple(
+          item.model_usage for item in self.repair_rounds) + (
+              self.operational_failure.model_usage,)
+    if self.repair_cost != RepairCost.from_usages(expected_usages):
+      raise ValueError("repair_cost must match every submitted repair attempt")
     if (not isinstance(self.robustness, RobustnessResult)
         or self.robustness.observed_final_status != "invalid"):
       raise ValueError("operational robustness must report invalid")
+    if self.robustness.expected_final_status is not None:
+      expected = (
+          self.robustness.expected_final_status == "invalid"
+          and self.robustness.minimum_repair_rounds
+          <= self.operational_failure.attempt
+          <= self.robustness.maximum_repair_rounds)
+      if self.robustness.expectation_met != expected:
+        raise ValueError(
+            "operational robustness expectation does not match attempts")
 
   def to_dict(self) -> dict:
     return {
@@ -775,7 +838,7 @@ def _load_case(path: Path) -> CaseDefinition:
   if sources:
     staging = Path(tempfile.mkdtemp(
         prefix="literature-fixtures-",
-        dir=Path(tempfile.gettempdir()).resolve(),
+        dir=_SAFE_TEMP_ROOT,
     )).resolve()
     _FIXTURE_STAGING_ROOTS.append(staging)
     for relative, source in sources:
@@ -792,25 +855,77 @@ def _load_case(path: Path) -> CaseDefinition:
   )
 
 
+def _collection_flags(*, directory: bool) -> int:
+  flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | os.O_NOFOLLOW
+  return flags | os.O_DIRECTORY if directory else flags
+
+
+def _open_collection_root(root: Path) -> int:
+  absolute = Path(os.path.abspath(os.fspath(root)))
+  current = os.open(os.path.sep, _collection_flags(directory=True))
+  try:
+    for component in absolute.parts[1:]:
+      metadata = os.stat(component, dir_fd=current, follow_symlinks=False)
+      if stat.S_ISLNK(metadata.st_mode):
+        raise ValueError("collection path contains a symlink ancestor")
+      if not stat.S_ISDIR(metadata.st_mode):
+        raise ValueError("collection path ancestor is not a directory")
+      child = os.open(
+          component, _collection_flags(directory=True), dir_fd=current)
+      opened = os.fstat(child)
+      if (opened.st_dev, opened.st_ino) != (
+          metadata.st_dev, metadata.st_ino):
+        os.close(child)
+        raise ValueError("collection directory identity changed during open")
+      os.close(current)
+      current = child
+    return current
+  except OSError as exc:
+    os.close(current)
+    raise ValueError(
+        f"cannot securely open collection path; symlink or swap: {exc}") from exc
+  except Exception:
+    os.close(current)
+    raise
+
+
+def _read_collection_file(
+    parent: int, name: str, expected: os.stat_result,
+) -> bytes:
+  descriptor = os.open(
+      name, _collection_flags(directory=False), dir_fd=parent)
+  try:
+    opened = os.fstat(descriptor)
+    if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1
+        or (opened.st_dev, opened.st_ino)
+        != (expected.st_dev, expected.st_ino)):
+      raise ValueError("collection file identity changed or is aliased")
+    chunks = []
+    while chunk := os.read(descriptor, 1024 * 1024):
+      chunks.append(chunk)
+    return b"".join(chunks)
+  finally:
+    os.close(descriptor)
+
+
 def _discover_named_paths(root: Path, filename: str) -> tuple[Path, ...]:
-  """Walk a collection without following links or inode aliases."""
+  """Snapshot a collection through no-follow descriptors."""
   discovered: list[Path] = []
   seen_directories: set[tuple[int, int]] = set()
   seen_files: set[tuple[int, int]] = set()
+  root_descriptor = _open_collection_root(root)
+  root_identity = os.fstat(root_descriptor)
+  mirror = Path(tempfile.mkdtemp(
+      prefix="literature-collection-", dir=_SAFE_TEMP_ROOT))
 
-  def walk(directory: Path) -> None:
-    try:
-      metadata = directory.stat(follow_symlinks=False)
-    except OSError as exc:
-      raise ValueError(f"cannot inspect collection directory: {exc}") from exc
-    if not stat.S_ISDIR(metadata.st_mode):
-      raise ValueError("collection path must be a directory")
+  def walk(descriptor: int, relative: Path) -> None:
+    metadata = os.fstat(descriptor)
     identity = (metadata.st_dev, metadata.st_ino)
     if identity in seen_directories:
       raise ValueError("case directory contains a duplicate inode alias")
     seen_directories.add(identity)
     try:
-      entries = sorted(os.scandir(directory), key=lambda item: item.name)
+      entries = sorted(os.scandir(descriptor), key=lambda item: item.name)
     except OSError as exc:
       raise ValueError(f"cannot inspect case directory: {exc}") from exc
     for entry in entries:
@@ -820,28 +935,53 @@ def _discover_named_paths(root: Path, filename: str) -> tuple[Path, ...]:
         raise ValueError(f"cannot inspect case entry: {exc}") from exc
       if entry.is_symlink():
         raise ValueError(f"case collection contains a symlink: {entry.path}")
-      path = Path(entry.path)
       if entry.is_dir(follow_symlinks=False):
-        walk(path)
+        child = os.open(
+            entry.name, _collection_flags(directory=True), dir_fd=descriptor)
+        try:
+          opened = os.fstat(child)
+          if (opened.st_dev, opened.st_ino) != (
+              entry_metadata.st_dev, entry_metadata.st_ino):
+            raise ValueError("collection directory identity changed")
+          walk(child, relative / entry.name)
+        finally:
+          os.close(child)
       elif entry.is_file(follow_symlinks=False):
         file_identity = (entry_metadata.st_dev, entry_metadata.st_ino)
         if file_identity in seen_files or entry_metadata.st_nlink != 1:
           raise ValueError("case collection contains a hardlink or inode alias")
         seen_files.add(file_identity)
+        destination = mirror / relative / entry.name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(_read_collection_file(
+            descriptor, entry.name, entry_metadata))
         if entry.name == filename:
-          discovered.append(path)
+          discovered.append(destination)
 
-  walk(root)
-  return tuple(discovered)
+  try:
+    walk(root_descriptor, Path())
+    verification = _open_collection_root(root)
+    try:
+      verified = os.fstat(verification)
+      if (verified.st_dev, verified.st_ino) != (
+          root_identity.st_dev, root_identity.st_ino):
+        raise ValueError("collection root identity changed during discovery")
+    finally:
+      os.close(verification)
+    _FIXTURE_STAGING_ROOTS.append(mirror)
+    return tuple(discovered)
+  except Exception:
+    shutil.rmtree(mirror, ignore_errors=True)
+    raise
+  finally:
+    os.close(root_descriptor)
 
 
 def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
   supplied = Path(directory)
   if supplied.is_symlink():
     raise ValueError("case directory must not be a symlink")
-  root = supplied.resolve()
-  if not root.is_dir():
-    raise ValueError("case directory must exist")
+  root = Path(os.path.abspath(os.fspath(supplied)))
   paths = _discover_named_paths(root, "case.json")
   cases = tuple(_load_case(path) for path in paths)
   if not cases:
@@ -859,7 +999,7 @@ class _ScorecardStore:
     supplied = Path(directory)
     if supplied.is_symlink():
       raise ValueError("scorecard directory must not be a symlink")
-    self._directory = supplied.resolve()
+    self._directory = Path(os.path.abspath(os.fspath(supplied)))
 
   def load(self, case_id: str) -> dict:
     if self._directory is None:
@@ -942,12 +1082,14 @@ def _score_robustness(
 class ReasonMetric:
   true_positive: int
   false_positive: int
+  true_negative: int
   false_negative: int
 
   def __post_init__(self) -> None:
     for value, label in (
         (self.true_positive, "true_positive"),
         (self.false_positive, "false_positive"),
+        (self.true_negative, "true_negative"),
         (self.false_negative, "false_negative"),
     ):
       if isinstance(value, bool) or not isinstance(value, int) or value < 0:
@@ -967,6 +1109,7 @@ class ReasonMetric:
     return {
         "true_positive": self.true_positive,
         "false_positive": self.false_positive,
+        "true_negative": self.true_negative,
         "false_negative": self.false_negative,
         "precision": self.precision,
         "recall": self.recall,
@@ -975,12 +1118,13 @@ class ReasonMetric:
   @classmethod
   def from_dict(cls, value: dict) -> "ReasonMetric":
     data = _closed_object(value, {
-        "true_positive", "false_positive", "false_negative",
+        "true_positive", "false_positive", "true_negative", "false_negative",
         "precision", "recall",
     }, "reason metric")
     metric = cls(
         true_positive=data["true_positive"],
         false_positive=data["false_positive"],
+        true_negative=data["true_negative"],
         false_negative=data["false_negative"],
     )
     if data["precision"] != metric.precision or data["recall"] != metric.recall:
@@ -1016,7 +1160,9 @@ class AdversarialCaseScore:
           else ReasonMetric.from_dict(metric))
     if not metrics:
       raise ValueError("reason metrics must not be empty")
-    for field in ("true_positive", "false_positive", "false_negative"):
+    for field in (
+        "true_positive", "false_positive", "true_negative", "false_negative",
+    ):
       if sum(getattr(metric, field) for metric in metrics.values()) != (
           frozen_confusion[field]):
         raise ValueError(
@@ -1027,7 +1173,7 @@ class AdversarialCaseScore:
 
   def to_dict(self) -> dict:
     return {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": ADVERSARIAL_SCHEMA_VERSION,
         "attack_family": self.attack_family,
         "confusion": dict(self.confusion),
         "reason_metrics": {
@@ -1038,9 +1184,11 @@ class AdversarialCaseScore:
 
   @classmethod
   def from_dict(cls, value: dict) -> "AdversarialCaseScore":
-    data = _wire_object(value, {
-        "attack_family", "confusion", "reason_metrics",
+    data = _closed_object(value, {
+        "schema_version", "attack_family", "confusion", "reason_metrics",
     }, "adversarial case score")
+    if data["schema_version"] != ADVERSARIAL_SCHEMA_VERSION:
+      raise ValueError("unsupported adversarial case score schema_version")
     if not isinstance(data["confusion"], dict):
       raise ValueError("adversarial confusion must be a dictionary")
     if not isinstance(data["reason_metrics"], dict):
@@ -1057,7 +1205,13 @@ def _observed_findings(value: object) -> tuple[Finding, ...]:
     return value.model_first_pass.integrity.findings
   if isinstance(value, OperationalIntegrityEvalResult):
     failure = value.operational_failure
-    return (Finding(
+    trusted = ()
+    if failure.phase == "repair_load":
+      snapshot = (
+          value.repair_rounds[-1].integrity if value.repair_rounds
+          else value.model_first_pass.integrity)
+      trusted = snapshot.findings
+    return (*trusted, Finding(
         reason_code=failure.reason_code,
         severity=Severity.CRITICAL,
         artifact=failure.artifact,
@@ -1155,14 +1309,15 @@ def load_adversarial_scores(
         outcome = "false_positive" if matched else "true_negative"
       confusion[outcome] += 1
       counts = reason_counts.setdefault(code, {
-          "true_positive": 0, "false_positive": 0, "false_negative": 0})
-      if outcome in counts:
-        counts[outcome] += 1
+          "true_positive": 0, "false_positive": 0,
+          "true_negative": 0, "false_negative": 0})
+      counts[outcome] += 1
     for index in unmatched:
       code = findings[index].reason_code.value
       confusion["false_positive"] += 1
       counts = reason_counts.setdefault(code, {
-          "true_positive": 0, "false_positive": 0, "false_negative": 0})
+          "true_positive": 0, "false_positive": 0,
+          "true_negative": 0, "false_negative": 0})
       counts["false_positive"] += 1
     scores[case_id] = AdversarialCaseScore(
         attack_family=family,
@@ -1212,7 +1367,9 @@ class LiteratureIntegrityRunner:
       rounds: tuple[RepairRound, ...] = (),
   ) -> OperationalIntegrityEvalResult:
     robustness = _score_robustness(
-        self._scorecards, case.case_id, "invalid", len(rounds))
+        self._scorecards, case.case_id, "invalid", attempt)
+    usages = (() if phase == "initial_load" else tuple(
+        item.model_usage for item in rounds) + (usage,))
     return OperationalIntegrityEvalResult(
         model_first_pass=first,
         repair_rounds=rounds,
@@ -1222,7 +1379,7 @@ class LiteratureIntegrityRunner:
             message=str(error).strip() or error.__class__.__name__,
             model_usage=usage,
         ),
-        repair_cost=RepairCost.from_rounds(rounds),
+        repair_cost=RepairCost.from_usages(usages),
         robustness=robustness,
     )
 
@@ -1392,11 +1549,48 @@ class ProductionModelExecutor:
     self._repository_root = Path(repository_root).resolve()
     self._timeout = timeout
 
+  @staticmethod
+  def _inside(path: Path, root: Path) -> bool:
+    try:
+      path.relative_to(root)
+      return True
+    except ValueError:
+      return False
+
+  def _child_environment(self, workspace: Path, provider: str) -> dict[str, str]:
+    allowed = _COMMON_CHILD_ENV | _PROVIDER_CHILD_ENV[provider]
+    protected = (self._repository_root, workspace.parent.resolve())
+    child = {}
+    for name in sorted(allowed):
+      value = os.environ.get(name)
+      if value is None:
+        continue
+      if any(str(root) in value for root in protected):
+        continue
+      if name in _PATH_CHILD_ENV:
+        candidate = Path(value).expanduser()
+        try:
+          candidate = candidate.resolve(strict=False)
+        except OSError:
+          continue
+        if any(self._inside(candidate, root) for root in protected):
+          continue
+      child[name] = value
+    child.update({
+        "LANG": child.get("LANG", "C.UTF-8"),
+        "PATH": _SAFE_SYSTEM_PATH,
+        "PWD": str(workspace.resolve()),
+        "TMPDIR": str(_SAFE_TEMP_ROOT),
+    })
+    return child
+
   def _run(
       self, prompt: str, workspace: Path, *, prompt_version: str,
       prompt_sha256: str, allow_research: bool,
   ) -> ModelUsage:
     parts = self._model.split(":")
+    if self._inside(workspace.resolve(), self._repository_root):
+      raise ValueError("model workspace must be isolated outside the repository")
     provider = parts[0].lower()
     model_name = parts[1] if len(parts) > 1 else None
     extra = parts[2] if len(parts) > 2 else None
@@ -1423,6 +1617,7 @@ class ProductionModelExecutor:
     completed = subprocess.run(
         command,
         cwd=workspace,
+        env=self._child_environment(workspace, provider),
         input=stdin,
         capture_output=True,
         text=True,
@@ -1448,7 +1643,9 @@ class ProductionModelExecutor:
       self, case: CaseDefinition, workspace: Path,
   ) -> ModelUsage:
     source_skill = self._repository_root / "skills/literature-review"
-    with tempfile.TemporaryDirectory(prefix="literature-input-") as temporary:
+    with tempfile.TemporaryDirectory(
+        prefix="literature-input-", dir=_SAFE_TEMP_ROOT,
+    ) as temporary:
       staging = Path(temporary).resolve()
       for path in source_skill.rglob("*"):
         if path.is_symlink():

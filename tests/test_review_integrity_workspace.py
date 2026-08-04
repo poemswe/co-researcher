@@ -249,6 +249,41 @@ def test_workspace_rejects_directory_artifact_as_type_invalid(tmp_path):
   assert captured.value.artifact == "claims.json"
 
 
+@pytest.mark.parametrize("artifact", [
+    "project.json", "corpus.json", "claims.json",
+])
+def test_malformed_json_reports_exact_artifact(tmp_path, artifact):
+  root = _write_project_workspace(tmp_path / "review")
+  (root / artifact).write_text("{not-json", encoding="utf-8")
+
+  with pytest.raises(WorkspaceError) as captured:
+    snapshot = load_workspace(root)
+    snapshot.read_json(artifact)
+
+  assert captured.value.reason_code is ReasonCode.ARTIFACT_MALFORMED
+  assert captured.value.artifact == artifact
+
+
+def test_semantically_invalid_corpus_reports_corpus_artifact(tmp_path):
+  root = _write_project_workspace(tmp_path / "review")
+  (root / "corpus.json").write_text("{}", encoding="utf-8")
+
+  with pytest.raises(WorkspaceError) as captured:
+    load_workspace(root)
+
+  assert captured.value.artifact == "corpus.json"
+
+
+def test_semantically_invalid_project_reports_project_artifact(tmp_path):
+  root = _write_project_workspace(tmp_path / "review")
+  (root / "project.json").write_text("{}", encoding="utf-8")
+
+  with pytest.raises(WorkspaceError) as captured:
+    load_workspace(root)
+
+  assert captured.value.artifact == "project.json"
+
+
 @pytest.mark.parametrize("bad", [
     "../claims.json", "papers/../claims.json", "/absolute/claims.json",
     "./claims.json", "papers//10.1_example/fulltext.md",

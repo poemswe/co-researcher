@@ -96,6 +96,61 @@ def test_fixture_loader_rejects_symlinked_case_collection(tmp_path):
     load_cases(linked)
 
 
+def test_case_discovery_rejects_symlinked_absolute_ancestor(tmp_path):
+  real_parent = tmp_path / "real-parent"
+  case_dir = real_parent / "collection" / "case-one"
+  case_dir.mkdir(parents=True)
+  (case_dir / "case.json").write_text(json.dumps({
+      "schema_version": "1.0.0",
+      "capability": "literature-review-integrity",
+      "case_id": "case-one",
+      "prompt": "Create an invented review.",
+      "domain": "invented",
+      "fixture_paths": [],
+      "quality_rubric_id": "literature-review-v1",
+  }))
+  linked_parent = tmp_path / "linked-parent"
+  linked_parent.symlink_to(real_parent, target_is_directory=True)
+
+  with pytest.raises(ValueError, match="ancestor|symlink"):
+    load_cases(linked_parent / "collection")
+
+
+def test_case_discovery_fails_closed_when_collection_path_is_swapped(
+    monkeypatch, tmp_path,
+):
+  collection = tmp_path / "collection"
+  collection.mkdir()
+  outside = tmp_path / "outside"
+  case_dir = outside / "case-one"
+  case_dir.mkdir(parents=True)
+  (case_dir / "case.json").write_text(json.dumps({
+      "schema_version": "1.0.0",
+      "capability": "literature-review-integrity",
+      "case_id": "case-one",
+      "prompt": "Create an invented review.",
+      "domain": "invented",
+      "fixture_paths": [],
+      "quality_rubric_id": "literature-review-v1",
+  }))
+  original_open = literature_integrity.os.open
+  swapped = False
+
+  def swap_before_open(path, flags, *args, **kwargs):
+    nonlocal swapped
+    if (not swapped and path == collection.name
+        and kwargs.get("dir_fd") is not None):
+      swapped = True
+      collection.rename(tmp_path / "displaced")
+      collection.symlink_to(outside, target_is_directory=True)
+    return original_open(path, flags, *args, **kwargs)
+
+  monkeypatch.setattr(literature_integrity.os, "open", swap_before_open)
+
+  with pytest.raises(ValueError, match="swap|identity|symlink"):
+    load_cases(collection)
+
+
 def test_case_discovery_rejects_nested_directory_symlink(tmp_path):
   outside = tmp_path / "outside"
   outside.mkdir()

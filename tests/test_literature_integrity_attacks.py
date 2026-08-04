@@ -221,6 +221,36 @@ def test_critical_attack_is_detected_at_its_expected_unit(
   assert len(matches) == 1
 
 
+def test_repair_operational_failure_keeps_latest_trusted_findings(tmp_path):
+  case = next(
+      item for item in load_cases(ATTACKS)
+      if item.case_id == "integrity-case-001")
+
+  class SymlinkRepairExecutor(_ScenarioExecutor):
+    def __init__(self):
+      super().__init__(None)
+
+    def repair(self, feedback, workspace):
+      self.feedback.append(feedback)
+      scenario = json.loads(case.fixture_paths[0].read_text())
+      _artifact_failure("symlink", workspace, scenario)
+      return self._usage()
+
+  result = literature_integrity.LiteratureIntegrityRunner(
+      SymlinkRepairExecutor(), _ScenarioJudge(),
+      workspace_parent=tmp_path / "workspaces",
+      scorecard_directory=ATTACKS).run_case(case)
+  score = literature_integrity.load_adversarial_scores(
+      ATTACKS, {case.case_id: result})[case.case_id]
+
+  assert result.operational_failure.phase == "repair_load"
+  assert dict(score.confusion) == {
+      "true_positive": 1, "false_positive": 2,
+      "true_negative": 1, "false_negative": 0}
+  assert score.reason_metrics["fabricated_quote"].true_positive == 1
+  assert score.reason_metrics["artifact_symlink"].false_positive == 1
+
+
 @pytest.mark.parametrize(
     "case_id", [case for case, _family, _reason, _mutation
                 in ATTACK_EXPECTATIONS[:9]])
@@ -293,6 +323,7 @@ def test_scorer_produces_per_family_confusion_and_reason_metrics(tmp_path):
   }
   assert score.reason_metrics["fabricated_quote"].precision == 1.0
   assert score.reason_metrics["fabricated_quote"].recall == 1.0
+  assert score.reason_metrics["fabricated_quote"].true_negative == 1
 
 
 def _write_adversarial_scorecard(root, expectations):
@@ -336,8 +367,8 @@ def test_scorer_matches_one_to_one_and_counts_duplicates_and_extras(tmp_path):
   assert dict(score.confusion) == {
       "true_positive": 1, "false_positive": 3,
       "true_negative": 0, "false_negative": 0}
-  assert score.reason_metrics["fabricated_quote"] == ReasonMetric(1, 2, 0)
-  assert score.reason_metrics["citation_ambiguous"] == ReasonMetric(0, 1, 0)
+  assert score.reason_metrics["fabricated_quote"] == ReasonMetric(1, 2, 0, 0)
+  assert score.reason_metrics["citation_ambiguous"] == ReasonMetric(0, 1, 0, 0)
 
 
 def test_scorer_rejects_contradictory_expectations_for_the_same_unit(tmp_path):
@@ -377,6 +408,7 @@ def test_scorer_has_explicit_zero_denominator_behavior(
   assert dict(score.confusion) == confusion
   assert metric.precision is precision
   assert metric.recall == recall
+  assert metric.true_negative == confusion["true_negative"]
 
 
 def _valid_evaluation():
@@ -409,7 +441,7 @@ def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
           "true_positive": 1, "false_positive": 0,
           "true_negative": 1, "false_negative": 0},
       reason_metrics={
-          "fabricated_quote": ReasonMetric(1, 0, 0)},
+          "fabricated_quote": ReasonMetric(1, 0, 1, 0)},
   )
   second = AdversarialCaseScore(
       attack_family="unicode-substitution",
@@ -417,7 +449,7 @@ def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
           "true_positive": 0, "false_positive": 1,
           "true_negative": 0, "false_negative": 1},
       reason_metrics={
-          "fabricated_quote": ReasonMetric(0, 1, 1)},
+          "fabricated_quote": ReasonMetric(0, 1, 0, 1)},
   )
   run = CombinedRunResult(
       run_id="run-attack-metrics", timestamp="2026-08-04T12:00:00Z",
@@ -439,7 +471,8 @@ def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
           "true_negative": 1, "false_negative": 1}}
   assert report["summary"]["reason_code_metrics"] == {
       "fabricated_quote": {
-          "true_positive": 1, "false_positive": 1, "false_negative": 1,
+          "true_positive": 1, "false_positive": 1, "true_negative": 1,
+          "false_negative": 1,
           "precision": 0.5, "recall": 0.5}}
   serialized = json.dumps(report)
   assert "reason_expectations" not in serialized
@@ -453,7 +486,7 @@ def test_count_only_adversarial_schema_rejects_unknown_and_forged_metrics():
           "true_positive": 1, "false_positive": 0,
           "true_negative": 1, "false_negative": 0},
       reason_metrics={
-          "fabricated_quote": ReasonMetric(1, 0, 0)},
+          "fabricated_quote": ReasonMetric(1, 0, 1, 0)},
   ).to_dict()
   with_unknown = {**score, "gold": "must not enter count output"}
 
@@ -472,4 +505,32 @@ def test_adversarial_schema_rejects_confusion_that_disagrees_with_reasons():
         confusion={
             "true_positive": 2, "false_positive": 0,
             "true_negative": 0, "false_negative": 0},
-        reason_metrics={"fabricated_quote": ReasonMetric(1, 0, 0)})
+        reason_metrics={"fabricated_quote": ReasonMetric(1, 0, 0, 0)})
+
+
+def test_adversarial_schema_rejects_forged_true_negative_count():
+  with pytest.raises(ValueError, match="reconcile|confusion"):
+    AdversarialCaseScore(
+        attack_family="unicode-substitution",
+        confusion={
+            "true_positive": 1, "false_positive": 0,
+            "true_negative": 1, "false_negative": 0},
+        reason_metrics={"fabricated_quote": {
+            "true_positive": 1, "false_positive": 0,
+            "true_negative": 0, "false_negative": 0,
+            "precision": 1.0, "recall": 1.0}})
+
+
+def test_adversarial_v1_wire_artifact_is_explicitly_rejected():
+  with pytest.raises(ValueError, match="schema_version"):
+    AdversarialCaseScore.from_dict({
+        "schema_version": "1.0.0",
+        "attack_family": "unicode-substitution",
+        "confusion": {
+            "true_positive": 1, "false_positive": 0,
+            "true_negative": 0, "false_negative": 0},
+        "reason_metrics": {"fabricated_quote": {
+            "true_positive": 1, "false_positive": 0,
+            "true_negative": 0, "false_negative": 0,
+            "precision": 1.0, "recall": 1.0}},
+    })

@@ -469,9 +469,11 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
         confusion[name] += value
       for code, metric in case.adversarial_score.reason_metrics.items():
         combined = reason_counts.setdefault(code, {
-            "true_positive": 0, "false_positive": 0, "false_negative": 0})
+            "true_positive": 0, "false_positive": 0,
+            "true_negative": 0, "false_negative": 0})
         combined["true_positive"] += metric.true_positive
         combined["false_positive"] += metric.false_positive
+        combined["true_negative"] += metric.true_negative
         combined["false_negative"] += metric.false_negative
   summary = {"case_count": len(cases), "integrity_status_counts": counts}
   if attack_families:

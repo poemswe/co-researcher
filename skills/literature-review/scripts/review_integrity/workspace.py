@@ -8,6 +8,7 @@ manifest, so later validators never need to reopen an artifact pathname.
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
+from contextlib import contextmanager
 import errno
 import hashlib
 import json
@@ -60,6 +61,18 @@ def _filesystem_reason(exc: OSError) -> ReasonCode:
   if exc.errno == errno.ENOTDIR:
     return ReasonCode.ARTIFACT_TYPE_INVALID
   return ReasonCode.VALIDATOR_INCOMPLETE
+
+
+@contextmanager
+def _artifact_context(relative_path: str):
+  """Attach the submitted artifact to semantic errors that lack provenance."""
+  try:
+    yield
+  except WorkspaceError as exc:
+    if exc.artifact != ".":
+      raise
+    raise WorkspaceError(
+        str(exc), exc.reason_code, relative_path) from exc
 
 
 def _valid_unicode(value: str, field_name: str) -> str:
@@ -136,16 +149,23 @@ class Artifact:
           "Artifact construction is restricted to the workspace loader")
     _canonical_relative_path(self.relative_path)
     if type(self.payload) is not bytes:
-      raise WorkspaceError("artifact payload must be immutable bytes")
+      raise WorkspaceError(
+          "artifact payload must be immutable bytes",
+          ReasonCode.ARTIFACT_MALFORMED, self.relative_path)
     if len(self.payload) > MAX_ARTIFACT_BYTES:
       raise WorkspaceError(
           f"artifact exceeds size limit ({MAX_ARTIFACT_BYTES} bytes): "
-          f"{self.relative_path}")
+          f"{self.relative_path}", ReasonCode.ARTIFACT_MALFORMED,
+          self.relative_path)
     expected = hashlib.sha256(self.payload).hexdigest()
     if self.sha256 != expected:
-      raise WorkspaceError("artifact sha256 does not match its retained bytes")
+      raise WorkspaceError(
+          "artifact sha256 does not match its retained bytes",
+          ReasonCode.ARTIFACT_MALFORMED, self.relative_path)
     if type(self.preferred_for_claims) is not bool:
-      raise WorkspaceError("preferred_for_claims must be a boolean")
+      raise WorkspaceError(
+          "preferred_for_claims must be a boolean",
+          ReasonCode.ARTIFACT_MALFORMED, self.relative_path)
 
   @property
   def size(self) -> int:
@@ -209,7 +229,8 @@ class WorkspaceSnapshot:
       return self._files_by_path[relative_path].payload
     except (KeyError, TypeError) as exc:
       raise WorkspaceError(
-          f"artifact is not present in the snapshot: {relative_path!r}") from exc
+          f"artifact is not present in the snapshot: {relative_path!r}",
+          ReasonCode.ARTIFACT_MISSING, relative_path) from exc
 
   def read_text(self, relative_path: str) -> str:
     payload = self.read_bytes(relative_path)
@@ -217,7 +238,8 @@ class WorkspaceSnapshot:
       return payload.decode("utf-8")
     except UnicodeDecodeError as exc:
       raise WorkspaceError(
-          f"artifact is not valid UTF-8: {relative_path}") from exc
+          f"artifact is not valid UTF-8: {relative_path}",
+          ReasonCode.ARTIFACT_MALFORMED, relative_path) from exc
 
   def read_json(self, relative_path: str) -> object:
     return _decode_json(self.read_bytes(relative_path), relative_path)
@@ -248,19 +270,20 @@ def _decode_json(payload: bytes, relative_path: str) -> object:
     text = payload.decode("utf-8")
   except UnicodeDecodeError as exc:
     raise WorkspaceError(
-        f"artifact is not valid UTF-8: {relative_path}") from exc
+        f"artifact is not valid UTF-8: {relative_path}",
+        ReasonCode.ARTIFACT_MALFORMED, relative_path) from exc
   try:
-    return json.loads(
-        text,
-        object_pairs_hook=_duplicate_rejecting_object,
-        parse_constant=_reject_json_constant,
-        parse_float=_parse_finite_float,
-    )
-  except WorkspaceError:
-    raise
+    with _artifact_context(relative_path):
+      return json.loads(
+          text,
+          object_pairs_hook=_duplicate_rejecting_object,
+          parse_constant=_reject_json_constant,
+          parse_float=_parse_finite_float,
+      )
   except json.JSONDecodeError as exc:
     raise WorkspaceError(
-        f"artifact contains malformed JSON: {relative_path}: {exc}") from exc
+        f"artifact contains malformed JSON: {relative_path}: {exc}",
+        ReasonCode.ARTIFACT_MALFORMED, relative_path) from exc
 
 
 def decode_json_bytes(payload: bytes, label: str) -> object:
@@ -383,7 +406,7 @@ def _read_member(root_descriptor: int, relative_path: str) -> bytes:
     if metadata.st_size < 0 or metadata.st_size > MAX_ARTIFACT_BYTES:
       raise WorkspaceError(
           f"artifact exceeds size limit ({MAX_ARTIFACT_BYTES} bytes): "
-          f"{relative_path}")
+          f"{relative_path}", ReasonCode.ARTIFACT_MALFORMED, relative_path)
     chunks: list[bytes] = []
     retained = 0
     while True:
@@ -391,7 +414,7 @@ def _read_member(root_descriptor: int, relative_path: str) -> bytes:
       if allowance <= 0:
         raise WorkspaceError(
             f"artifact exceeds size limit ({MAX_ARTIFACT_BYTES} bytes): "
-            f"{relative_path}")
+            f"{relative_path}", ReasonCode.ARTIFACT_MALFORMED, relative_path)
       chunk = os.read(leaf, min(_READ_SIZE, allowance))
       if not chunk:
         break
@@ -400,7 +423,7 @@ def _read_member(root_descriptor: int, relative_path: str) -> bytes:
       if retained > MAX_ARTIFACT_BYTES:
         raise WorkspaceError(
             f"artifact exceeds size limit ({MAX_ARTIFACT_BYTES} bytes): "
-            f"{relative_path}")
+            f"{relative_path}", ReasonCode.ARTIFACT_MALFORMED, relative_path)
     return b"".join(chunks)
   finally:
     close_error: Optional[Exception] = None
@@ -411,7 +434,8 @@ def _read_member(root_descriptor: int, relative_path: str) -> bytes:
         close_error = exc
     if close_error is not None:
       raise WorkspaceError(
-          f"cannot close artifact descriptor for {relative_path}: {close_error}"
+          f"cannot close artifact descriptor for {relative_path}: {close_error}",
+          ReasonCode.VALIDATOR_INCOMPLETE, relative_path,
       ) from close_error
 
 
@@ -656,22 +680,27 @@ def load_workspace(root: pathlib.Path) -> WorkspaceSnapshot:
     if project_payload is not None and run_manifest_payload is not None:
       raise WorkspaceError(
           "workspace has both project.json and run-manifest.json; "
-          "the project link is ambiguous")
+          "the project link is ambiguous",
+          ReasonCode.ARTIFACT_MALFORMED, "project.json")
     if project_payload is None and run_manifest_payload is None:
       raise WorkspaceError(
-          "workspace requires exactly one of project.json or run-manifest.json")
+          "workspace requires exactly one of project.json or run-manifest.json",
+          ReasonCode.ARTIFACT_MISSING, "project.json")
 
     if run_manifest_payload is not None:
-      preferred_sources = _load_run_manifest(reader, run_manifest_payload)
+      with _artifact_context("run-manifest.json"):
+        preferred_sources = _load_run_manifest(reader, run_manifest_payload)
     else:
       assert project_payload is not None
-      project = _decode_json(project_payload, "project.json")
-      if type(project) is not dict or not project:
-        raise WorkspaceError("project.json must be a nonempty JSON object")
+      with _artifact_context("project.json"):
+        project = _decode_json(project_payload, "project.json")
+        if type(project) is not dict or not project:
+          raise WorkspaceError("project.json must be a nonempty JSON object")
       for relative_path in _FIXED_ARTIFACTS:
         reader.required(relative_path)
-      corpus = _decode_json(reader.required("corpus.json"), "corpus.json")
-      preferred_sources = _discover_sources(reader, corpus)
+      with _artifact_context("corpus.json"):
+        corpus = _decode_json(reader.required("corpus.json"), "corpus.json")
+        preferred_sources = _discover_sources(reader, corpus)
     return WorkspaceSnapshot(
         files=_artifacts(reader.payloads, preferred_sources),
         canonicalization=CANONICALIZATION,
