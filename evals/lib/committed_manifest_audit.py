@@ -9,6 +9,7 @@ import pathlib
 import re
 import stat
 import unicodedata
+from dataclasses import dataclass
 
 
 INDEX_NAME = "commitment-index.json"
@@ -25,6 +26,16 @@ _OPEN_SUPPORTS_DIR_FD = os.open in getattr(os, "supports_dir_fd", ())
 
 class ManifestAuditError(ValueError):
   """A committed manifest set cannot be audited safely."""
+
+
+@dataclass(frozen=True)
+class _FileWitness:
+  relative_path: pathlib.PurePosixPath
+  context: str
+  limit: int
+  digest: str
+  descriptors: tuple[int, ...]
+  metadata: tuple[os.stat_result, ...]
 
 
 def _require_secure_descriptor_support() -> None:
@@ -147,7 +158,7 @@ def _read_regular_file(
     *,
     limit: int,
     context: str,
-) -> bytes:
+) -> tuple[bytes, _FileWitness]:
   descriptors: list[int] = []
   directory_metadata = []
   try:
@@ -191,41 +202,114 @@ def _read_regular_file(
     if after.st_nlink != 1 or after.st_size != total:
       raise ManifestAuditError(f"{context} changed while it was read")
 
-    for held_descriptor, expected in zip(
-        descriptors[:len(directory_metadata)], directory_metadata):
-      if _stable_file_metadata(os.fstat(held_descriptor)) != (
-          _stable_file_metadata(expected)):
-        raise ManifestAuditError(f"{context} changed while it was read")
-
-    reopened_parent = root_descriptor
-    for component, expected in zip(
-        relative_path.parts[:-1], directory_metadata):
-      reopened = os.open(
-          component, _open_flags(directory=True), dir_fd=reopened_parent)
-      descriptors.append(reopened)
-      current = os.fstat(reopened)
-      if (
-          not stat.S_ISDIR(current.st_mode)
-          or _stable_file_metadata(current) != _stable_file_metadata(expected)
-      ):
-        raise ManifestAuditError(f"{context} changed while it was read")
-      reopened_parent = reopened
-
-    current_descriptor = os.open(
-        relative_path.parts[-1], _open_flags(directory=False),
-        dir_fd=reopened_parent)
-    descriptors.append(current_descriptor)
-    current = os.fstat(current_descriptor)
-    if not stat.S_ISREG(current.st_mode) or (
-        _stable_file_metadata(after) != _stable_file_metadata(current)):
-      raise ManifestAuditError(f"{context} changed while it was read")
-    return b"".join(chunks)
+    payload = b"".join(chunks)
+    witness = _FileWitness(
+        relative_path=relative_path,
+        context=context,
+        limit=limit,
+        digest=hashlib.sha256(payload).hexdigest(),
+        descriptors=tuple(descriptors),
+        metadata=tuple([*directory_metadata, after]),
+    )
+    _check_held_witness(witness)
+    _validate_witness_path(root_descriptor, witness, hash_bytes=False)
+    descriptors = []
+    return payload, witness
   except ManifestAuditError:
     raise
   except Exception as exc:
     raise ManifestAuditError(f"cannot securely open {context}: {exc}") from exc
   finally:
     _close(descriptors, context)
+
+
+def _check_held_witness(witness: _FileWitness) -> None:
+  if len(witness.descriptors) != len(witness.metadata):
+    raise ManifestAuditError(f"{witness.context} has an incomplete witness")
+  for descriptor, expected in zip(witness.descriptors, witness.metadata):
+    if _stable_file_metadata(os.fstat(descriptor)) != (
+        _stable_file_metadata(expected)):
+      raise ManifestAuditError(
+          f"{witness.context} changed during manifest-set audit")
+
+
+def _validate_witness_path(
+    root_descriptor: int,
+    witness: _FileWitness,
+    *,
+    hash_bytes: bool,
+) -> None:
+  descriptors = []
+  try:
+    parent_descriptor = root_descriptor
+    for component, expected in zip(
+        witness.relative_path.parts[:-1], witness.metadata[:-1]):
+      descriptor = os.open(
+          component, _open_flags(directory=True), dir_fd=parent_descriptor)
+      descriptors.append(descriptor)
+      current = os.fstat(descriptor)
+      if (
+          not stat.S_ISDIR(current.st_mode)
+          or _stable_file_metadata(current) != _stable_file_metadata(expected)
+      ):
+        raise ManifestAuditError(
+            f"{witness.context} changed during manifest-set audit")
+      parent_descriptor = descriptor
+
+    descriptor = os.open(
+        witness.relative_path.parts[-1], _open_flags(directory=False),
+        dir_fd=parent_descriptor)
+    descriptors.append(descriptor)
+    before = os.fstat(descriptor)
+    if (
+        not stat.S_ISREG(before.st_mode)
+        or _stable_file_metadata(before) != (
+            _stable_file_metadata(witness.metadata[-1]))
+    ):
+      raise ManifestAuditError(
+          f"{witness.context} changed during manifest-set audit")
+    if not hash_bytes:
+      return
+
+    digest = hashlib.sha256()
+    total = 0
+    while True:
+      payload = os.read(
+          descriptor, min(64 * 1024, witness.limit + 1 - total))
+      if not payload:
+        break
+      digest.update(payload)
+      total += len(payload)
+      if total > witness.limit:
+        raise ManifestAuditError(
+            f"{witness.context} exceeds the size limit")
+    after = os.fstat(descriptor)
+    if (
+        _stable_file_metadata(before) != _stable_file_metadata(after)
+        or total != after.st_size
+        or digest.hexdigest() != witness.digest
+    ):
+      raise ManifestAuditError(
+          f"{witness.context} changed during manifest-set audit")
+  except ManifestAuditError:
+    raise
+  except Exception as exc:
+    raise ManifestAuditError(
+        f"{witness.context} changed during manifest-set audit") from exc
+  finally:
+    _close(descriptors, f"reopened {witness.context}")
+
+
+def _revalidate_witnesses(
+    root_descriptor: int,
+    witnesses: list[_FileWitness],
+) -> None:
+  for witness in witnesses:
+    _check_held_witness(witness)
+  for witness in witnesses:
+    _validate_witness_path(root_descriptor, witness, hash_bytes=True)
+  for witness in witnesses:
+    _check_held_witness(witness)
 
 
 def _verify_root_directory(
@@ -347,14 +431,16 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
   """Verify an index and its listed manifests without opening public inputs."""
   _require_secure_descriptor_support()
   root_descriptor = None
+  witnesses: list[_FileWitness] = []
   try:
     root_descriptor, root_absolute, root_chain = _open_root_directory(root)
     root_before = os.fstat(root_descriptor)
     if not stat.S_ISDIR(root_before.st_mode):
       raise ManifestAuditError("manifest root is not a directory")
-    index_payload = _read_regular_file(
+    index_payload, index_witness = _read_regular_file(
         root_descriptor, pathlib.PurePosixPath(INDEX_NAME),
         limit=MAX_INDEX_BYTES, context="commitment index")
+    witnesses.append(index_witness)
     index = _require_exact_keys(
         _decode_json(index_payload, "commitment index"),
         {"schema_version", "cases"}, "commitment index")
@@ -390,9 +476,10 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
       expected_digest = _require_sha256(
           entry["manifest_sha256"],
           f"commitment index case {offset} manifest_sha256")
-      payload = _read_regular_file(
+      payload, manifest_witness = _read_regular_file(
           root_descriptor, pathlib.PurePosixPath(manifest_path),
           limit=MAX_MANIFEST_BYTES, context=f"manifest for {case_id}")
+      witnesses.append(manifest_witness)
       actual_digest = hashlib.sha256(payload).hexdigest()
       if actual_digest != expected_digest:
         raise ManifestAuditError(f"manifest digest mismatch for {case_id}")
@@ -414,6 +501,7 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
         "public_input_count": total_inputs,
         "cases": sorted(audit_cases, key=lambda item: item["case_id"]),
     }
+    _revalidate_witnesses(root_descriptor, witnesses)
     _verify_root_directory(
         root_descriptor, root_absolute, root_chain, root_before)
     return audit
@@ -422,8 +510,12 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
   except Exception as exc:
     raise ManifestAuditError("cannot securely open manifest root") from exc
   finally:
+    descriptors = []
     if root_descriptor is not None:
-      _close([root_descriptor], "manifest root")
+      descriptors.append(root_descriptor)
+    for witness in witnesses:
+      descriptors.extend(witness.descriptors)
+    _close(descriptors, "manifest audit")
 
 
 __all__ = ["ManifestAuditError", "audit_committed_manifests"]

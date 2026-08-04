@@ -101,8 +101,10 @@ opened descriptor-relatively without following symlinks. Regular-file identity,
 mode, owner, link count, size, modification time, and change time must remain
 stable across each bounded read. Held in-root directory components must also
 remain stable. Before accepting, the audit reopens each complete manifest chain
-from the held root and the complete supplied-root chain from the filesystem
-anchor; every component must have the same observed identity at that final
+from the held root and rehashes its bytes. The completion barrier checks every
+retained index/manifest component and leaf descriptor before and after that
+full-set pass, then reopens the complete supplied-root chain from the filesystem
+anchor. Every component and committed digest must match at that final
 verification point. This is a fail-closed point-in-time audit, not a filesystem
 lock against mutations after the command returns.
 
