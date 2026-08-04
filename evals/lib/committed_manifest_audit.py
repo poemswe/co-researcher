@@ -312,6 +312,26 @@ def _revalidate_witnesses(
     _check_held_witness(witness)
 
 
+def _append_witness(
+    witnesses: list[_FileWitness], witness: _FileWitness,
+) -> None:
+  """Registration seam for deterministic ownership-failure tests."""
+  witnesses.append(witness)
+
+
+def _register_witness(
+    witnesses: list[_FileWitness], witness: _FileWitness,
+) -> None:
+  """Transfer descriptor ownership to witnesses or close it on any abort."""
+  original_length = len(witnesses)
+  try:
+    _append_witness(witnesses, witness)
+  except BaseException:
+    del witnesses[original_length:]
+    _close(list(witness.descriptors), f"unregistered {witness.context}")
+    raise
+
+
 def _verify_root_directory(
     root_descriptor: int,
     root_absolute: str,
@@ -440,7 +460,7 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
     index_payload, index_witness = _read_regular_file(
         root_descriptor, pathlib.PurePosixPath(INDEX_NAME),
         limit=MAX_INDEX_BYTES, context="commitment index")
-    witnesses.append(index_witness)
+    _register_witness(witnesses, index_witness)
     index = _require_exact_keys(
         _decode_json(index_payload, "commitment index"),
         {"schema_version", "cases"}, "commitment index")
@@ -479,7 +499,7 @@ def audit_committed_manifests(root: pathlib.Path) -> dict[str, object]:
       payload, manifest_witness = _read_regular_file(
           root_descriptor, pathlib.PurePosixPath(manifest_path),
           limit=MAX_MANIFEST_BYTES, context=f"manifest for {case_id}")
-      witnesses.append(manifest_witness)
+      _register_witness(witnesses, manifest_witness)
       actual_digest = hashlib.sha256(payload).hexdigest()
       if actual_digest != expected_digest:
         raise ManifestAuditError(f"manifest digest mismatch for {case_id}")

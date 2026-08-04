@@ -18,7 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evals"))
 
 import run_eval  # noqa: E402
-from lib import literature_integrity  # noqa: E402
+from lib import committed_manifest_audit, literature_integrity  # noqa: E402
 from lib.committed_manifest_audit import (  # noqa: E402
     ManifestAuditError,
     audit_committed_manifests,
@@ -621,6 +621,75 @@ def test_multi_manifest_directory_replacement_before_later_case_fails_closed(
   monkeypatch.setattr(os, "open", replacing_before_second_case)
   with pytest.raises(ManifestAuditError, match="changed|manifest root"):
     audit_committed_manifests(case_root)
+
+
+@pytest.mark.parametrize("failure_call, append_before_failure", [
+    (1, False), (2, False), (1, True), (2, True),
+])
+def test_witness_registration_failure_closes_every_descriptor_once(
+    tmp_path, monkeypatch, failure_call, append_before_failure,
+):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001",))
+  real_open = os.open
+  real_close = os.close
+  opened = []
+  closed = []
+  registrations = 0
+
+  def recording_open(path, flags, mode=0o777, *, dir_fd=None):
+    descriptor = real_open(path, flags, mode, dir_fd=dir_fd)
+    opened.append(descriptor)
+    return descriptor
+
+  def recording_close(descriptor):
+    closed.append(descriptor)
+    return real_close(descriptor)
+
+  def failing_append(collection, witness):
+    nonlocal registrations
+    registrations += 1
+    if registrations == failure_call:
+      if append_before_failure:
+        collection.append(witness)
+      raise MemoryError("synthetic witness registration failure")
+    collection.append(witness)
+
+  monkeypatch.setattr(os, "open", recording_open)
+  monkeypatch.setattr(os, "close", recording_close)
+  monkeypatch.setattr(
+      committed_manifest_audit, "_append_witness", failing_append)
+
+  with pytest.raises(ManifestAuditError, match="manifest root"):
+    audit_committed_manifests(case_root)
+
+  assert sorted(opened) == sorted(closed)
+  assert len(opened) == len(closed)
+
+
+def test_successful_audit_closes_every_descriptor_once(tmp_path, monkeypatch):
+  case_root = tmp_path / "runtime-supplied"
+  _write_case_set(case_root, ("case-001", "case-002"))
+  real_open = os.open
+  real_close = os.close
+  opened = []
+  closed = []
+
+  def recording_open(path, flags, mode=0o777, *, dir_fd=None):
+    descriptor = real_open(path, flags, mode, dir_fd=dir_fd)
+    opened.append(descriptor)
+    return descriptor
+
+  def recording_close(descriptor):
+    closed.append(descriptor)
+    return real_close(descriptor)
+
+  monkeypatch.setattr(os, "open", recording_open)
+  monkeypatch.setattr(os, "close", recording_close)
+
+  assert audit_committed_manifests(case_root)["case_count"] == 2
+  assert sorted(opened) == sorted(closed)
+  assert len(opened) == len(closed)
 
 
 def test_symlinked_root_ancestor_and_final_root_fail_closed(tmp_path):
