@@ -141,7 +141,7 @@ def _reachable_strings(value, seen=None):
   if id(value) in seen:
     return []
   seen.add(id(value))
-  if isinstance(value, pathlib.Path):
+  if isinstance(value, pathlib.PurePath):
     return [str(value)]
   if isinstance(value, str):
     return [value]
@@ -177,10 +177,12 @@ def test_integrity_mode_is_listed_by_cli():
 
 def test_eval_uses_isolated_workspace_per_case(tmp_path):
   executor = FakeExecutor()
+  first = _case(tmp_path, "one")
+  second = _case(tmp_path, "two")
   runner = _runner(tmp_path, executor=executor)
 
-  runner.run_case(_case(tmp_path, "one"))
-  runner.run_case(_case(tmp_path, "two"))
+  runner.run_case(first)
+  runner.run_case(second)
 
   assert len(set(executor.workspaces)) == 2
   assert executor.initial_contents == [(), ()]
@@ -190,8 +192,9 @@ def test_eval_uses_isolated_workspace_per_case(tmp_path):
 def test_first_pass_is_immutable_after_repairs(tmp_path):
   executor = FakeExecutor()
   judge = RecordingJudge()
+  case = _case(tmp_path)
 
-  result = _runner(tmp_path, executor, judge).run_case(_case(tmp_path))
+  result = _runner(tmp_path, executor, judge).run_case(case)
 
   assert result.model_first_pass.quality.quality_score == 11.0
   assert result.model_first_pass.integrity.manifest_sha256 == (
@@ -208,8 +211,9 @@ def test_quality_judge_receives_first_and_final_synthesis_from_matching_snapshot
     tmp_path,
 ):
   judge = RecordingJudge()
+  case = _case(tmp_path)
 
-  result = _runner(tmp_path, judge=judge).run_case(_case(tmp_path))
+  result = _runner(tmp_path, judge=judge).run_case(case)
 
   assert judge.syntheses == ["", "final synthesis 3\n"]
   assert result.model_first_pass.quality.quality_score == 11.0
@@ -220,8 +224,9 @@ def test_quality_judge_receives_first_and_final_synthesis_from_matching_snapshot
 
 def test_eval_stops_after_three_repairs(tmp_path):
   executor = FakeExecutor()
+  case = _case(tmp_path)
 
-  result = _runner(tmp_path, executor=executor).run_case(_case(tmp_path))
+  result = _runner(tmp_path, executor=executor).run_case(case)
 
   assert len(result.repair_rounds) == 3
   assert len(executor.feedback) == 3
@@ -231,7 +236,8 @@ def test_eval_stops_after_three_repairs(tmp_path):
 
 
 def test_eval_marks_unresolved_critical_case_invalid(tmp_path):
-  result = _runner(tmp_path).run_case(_case(tmp_path))
+  case = _case(tmp_path)
+  result = _runner(tmp_path).run_case(case)
 
   assert result.system_final.integrity.status.value == "invalid"
   assert result.robustness.observed_final_status == "invalid"
@@ -239,7 +245,8 @@ def test_eval_marks_unresolved_critical_case_invalid(tmp_path):
 
 
 def test_quality_and_integrity_scores_are_not_blended(tmp_path):
-  result = _runner(tmp_path).run_case(_case(tmp_path))
+  case = _case(tmp_path)
+  result = _runner(tmp_path).run_case(case)
   serialized = result.to_dict()
 
   assert serialized["model_first_pass"]["quality"]["quality_score"] == 11.0
@@ -252,7 +259,8 @@ def test_quality_and_integrity_scores_are_not_blended(tmp_path):
 
 
 def test_eval_result_round_trips_with_a_closed_schema(tmp_path):
-  result = _runner(tmp_path).run_case(_case(tmp_path))
+  case = _case(tmp_path)
+  result = _runner(tmp_path).run_case(case)
 
   assert IntegrityEvalResult.from_dict(result.to_dict()) == result
   with pytest.raises(ValueError, match="unknown fields"):
@@ -260,7 +268,8 @@ def test_eval_result_round_trips_with_a_closed_schema(tmp_path):
 
 
 def test_eval_result_rejects_rewritten_first_pass_chain(tmp_path):
-  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  case = _case(tmp_path)
+  serialized = _runner(tmp_path).run_case(case).to_dict()
   serialized["repair_rounds"][0]["previous_integrity"] = (
       serialized["system_final"]["integrity"])
 
@@ -269,7 +278,8 @@ def test_eval_result_rejects_rewritten_first_pass_chain(tmp_path):
 
 
 def test_eval_result_rejects_repair_cost_that_does_not_match_usage(tmp_path):
-  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  case = _case(tmp_path)
+  serialized = _runner(tmp_path).run_case(case).to_dict()
   serialized["repair_cost"]["estimated_cost_usd"] = 99.0
 
   with pytest.raises(ValueError, match="repair_cost"):
@@ -277,7 +287,8 @@ def test_eval_result_rejects_repair_cost_that_does_not_match_usage(tmp_path):
 
 
 def test_repair_round_retains_and_validates_reason_chain(tmp_path):
-  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  case = _case(tmp_path)
+  serialized = _runner(tmp_path).run_case(case).to_dict()
   expected = list(dict.fromkeys(
       finding["reason_code"]
       for finding in serialized["repair_rounds"][0]["integrity"]["findings"]))
@@ -290,8 +301,9 @@ def test_repair_round_retains_and_validates_reason_chain(tmp_path):
 
 def test_quality_failure_is_explicit_and_does_not_change_integrity(tmp_path):
   judge = RecordingJudge(fail_on="final synthesis 3\n")
+  case = _case(tmp_path)
 
-  result = _runner(tmp_path, judge=judge).run_case(_case(tmp_path))
+  result = _runner(tmp_path, judge=judge).run_case(case)
 
   assert result.system_final.quality.quality_score is None
   assert result.system_final.quality.error == "synthetic judge failure"
@@ -378,6 +390,37 @@ def test_case_scoring_material_is_not_reachable_by_executor_or_judge(tmp_path):
                  for definition in fields(case))
   assert executor.feedback[0] == safe_repair_feedback(
       result.model_first_pass.integrity)
+
+
+def test_scorecards_preload_in_memory_without_temp_artifacts(
+    monkeypatch, tmp_path,
+):
+  case = _case(
+      tmp_path, case_id="integrity-case-807",
+      expected_status="valid_with_warnings")
+  scorecard = tmp_path / "cases" / case.case_id / "expected.json"
+  scorecard.write_text(json.dumps({
+      "schema_version": "1.0.0", "final_status": "invalid",
+      "minimum_repair_rounds": 3, "maximum_repair_rounds": 3,
+      "attack_family": "memory-only-family",
+      "reason_expectations": [{
+          "reason_code": "fabricated_quote", "present": False,
+          "unit": {"artifact": "claims.json", "context_key": None,
+                   "context_value": None},
+      }],
+  }))
+  safe_temp = tmp_path / "scorecard-temp"
+  safe_temp.mkdir()
+  monkeypatch.setattr(literature_integrity, "_SAFE_TEMP_ROOT", safe_temp)
+
+  runner = _runner(tmp_path)
+  assert not tuple(safe_temp.rglob("*"))
+  scorecard.unlink()
+  result = runner.run_case(case)
+
+  assert result.robustness.expected_final_status == "invalid"
+  assert result.robustness.minimum_repair_rounds == 3
+  assert not tuple(safe_temp.rglob("*"))
 
 
 def test_runner_records_unsafe_case_and_continues_to_next_case(tmp_path):
@@ -474,6 +517,60 @@ def test_operational_result_rejects_forged_attempt_cost_and_expectation(tmp_path
     literature_integrity.decode_integrity_result(forged_error)
 
 
+def _repair_failure_after_two_trusted_rounds(tmp_path):
+  class ThirdRepairFailsToLoad(FakeExecutor):
+    def repair(self, feedback, workspace):
+      usage = super().repair(feedback, workspace)
+      if len(self.feedback) == 3:
+        (workspace / "refs.json").unlink()
+      return usage
+
+  case = _case(tmp_path, case_id="integrity-case-809")
+  result = _runner(
+      tmp_path, executor=ThirdRepairFailsToLoad()).run_case(case)
+  assert len(result.repair_rounds) == 2
+  assert result.operational_failure.attempt == 3
+  return result.to_dict()
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda value: value["repair_rounds"][0].update(
+        previous_integrity=value["repair_rounds"][0]["integrity"]),
+    lambda value: value["repair_rounds"][1].update(attempt=3),
+    lambda value: value["repair_rounds"][1].update(attempt=1),
+    lambda value: value["repair_rounds"][0].update(action="pass"),
+    lambda value: value["repair_rounds"][-1].update(action="stop_invalid"),
+    lambda value: value["repair_rounds"][0].update(
+        workspace_manifest_sha256="f" * 64),
+    lambda value: value["repair_rounds"][0]["model_usage"].update(
+        duration_seconds=99.0),
+])
+def test_operational_result_rejects_forged_repair_chain(tmp_path, mutation):
+  serialized = _repair_failure_after_two_trusted_rounds(tmp_path)
+  mutation(serialized)
+
+  with pytest.raises(ValueError):
+    literature_integrity.decode_integrity_result(serialized)
+
+
+def test_operational_result_rejects_successful_history_followed_by_failure(
+    tmp_path,
+):
+  serialized = _repair_failure_after_two_trusted_rounds(tmp_path)
+  valid = IntegrityRunReport.example_valid().pass_report.to_dict()
+  first_round = serialized["repair_rounds"][0]
+  first_round.update({
+      "integrity": valid,
+      "workspace_manifest_sha256": valid["manifest_sha256"],
+      "reason_codes": [],
+      "action": "pass",
+  })
+  serialized["repair_rounds"][1]["previous_integrity"] = valid
+
+  with pytest.raises(ValueError, match="terminal|policy|repair"):
+    literature_integrity.decode_integrity_result(serialized)
+
+
 @pytest.mark.parametrize("bad_attack", [
     {"attack_family": "", "reason_expectations": []},
     {"attack_family": "unicode-substitution", "reason_expectations": [{
@@ -496,7 +593,7 @@ def test_invalid_adversarial_scorecard_is_an_explicit_scorer_error(
   assert result.robustness.error
 
 
-def test_scorecard_is_loaded_after_both_quality_judgments(tmp_path):
+def test_scorecard_preload_is_immutable_during_model_and_judge_phases(tmp_path):
   case = _case(tmp_path, expected_status="valid_with_warnings")
   scorecard = tmp_path / "cases" / case.case_id / "expected.json"
 
@@ -514,8 +611,8 @@ def test_scorecard_is_loaded_after_both_quality_judgments(tmp_path):
 
   result = _runner(tmp_path, judge=FinalJudge()).run_case(case)
 
-  assert result.robustness.expected_final_status == "invalid"
-  assert result.robustness.expectation_met is True
+  assert result.robustness.expected_final_status == "valid_with_warnings"
+  assert result.robustness.expectation_met is False
 
 
 def _capture_executor_calls(monkeypatch):
@@ -560,7 +657,7 @@ def test_claude_executor_can_create_and_repair_workspace(
     assert str(ROOT) not in prompt
     assert "unicode-substitution" not in prompt
     if index == 0:
-      assert str(case.fixture_paths[0]) not in prompt
+      assert str(tmp_path / "cases") not in prompt
       skill_line = next(
           line for line in prompt.splitlines() if line.startswith("Skill path:"))
       fixture_line = next(
@@ -571,6 +668,59 @@ def test_claude_executor_can_create_and_repair_workspace(
       ]
       assert all("synthetic-attacks" not in str(path) for path in staged_paths)
       assert all(not path.exists() for path in staged_paths)
+
+
+@pytest.mark.parametrize("returncode", [0, 17])
+def test_first_pass_stages_only_public_bytes_and_cleans_immediately(
+    monkeypatch, tmp_path, returncode,
+):
+  safe_temp = tmp_path / "executor-temp"
+  safe_temp.mkdir()
+  monkeypatch.setattr(literature_integrity, "_SAFE_TEMP_ROOT", safe_temp)
+  monkeypatch.setattr(
+      literature_integrity, "find_cli", lambda _provider: pathlib.Path(
+          "/fake/claude"))
+  case = _case(tmp_path, case_id="integrity-case-808")
+  scorecard = tmp_path / "cases" / case.case_id / "expected.json"
+  scorecard.write_text('{"attack_family":"must-never-stage"}')
+  active_snapshots = []
+  active_roots = []
+
+  def inspect_active_staging(command, **kwargs):
+    prompt = command[command.index("-p") + 1]
+    skill_path = pathlib.Path(next(
+        line.split(": ", 1)[1] for line in prompt.splitlines()
+        if line.startswith("Skill path:")))
+    staging = skill_path.parent.parent
+    active_roots.append(staging)
+    files = tuple(
+        (path.relative_to(staging).as_posix(), path.read_bytes())
+        for path in sorted(staging.rglob("*")) if path.is_file())
+    active_snapshots.append(files)
+    return SimpleNamespace(
+        returncode=returncode, stdout="", stderr="synthetic failure")
+
+  monkeypatch.setattr(
+      literature_integrity.subprocess, "run", inspect_active_staging)
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+
+  if returncode:
+    with pytest.raises(RuntimeError, match="exited 17"):
+      ProductionModelExecutor("claude", ROOT).first_pass(case, workspace)
+  else:
+    ProductionModelExecutor("claude", ROOT).first_pass(case, workspace)
+
+  assert len(active_snapshots) == 1
+  staged = active_snapshots[0]
+  fixture_files = [item for item in staged if item[0].startswith("fixture-")]
+  assert fixture_files == [("fixture-001.txt", b"synthetic public input\n")]
+  serialized = b"\n".join(
+      name.encode() + b"\n" + content for name, content in staged)
+  assert b"expected.json" not in serialized
+  assert b"must-never-stage" not in serialized
+  assert not active_roots[0].name.startswith("literature-")
+  assert not tuple(safe_temp.rglob("*"))
 
 
 @pytest.mark.parametrize("provider", ["codex", "gemini"])
@@ -697,7 +847,8 @@ def test_production_quality_judge_accepts_explicit_zero_scores(
 def test_eval_result_rejects_policy_and_commitment_tampering(
     tmp_path, mutation,
 ):
-  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  case = _case(tmp_path)
+  serialized = _runner(tmp_path).run_case(case).to_dict()
   mutation(serialized)
 
   with pytest.raises(ValueError):

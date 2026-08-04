@@ -1,6 +1,7 @@
 import json
 import pathlib
 import sys
+from dataclasses import fields, is_dataclass
 
 import pytest
 
@@ -33,10 +34,19 @@ def _walk(value):
   elif isinstance(value, (list, tuple, set)):
     for nested in value:
       yield from _walk(nested)
-  elif isinstance(value, pathlib.Path):
+  elif isinstance(value, pathlib.PurePath):
     yield str(value)
   elif isinstance(value, str):
     yield value
+  elif is_dataclass(value):
+    for definition in fields(value):
+      yield from _walk(getattr(value, definition.name))
+
+
+def _temp_tree(root: pathlib.Path) -> tuple[tuple[str, bytes], ...]:
+  return tuple(
+      (path.relative_to(root).as_posix(), path.read_bytes())
+      for path in sorted(root.rglob("*")) if path.is_file())
 
 
 def test_public_cases_and_fixtures_do_not_serialize_scorer_material():
@@ -74,6 +84,83 @@ def test_fixture_loader_rejects_symlinks_even_when_target_stays_inside_case(
 
   with pytest.raises(ValueError, match="symlink"):
     load_cases(case_dir)
+
+
+def test_case_loading_keeps_public_fixtures_in_memory_without_temp_mirrors(
+    monkeypatch, tmp_path,
+):
+  safe_temp = tmp_path / "safe-temp"
+  safe_temp.mkdir()
+  monkeypatch.setattr(literature_integrity, "_SAFE_TEMP_ROOT", safe_temp)
+  case_dir = tmp_path / "collection" / "case-one"
+  case_dir.mkdir(parents=True)
+  (case_dir / "input.txt").write_bytes(b"neutral public fixture\n")
+  (case_dir / "case.json").write_text(json.dumps({
+      "schema_version": "1.0.0",
+      "capability": "literature-review-integrity",
+      "case_id": "case-one",
+      "prompt": "Create an invented review.",
+      "domain": "invented",
+      "fixture_paths": ["input.txt"],
+      "quality_rubric_id": "literature-review-v1",
+  }))
+  (case_dir / "expected.json").write_text(json.dumps({
+      "schema_version": "1.0.0",
+      "final_status": "invalid",
+      "minimum_repair_rounds": 0,
+      "maximum_repair_rounds": 3,
+      "attack_family": "never-write-this-family",
+      "reason_expectations": [],
+  }))
+
+  case, = load_cases(tmp_path / "collection")
+
+  assert case.fixture_files[0].relative_path == pathlib.PurePosixPath(
+      "input.txt")
+  assert case.fixture_files[0].content == b"neutral public fixture\n"
+  assert _temp_tree(safe_temp) == ()
+  assert not any(str(tmp_path) in value for value in _walk(case))
+
+
+def test_public_fixture_record_rejects_scorer_owned_names():
+  with pytest.raises(ValueError, match="harness|scorer|expected"):
+    literature_integrity.PublicFixture(
+        pathlib.PurePosixPath("expected.json"), b"private scorer bytes")
+
+
+def test_malformed_case_cannot_leave_a_scorer_mirror_after_interruption(
+    monkeypatch, tmp_path,
+):
+  safe_temp = tmp_path / "safe-temp"
+  safe_temp.mkdir()
+  monkeypatch.setattr(literature_integrity, "_SAFE_TEMP_ROOT", safe_temp)
+  case_dir = tmp_path / "collection" / "case-one"
+  case_dir.mkdir(parents=True)
+  (case_dir / "case.json").write_text("{")
+  (case_dir / "expected.json").write_text(
+      '{"attack_family":"crash-visible-family"}')
+
+  with pytest.raises(ValueError, match="case definition"):
+    load_cases(tmp_path / "collection")
+
+  assert _temp_tree(safe_temp) == ()
+
+
+def test_collection_file_reads_are_bounded(tmp_path):
+  case_dir = tmp_path / "collection" / "case-one"
+  case_dir.mkdir(parents=True)
+  (case_dir / "case.json").write_text(json.dumps({
+      "schema_version": "1.0.0",
+      "capability": "literature-review-integrity",
+      "case_id": "case-one",
+      "prompt": "x" * (8 * 1024 * 1024),
+      "domain": "invented",
+      "fixture_paths": [],
+      "quality_rubric_id": "literature-review-v1",
+  }))
+
+  with pytest.raises(ValueError, match="size|large|limit"):
+    load_cases(tmp_path / "collection")
 
 
 def test_fixture_loader_rejects_symlinked_case_collection(tmp_path):

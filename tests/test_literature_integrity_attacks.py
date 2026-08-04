@@ -135,7 +135,8 @@ def test_public_attack_case_definitions_cover_every_family_once():
     assert public["fixture_paths"] == ["input.json"]
     public_reachable = "\n".join((
         case.case_id, case.prompt, case.domain,
-        *(str(path) for path in case.fixture_paths))).casefold()
+        *(fixture.relative_path.as_posix()
+          for fixture in case.fixture_files))).casefold()
     assert not FAMILY_NAMES & {
         family for family in FAMILY_NAMES if family in public_reachable}
 
@@ -157,7 +158,7 @@ class _ScenarioExecutor:
         prompt_version="scenario-v1", prompt_sha256="b" * 64)
 
   def first_pass(self, case, workspace):
-    scenario = json.loads(case.fixture_paths[0].read_text())
+    scenario = json.loads(case.fixture_files[0].content.decode("utf-8"))
     _write_workspace(workspace, scenario)
     if self.mutation is not None:
       _artifact_failure(self.mutation, workspace, scenario)
@@ -232,7 +233,7 @@ def test_repair_operational_failure_keeps_latest_trusted_findings(tmp_path):
 
     def repair(self, feedback, workspace):
       self.feedback.append(feedback)
-      scenario = json.loads(case.fixture_paths[0].read_text())
+      scenario = json.loads(case.fixture_files[0].content.decode("utf-8"))
       _artifact_failure("symlink", workspace, scenario)
       return self._usage()
 

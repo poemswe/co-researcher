@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import atexit
 import hashlib
 import json
 import math
@@ -16,7 +15,7 @@ import tempfile
 import time
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import MappingProxyType
 from typing import Protocol
 
@@ -73,7 +72,9 @@ REPAIR_PROMPT_SHA256 = hashlib.sha256(
 _CLAUDE_CAPTURE_TOOLS = (
     "WebSearch,WebFetch,Read,Grep,Glob,Write,Edit,Bash")
 _CLAUDE_REPAIR_TOOLS = "Read,Grep,Glob,Write,Edit,Bash"
-_FIXTURE_STAGING_ROOTS: list[Path] = []
+_MAX_COLLECTION_FILE_BYTES = 8 * 1024 * 1024
+_MAX_COLLECTION_BYTES = 64 * 1024 * 1024
+_MAX_COLLECTION_FILES = 4096
 _SAFE_SYSTEM_PATH = (
     "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin")
 _COMMON_CHILD_ENV = frozenset({
@@ -116,16 +117,6 @@ _PROVIDER_CHILD_ENV = {
         "GOOGLE_GENAI_USE_VERTEXAI",
     }),
 }
-
-
-def _cleanup_fixture_staging() -> None:
-  for root in _FIXTURE_STAGING_ROOTS:
-    shutil.rmtree(root, ignore_errors=True)
-
-
-atexit.register(_cleanup_fixture_staging)
-
-
 def _closed_object(value: object, fields: set[str], label: str) -> dict:
   if not isinstance(value, dict):
     raise ValueError(f"{label} must be a JSON object")
@@ -161,11 +152,28 @@ def _finite_score(value: object, label: str) -> float:
 
 
 @dataclass(frozen=True, slots=True)
+class PublicFixture:
+  relative_path: PurePosixPath
+  content: bytes
+
+  def __post_init__(self) -> None:
+    if (not isinstance(self.relative_path, PurePosixPath)
+        or self.relative_path.is_absolute()
+        or not self.relative_path.parts
+        or any(part in {".", ".."} for part in self.relative_path.parts)):
+      raise ValueError("public fixture path must be canonical and relative")
+    if self.relative_path.name in {"case.json", "expected.json"}:
+      raise ValueError("public fixture must not use a harness-owned name")
+    if not isinstance(self.content, bytes):
+      raise ValueError("public fixture content must be immutable bytes")
+
+
+@dataclass(frozen=True, slots=True)
 class CaseDefinition:
   case_id: str
   prompt: str
   domain: str
-  fixture_paths: tuple[Path, ...]
+  fixture_files: tuple[PublicFixture, ...]
   quality_rubric_id: str
 
   def __post_init__(self) -> None:
@@ -177,10 +185,9 @@ class CaseDefinition:
     if self.quality_rubric_id != QUALITY_RUBRIC_ID:
       raise ValueError(
           f"quality_rubric_id must be {QUALITY_RUBRIC_ID!r}")
-    if not isinstance(self.fixture_paths, tuple) or not all(
-        isinstance(path, Path) and path.is_absolute()
-        for path in self.fixture_paths):
-      raise ValueError("fixture_paths must contain absolute paths")
+    if not isinstance(self.fixture_files, tuple) or not all(
+        isinstance(item, PublicFixture) for item in self.fixture_files):
+      raise ValueError("fixture_files must contain PublicFixture values")
 
 
 @dataclass(frozen=True, slots=True)
@@ -525,6 +532,42 @@ class RobustnessResult:
     return cls(**{key: data[key] for key in data if key != "schema_version"})
 
 
+def _replay_repair_chain(
+    first: SnapshotEvaluation,
+    rounds: tuple[RepairRound, ...],
+) -> str:
+  """Validate one retained chain and return its latest trusted action."""
+  if len(rounds) > 3 or any(
+      item.attempt != index for index, item in enumerate(rounds, 1)):
+    raise ValueError("repair rounds must be bounded and contiguous")
+  previous_integrity = first.integrity
+  for repair_round in rounds:
+    if repair_round.previous_integrity != previous_integrity:
+      raise ValueError("repair round previous integrity breaks the chain")
+    previous_integrity = repair_round.integrity
+  initial_action = (
+      "repair" if first.integrity.status.value == "invalid" else "pass")
+  try:
+    strict_run = IntegrityRunReport(
+        pass_report=first.integrity,
+        workspace_manifest_sha256=first.workspace_manifest_sha256,
+        action=initial_action,
+        quality_score=None,
+        repairs=tuple(RepairRecord(
+            attempt=repair_round.attempt,
+            pass_report=repair_round.integrity,
+            workspace_manifest_sha256=repair_round.workspace_manifest_sha256,
+            reason_codes=repair_round.reason_codes,
+            action=repair_round.action,
+            resolved=(repair_round.integrity.status.value != "invalid"),
+        ) for repair_round in rounds),
+    )
+    RepairController.from_run_report(strict_run)
+  except ValueError as exc:
+    raise ValueError(f"repair policy replay failed: {exc}") from exc
+  return rounds[-1].action if rounds else strict_run.action
+
+
 @dataclass(frozen=True, slots=True)
 class IntegrityEvalResult:
   model_first_pass: SnapshotEvaluation
@@ -539,39 +582,8 @@ class IntegrityEvalResult:
     if not isinstance(self.repair_rounds, tuple) or not all(
         isinstance(item, RepairRound) for item in self.repair_rounds):
       raise ValueError("repair_rounds must contain RepairRound values")
-    if len(self.repair_rounds) > 3 or any(
-        item.attempt != index
-        for index, item in enumerate(self.repair_rounds, 1)):
-      raise ValueError("repair rounds must be bounded and contiguous")
-    previous_integrity = self.model_first_pass.integrity
-    for repair_round in self.repair_rounds:
-      if repair_round.previous_integrity != previous_integrity:
-        raise ValueError("repair round previous integrity breaks the chain")
-      previous_integrity = repair_round.integrity
-    initial_action = "repair" if self.repair_rounds else "pass"
-    try:
-      strict_run = IntegrityRunReport(
-          pass_report=self.model_first_pass.integrity,
-          workspace_manifest_sha256=(
-              self.model_first_pass.workspace_manifest_sha256),
-          action=initial_action,
-          quality_score=None,
-          repairs=tuple(RepairRecord(
-              attempt=repair_round.attempt,
-              pass_report=repair_round.integrity,
-              workspace_manifest_sha256=(
-                  repair_round.workspace_manifest_sha256),
-              reason_codes=repair_round.reason_codes,
-              action=repair_round.action,
-              resolved=(repair_round.integrity.status.value != "invalid"),
-          ) for repair_round in self.repair_rounds),
-      )
-      RepairController.from_run_report(strict_run)
-    except ValueError as exc:
-      raise ValueError(f"repair policy replay failed: {exc}") from exc
-    final_action = (
-        self.repair_rounds[-1].action if self.repair_rounds
-        else strict_run.action)
+    final_action = _replay_repair_chain(
+        self.model_first_pass, self.repair_rounds)
     if final_action not in {"pass", "stop_invalid"}:
       raise ValueError("repair policy replay did not reach a terminal action")
     if not isinstance(self.system_final, SnapshotEvaluation):
@@ -717,6 +729,10 @@ class OperationalIntegrityEvalResult:
         raise ValueError("repair load failure requires a trusted first pass")
       if self.operational_failure.attempt != len(self.repair_rounds) + 1:
         raise ValueError("repair failure attempt must follow successful rounds")
+      if _replay_repair_chain(
+          self.model_first_pass, self.repair_rounds) != "repair":
+        raise ValueError(
+            "repair load failure must follow a trusted repair action")
       expected_usages = tuple(
           item.model_usage for item in self.repair_rounds) + (
               self.operational_failure.model_usage,)
@@ -793,20 +809,30 @@ class QualityJudge(Protocol):
   ) -> QualityResult: ...
 
 
-def _read_json(path: Path, label: str) -> object:
+def _read_json_bytes(content: bytes, label: str) -> object:
   try:
-    return json.loads(path.read_text(encoding="utf-8"))
-  except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+    return json.loads(content.decode("utf-8"))
+  except (UnicodeError, json.JSONDecodeError) as exc:
     raise ValueError(f"cannot read {label}: {exc}") from exc
 
 
-def _load_case(path: Path) -> CaseDefinition:
+@dataclass(frozen=True, slots=True)
+class _CollectionFile:
+  relative_path: PurePosixPath
+  content: bytes
+
+
+def _load_case(
+    definition: _CollectionFile,
+    collection: Mapping[PurePosixPath, _CollectionFile],
+) -> CaseDefinition:
   fields = {
       "schema_version", "capability", "case_id", "prompt", "domain",
       "fixture_paths", "quality_rubric_id",
   }
-  data = _closed_object(_read_json(path, "case definition"), fields,
-                        "case definition")
+  data = _closed_object(
+      _read_json_bytes(definition.content, "case definition"), fields,
+      "case definition")
   if data["schema_version"] != SCHEMA_VERSION:
     raise ValueError("unsupported case schema_version")
   if data["capability"] != CAPABILITY:
@@ -814,43 +840,26 @@ def _load_case(path: Path) -> CaseDefinition:
   if not isinstance(data["fixture_paths"], list) or not all(
       isinstance(item, str) and item for item in data["fixture_paths"]):
     raise ValueError("fixture_paths must be a list of nonempty text paths")
-  base = path.parent.resolve()
-  sources: list[tuple[str, Path]] = []
-  for item in data["fixture_paths"]:
-    relative = Path(item)
-    if (relative.is_absolute() or "." in relative.parts
-        or ".." in relative.parts):
-      raise ValueError("fixture paths must be canonical relative paths")
-    unresolved = base
-    for component in relative.parts:
-      unresolved = unresolved / component
-      if unresolved.is_symlink():
-        raise ValueError("fixture paths must not contain symlinks")
-    candidate = unresolved.resolve()
-    try:
-      candidate.relative_to(base)
-    except ValueError as exc:
-      raise ValueError("fixture paths must remain inside the case directory") from exc
-    if not candidate.is_file():
-      raise ValueError(f"fixture path is not a file: {item}")
-    sources.append((item, candidate))
+  base = definition.relative_path.parent
   fixtures = []
-  if sources:
-    staging = Path(tempfile.mkdtemp(
-        prefix="literature-fixtures-",
-        dir=_SAFE_TEMP_ROOT,
-    )).resolve()
-    _FIXTURE_STAGING_ROOTS.append(staging)
-    for relative, source in sources:
-      destination = staging / relative
-      destination.parent.mkdir(parents=True, exist_ok=True)
-      destination.write_bytes(source.read_bytes())
-      fixtures.append(destination)
+  for item in data["fixture_paths"]:
+    relative = PurePosixPath(item)
+    if (relative.is_absolute() or not relative.parts
+        or any(part in {".", ".."} for part in relative.parts)
+        or relative.as_posix() != item):
+      raise ValueError("fixture paths must be canonical relative paths")
+    if relative.name in {"case.json", "expected.json"}:
+      raise ValueError("fixture paths must not reference harness-owned files")
+    source = collection.get(base / relative)
+    if source is None:
+      raise ValueError(f"fixture path is not a file: {item}")
+    fixtures.append(PublicFixture(
+        relative_path=relative, content=source.content))
   return CaseDefinition(
       case_id=data["case_id"],
       prompt=_text(data["prompt"], "prompt"),
       domain=_text(data["domain"], "domain"),
-      fixture_paths=tuple(fixtures),
+      fixture_files=tuple(fixtures),
       quality_rubric_id=data["quality_rubric_id"],
   )
 
@@ -900,25 +909,32 @@ def _read_collection_file(
         or (opened.st_dev, opened.st_ino)
         != (expected.st_dev, expected.st_ino)):
       raise ValueError("collection file identity changed or is aliased")
+    if opened.st_size > _MAX_COLLECTION_FILE_BYTES:
+      raise ValueError("collection file exceeds size limit")
     chunks = []
-    while chunk := os.read(descriptor, 1024 * 1024):
+    total = 0
+    while chunk := os.read(
+        descriptor, min(1024 * 1024, _MAX_COLLECTION_FILE_BYTES + 1 - total)):
+      total += len(chunk)
+      if total > _MAX_COLLECTION_FILE_BYTES:
+        raise ValueError("collection file exceeds size limit")
       chunks.append(chunk)
     return b"".join(chunks)
   finally:
     os.close(descriptor)
 
 
-def _discover_named_paths(root: Path, filename: str) -> tuple[Path, ...]:
-  """Snapshot a collection through no-follow descriptors."""
-  discovered: list[Path] = []
+def _discover_named_paths(root: Path) -> tuple[_CollectionFile, ...]:
+  """Read one bounded collection into immutable, no-follow records."""
+  discovered: list[_CollectionFile] = []
   seen_directories: set[tuple[int, int]] = set()
   seen_files: set[tuple[int, int]] = set()
+  total_bytes = 0
   root_descriptor = _open_collection_root(root)
   root_identity = os.fstat(root_descriptor)
-  mirror = Path(tempfile.mkdtemp(
-      prefix="literature-collection-", dir=_SAFE_TEMP_ROOT))
 
-  def walk(descriptor: int, relative: Path) -> None:
+  def walk(descriptor: int, relative: PurePosixPath) -> None:
+    nonlocal total_bytes
     metadata = os.fstat(descriptor)
     identity = (metadata.st_dev, metadata.st_ino)
     if identity in seen_directories:
@@ -951,15 +967,18 @@ def _discover_named_paths(root: Path, filename: str) -> tuple[Path, ...]:
         if file_identity in seen_files or entry_metadata.st_nlink != 1:
           raise ValueError("case collection contains a hardlink or inode alias")
         seen_files.add(file_identity)
-        destination = mirror / relative / entry.name
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(_read_collection_file(
-            descriptor, entry.name, entry_metadata))
-        if entry.name == filename:
-          discovered.append(destination)
+        if len(seen_files) > _MAX_COLLECTION_FILES:
+          raise ValueError("collection exceeds file count limit")
+        content = _read_collection_file(
+            descriptor, entry.name, entry_metadata)
+        total_bytes += len(content)
+        if total_bytes > _MAX_COLLECTION_BYTES:
+          raise ValueError("collection exceeds total size limit")
+        discovered.append(_CollectionFile(
+            relative_path=relative / entry.name, content=content))
 
   try:
-    walk(root_descriptor, Path())
+    walk(root_descriptor, PurePosixPath())
     verification = _open_collection_root(root)
     try:
       verified = os.fstat(verification)
@@ -968,11 +987,7 @@ def _discover_named_paths(root: Path, filename: str) -> tuple[Path, ...]:
         raise ValueError("collection root identity changed during discovery")
     finally:
       os.close(verification)
-    _FIXTURE_STAGING_ROOTS.append(mirror)
     return tuple(discovered)
-  except Exception:
-    shutil.rmtree(mirror, ignore_errors=True)
-    raise
   finally:
     os.close(root_descriptor)
 
@@ -982,8 +997,12 @@ def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
   if supplied.is_symlink():
     raise ValueError("case directory must not be a symlink")
   root = Path(os.path.abspath(os.fspath(supplied)))
-  paths = _discover_named_paths(root, "case.json")
-  cases = tuple(_load_case(path) for path in paths)
+  records = _discover_named_paths(root)
+  collection = MappingProxyType({
+      record.relative_path: record for record in records})
+  definitions = tuple(
+      record for record in records if record.relative_path.name == "case.json")
+  cases = tuple(_load_case(record, collection) for record in definitions)
   if not cases:
     raise ValueError("case directory does not contain case definitions")
   if len({case.case_id for case in cases}) != len(cases):
@@ -994,23 +1013,30 @@ def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
 class _ScorecardStore:
   def __init__(self, directory: Path | str | None):
     if directory is None:
-      self._directory = None
+      self._scorecards = None
       return
     supplied = Path(directory)
     if supplied.is_symlink():
       raise ValueError("scorecard directory must not be a symlink")
-    self._directory = Path(os.path.abspath(os.fspath(supplied)))
+    root = Path(os.path.abspath(os.fspath(supplied)))
+    records = _discover_named_paths(root)
+    scorecards = {}
+    for record in records:
+      if record.relative_path.name != "expected.json":
+        continue
+      case_id = record.relative_path.parent.name
+      if case_id in scorecards:
+        raise ValueError(f"scorecard lookup is not unique: {case_id}")
+      scorecards[case_id] = record.content
+    self._scorecards = MappingProxyType(scorecards)
 
   def load(self, case_id: str) -> dict:
-    if self._directory is None:
+    if self._scorecards is None:
       raise ValueError("scorecard directory was not supplied")
-    matches = [
-        path for path in _discover_named_paths(
-            self._directory, "expected.json")
-        if path.parent.name == case_id]
-    if len(matches) != 1:
+    content = self._scorecards.get(case_id)
+    if content is None:
       raise ValueError(f"scorecard lookup is not unique: {case_id}")
-    return _read_json(matches[0], "scorecard")
+    return _read_json_bytes(content, "scorecard")
 
 
 _ROBUSTNESS_SCORECARD_FIELDS = {
@@ -1455,7 +1481,7 @@ class LiteratureIntegrityRunner:
       else:
         final = first
 
-      # Scoring-only data is deliberately read after model work, validation,
+      # Preloaded scoring bytes are parsed only after model work, validation,
       # repair feedback, and quality judging are all complete.
       robustness = _score_robustness(
           self._scorecards, case.case_id, final.integrity.status.value,
@@ -1644,7 +1670,7 @@ class ProductionModelExecutor:
   ) -> ModelUsage:
     source_skill = self._repository_root / "skills/literature-review"
     with tempfile.TemporaryDirectory(
-        prefix="literature-input-", dir=_SAFE_TEMP_ROOT,
+        dir=_SAFE_TEMP_ROOT,
     ) as temporary:
       staging = Path(temporary).resolve()
       for path in source_skill.rglob("*"):
@@ -1653,13 +1679,10 @@ class ProductionModelExecutor:
       shutil.copytree(source_skill, staging / "skill")
       skill_path = staging / "skill/SKILL.md"
       fixture_paths = []
-      for index, source in enumerate(case.fixture_paths, 1):
-        metadata = source.stat(follow_symlinks=False)
-        if source.is_symlink() or not source.is_file() or metadata.st_nlink != 1:
-          raise ValueError("public fixture must be a regular single-link file")
-        suffix = source.suffix if source.suffix else ".bin"
+      for index, fixture in enumerate(case.fixture_files, 1):
+        suffix = fixture.relative_path.suffix or ".bin"
         destination = staging / f"fixture-{index:03d}{suffix}"
-        destination.write_bytes(source.read_bytes())
+        destination.write_bytes(fixture.content)
         fixture_paths.append(destination)
       fixtures = "\n".join(
           f"- {path}" for path in fixture_paths) or "- none"
@@ -1695,7 +1718,8 @@ __all__ = [
     "IntegrityResult", "LiteratureIntegrityRunner", "OperationalFailure",
     "OperationalIntegrityEvalResult",
     "ModelExecutor", "ModelUsage", "ProductionModelExecutor",
-    "ProductionQualityJudge", "QualityJudge", "QualityResult", "RepairCost",
+    "ProductionQualityJudge", "PublicFixture", "QualityJudge",
+    "QualityResult", "RepairCost",
     "ReasonMetric", "RepairRound", "RobustnessResult", "SnapshotEvaluation",
     "decode_integrity_result", "load_adversarial_scores", "load_cases",
 ]
