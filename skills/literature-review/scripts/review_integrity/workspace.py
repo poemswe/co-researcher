@@ -7,9 +7,10 @@ manifest, so later validators never need to reopen an artifact pathname.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 import hashlib
 import json
+import math
 import os
 import pathlib
 import re
@@ -31,6 +32,7 @@ _EVIDENCE_ROLES = frozenset({"evidence", "background"})
 _READ_SIZE = 1024 * 1024
 _OPEN_SUPPORTS_DIR_FD = os.open in getattr(os, "supports_dir_fd", ())
 _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
+_LOADER_TOKEN = object()
 
 
 class WorkspaceError(ValueError):
@@ -101,11 +103,19 @@ class Artifact:
   payload: bytes = field(repr=False)
   sha256: str
   preferred_for_claims: bool = False
+  _loader_token: InitVar[object] = None
 
-  def __post_init__(self) -> None:
+  def __post_init__(self, _loader_token: object) -> None:
+    if _loader_token is not _LOADER_TOKEN:
+      raise WorkspaceError(
+          "Artifact construction is restricted to the workspace loader")
     _canonical_relative_path(self.relative_path)
     if type(self.payload) is not bytes:
       raise WorkspaceError("artifact payload must be immutable bytes")
+    if len(self.payload) > MAX_ARTIFACT_BYTES:
+      raise WorkspaceError(
+          f"artifact exceeds size limit ({MAX_ARTIFACT_BYTES} bytes): "
+          f"{self.relative_path}")
     expected = hashlib.sha256(self.payload).hexdigest()
     if self.sha256 != expected:
       raise WorkspaceError("artifact sha256 does not match its retained bytes")
@@ -133,8 +143,13 @@ class WorkspaceSnapshot:
   manifest_sha256: str = field(init=False)
   _files_by_path: Mapping[str, Artifact] = field(
       init=False, repr=False, compare=False)
+  _loader_token: InitVar[object] = None
 
-  def __post_init__(self) -> None:
+  def __post_init__(self, _loader_token: object) -> None:
+    if _loader_token is not _LOADER_TOKEN:
+      raise WorkspaceError(
+          "WorkspaceSnapshot construction is restricted to the workspace "
+          "loader")
     if self.canonicalization != CANONICALIZATION:
       raise WorkspaceError(
           f"unsupported canonicalization: {self.canonicalization!r}")
@@ -147,6 +162,11 @@ class WorkspaceSnapshot:
       raise WorkspaceError("artifacts must be ordered by UTF-8 path bytes")
     if len(paths) != len(set(paths)):
       raise WorkspaceError("artifact paths must be unique")
+    total_size = sum(item.size for item in self.files)
+    if total_size > MAX_TOTAL_ARTIFACT_BYTES:
+      raise WorkspaceError(
+          "workspace exceeds total retained artifact size limit "
+          f"({MAX_TOTAL_ARTIFACT_BYTES} bytes)")
     by_path = MappingProxyType(dict(zip(paths, self.files)))
     object.__setattr__(self, "_files_by_path", by_path)
     digest = hashlib.sha256(canonical_manifest_bytes(self.manifest)).hexdigest()
@@ -191,6 +211,13 @@ def _reject_json_constant(value: str) -> object:
   raise WorkspaceError(f"nonstandard JSON numeric constant: {value}")
 
 
+def _parse_finite_float(value: str) -> float:
+  result = float(value)
+  if not math.isfinite(result):
+    raise WorkspaceError(f"JSON number must be finite: {value}")
+  return result
+
+
 def _decode_json(payload: bytes, relative_path: str) -> object:
   try:
     text = payload.decode("utf-8")
@@ -202,6 +229,7 @@ def _decode_json(payload: bytes, relative_path: str) -> object:
         text,
         object_pairs_hook=_duplicate_rejecting_object,
         parse_constant=_reject_json_constant,
+        parse_float=_parse_finite_float,
     )
   except WorkspaceError:
     raise
@@ -533,6 +561,7 @@ def _artifacts(
       payload=payloads[relative_path],
       sha256=hashlib.sha256(payloads[relative_path]).hexdigest(),
       preferred_for_claims=preferred_sources.get(relative_path, False),
+      _loader_token=_LOADER_TOKEN,
   ) for relative_path in ordered_paths)
 
 
@@ -565,6 +594,7 @@ def load_workspace(root: pathlib.Path) -> WorkspaceSnapshot:
     return WorkspaceSnapshot(
         files=_artifacts(reader.payloads, preferred_sources),
         canonicalization=CANONICALIZATION,
+        _loader_token=_LOADER_TOKEN,
     )
   finally:
     try:

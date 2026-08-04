@@ -14,8 +14,10 @@ sys.path.insert(0, str(SCRIPTS))
 
 from review_integrity import workspace  # noqa: E402
 from review_integrity.workspace import (  # noqa: E402
+    Artifact,
     CANONICALIZATION,
     WorkspaceError,
+    WorkspaceSnapshot,
     canonical_manifest_bytes,
     load_workspace,
 )
@@ -324,6 +326,39 @@ def test_snapshot_read_json_rejects_nonstandard_numeric_constants(
 
   with pytest.raises(WorkspaceError, match="JSON"):
     snapshot.read_json("refs.json")
+
+
+@pytest.mark.parametrize("payload", [b"1e400", b'[{"nested":1e400}]'])
+def test_snapshot_read_json_rejects_overflowed_floats(tmp_path, payload):
+  root = _write_project_workspace(tmp_path / "review")
+  (root / "refs.json").write_bytes(payload)
+  snapshot = load_workspace(root)
+
+  with pytest.raises(WorkspaceError, match="finite|JSON"):
+    snapshot.read_json("refs.json")
+
+
+def test_trusted_dataclasses_reject_public_direct_construction(tmp_path):
+  root = _write_project_workspace(tmp_path / "review")
+  trusted = load_workspace(root)
+
+  with pytest.raises(WorkspaceError, match="loader"):
+    WorkspaceSnapshot(files=())
+  with pytest.raises(WorkspaceError, match="loader"):
+    WorkspaceSnapshot(files=trusted.files)
+  assert trusted.read_json("claims.json") == [{"claim": "original"}]
+
+
+def test_artifact_direct_construction_cannot_bypass_size_limit(monkeypatch):
+  payload = b"oversized"
+  monkeypatch.setattr(workspace, "MAX_ARTIFACT_BYTES", len(payload) - 1)
+
+  with pytest.raises(WorkspaceError, match="loader"):
+    Artifact(
+        relative_path="claims.json",
+        payload=payload,
+        sha256=hashlib.sha256(payload).hexdigest(),
+    )
 
 
 def test_discovery_requires_sources_only_for_included_evidence_or_background(
