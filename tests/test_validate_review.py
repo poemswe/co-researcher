@@ -122,7 +122,8 @@ def test_valid_review_cli_exits_zero_and_prints_strict_json_from_any_cwd(
       "schema_version", "engine_version", "quality_score", "target_commit",
       "target_dirty", "validator_versions", "manifest_sha256",
       "workspace_manifest_sha256", "citation_report_sha256", "dimensions",
-      "findings", "integrity_score", "status", "citation_resolution",
+      "findings", "integrity_score", "status", "action", "repair_feedback",
+      "citation_resolution",
   }
   assert report["schema_version"] == "1.0.0"
   assert report["engine_version"] == "1.0.0"
@@ -246,6 +247,115 @@ def test_invalid_claim_report_exits_one_and_preserves_json_report(tmp_path):
   assert report["status"] == "invalid"
   assert any(item["severity"] == "critical" for item in report["findings"])
   assert "verified" not in result.stderr.lower()
+
+
+def test_cli_run_report_retains_first_and_intermediate_passes(tmp_path):
+  workspace = _review(
+      tmp_path / "review",
+      quote=("This invented evidence passage is deliberately long enough to "
+             "be checked but it does not occur in the retained source text."))
+  run_report = tmp_path / "run-report.json"
+
+  first = _run(workspace, "--run-report", str(run_report))
+  first_stdout = _report(first)
+  first_ledger = json.loads(run_report.read_text(encoding="utf-8"))
+  (workspace / "protocol.md").write_text(
+      "# Protocol\n\nA submitted repair that remains invalid.\n",
+      encoding="utf-8")
+  second = _run(workspace, "--run-report", str(run_report))
+  second_stdout = _report(second)
+  second_ledger = json.loads(run_report.read_text(encoding="utf-8"))
+
+  assert first.returncode == second.returncode == 1
+  assert first_stdout["action"] == second_stdout["action"] == "repair"
+  assert first_stdout["repair_feedback"]["reason_codes"] == list(dict.fromkeys(
+      finding["reason_code"] for finding in first_stdout["findings"]))
+  assert "fabricated_quote" in first_stdout[
+      "repair_feedback"]["reason_codes"]
+  assert second_ledger["pass_report"] == first_ledger["pass_report"]
+  assert second_ledger["workspace_manifest_sha256"] == first_ledger[
+      "workspace_manifest_sha256"]
+  assert second_ledger["action"] == first_ledger["action"] == "repair"
+  assert len(second_ledger["repairs"]) == 1
+  repair = second_ledger["repairs"][0]
+  assert repair["attempt"] == 1
+  assert repair["pass_report"] == {
+      key: second_stdout[key]
+      for key in ("schema_version", "integrity_score", "findings",
+                  "dimensions", "manifest_sha256", "status")
+  }
+  assert repair["workspace_manifest_sha256"] != second_ledger[
+      "workspace_manifest_sha256"]
+
+
+def test_cli_rejects_run_report_inside_workspace(tmp_path):
+  workspace = _review(tmp_path / "review")
+  run_report = workspace / "run-report.json"
+
+  result = _run(workspace, "--run-report", str(run_report))
+
+  assert result.returncode == 2
+  assert result.stdout == ""
+  assert "outside" in result.stderr.lower()
+  assert not run_report.exists()
+
+
+@pytest.mark.parametrize("payload", [
+    b'{"schema_version":"1.0.0","schema_version":"1.0.0"}',
+    b'{"schema_version":"1.0.0","quality_score":NaN}',
+    b'{"schema_version":"1.0.0","gold_label":true}',
+    b'not-json',
+    b'\xff',
+])
+def test_cli_rejects_unsafe_run_report_json_without_overwrite(
+    tmp_path, payload,
+):
+  workspace = _review(tmp_path / "review")
+  run_report = tmp_path / "run-report.json"
+  run_report.write_bytes(payload)
+
+  result = _run(workspace, "--run-report", str(run_report))
+
+  assert result.returncode == 2
+  assert result.stdout == ""
+  assert "not validated" in result.stderr.lower()
+  assert run_report.read_bytes() == payload
+
+
+def test_cli_rejects_symlinked_run_report_and_parent(tmp_path):
+  workspace = _review(tmp_path / "review")
+  target = tmp_path / "target.json"
+  target.write_text("do not overwrite", encoding="utf-8")
+  symlink = tmp_path / "run-report.json"
+  symlink.symlink_to(target)
+  real_parent = tmp_path / "real-parent"
+  real_parent.mkdir()
+  linked_parent = tmp_path / "linked-parent"
+  linked_parent.symlink_to(real_parent, target_is_directory=True)
+
+  for run_report in (symlink, linked_parent / "run-report.json"):
+    result = _run(workspace, "--run-report", str(run_report))
+    assert result.returncode == 2
+    assert result.stdout == ""
+    assert "not validated" in result.stderr.lower()
+  assert target.read_text(encoding="utf-8") == "do not overwrite"
+  assert not (real_parent / "run-report.json").exists()
+
+
+def test_cli_refuses_to_append_after_terminal_run_report(tmp_path):
+  workspace = _review(tmp_path / "review", refs=[])
+  run_report = tmp_path / "run-report.json"
+  first = _run(workspace, "--run-report", str(run_report))
+  retained = run_report.read_bytes()
+
+  second = _run(workspace, "--run-report", str(run_report))
+
+  assert first.returncode == 0
+  assert _report(first)["action"] == "pass"
+  assert second.returncode == 2
+  assert second.stdout == ""
+  assert "terminal" in second.stderr.lower()
+  assert run_report.read_bytes() == retained
 
 
 def test_json_stdout_and_output_are_exactly_identical(tmp_path):
@@ -407,6 +517,17 @@ def test_markdown_escapes_untrusted_inline_heading_injection(tmp_path):
       finding["artifact"] = injection
       finding["message"] = injection
       finding["context"] = {"private": injection}
+  report["repair_feedback"] = {
+      "reason_codes": list(dict.fromkeys(
+          finding["reason_code"] for finding in report["findings"])),
+      "affected_artifacts": [injection],
+      "findings": [{
+          "reason_code": finding["reason_code"],
+          "severity": finding["severity"],
+          "artifact": injection,
+          "message": injection,
+      } for finding in report["findings"]],
+  }
 
   markdown = module.render_markdown(report, synthesis)
 

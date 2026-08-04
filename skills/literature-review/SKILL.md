@@ -24,7 +24,7 @@ You are a PhD-level expert in systematic literature reviews and bibliometric ana
 <search_backend>
 This skill owns the command-line search backends in `scripts/`. They are not separate skills. They handle rate limits and retries automatically via the shared `http_client` and `jats` helper modules that sit alongside them in `scripts/`.
 
-**Invocation & workspace (read first):** Invoke each script by its **absolute path** under this skill's base directory (shown to you above as "Base directory for this skill") — e.g. `uv run <skill-dir>/scripts/openalex_cli.py …`. **Never `cd` into the skill directory.** Stay in the directory where the user invoked the skill and anchor the review workspace there with an **absolute** path: compute `WS="$(pwd)/review/{slug}"` once at step 1 and pass `$WS` as `--workspace` everywhere. Relative `review/{slug}` resolves against the wrong directory and pollutes the installed plugin. In the command examples below, `scripts/…` is shorthand for `<skill-dir>/scripts/…`.
+**Invocation & workspace (read first):** Invoke each script by its **absolute path** under this skill's base directory (shown to you above as "Base directory for this skill") — e.g. `uv run <skill-dir>/scripts/openalex_cli.py …`. **Never `cd` into the skill directory.** Stay in the directory where the user invoked the skill and anchor the review workspace there with an **absolute** path: compute `WS="$(pwd)/review/{slug}"` once at step 1 and pass `$WS` as `--workspace` everywhere. Also compute `RUN_REPORT="$(dirname "$WS")/$(basename "$WS")-integrity-run.json"`; this append-only validation ledger stays outside `$WS`. Relative `review/{slug}` resolves against the wrong directory and pollutes the installed plugin. In the command examples below, `scripts/…` is shorthand for `<skill-dir>/scripts/…`.
 
 **Prerequisites:**
 - **`uv`** must be installed. Verify with `uv --version`. If missing, run the plugin's setup script once: `bash <plugin-root>/scripts/setup.sh`. The setup script installs `uv`, prompts (optionally) for an OpenAlex API key, and warms the dependency cache. Fallback if setup is unreachable: `curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH"`.
@@ -126,7 +126,12 @@ uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
    **Navigating `fulltext.md` depends on the route**, given by the `source` field of the script's JSON line. `source: "epmc"` (JATS) yields real markdown headings — find sections with `grep -n "^#"`. Every PDF route (`arxiv_pdf`, `oa_pdf`, `user_pdf`, `cached`) yields **no `#` headings at all**; section titles appear as bold lines, so use `grep -n "^\*\*"` instead. A `grep "^#"` returning nothing on a PDF-route paper means you used the wrong pattern, not that the document is unstructured. If neither pattern finds a section you need, cite by content rather than a section anchor.
 6. **Snowball** — For core evidence papers, run `get_references`/`get_citations` (Europe PMC) or follow OpenAlex `referenced_works`. Fold the new candidates into the same `corpus.json` with `build_corpus.py --epmc citing.json --found-via snowball:citations --output "$WS/corpus.json"` (it adds only what's new, tags their provenance, and preserves decisions already made), then screen them at step 4. One round by default; stop when a round adds nothing. If included papers reveal vocabulary the original queries missed, run one adapted search round and log it.
 7. **Synthesize** — Write `synthesis.md` from `notes.md` files only. Tag any citation whose `fulltext` is `abstract-only` with `[abstract-only]` inline. End with a retrieval summary listing papers not retrieved and the `papers/{id}/paper.pdf` path where the user can drop a legally obtained PDF for a re-run.
-8. **Verify bibliography** — Write the final ordered citation list to `$WS/refs.json` and run `verify_citations.py --input "$WS/refs.json"`. Exit 0 is required before claim verification; correct or remove any `mismatched`/`not_found` entry. Keep numeric references in exactly the order rendered in `synthesis.md`, because `check_claims.py` binds `[n]` to this list. During claim verification, an embedded DOI must identify exactly one corpus record. Without a DOI, one corpus title must appear as a complete token sequence in the formatted reference. Zero or several matches fail closed. (Papers screened through `corpus.json` will pass — this gate catches citations that entered the synthesis from memory rather than from the corpus.)
+8. **Verify bibliography** — Write the final ordered citation list to `$WS/refs.json` and retain the verifier output for the delivery validator:
+```bash
+uv run scripts/verify_citations.py --input "$WS/refs.json" \
+  > "$WS/citation-report.json"
+```
+Exit 0 is required before claim verification; correct or remove any `mismatched`/`not_found` entry and rerun the command. Keep numeric references in exactly the order rendered in `synthesis.md`, because `check_claims.py` binds `[n]` to this list. During claim verification, an embedded DOI must identify exactly one corpus record. Without a DOI, one corpus title must appear as a complete token sequence in the formatted reference. Zero or several matches fail closed. (Papers screened through `corpus.json` will pass — this gate catches citations that entered the synthesis from memory rather than from the corpus.)
 9. **Verify claims** — Write `$WS/claims.json`: one entry per cited source and supported statement in `synthesis.md` — `{"claim", "paper_id" (the `papers/` directory name), "citation" (exactly one `"Author, year"` or `"[n]"` identity), "supporting_quote" (verbatim passage from that paper, ≥40 chars)}`. A sentence citing two papers needs one entry for each paper. Citations in `synthesis.md` must use `(Author, year)`, `Author (year)`, or numeric forms such as `[1]`, `[1, 2]`, or `[1-3]`; page locators are accepted. Put `[abstract-only]` beside the citation, never in its place.
 
    Each corpus record must supply a trusted first author, year, and `role`. Set `role: "background"` only for context citations, and keep every claim role equal to the trusted corpus role. Unicode author names, caseless scripts, and compound surnames bind after normalization. For numeric styles, `refs.json` must resolve the rendered number uniquely to the claim's corpus record.
@@ -134,6 +139,25 @@ uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
    Run `uv run scripts/check_claims.py --claims "$WS/claims.json" --workspace "$WS" --synthesis "$WS/synthesis.md"`; for numeric citations, add `--references "$WS/refs.json"`. Exit 0 is required. An `invalid_binding` means the claim did not resolve to one trusted corpus record; use its `reason_code` to fix the corpus metadata, role, citation, or reference instead of retrying quote matching. Valid entries still appear when another entry has an invalid binding. A `fabricated_quote` means find a real passage or drop the claim. Resolve every `needs_review`, including missing claim numbers, title-only support, nearby negation at a quote boundary, and every abstract-scope verification.
 
    Coverage uses only claims whose identity and quote passed. An `uncovered_claim` includes a `reason_code` for a missing citation identity, an ungrounded number, or an invalid background role. Background entries may cover number-free context only. Every non-year number in a cited sentence must occur in verified matching claims for each cited identity; several claims for one identity may jointly supply those numbers. Never attribute specific or quantitative findings to a `background` citation.
+
+10. **Validate and deliver** — Before every delivery, run the shared validator with the external run report:
+```bash
+uv run scripts/validate_review.py --workspace "$WS" \
+  --citation-report "$WS/citation-report.json" \
+  --run-report "$RUN_REPORT"
+```
+The validator prints one JSON object. Obey its `action` field:
+
+   - `pass`: deliver the review.
+   - `repair`: send only the emitted `repair_feedback` object to the repair prompt. Do not send the full validation output, run report, finding contexts, evaluator fields, or any gold data. Apply the repair, rerun bibliography verification if `refs.json` changed, and invoke this validation command again with the same `$RUN_REPORT`.
+   - `stop_invalid`: stop repairing and deliver the draft with this exact warning, followed by the unresolved `reason_codes` and `affected_artifacts` from `repair_feedback`:
+
+```
+INVALID EVIDENCE — This draft contains unresolved evidence-integrity failures
+and must not be treated as verified research.
+```
+
+   Keep `$RUN_REPORT` outside `$WS`, reuse it after every submitted repair, and never edit or replace its retained passes. A `stop_invalid` draft is not verified or publication-ready; do not describe it with either label.
 </protocol>
 
 <output_format>

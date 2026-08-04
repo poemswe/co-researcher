@@ -63,6 +63,8 @@ def test_run_report_round_trips_without_unknown_fields():
 def test_quality_score_is_none_without_a_quality_judge():
   report = IntegrityRunReport(
       pass_report=IntegrityRunReport.example_valid().pass_report,
+      workspace_manifest_sha256="a" * 64,
+      action="pass",
       quality_score=None,
       repairs=[],
   )
@@ -89,8 +91,10 @@ def test_independent_models_round_trip_with_schema_versions():
   )
   repair = RepairRecord(
       attempt=1,
+      pass_report=passed,
+      workspace_manifest_sha256="d" * 64,
       reason_codes=[ReasonCode.CITATION_AMBIGUOUS],
-      action="disambiguate bibliography entry",
+      action="pass",
       resolved=True,
   )
   for model_type, value in (
@@ -114,6 +118,8 @@ def test_scores_must_be_finite_and_within_0_to_100(value):
   with pytest.raises(ValueError, match="score"):
     IntegrityRunReport(
         pass_report=IntegrityRunReport.example_valid().pass_report,
+        workspace_manifest_sha256="a" * 64,
+        action="pass",
         quality_score=value,
         repairs=[],
     )

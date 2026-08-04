@@ -8,7 +8,8 @@ import math
 import re
 from typing import Mapping
 
-from .models import DIMENSION_ORDER, PassReport
+from .models import DIMENSION_ORDER, PassReport, REPAIR_ACTIONS
+from .repair import safe_repair_feedback
 
 
 SCHEMA_VERSION = "1.0.0"
@@ -28,7 +29,8 @@ _TOP_LEVEL_ORDER = (
     "schema_version", "engine_version", "quality_score", "target_commit",
     "target_dirty", "validator_versions", "manifest_sha256",
     "workspace_manifest_sha256", "citation_report_sha256", "dimensions",
-    "findings", "integrity_score", "status", "citation_resolution",
+    "findings", "integrity_score", "status", "action", "repair_feedback",
+    "citation_resolution",
 )
 _TOP_LEVEL_FIELDS = frozenset(_TOP_LEVEL_ORDER)
 _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
@@ -146,7 +148,7 @@ def validate_report(report: object) -> dict:
       report["workspace_manifest_sha256"],
       report["citation_report_sha256"]):
     raise ValueError("manifest_sha256 does not match validation inputs")
-  PassReport.from_dict({
+  pass_report = PassReport.from_dict({
       "schema_version": SCHEMA_VERSION,
       "integrity_score": report["integrity_score"],
       "findings": report["findings"],
@@ -154,6 +156,13 @@ def validate_report(report: object) -> dict:
       "manifest_sha256": report["manifest_sha256"],
       "status": report["status"],
   })
+  action = report["action"]
+  if action not in REPAIR_ACTIONS:
+    raise ValueError("unknown repair action")
+  if ((pass_report.status.value == "invalid") == (action == "pass")):
+    raise ValueError("repair action does not match validation status")
+  if report["repair_feedback"] != safe_repair_feedback(pass_report):
+    raise ValueError("repair_feedback does not match the public finding allowlist")
   return report
 
 
@@ -192,6 +201,13 @@ def render_json(report: Mapping[str, object]) -> str:
       for name in DIMENSION_ORDER}
   ordered["findings"] = [
       _ordered_finding(finding) for finding in value["findings"]]
+  ordered["repair_feedback"] = {
+      "reason_codes": list(value["repair_feedback"]["reason_codes"]),
+      "affected_artifacts": list(
+          value["repair_feedback"]["affected_artifacts"]),
+      "findings": [dict(finding)
+                   for finding in value["repair_feedback"]["findings"]],
+  }
   ordered["citation_resolution"] = {
       key: value["citation_resolution"][key]
       for key in ("source", "resolver", "checked_at", "response_status")

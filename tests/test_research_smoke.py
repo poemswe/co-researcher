@@ -17,6 +17,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 CHECK_CLAIMS = ROOT / "skills/literature-review/scripts/check_claims.py"
 PRISMA_COUNTS = ROOT / "skills/literature-review/scripts/prisma_counts.py"
+VALIDATE_REVIEW = ROOT / "skills/literature-review/scripts/validate_review.py"
 
 
 def _run(script, *args):
@@ -121,3 +122,27 @@ def test_codex_smoke_skips_without_opt_in():
            if key != "CO_RESEARCHER_CODEX_SMOKE"}, check=False)
   assert result.returncode == 0
   assert "skipped" in result.stdout.lower()
+
+
+def test_literature_review_delivery_validation_smoke(tmp_path):
+  workspace, claims, synthesis, _corpus = _write_fixture(tmp_path)
+  (workspace / "protocol.md").write_text("# Protocol\n", encoding="utf-8")
+  (workspace / "claims.json").write_bytes(claims.read_bytes())
+  (workspace / "synthesis.md").write_bytes(synthesis.read_bytes())
+  (workspace / "refs.json").write_text("[]", encoding="utf-8")
+  (workspace / "project.json").write_text(
+      json.dumps({"project": "smoke"}), encoding="utf-8")
+  run_report = tmp_path / "literature-review-run.json"
+
+  result = _run(
+      VALIDATE_REVIEW, "--workspace", workspace,
+      "--run-report", run_report)
+
+  assert result.returncode == 0, result.stderr
+  report = json.loads(result.stdout)
+  assert report["action"] == "pass"
+  assert report["repair_feedback"] == {
+      "reason_codes": [], "affected_artifacts": [], "findings": []}
+  ledger = json.loads(run_report.read_text(encoding="utf-8"))
+  assert ledger["action"] == "pass"
+  assert ledger["repairs"] == []

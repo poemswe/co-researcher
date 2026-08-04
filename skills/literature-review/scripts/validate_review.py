@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import errno
 import hashlib
+import json
 import os
 import pathlib
 import re
@@ -21,7 +22,11 @@ if str(_SCRIPT_DIR) not in sys.path:
   sys.path.insert(0, str(_SCRIPT_DIR))
 
 import verify_citations  # noqa: E402
-from review_integrity.models import PassReport  # noqa: E402
+from review_integrity.models import (  # noqa: E402
+    IntegrityRunReport,
+    PassReport,
+)
+from review_integrity.repair import RepairController  # noqa: E402
 from review_integrity.reporting import (  # noqa: E402
     ENGINE_VERSION,
     SCHEMA_VERSION,
@@ -210,10 +215,10 @@ def _citation_resolution(
   }
 
 
-def run_validation(
+def _retained_validation(
     workspace: os.PathLike[str] | str,
     citation_report: os.PathLike[str] | str | None,
-) -> tuple[dict, str]:
+) -> tuple[dict, str, object, PassReport]:
   """Retain all inputs once, execute offline validators, and build a report."""
   citation_payload = None
   parsed_citation_report = None
@@ -270,8 +275,26 @@ def run_validation(
           parsed_citation_report, supplied=citation_payload is not None,
           bibliography=bibliography),
   }
-  validate_report(report)
-  return report, snapshot.read_text("synthesis.md")
+  return report, snapshot.read_text("synthesis.md"), snapshot, combined_pass
+
+
+def _attach_decision(report: dict, decision: object) -> dict:
+  result = dict(report)
+  result["action"] = decision.action
+  result["repair_feedback"] = decision.repair_feedback
+  validate_report(result)
+  return result
+
+
+def run_validation(
+    workspace: os.PathLike[str] | str,
+    citation_report: os.PathLike[str] | str | None,
+) -> tuple[dict, str]:
+  """Validate one retained pass without persisting a repair run report."""
+  report, synthesis, snapshot, pass_report = _retained_validation(
+      workspace, citation_report)
+  decision = RepairController().record(pass_report, snapshot)
+  return _attach_decision(report, decision), synthesis
 
 
 class _OutputDestination:
@@ -286,6 +309,43 @@ class _OutputDestination:
       self.parent_descriptor = -1
 
 
+class _RunReportDestination:
+  def __init__(
+      self,
+      parent_descriptor: int,
+      name: str,
+      existing_identity: tuple[int, int, int, int] | None,
+      existing_sha256: str | None,
+      existing_report: IntegrityRunReport | None,
+  ):
+    self.parent_descriptor = parent_descriptor
+    self.name = name
+    self.existing_identity = existing_identity
+    self.existing_sha256 = existing_sha256
+    self.existing_report = existing_report
+
+  def close(self) -> None:
+    if self.parent_descriptor >= 0:
+      os.close(self.parent_descriptor)
+      self.parent_descriptor = -1
+
+
+def _require_outside_workspace(
+    absolute: pathlib.Path,
+    workspace: os.PathLike[str] | str,
+    label: str,
+) -> None:
+  workspace_absolute = _text_absolute_path(workspace, "workspace")
+  try:
+    common = os.path.commonpath((absolute, workspace_absolute))
+  except ValueError as exc:
+    raise ValidationInputError(
+        f"cannot compare {label} and workspace paths") from exc
+  if common == os.fspath(workspace_absolute):
+    raise ValidationInputError(
+        f"{label} must be outside the submitted workspace")
+
+
 def _prepare_output(
     output: os.PathLike[str] | str,
     workspace: os.PathLike[str] | str,
@@ -294,14 +354,7 @@ def _prepare_output(
   suffix = absolute.suffix
   if suffix not in {".json", ".md"}:
     raise ValidationInputError("output suffix must be .json or .md")
-  workspace_absolute = _text_absolute_path(workspace, "workspace")
-  try:
-    common = os.path.commonpath((absolute, workspace_absolute))
-  except ValueError as exc:
-    raise ValidationInputError("cannot compare output and workspace paths") from exc
-  if common == os.fspath(workspace_absolute):
-    raise ValidationInputError(
-        "output must be outside the submitted workspace")
+  _require_outside_workspace(absolute, workspace, "output")
   parent = _open_directory(absolute.parent, "output path")
   try:
     try:
@@ -316,34 +369,113 @@ def _prepare_output(
     raise
 
 
+def _read_descriptor_bytes(descriptor: int, label: str) -> bytes:
+  metadata = os.fstat(descriptor)
+  if not stat.S_ISREG(metadata.st_mode):
+    raise ValidationInputError(f"{label} is not a regular file")
+  if metadata.st_size < 0 or metadata.st_size > MAX_ARTIFACT_BYTES:
+    raise ValidationInputError(
+        f"{label} exceeds size limit ({MAX_ARTIFACT_BYTES} bytes)")
+  chunks: list[bytes] = []
+  retained = 0
+  while True:
+    allowance = MAX_ARTIFACT_BYTES + 1 - retained
+    if allowance <= 0:
+      raise ValidationInputError(
+          f"{label} exceeds size limit ({MAX_ARTIFACT_BYTES} bytes)")
+    chunk = os.read(descriptor, min(_READ_SIZE, allowance))
+    if not chunk:
+      break
+    retained += len(chunk)
+    if retained > MAX_ARTIFACT_BYTES:
+      raise ValidationInputError(
+          f"{label} exceeds size limit ({MAX_ARTIFACT_BYTES} bytes)")
+    chunks.append(chunk)
+  return b"".join(chunks)
+
+
+def _file_identity(metadata: os.stat_result) -> tuple[int, int, int, int]:
+  return (
+      metadata.st_dev, metadata.st_ino, metadata.st_size,
+      metadata.st_mtime_ns,
+  )
+
+
+def _prepare_run_report(
+    path: os.PathLike[str] | str,
+    workspace: os.PathLike[str] | str,
+) -> _RunReportDestination:
+  absolute = _text_absolute_path(path, "run report path")
+  if absolute.suffix != ".json":
+    raise ValidationInputError("run report suffix must be .json")
+  _require_outside_workspace(absolute, workspace, "run report")
+  parent = _open_directory(absolute.parent, "run report path")
+  descriptor = -1
+  try:
+    try:
+      descriptor = os.open(
+          absolute.name, _secure_flags(directory=False), dir_fd=parent)
+    except FileNotFoundError:
+      return _RunReportDestination(parent, absolute.name, None, None, None)
+    metadata = os.fstat(descriptor)
+    payload = _read_descriptor_bytes(descriptor, "run report")
+    try:
+      parsed = decode_json_bytes(payload, "run report")
+    except WorkspaceError as exc:
+      raise ValidationInputError(str(exc)) from exc
+    try:
+      run_report = IntegrityRunReport.from_dict(parsed)
+    except ValueError as exc:
+      raise ValidationInputError(f"invalid run report: {exc}") from exc
+    if run_report.quality_score is not None:
+      raise ValidationInputError(
+          "production run report quality_score must be null")
+    return _RunReportDestination(
+        parent, absolute.name, _file_identity(metadata),
+        hashlib.sha256(payload).hexdigest(), run_report)
+  except Exception:
+    os.close(parent)
+    raise
+  finally:
+    if descriptor >= 0:
+      os.close(descriptor)
+
+
+def _write_bytes(descriptor: int, payload: bytes) -> None:
+  view = memoryview(payload)
+  written = 0
+  while written < len(view):
+    count = os.write(descriptor, view[written:])
+    if count <= 0:
+      raise ValidationInputError("could not write complete output")
+    written += count
+  os.fsync(descriptor)
+
+
+def _reserve_temp(parent_descriptor: int, name: str) -> tuple[int, str]:
+  flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL
+           | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0))
+  for attempt in range(100):
+    candidate = f".{name}.tmp.{os.getpid()}.{attempt}"
+    try:
+      descriptor = os.open(
+          candidate, flags, 0o600, dir_fd=parent_descriptor)
+    except FileExistsError:
+      continue
+    if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+      os.close(descriptor)
+      raise ValidationInputError("temporary output is not a regular file")
+    return descriptor, candidate
+  raise ValidationInputError("cannot reserve an exclusive output file")
+
+
 def _write_output(destination: _OutputDestination, payload: bytes) -> None:
   temp_name = None
   descriptor = -1
-  flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL
-           | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0))
   try:
-    for attempt in range(100):
-      candidate = f".{destination.name}.tmp.{os.getpid()}.{attempt}"
-      try:
-        descriptor = os.open(
-            candidate, flags, 0o600, dir_fd=destination.parent_descriptor)
-      except FileExistsError:
-        continue
-      temp_name = candidate
-      break
-    if descriptor < 0 or temp_name is None:
-      raise ValidationInputError("cannot reserve an exclusive output file")
-    metadata = os.fstat(descriptor)
-    if not stat.S_ISREG(metadata.st_mode):
-      raise ValidationInputError("temporary output is not a regular file")
-    view = memoryview(payload)
-    written = 0
-    while written < len(view):
-      count = os.write(descriptor, view[written:])
-      if count <= 0:
-        raise ValidationInputError("could not write complete output")
-      written += count
-    os.fsync(descriptor)
+    descriptor, temp_name = _reserve_temp(
+        destination.parent_descriptor, destination.name)
+    _write_bytes(descriptor, payload)
     os.close(descriptor)
     descriptor = -1
     try:
@@ -374,23 +506,128 @@ def _write_output(destination: _OutputDestination, payload: bytes) -> None:
         pass
 
 
+def _render_run_report(run_report: IntegrityRunReport) -> bytes:
+  payload = (json.dumps(
+      run_report.to_dict(), ensure_ascii=False, sort_keys=False,
+      separators=(",", ":"), allow_nan=False) + "\n").encode("utf-8")
+  if len(payload) > MAX_ARTIFACT_BYTES:
+    raise ValidationInputError(
+        f"run report exceeds size limit ({MAX_ARTIFACT_BYTES} bytes)")
+  return payload
+
+
+def _write_run_report(
+    destination: _RunReportDestination,
+    run_report: IntegrityRunReport,
+) -> None:
+  payload = _render_run_report(run_report)
+  descriptor = -1
+  temp_name = None
+  try:
+    descriptor, temp_name = _reserve_temp(
+        destination.parent_descriptor, destination.name)
+    _write_bytes(descriptor, payload)
+    os.close(descriptor)
+    descriptor = -1
+    if destination.existing_identity is None:
+      try:
+        os.link(
+            temp_name, destination.name,
+            src_dir_fd=destination.parent_descriptor,
+            dst_dir_fd=destination.parent_descriptor,
+            follow_symlinks=False)
+      except FileExistsError as exc:
+        raise ValidationInputError(
+            "run report appeared during validation; refusing to overwrite"
+        ) from exc
+    else:
+      current_descriptor = -1
+      try:
+        current_descriptor = os.open(
+            destination.name, _secure_flags(directory=False),
+            dir_fd=destination.parent_descriptor)
+      except FileNotFoundError as exc:
+        raise ValidationInputError(
+            "run report disappeared during validation") from exc
+      try:
+        current = os.fstat(current_descriptor)
+        current_payload = _read_descriptor_bytes(
+            current_descriptor, "run report")
+        if (not stat.S_ISREG(current.st_mode)
+            or _file_identity(current) != destination.existing_identity
+            or hashlib.sha256(current_payload).hexdigest()
+            != destination.existing_sha256):
+          raise ValidationInputError(
+              "run report changed during validation; refusing to overwrite")
+        path_metadata = os.stat(
+            destination.name, dir_fd=destination.parent_descriptor,
+            follow_symlinks=False)
+        if _file_identity(path_metadata) != destination.existing_identity:
+          raise ValidationInputError(
+              "run report changed during validation; refusing to overwrite")
+      finally:
+        if current_descriptor >= 0:
+          os.close(current_descriptor)
+      os.replace(
+          temp_name, destination.name,
+          src_dir_fd=destination.parent_descriptor,
+          dst_dir_fd=destination.parent_descriptor)
+      temp_name = None
+    if temp_name is not None:
+      os.unlink(temp_name, dir_fd=destination.parent_descriptor)
+      temp_name = None
+    os.fsync(destination.parent_descriptor)
+  except ValidationInputError:
+    raise
+  except OSError as exc:
+    raise ValidationInputError(f"cannot write run report safely: {exc}") from exc
+  finally:
+    if descriptor >= 0:
+      os.close(descriptor)
+    if temp_name is not None:
+      try:
+        os.unlink(temp_name, dir_fd=destination.parent_descriptor)
+      except FileNotFoundError:
+        pass
+
+
 def _parser() -> argparse.ArgumentParser:
   parser = _ValidationArgumentParser(
       description="Offline one-pass literature-review integrity validation.")
   parser.add_argument("--workspace", required=True)
   parser.add_argument("--citation-report")
   parser.add_argument("--output")
+  parser.add_argument("--run-report")
   return parser
 
 
 def main(argv=None) -> int:
   args = _parser().parse_args(argv)
   destination = None
+  run_destination = None
   try:
     if args.output is not None:
       destination = _prepare_output(args.output, args.workspace)
-    report, synthesis = run_validation(args.workspace, args.citation_report)
+    if args.run_report is not None:
+      if (args.output is not None
+          and _text_absolute_path(args.output, "output path")
+          == _text_absolute_path(args.run_report, "run report path")):
+        raise ValidationInputError("output and run report paths must differ")
+      run_destination = _prepare_run_report(args.run_report, args.workspace)
+    report, synthesis, snapshot, pass_report = _retained_validation(
+        args.workspace, args.citation_report)
+    controller = (RepairController()
+                  if run_destination is None
+                  or run_destination.existing_report is None
+                  else RepairController.from_run_report(
+                      run_destination.existing_report))
+    decision = controller.record(pass_report, snapshot)
+    report = _attach_decision(report, decision)
     json_output = render_json(report)
+    if run_destination is not None:
+      if controller.run_report is None:
+        raise ValidationInputError("repair controller did not retain the pass")
+      _write_run_report(run_destination, controller.run_report)
     if destination is not None:
       rendered = (json_output if destination.suffix == ".json"
                   else render_markdown(report, synthesis))
@@ -407,6 +644,8 @@ def main(argv=None) -> int:
   finally:
     if destination is not None:
       destination.close()
+    if run_destination is not None:
+      run_destination.close()
 
 
 if __name__ == "__main__":

@@ -45,6 +45,9 @@ class IntegrityStatus(_StringEnum):
   INVALID = "invalid"
 
 
+REPAIR_ACTIONS = frozenset({"pass", "repair", "stop_invalid"})
+
+
 class ReasonCode(_StringEnum):
   """The versioned, closed reason-code vocabulary for integrity findings."""
 
@@ -494,6 +497,8 @@ class PassReport:
 @dataclass(frozen=True)
 class RepairRecord:
   attempt: int
+  pass_report: PassReport
+  workspace_manifest_sha256: str
   reason_codes: tuple[ReasonCode, ...]
   action: str
   resolved: bool
@@ -501,18 +506,35 @@ class RepairRecord:
   def __post_init__(self) -> None:
     if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
       raise ValueError("attempt must be a positive integer")
+    if not isinstance(self.pass_report, PassReport):
+      raise ValueError("pass_report must be a PassReport")
+    if (not isinstance(self.workspace_manifest_sha256, str)
+        or not _SHA256_RE.fullmatch(self.workspace_manifest_sha256)):
+      raise ValueError(
+          "workspace_manifest_sha256 must be a 64-character hexadecimal hash")
     if not isinstance(self.reason_codes, (list, tuple)):
       raise ValueError("reason_codes must be a list")
     object.__setattr__(self, "reason_codes", tuple(
         _enum(code, ReasonCode, "reason_code") for code in self.reason_codes))
-    object.__setattr__(self, "action", _nonempty_string(self.action, "action"))
+    expected_reason_codes = tuple(dict.fromkeys(
+        finding.reason_code for finding in self.pass_report.findings))
+    if self.reason_codes != expected_reason_codes:
+      raise ValueError("reason_codes must match the pass report findings")
+    if self.action not in REPAIR_ACTIONS:
+      raise ValueError(f"unknown repair action: {self.action!r}")
     if not isinstance(self.resolved, bool):
       raise ValueError("resolved must be a boolean")
+    if self.resolved != (self.pass_report.status is not IntegrityStatus.INVALID):
+      raise ValueError("resolved must match the pass report status")
+    if self.resolved != (self.action == "pass"):
+      raise ValueError("resolved must match the controller action")
 
   def to_dict(self) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "attempt": self.attempt,
+        "pass_report": self.pass_report.to_dict(),
+        "workspace_manifest_sha256": self.workspace_manifest_sha256,
         "reason_codes": [code.value for code in self.reason_codes],
         "action": self.action,
         "resolved": self.resolved,
@@ -521,10 +543,15 @@ class RepairRecord:
   @classmethod
   def from_dict(cls, value: dict) -> RepairRecord:
     data = _require_fields(value, {
-        "schema_version", "attempt", "reason_codes", "action", "resolved",
+        "schema_version", "attempt", "pass_report",
+        "workspace_manifest_sha256", "reason_codes", "action", "resolved",
     }, cls.__name__)
+    if not isinstance(data["pass_report"], dict):
+      raise ValueError("pass_report must be a dictionary")
     return cls(
         attempt=data["attempt"],
+        pass_report=PassReport.from_dict(data["pass_report"]),
+        workspace_manifest_sha256=data["workspace_manifest_sha256"],
         reason_codes=data["reason_codes"],
         action=data["action"],
         resolved=data["resolved"],
@@ -534,22 +561,41 @@ class RepairRecord:
 @dataclass(frozen=True)
 class IntegrityRunReport:
   pass_report: PassReport
+  workspace_manifest_sha256: str
+  action: str
   quality_score: Optional[float]
   repairs: tuple[RepairRecord, ...]
 
   def __post_init__(self) -> None:
     if not isinstance(self.pass_report, PassReport):
       raise ValueError("pass_report must be a PassReport")
+    if (not isinstance(self.workspace_manifest_sha256, str)
+        or not _SHA256_RE.fullmatch(self.workspace_manifest_sha256)):
+      raise ValueError(
+          "workspace_manifest_sha256 must be a 64-character hexadecimal hash")
+    if self.action not in REPAIR_ACTIONS:
+      raise ValueError(f"unknown repair action: {self.action!r}")
+    if ((self.pass_report.status is IntegrityStatus.INVALID)
+        == (self.action == "pass")):
+      raise ValueError("initial action must match the pass report status")
     if self.quality_score is not None:
       object.__setattr__(self, "quality_score", _score(
           self.quality_score, "quality_score"))
     object.__setattr__(self, "repairs", _model_list(
         self.repairs, RepairRecord, "repairs"))
+    for attempt, repair in enumerate(self.repairs, 1):
+      if repair.attempt != attempt:
+        raise ValueError("repair attempts must be contiguous and ordered")
+    actions = (self.action, *(repair.action for repair in self.repairs))
+    if any(action in {"pass", "stop_invalid"} for action in actions[:-1]):
+      raise ValueError("terminal action cannot be followed by another pass")
 
   def to_dict(self) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "pass_report": self.pass_report.to_dict(),
+        "workspace_manifest_sha256": self.workspace_manifest_sha256,
+        "action": self.action,
         "quality_score": self.quality_score,
         "repairs": [repair.to_dict() for repair in self.repairs],
     }
@@ -557,12 +603,15 @@ class IntegrityRunReport:
   @classmethod
   def from_dict(cls, value: dict) -> IntegrityRunReport:
     data = _require_fields(value, {
-        "schema_version", "pass_report", "quality_score", "repairs",
+        "schema_version", "pass_report", "workspace_manifest_sha256",
+        "action", "quality_score", "repairs",
     }, cls.__name__)
     if not isinstance(data["pass_report"], dict):
       raise ValueError("pass_report must be a dictionary")
     return cls(
         pass_report=PassReport.from_dict(data["pass_report"]),
+        workspace_manifest_sha256=data["workspace_manifest_sha256"],
+        action=data["action"],
         quality_score=data["quality_score"],
         repairs=data["repairs"],
     )
@@ -584,6 +633,8 @@ class IntegrityRunReport:
             dimensions=dimensions,
             manifest_sha256="0" * 64,
         ),
+        workspace_manifest_sha256="0" * 64,
+        action="pass",
         quality_score=None,
         repairs=[],
     )
