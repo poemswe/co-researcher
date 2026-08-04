@@ -291,8 +291,13 @@ def _rewrite_result_and_registry(tmp_path, run_id, mutate):
   registry_path = tmp_path / "runs" / "index.json"
   registry = json.loads(registry_path.read_text())
   entry = next(item for item in registry["runs"] if item["run_id"] == run_id)
-  entry["result_sha256"] = hashlib.sha256(payload).hexdigest()
+  digest = hashlib.sha256(payload).hexdigest()
+  entry["result_sha256"] = digest
   registry_path.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
+  marker_path = tmp_path / "runs" / run_id / "publication.json"
+  marker = json.loads(marker_path.read_text())
+  marker["result_sha256"] = digest
+  marker_path.write_text(json.dumps(marker, indent=2, sort_keys=True) + "\n")
 
 
 def test_dashboard_loader_rejects_symlinked_artifact_parent(tmp_path):
@@ -364,8 +369,13 @@ def test_dashboard_loader_rejects_boolean_summary_counts(tmp_path):
   result_path.write_bytes(payload)
   registry_path = tmp_path / "runs" / "index.json"
   registry = json.loads(registry_path.read_text())
-  registry["runs"][0]["result_sha256"] = hashlib.sha256(payload).hexdigest()
+  digest = hashlib.sha256(payload).hexdigest()
+  registry["runs"][0]["result_sha256"] = digest
   registry_path.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
+  marker_path = run_path / "publication.json"
+  marker = json.loads(marker_path.read_text())
+  marker["result_sha256"] = digest
+  marker_path.write_text(json.dumps(marker, indent=2, sort_keys=True) + "\n")
 
   with pytest.raises(ValueError, match="summary counts"):
     load_dashboard_data(tmp_path, "run-boolean-count")
@@ -437,6 +447,177 @@ def test_failed_registry_publication_rolls_back_run_and_registry(
     assert registry["runs"] == []
   monkeypatch.setattr(run_reports, "_update_registry", original)
   assert write_run_report(_run("run-retry-registry", 81.0), tmp_path).is_dir()
+
+
+@pytest.mark.parametrize("post_rename_fsync", [1, 2, 3, 4])
+def test_every_post_rename_fsync_failure_rolls_back_and_allows_retry(
+    monkeypatch, tmp_path, post_rename_fsync,
+):
+  original = run_reports.os.fsync
+  final = tmp_path / "runs" / "run-fsync-rollback"
+  calls = 0
+  injected = False
+
+  def fail_selected_fsync(descriptor):
+    nonlocal calls, injected
+    if final.exists() and not injected:
+      calls += 1
+      if calls == post_rename_fsync:
+        injected = True
+        raise OSError(f"injected post-rename fsync {post_rename_fsync}")
+    return original(descriptor)
+
+  monkeypatch.setattr(run_reports.os, "fsync", fail_selected_fsync)
+  with pytest.raises(OSError, match="injected post-rename fsync"):
+    write_run_report(_run("run-fsync-rollback", 81.0), tmp_path)
+
+  assert not final.exists()
+  registry_path = tmp_path / "runs" / "index.json"
+  if registry_path.exists():
+    assert json.loads(registry_path.read_text())["runs"] == []
+  monkeypatch.setattr(run_reports.os, "fsync", original)
+  assert write_run_report(
+      _run("run-fsync-rollback", 81.0), tmp_path) == final
+
+
+def test_rename_that_completes_then_raises_rolls_back_and_allows_retry(
+    monkeypatch, tmp_path,
+):
+  original = run_reports.os.rename
+  injected = False
+
+  def rename_then_fail(*args, **kwargs):
+    nonlocal injected
+    original(*args, **kwargs)
+    if not injected:
+      injected = True
+      raise OSError("injected completed rename failure")
+
+  monkeypatch.setattr(run_reports.os, "rename", rename_then_fail)
+  with pytest.raises(OSError, match="completed rename failure"):
+    write_run_report(_run("run-rename-rollback", 81.0), tmp_path)
+
+  final = tmp_path / "runs" / "run-rename-rollback"
+  assert not final.exists()
+  monkeypatch.setattr(run_reports.os, "rename", original)
+  assert write_run_report(_run("run-rename-rollback", 81.0), tmp_path) == final
+
+
+@pytest.mark.parametrize("registry_phase", ["create", "write", "replace"])
+def test_every_registry_replacement_phase_rolls_back_and_allows_retry(
+    monkeypatch, tmp_path, registry_phase,
+):
+  original_open = run_reports.os.open
+  original_write = run_reports._write_all
+  original_replace = run_reports.os.replace
+  injected = False
+
+  def fail_create(path, *args, **kwargs):
+    nonlocal injected
+    if (not injected and isinstance(path, str)
+        and path.startswith(".index-") and path.endswith(".tmp")):
+      injected = True
+      raise OSError("injected registry create failure")
+    return original_open(path, *args, **kwargs)
+
+  def fail_write(*args, **kwargs):
+    nonlocal injected
+    if not injected:
+      injected = True
+      raise OSError("injected registry write failure")
+    return original_write(*args, **kwargs)
+
+  def fail_replace(*args, **kwargs):
+    nonlocal injected
+    if not injected:
+      injected = True
+      raise OSError("injected registry replace failure")
+    return original_replace(*args, **kwargs)
+
+  if registry_phase == "create":
+    monkeypatch.setattr(run_reports.os, "open", fail_create)
+  elif registry_phase == "write":
+    monkeypatch.setattr(run_reports, "_write_all", fail_write)
+  else:
+    monkeypatch.setattr(run_reports.os, "replace", fail_replace)
+
+  with pytest.raises(OSError, match=f"registry {registry_phase} failure"):
+    write_run_report(_run("run-registry-phase", 81.0), tmp_path)
+
+  final = tmp_path / "runs" / "run-registry-phase"
+  assert not final.exists()
+  registry_path = tmp_path / "runs" / "index.json"
+  if registry_path.exists():
+    assert json.loads(registry_path.read_text())["runs"] == []
+  assert write_run_report(_run("run-registry-phase", 81.0), tmp_path) == final
+
+
+def _leave_process_death_orphan(tmp_path, result):
+  payload_path = tmp_path / f"{result.run_id}-input.json"
+  payload_path.write_text(json.dumps(result.to_dict()))
+  script = r"""
+import json
+import os
+import pathlib
+import sys
+sys.path.insert(0, sys.argv[1])
+from lib import run_reports
+payload = run_reports.CombinedRunResult.from_dict(
+    json.loads(pathlib.Path(sys.argv[2]).read_text()))
+run_reports._update_registry = lambda *args, **kwargs: os._exit(77)
+run_reports.write_run_report(payload, pathlib.Path(sys.argv[3]))
+"""
+  completed = subprocess.run(
+      [sys.executable, "-c", script, str(ROOT / "evals"),
+       str(payload_path), str(tmp_path)],
+      check=False, capture_output=True, text=True)
+  assert completed.returncode == 77, completed.stderr
+  return tmp_path / "runs" / result.run_id
+
+
+def test_complete_process_death_orphan_is_recovered_idempotently(tmp_path):
+  expected = _run("run-crash-recovery", 81.0)
+  orphan = _leave_process_death_orphan(tmp_path, expected)
+
+  assert orphan.is_dir()
+  assert not (tmp_path / "runs" / "index.json").exists()
+  assert write_run_report(expected, tmp_path) == orphan
+
+  registry = json.loads((tmp_path / "runs" / "index.json").read_text())
+  assert [entry["run_id"] for entry in registry["runs"]] == [
+      "run-crash-recovery"]
+  with pytest.raises(FileExistsError):
+    write_run_report(expected, tmp_path)
+
+
+def test_mismatched_process_death_orphan_fails_closed(tmp_path):
+  orphan = _leave_process_death_orphan(
+      tmp_path, _run("run-crash-mismatch", 81.0))
+
+  with pytest.raises((FileExistsError, ValueError)):
+    write_run_report(_run("run-crash-mismatch", 82.0), tmp_path)
+
+  assert orphan.is_dir()
+  assert not (tmp_path / "runs" / "index.json").exists()
+
+
+@pytest.mark.parametrize("tamper", ["artifact", "marker"])
+def test_process_death_marker_cannot_bypass_full_orphan_validation(
+    tmp_path, tamper,
+):
+  expected = _run(f"run-crash-tampered-{tamper}", 81.0)
+  orphan = _leave_process_death_orphan(tmp_path, expected)
+  if tamper == "artifact":
+    artifact = orphan / "artifacts" / "case-1.json"
+    artifact.write_bytes(artifact.read_bytes() + b" ")
+  else:
+    (orphan / "publication.json").unlink()
+
+  with pytest.raises(ValueError, match="unregistered|publication"):
+    write_run_report(expected, tmp_path)
+
+  assert orphan.is_dir()
+  assert not (tmp_path / "runs" / "index.json").exists()
 
 
 def test_concurrent_distinct_writers_both_remain_in_registry(
@@ -674,10 +855,11 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       finalToggle: { disabled: false, classList: { toggle() {} } },
     };
     const context = {
-      window: { addEventListener() {} },
+      window: { addEventListener() {}, location: {search: ''} },
       document: { body: {}, getElementById(id) { return elements[id]; } },
       crypto: webcrypto,
       TextDecoder,
+      URLSearchParams,
       console,
     };
     vm.createContext(context);
@@ -785,6 +967,71 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       if (elements.integrityRunCases.innerHTML !== '') process.exit(21);
       if (!classes.has('integrity-run-error')) process.exit(22);
       if (!elements.integrityRunSummary.textContent.includes('unsafe')) process.exit(23);
+
+      const makeReport = (runId, caseId) => {
+        const value = JSON.parse(JSON.stringify(report));
+        value.run_id = runId;
+        value.cases[0].case_id = caseId;
+        value.cases[0].artifact.path = `artifacts/${caseId}.json`;
+        return value;
+      };
+      const one = makeReport('run-one', 'case-one');
+      const two = makeReport('run-two', 'case-two');
+      const makeEntry = async value => {
+        const payload = Buffer.from(JSON.stringify(value));
+        const digest = await webcrypto.subtle.digest(
+          'SHA-256', payload.buffer.slice(
+            payload.byteOffset, payload.byteOffset + payload.byteLength));
+        return {
+          run_id: value.run_id, timestamp: value.timestamp, model: value.model,
+          capability: value.capability, evaluation_kind: value.evaluation_kind,
+          evaluation_label: value.evaluation_label, case_count: 1,
+          result_file: `${value.run_id}/result.json`,
+          result_sha256: Buffer.from(digest).toString('hex'),
+        };
+      };
+      const responseFor = value => {
+        const payload = Buffer.from(JSON.stringify(value));
+        return {ok: true, async arrayBuffer() {
+          return payload.buffer.slice(
+            payload.byteOffset, payload.byteOffset + payload.byteLength);
+        }};
+      };
+      const entries = [await makeEntry(one), await makeEntry(two)];
+      context.fetch = async url => {
+        if (url === 'results/runs/index.json') {
+          return {ok: true, async json() {
+            return {schema_version: '1.0.0', runs: entries};
+          }};
+        }
+        return responseFor(two);
+      };
+      await context.loadIntegrityRunIndex();
+
+      let settleOld;
+      context.fetch = url => {
+        if (url.includes('run-one')) {
+          return new Promise((resolve, reject) => { settleOld = {resolve, reject}; });
+        }
+        return Promise.resolve(responseFor(two));
+      };
+      elements.integrityRunFilter.value = 'run-one';
+      const oldSuccess = context.handleIntegrityRunChange();
+      elements.integrityRunFilter.value = 'run-two';
+      await context.handleIntegrityRunChange();
+      settleOld.resolve(responseFor(one));
+      await oldSuccess;
+      if (!elements.integrityRunCases.innerHTML.includes('case-two')) process.exit(25);
+      if (elements.integrityRunCases.innerHTML.includes('case-one')) process.exit(26);
+
+      elements.integrityRunFilter.value = 'run-one';
+      const oldFailure = context.handleIntegrityRunChange();
+      elements.integrityRunFilter.value = 'run-two';
+      await context.handleIntegrityRunChange();
+      settleOld.reject(new Error('late old failure'));
+      await oldFailure;
+      if (!elements.integrityRunCases.innerHTML.includes('case-two')) process.exit(27);
+      if (classes.has('integrity-run-error')) process.exit(28);
     })().catch(error => {
       console.error(error);
       process.exit(24);

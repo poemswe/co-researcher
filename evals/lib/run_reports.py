@@ -30,6 +30,7 @@ _RUN_ID_RE = re.compile(
     r"run[-_][a-z0-9](?:[a-z0-9._-]{0,125}[a-z0-9])?\Z")
 _CASE_ID_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
+_NONCE_RE = re.compile(r"[0-9a-f]{32}\Z")
 _STATUS_NAMES = ("valid", "valid_with_warnings", "invalid")
 _MAX_REPORT_BYTES = 16 * 1024 * 1024
 _REGISTRY_FIELDS = {
@@ -626,9 +627,90 @@ def _read_owned_file(path: Path, label: str) -> bytes:
     os.close(descriptor)
 
 
-def _validate_and_sync_staging(
-    destination: Path, report: dict, case_views: list[dict],
+def _prepare_run_payloads(result: CombinedRunResult) -> dict:
+  case_views = []
+  artifact_payloads = {}
+  repair_payloads = {}
+  for case in sorted(result.cases, key=lambda item: item.case_id):
+    artifact_path = f"artifacts/{case.case_id}.json"
+    artifact_payload = _json_bytes(case.evaluation.to_dict())
+    artifact_payloads[f"{case.case_id}.json"] = artifact_payload
+    view = {
+        "case_id": case.case_id,
+        "first_pass": _snapshot_view(case.evaluation.model_first_pass),
+        "final": _snapshot_view(case.evaluation.system_final),
+        "artifact": {
+            "path": artifact_path, "sha256": _digest(artifact_payload)},
+    }
+    if case.attack_family is not None:
+      view["attack_family"] = case.attack_family
+    if case.evaluation.repair_rounds:
+      round_views = []
+      for repair_round in case.evaluation.repair_rounds:
+        name = f"{case.case_id}-round-{repair_round.attempt:02d}.json"
+        relative = f"repair-rounds/{name}"
+        payload = _json_bytes(repair_round.to_dict())
+        repair_payloads[name] = payload
+        round_views.append(_repair_round_view(
+            repair_round, relative, _digest(payload)))
+      view["repair_rounds"] = round_views
+    case_views.append(view)
+  report = {
+      "schema_version": SCHEMA_VERSION,
+      "evaluation_kind": INTEGRITY_EVALUATION_KIND,
+      "evaluation_label": INTEGRITY_EVALUATION_LABEL,
+      "run_id": result.run_id,
+      "timestamp": result.timestamp,
+      "model": result.model,
+      "capability": result.capability,
+      "summary": _status_summary(result.cases),
+      "cases": case_views,
+  }
+  return {
+      "report": report,
+      "case_views": case_views,
+      "result": _json_bytes(report),
+      "summary": _summary_markdown(result, case_views).encode("utf-8"),
+      "artifacts": artifact_payloads,
+      "repair_rounds": repair_payloads,
+  }
+
+
+def _publication_payload(
+    result: CombinedRunResult, result_sha256: str, nonce: str,
 ) -> bytes:
+  return _json_bytes({
+      "schema_version": SCHEMA_VERSION,
+      "run_id": result.run_id,
+      "result_sha256": result_sha256,
+      "nonce": nonce,
+  })
+
+
+def _validate_publication_marker(
+    payload: bytes, run_id: str, result_sha256: str,
+) -> dict:
+  try:
+    marker = json.loads(payload)
+  except (UnicodeError, json.JSONDecodeError) as exc:
+    raise ValueError(f"publication marker is not valid JSON: {exc}") from exc
+  data = _closed_object(marker, {
+      "schema_version", "run_id", "result_sha256", "nonce",
+  }, "publication marker")
+  if (data["schema_version"] != SCHEMA_VERSION
+      or data["run_id"] != run_id
+      or data["result_sha256"] != result_sha256
+      or not isinstance(data["nonce"], str)
+      or not _NONCE_RE.fullmatch(data["nonce"])):
+    raise ValueError("publication marker does not match the requested run")
+  return data
+
+
+def _validate_and_sync_staging(
+    destination: Path, prepared: dict,
+) -> bytes:
+  report = prepared["report"]
+  case_views = prepared["case_views"]
   expected_artifacts = {Path(case["artifact"]["path"]).name
                         for case in case_views}
   expected_rounds = {
@@ -637,6 +719,7 @@ def _validate_and_sync_staging(
   }
   if set(os.listdir(destination)) != {
       "artifacts", "repair-rounds", "result.json", "summary.md",
+      "publication.json",
   }:
     raise ValueError("staged run contains unexpected top-level entries")
   if set(os.listdir(destination / "artifacts")) != expected_artifacts:
@@ -658,11 +741,81 @@ def _validate_and_sync_staging(
       destination / "result.json", "run result")
   if json.loads(result_payload) != report:
     raise ValueError("staged result does not match the run report")
+  marker_payload = _read_owned_file(
+      destination / "publication.json", "publication marker")
+  _validate_publication_marker(
+      marker_payload, report["run_id"], _digest(result_payload))
   _read_owned_file(destination / "summary.md", "run summary")
   _fsync_directory(destination / "artifacts")
   _fsync_directory(destination / "repair-rounds")
   _fsync_directory(destination)
   return result_payload
+
+
+def _validate_matching_orphan(
+    root_descriptor: int, result: CombinedRunResult, prepared: dict,
+) -> str:
+  try:
+    run_descriptor = os.open(
+        result.run_id, _directory_flags(), dir_fd=root_descriptor)
+  except OSError as exc:
+    raise ValueError("unregistered run directory is not recoverable") from exc
+  try:
+    if set(os.listdir(run_descriptor)) != {
+        "artifacts", "repair-rounds", "result.json", "summary.md",
+        "publication.json",
+    }:
+      raise ValueError("unregistered run has a non-canonical layout")
+    result_payload = _read_regular_at(
+        run_descriptor, "result.json", "orphan run result")
+    if result_payload != prepared["result"]:
+      raise ValueError("unregistered run does not match the requested result")
+    result_sha256 = _digest(result_payload)
+    marker_payload = _read_regular_at(
+        run_descriptor, "publication.json", "publication marker")
+    _validate_publication_marker(
+        marker_payload, result.run_id, result_sha256)
+    if (_read_regular_at(
+        run_descriptor, "summary.md", "orphan run summary")
+        != prepared["summary"]):
+      raise ValueError("unregistered run summary does not match")
+
+    for directory_name, expected in (
+        ("artifacts", prepared["artifacts"]),
+        ("repair-rounds", prepared["repair_rounds"]),
+    ):
+      descriptor = _open_child_directory(
+          run_descriptor, directory_name, f"orphan {directory_name}")
+      try:
+        if set(os.listdir(descriptor)) != set(expected):
+          raise ValueError(
+              f"unregistered run {directory_name} layout does not match")
+        for name, payload in expected.items():
+          if _read_regular_at(
+              descriptor, name, f"orphan {directory_name} artifact") != payload:
+            raise ValueError(
+                f"unregistered run {directory_name} artifact does not match")
+      finally:
+        os.close(descriptor)
+    return result_sha256
+  finally:
+    os.close(run_descriptor)
+
+
+def _register_matching_orphan(
+    runs_root: Path, root_descriptor: int, result: CombinedRunResult,
+    prepared: dict, entries: list[dict], previous_registry: bytes | None,
+) -> None:
+  result_sha256 = _validate_matching_orphan(
+      root_descriptor, result, prepared)
+  try:
+    _update_registry(
+        runs_root, _registry_entry(result, result_sha256),
+        root_descriptor=root_descriptor, entries=entries)
+  except BaseException:
+    _restore_registry_locked(
+        root_descriptor, previous_registry, result.run_id)
+    raise
 
 
 def write_run_report(result: CombinedRunResult, root: Path) -> Path:
@@ -683,92 +836,83 @@ def write_run_report(result: CombinedRunResult, root: Path) -> Path:
   if runs_root.is_symlink():
     raise ValueError("runs directory must not be a symlink")
   runs_root.mkdir(exist_ok=True)
+  prepared = _prepare_run_payloads(result)
+  final_destination = runs_root / result.run_id
   with _registry_lock(runs_root) as root_descriptor:
-    existing, _ = _read_registry_locked(root_descriptor, missing_ok=True)
-    if (any(item["run_id"] == result.run_id for item in existing)
-        or _entry_metadata(root_descriptor, result.run_id) is not None):
+    existing, previous_registry = _read_registry_locked(
+        root_descriptor, missing_ok=True)
+    if any(item["run_id"] == result.run_id for item in existing):
       raise FileExistsError(f"run_id already exists: {result.run_id}")
+    final_metadata = _entry_metadata(root_descriptor, result.run_id)
+    if final_metadata is not None and not stat.S_ISDIR(final_metadata.st_mode):
+      raise FileExistsError(f"run_id already exists: {result.run_id}")
+    if final_metadata is not None:
+      _register_matching_orphan(
+          runs_root, root_descriptor, result, prepared, existing,
+          previous_registry)
+      return final_destination
 
   staging_name, owned_identity = _new_staging_directory(
       runs_root, result.run_id)
   destination = runs_root / staging_name
   published = False
   completed = False
-  final_destination = runs_root / result.run_id
   try:
     artifacts = destination / "artifacts"
     repair_rounds = destination / "repair-rounds"
     artifacts.mkdir()
     repair_rounds.mkdir()
-
-    case_views = []
-    for case in sorted(result.cases, key=lambda item: item.case_id):
-      artifact_path = f"artifacts/{case.case_id}.json"
-      artifact_payload = _json_bytes(case.evaluation.to_dict())
-      artifact_sha256 = _digest(artifact_payload)
-      _write_exclusive(destination / artifact_path, artifact_payload)
-      view = {
-          "case_id": case.case_id,
-          "first_pass": _snapshot_view(case.evaluation.model_first_pass),
-          "final": _snapshot_view(case.evaluation.system_final),
-          "artifact": {"path": artifact_path, "sha256": artifact_sha256},
-      }
-      if case.attack_family is not None:
-        view["attack_family"] = case.attack_family
-      if case.evaluation.repair_rounds:
-        round_views = []
-        for repair_round in case.evaluation.repair_rounds:
-          relative = (
-              f"repair-rounds/{case.case_id}-round-"
-              f"{repair_round.attempt:02d}.json")
-          payload = _json_bytes(repair_round.to_dict())
-          sha256 = _digest(payload)
-          _write_exclusive(destination / relative, payload)
-          round_views.append(_repair_round_view(
-              repair_round, relative, sha256))
-        view["repair_rounds"] = round_views
-      case_views.append(view)
-
-    report = {
-        "schema_version": SCHEMA_VERSION,
-        "evaluation_kind": INTEGRITY_EVALUATION_KIND,
-        "evaluation_label": INTEGRITY_EVALUATION_LABEL,
-        "run_id": result.run_id,
-        "timestamp": result.timestamp,
-        "model": result.model,
-        "capability": result.capability,
-        "summary": _status_summary(result.cases),
-        "cases": case_views,
-    }
-    result_payload = _json_bytes(report)
+    for name, payload in prepared["artifacts"].items():
+      _write_exclusive(artifacts / name, payload)
+    for name, payload in prepared["repair_rounds"].items():
+      _write_exclusive(repair_rounds / name, payload)
+    result_payload = prepared["result"]
+    result_sha256 = _digest(result_payload)
     _write_exclusive(destination / "result.json", result_payload)
+    _write_exclusive(destination / "summary.md", prepared["summary"])
     _write_exclusive(
-        destination / "summary.md",
-        _summary_markdown(result, case_views).encode("utf-8"))
-    result_payload = _validate_and_sync_staging(
-        destination, report, case_views)
+        destination / "publication.json",
+        _publication_payload(result, result_sha256, secrets.token_hex(16)))
+    result_payload = _validate_and_sync_staging(destination, prepared)
 
     with _registry_lock(runs_root) as root_descriptor:
       entries, previous_registry = _read_registry_locked(
           root_descriptor, missing_ok=True)
-      if (any(item["run_id"] == result.run_id for item in entries)
-          or _entry_metadata(root_descriptor, result.run_id) is not None):
+      if any(item["run_id"] == result.run_id for item in entries):
         raise FileExistsError(f"run_id already exists: {result.run_id}")
-      os.rename(
-          staging_name, result.run_id,
-          src_dir_fd=root_descriptor, dst_dir_fd=root_descriptor)
-      published = True
-      os.fsync(root_descriptor)
+      final_metadata = _entry_metadata(root_descriptor, result.run_id)
+      if final_metadata is not None and not stat.S_ISDIR(final_metadata.st_mode):
+        raise FileExistsError(f"run_id already exists: {result.run_id}")
+      if final_metadata is not None:
+        _register_matching_orphan(
+            runs_root, root_descriptor, result, prepared, entries,
+            previous_registry)
+        return final_destination
+      registry_started = False
       try:
+        # Mark rollback responsibility before the syscall: a wrapper or signal
+        # may report failure after the directory entry was already renamed.
+        published = True
+        os.rename(
+            staging_name, result.run_id,
+            src_dir_fd=root_descriptor, dst_dir_fd=root_descriptor)
+        os.fsync(root_descriptor)
+        registry_started = True
         _update_registry(
             runs_root, _registry_entry(result, _digest(result_payload)),
             root_descriptor=root_descriptor, entries=entries)
       except BaseException:
-        _restore_registry_locked(
-            root_descriptor, previous_registry, result.run_id)
-        _remove_owned_directory(
-            runs_root, result.run_id, owned_identity)
-        published = False
+        if published:
+          try:
+            if registry_started:
+              _restore_registry_locked(
+                  root_descriptor, previous_registry, result.run_id)
+          finally:
+            try:
+              _remove_owned_directory(
+                  runs_root, result.run_id, owned_identity)
+            finally:
+              published = False
         raise
     completed = True
     return final_destination
@@ -907,12 +1051,17 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
     try:
       if set(os.listdir(run_descriptor)) != {
           "artifacts", "repair-rounds", "result.json", "summary.md",
+          "publication.json",
       }:
         raise ValueError("selected run contains unexpected entries")
       report_payload = _read_regular_at(
           run_descriptor, "result.json", "selected run result")
       if _digest(report_payload) != registry_entry["result_sha256"]:
         raise ValueError("selected run result SHA-256 mismatch")
+      marker_payload = _read_regular_at(
+          run_descriptor, "publication.json", "publication marker")
+      _validate_publication_marker(
+          marker_payload, selected, registry_entry["result_sha256"])
       try:
         report = json.loads(report_payload)
       except (UnicodeError, json.JSONDecodeError) as exc:

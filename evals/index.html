@@ -1865,6 +1865,7 @@
         let integrityRunIndex = [];
         let selectedIntegrityRun = null;
         let integritySnapshot = 'final';
+        let integrityRequestGeneration = 0;
 
         function isPlainObject(value) {
             return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -2165,19 +2166,32 @@
 
         async function handleIntegrityRunChange() {
             const selector = document.getElementById('integrityRunFilter');
+            const generation = ++integrityRequestGeneration;
+            let runId = null;
             clearIntegrityRunView('Loading selected run…');
             try {
-                const runId = requireRunId(selector.value);
+                runId = requireRunId(selector.value);
                 const entry = integrityRunIndex.find(value => value.run_id === runId);
                 if (!entry) throw new Error(`unknown run ID: ${runId}`);
                 const response = await fetch(`results/runs/${entry.result_file}`);
-                selectedIntegrityRun = await parseIntegrityRunResponse(entry, response);
+                if (generation !== integrityRequestGeneration || selector.value !== runId) {
+                    return null;
+                }
+                const loaded = await parseIntegrityRunResponse(entry, response);
+                if (generation !== integrityRequestGeneration || selector.value !== runId) {
+                    return null;
+                }
+                selectedIntegrityRun = loaded;
                 selector.removeAttribute('aria-invalid');
                 document.getElementById('integrityRunSummary').classList.toggle(
                     'integrity-run-error', false);
                 renderIntegrityRun();
                 return selectedIntegrityRun;
             } catch (error) {
+                if (generation !== integrityRequestGeneration ||
+                    (runId !== null && selector.value !== runId)) {
+                    return null;
+                }
                 selector.setAttribute('aria-invalid', 'true');
                 clearIntegrityRunView(`Cannot display selected run: ${error.message}`);
                 return null;

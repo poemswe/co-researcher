@@ -95,6 +95,7 @@ The framework uses specialized rubrics based on the agent's task domain:
 results/runs/
 ├── index.json
 └── <run_id>/
+    ├── publication.json
     ├── summary.md
     ├── result.json
     ├── artifacts/
@@ -116,7 +117,10 @@ rollback. The writer and loader reject unsafe IDs, links, aliases, oversized
 files, and non-canonical artifact names. `index.json` gives the static dashboard
 a closed list of known runs. The browser verifies the selected `result.json`
 digest before parsing it, couples its metadata and case count to the registry,
-and recomputes displayed status and attack-family totals from the cases.
+and recomputes displayed status and attack-family totals from the cases. A
+retained `publication.json` commit marker allows an exact, fully validated run
+left by process death to be registered on retry; incomplete or mismatched
+directories are never deleted or adopted.
 
 The 26-case broad benchmark predates integrity evaluation. Its dashboard rows
 are labeled **Quality-only historical run — not integrity evaluated**. A broad
