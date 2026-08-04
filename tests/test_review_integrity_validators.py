@@ -91,7 +91,25 @@ def test_claim_statuses_map_to_stable_findings(status, reason, severity):
 
   assert [(finding.reason_code, finding.severity)
           for finding in findings] == [(reason, severity)]
-  assert findings[0].context["result_index"] == 0
+  if status == "uncovered_claim":
+    assert findings[0].context["synthesis_sentence"] == "submitted claim"
+    assert findings[0].context["citation_identity"] == "Patel, 2022"
+    assert "result_index" not in findings[0].context
+  else:
+    assert findings[0].context["result_index"] == 0
+    assert findings[0].context["claim_text"] == "submitted claim"
+    assert findings[0].context["numbers_missing"] is None
+
+
+def test_claim_finding_context_retains_numeric_anchor_failures():
+  finding = _validators().claim_findings(_claim_report([_claim_result(
+      "needs_review", claim="Rates fell 18%.",
+      anchors={"numbers_found": [], "numbers_missing": ["18"],
+               "words_found": [], "words_missing": []},
+  )]))[0]
+
+  assert finding.context["claim_text"] == "Rates fell 18%."
+  assert finding.context["numbers_missing"] == ("18",)
 
 
 def test_ambiguous_binding_maps_to_distinct_stable_reason():
@@ -150,6 +168,38 @@ def test_missing_exclusion_reason_is_warning():
   assert findings[0].reason_code is ReasonCode.PRISMA_EXCLUSION_REASON_MISSING
   assert findings[0].severity is Severity.WARNING
   assert findings[0].context["count"] == 1
+
+
+def test_prisma_findings_retain_exact_missing_reason_decision_indices():
+  records = [
+      {"screening": {"status": "excluded"}},
+      {"screening": {"status": "excluded", "reason": "out of scope"}},
+  ]
+  finding = _validators().prisma_findings({
+      "records_by_source": {"unknown": 2}, "after_dedup": 2,
+      "screened": 2,
+      "excluded": {"unspecified": 1, "out of scope": 1},
+      "included": 0, "not_retrieved": 0, "in_synthesis": 0,
+  }, records)[0]
+
+  assert finding.context["decision_indices"] == (0,)
+
+
+def test_unscreened_prisma_records_emit_global_incomplete_context():
+  records = [
+      {"screening": {"status": "included"}},
+      {"screening": {}},
+  ]
+  finding = _validators().prisma_findings({
+      "records_by_source": {"unknown": 2}, "after_dedup": 2,
+      "screened": 1, "excluded": {}, "included": 1,
+      "not_retrieved": 0, "in_synthesis": 1,
+  }, records)[0]
+
+  assert finding.reason_code is ReasonCode.VALIDATOR_INCOMPLETE
+  assert finding.severity is Severity.CRITICAL
+  assert finding.context["validator"] == "prisma"
+  assert finding.context["unscreened_indices"] == (1,)
 
 
 def test_retracted_citation_is_critical():

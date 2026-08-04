@@ -26,7 +26,20 @@ def _incomplete(validator: str, artifact: str) -> Finding:
 
 
 def _result_context(result: dict, index: int) -> dict:
-  context = {"result_index": index}
+  if result.get("status") == "uncovered_claim":
+    context = {
+        "synthesis_sentence": result.get("claim"),
+        "citation_identity": result.get("citation"),
+    }
+  else:
+    anchors = result.get("anchors")
+    numbers_missing = (anchors.get("numbers_missing")
+                       if isinstance(anchors, dict) else None)
+    context = {
+        "result_index": index,
+        "claim_text": result.get("claim"),
+        "numbers_missing": numbers_missing,
+    }
   for source, target in (
       ("status", "status"), ("reason_code", "validator_reason"),
       ("paper_id", "paper_id"), ("citation", "citation"),
@@ -401,7 +414,9 @@ def citation_findings(
   return tuple(findings)
 
 
-def prisma_findings(report: dict) -> tuple[Finding, ...]:
+def prisma_findings(
+    report: dict, records: list[dict] | None = None,
+) -> tuple[Finding, ...]:
   """Map PRISMA output into stable completeness findings."""
   required = {
       "records_by_source", "after_dedup", "screened", "excluded",
@@ -428,15 +443,38 @@ def prisma_findings(report: dict) -> tuple[Finding, ...]:
       or report["in_synthesis"]
       != report["included"] - report["not_retrieved"]):
     return (_incomplete("prisma", "corpus.json"),)
+  if report["screened"] != report["after_dedup"]:
+    context = {"validator": "prisma"}
+    if isinstance(records, list):
+      context["unscreened_indices"] = [
+          index for index, record in enumerate(records)
+          if isinstance(record, dict)
+          and (record.get("screening") or {}).get("status") is None
+      ]
+    return (Finding(
+        reason_code=ReasonCode.VALIDATOR_INCOMPLETE,
+        severity=Severity.CRITICAL,
+        artifact="corpus.json",
+        message="prisma validator did not produce an interpretable result",
+        context=context,
+    ),)
   count = excluded.get("unspecified", 0)
   if not count:
     return ()
+  context = {"count": count}
+  if isinstance(records, list):
+    context["decision_indices"] = [
+        index for index, record in enumerate(records)
+        if isinstance(record, dict)
+        and (record.get("screening") or {}).get("status") == "excluded"
+        and not (record.get("screening") or {}).get("reason")
+    ]
   return (Finding(
       reason_code=ReasonCode.PRISMA_EXCLUSION_REASON_MISSING,
       severity=Severity.WARNING,
       artifact="corpus.json",
       message="excluded review records are missing exclusion reasons",
-      context={"count": count},
+      context=context,
   ),)
 
 
@@ -544,7 +582,7 @@ def validate_snapshot(
 
   def prisma() -> tuple[Finding, ...]:
     records = snapshot.read_json("corpus.json")
-    return prisma_findings(prisma_counts.prisma_report(records))
+    return prisma_findings(prisma_counts.prisma_report(records), records)
 
   run("prisma", "corpus.json", prisma)
   return tuple(findings)

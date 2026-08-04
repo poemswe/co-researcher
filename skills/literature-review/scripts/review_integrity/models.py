@@ -20,14 +20,17 @@ except ImportError:  # Python 3.10 compatibility
 SCHEMA_VERSION = "1.0.0"
 REASON_CODE_SCHEMA_VERSION = SCHEMA_VERSION
 
-DIMENSION_NAMES = frozenset({
+DIMENSION_ORDER = (
     "quote_authenticity",
     "citation_binding",
     "quantitative_grounding",
     "synthesis_coverage",
     "bibliography_verification",
     "prisma_artifact_completeness",
-})
+)
+DIMENSION_NAMES = frozenset(DIMENSION_ORDER)
+DIMENSION_WEIGHTS = MappingProxyType(dict(zip(
+    DIMENSION_ORDER, (25.0, 20.0, 20.0, 15.0, 10.0, 10.0))))
 
 
 class Severity(_StringEnum):
@@ -110,6 +113,21 @@ def _score(value: object, field: str) -> float:
   if not math.isfinite(result) or not 0.0 <= result <= 100.0:
     raise ValueError(f"{field} must be a finite score from 0 to 100")
   return result
+
+
+def _finite_number(value: object, field: str) -> float:
+  if isinstance(value, bool) or not isinstance(value, (int, float)):
+    raise ValueError(f"{field} must be a finite number")
+  result = float(value)
+  if not math.isfinite(result):
+    raise ValueError(f"{field} must be a finite number")
+  return result
+
+
+def _unit_count(value: object, field: str) -> int:
+  if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+    raise ValueError(f"{field} must be a nonnegative integer")
+  return value
 
 
 def _model_list(value: object, model_type: Type[_T], field: str) -> tuple[_T, ...]:
@@ -221,31 +239,92 @@ class Finding:
 @dataclass(frozen=True)
 class DimensionResult:
   name: str
-  score: float
+  score: Optional[float]
+  applicable: bool
+  evaluated_units: int
+  passed_units: int
+  nominal_weight: float
+  effective_weight: float
   findings: tuple[Finding, ...]
 
   def __post_init__(self) -> None:
     if self.name not in DIMENSION_NAMES:
       raise ValueError(f"unknown dimension: {self.name!r}")
-    object.__setattr__(self, "score", _score(self.score, "score"))
+    if not isinstance(self.applicable, bool):
+      raise ValueError("applicable must be a boolean")
+    evaluated = _unit_count(self.evaluated_units, "evaluated_units")
+    passed = _unit_count(self.passed_units, "passed_units")
+    if passed > evaluated:
+      raise ValueError("passed_units must not exceed evaluated_units")
+    nominal = _finite_number(self.nominal_weight, "nominal_weight")
+    if nominal != DIMENSION_WEIGHTS[self.name]:
+      raise ValueError("nominal_weight does not match the dimension")
+    effective = _finite_number(self.effective_weight, "effective_weight")
+    if not 0.0 <= effective <= 100.0:
+      raise ValueError("effective_weight must be from 0 to 100")
+    if not self.applicable:
+      if (self.score is not None or evaluated != 0 or passed != 0
+          or effective != 0.0):
+        raise ValueError(
+            "not_applicable dimensions require null score, zero units, and "
+            "zero effective_weight")
+    else:
+      actual = _score(self.score, "score")
+      expected = 0.0 if evaluated == 0 else 100.0 * passed / evaluated
+      if not math.isclose(actual, expected, rel_tol=0.0, abs_tol=1e-12):
+        raise ValueError("score does not match evaluated and passed units")
+      object.__setattr__(self, "score", expected)
+    object.__setattr__(self, "nominal_weight", nominal)
+    object.__setattr__(self, "effective_weight", effective)
     object.__setattr__(self, "findings", _model_list(
         self.findings, Finding, "findings"))
+
+  @property
+  def unrounded_score(self) -> Optional[float]:
+    if not self.applicable:
+      return None
+    if self.evaluated_units == 0:
+      return 0.0
+    return 100.0 * self.passed_units / self.evaluated_units
 
   def to_dict(self) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "name": self.name,
-        "score": self.score,
+        "score": (None if self.score is None else round(self.score, 1)),
+        "applicable": self.applicable,
+        "evaluated_units": self.evaluated_units,
+        "passed_units": self.passed_units,
+        "nominal_weight": round(self.nominal_weight, 1),
+        "effective_weight": round(self.effective_weight, 1),
         "findings": [finding.to_dict() for finding in self.findings],
     }
 
   @classmethod
   def from_dict(cls, value: dict) -> DimensionResult:
     data = _require_fields(value, {
-        "schema_version", "name", "score", "findings",
+        "schema_version", "name", "score", "applicable",
+        "evaluated_units", "passed_units", "nominal_weight",
+        "effective_weight", "findings",
     }, cls.__name__)
+    applicable = data["applicable"]
+    evaluated = _unit_count(data["evaluated_units"], "evaluated_units")
+    passed = _unit_count(data["passed_units"], "passed_units")
+    expected_score = (None if applicable is False else
+                      (0.0 if evaluated == 0 else 100.0 * passed / evaluated))
+    wire_score = data["score"]
+    if expected_score is None:
+      if wire_score is not None:
+        raise ValueError("not_applicable score must be null")
+    else:
+      parsed_score = _score(wire_score, "score")
+      if parsed_score != round(expected_score, 1):
+        raise ValueError("score does not match evaluated and passed units")
     return cls(
-        name=data["name"], score=data["score"], findings=data["findings"])
+        name=data["name"], score=expected_score, applicable=applicable,
+        evaluated_units=evaluated, passed_units=passed,
+        nominal_weight=data["nominal_weight"],
+        effective_weight=data["effective_weight"], findings=data["findings"])
 
 
 DimensionsInput = Union[
@@ -280,11 +359,34 @@ class PassReport:
   manifest_sha256: str
 
   def __post_init__(self) -> None:
-    object.__setattr__(self, "integrity_score", _score(
-        self.integrity_score, "integrity_score"))
+    actual_score = _score(self.integrity_score, "integrity_score")
     object.__setattr__(self, "findings", _model_list(
         self.findings, Finding, "findings"))
-    object.__setattr__(self, "dimensions", _dimensions(self.dimensions))
+    dimensions = _dimensions(self.dimensions)
+    object.__setattr__(self, "dimensions", dimensions)
+    applicable = [dimension for dimension in dimensions.values()
+                  if dimension.applicable]
+    if applicable:
+      nominal_total = sum(dimension.nominal_weight for dimension in applicable)
+      for dimension in dimensions.values():
+        expected_weight = (dimension.nominal_weight * 100.0 / nominal_total
+                           if dimension.applicable else 0.0)
+        if not math.isclose(
+            dimension.effective_weight, expected_weight,
+            rel_tol=0.0, abs_tol=1e-12,
+        ):
+          raise ValueError(
+              "effective_weight does not match applicable nominal weights")
+      expected_score = sum(
+          dimension.nominal_weight * (dimension.unrounded_score or 0.0)
+          for dimension in applicable) / nominal_total
+      if not math.isclose(
+          actual_score, expected_score, rel_tol=0.0, abs_tol=1e-12,
+      ):
+        raise ValueError(
+            "integrity_score does not match dimension counts and weights")
+      actual_score = expected_score
+    object.__setattr__(self, "integrity_score", actual_score)
     if not isinstance(self.manifest_sha256, str) or not _SHA256_RE.fullmatch(
         self.manifest_sha256):
       raise ValueError("manifest_sha256 must be a 64-character hexadecimal hash")
@@ -297,10 +399,21 @@ class PassReport:
       return IntegrityStatus.VALID_WITH_WARNINGS
     return IntegrityStatus.VALID
 
+  @property
+  def unrounded_integrity_score(self) -> float:
+    applicable = [dimension for dimension in self.dimensions.values()
+                  if dimension.applicable]
+    if not applicable:
+      return self.integrity_score
+    nominal_total = sum(dimension.nominal_weight for dimension in applicable)
+    return sum(
+        dimension.nominal_weight * (dimension.unrounded_score or 0.0)
+        for dimension in applicable) / nominal_total
+
   def to_dict(self) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
-        "integrity_score": self.integrity_score,
+        "integrity_score": round(self.integrity_score, 1),
         "findings": [finding.to_dict() for finding in self.findings],
         "dimensions": {
             name: dimension.to_dict()
@@ -318,13 +431,45 @@ class PassReport:
     }, cls.__name__)
     if not isinstance(data["dimensions"], dict):
       raise ValueError("dimensions must be a dictionary")
-    dimensions = {}
-    for name, serialized in data["dimensions"].items():
+    serialized_dimensions = data["dimensions"]
+    applicable_nominal = 0.0
+    for serialized in serialized_dimensions.values():
       if not isinstance(serialized, dict):
         raise ValueError("dimensions must contain dictionaries")
-      dimensions[name] = DimensionResult.from_dict(serialized)
+      if serialized.get("applicable") is True:
+        applicable_nominal += _finite_number(
+            serialized.get("nominal_weight"), "nominal_weight")
+    dimensions = {}
+    for name, serialized in serialized_dimensions.items():
+      if not isinstance(serialized, dict):
+        raise ValueError("dimensions must contain dictionaries")
+      copied = dict(serialized)
+      if copied.get("applicable") is True:
+        nominal = _finite_number(copied.get("nominal_weight"),
+                                 "nominal_weight")
+        expected_effective = nominal * 100.0 / applicable_nominal
+        wire_effective = _finite_number(
+            copied.get("effective_weight"), "effective_weight")
+        if wire_effective != round(expected_effective, 1):
+          raise ValueError(
+              "effective_weight does not match applicable nominal weights")
+        copied["effective_weight"] = expected_effective
+      dimensions[name] = DimensionResult.from_dict(copied)
+    applicable = [dimension for dimension in dimensions.values()
+                  if dimension.applicable]
+    if applicable:
+      expected_integrity = sum(
+          dimension.nominal_weight * (dimension.unrounded_score or 0.0)
+          for dimension in applicable) / sum(
+              dimension.nominal_weight for dimension in applicable)
+      wire_integrity = _score(data["integrity_score"], "integrity_score")
+      if wire_integrity != round(expected_integrity, 1):
+        raise ValueError(
+            "integrity_score does not match dimension counts and weights")
+    else:
+      expected_integrity = data["integrity_score"]
     report = cls(
-        integrity_score=data["integrity_score"],
+        integrity_score=expected_integrity,
         findings=data["findings"],
         dimensions=dimensions,
         manifest_sha256=data["manifest_sha256"],
@@ -413,8 +558,12 @@ class IntegrityRunReport:
   @classmethod
   def example_valid(cls) -> IntegrityRunReport:
     dimensions = {
-        name: DimensionResult(name=name, score=100.0, findings=[])
-        for name in sorted(DIMENSION_NAMES)
+        name: DimensionResult(
+            name=name, score=100.0, applicable=True,
+            evaluated_units=1, passed_units=1,
+            nominal_weight=DIMENSION_WEIGHTS[name],
+            effective_weight=DIMENSION_WEIGHTS[name], findings=[])
+        for name in DIMENSION_ORDER
     }
     return cls(
         pass_report=PassReport(

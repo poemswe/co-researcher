@@ -1,0 +1,336 @@
+import json
+import pathlib
+import sys
+
+
+SCRIPTS = (pathlib.Path(__file__).resolve().parents[1]
+           / "skills/literature-review/scripts")
+sys.path.insert(0, str(SCRIPTS))
+
+import check_claims  # noqa: E402
+from review_integrity.models import (  # noqa: E402
+    Finding,
+    IntegrityStatus,
+    PassReport,
+    ReasonCode,
+    Severity,
+)
+from review_integrity.scoring import score_integrity  # noqa: E402
+from review_integrity.workspace import load_workspace  # noqa: E402
+
+
+def _claim(*, claim=None, paper_id="p1", citation="Patel, 2022",
+           quote=None):
+  text = claim or "Readmissions fell 18% in the treatment arm."
+  return {
+      "claim": text,
+      "paper_id": paper_id,
+      "citation": citation,
+      "supporting_quote": quote or (
+          "Thirty-day readmissions fell 18% in the treatment arm relative "
+          "to usual care across all enrolled regional hospitals."),
+  }
+
+
+def _record(*, key="paper-one", paper_id="p1", author="Priya Patel",
+            year=2022, status="included", role="evidence", reason=None):
+  screening = {"status": status}
+  if reason is not None:
+    screening["reason"] = reason
+  return {
+      "key": key,
+      "ids": {"pmcid": paper_id},
+      "authors": [author],
+      "year": year,
+      "role": role,
+      "found_via": "openalex",
+      "fulltext": "fulltext",
+      "screening": screening,
+  }
+
+
+def _snapshot(tmp_path, *, claims=None, corpus=None, synthesis=None,
+              refs=None, reverse_creation=False):
+  claims = claims or [_claim()]
+  corpus = corpus or [_record()]
+  synthesis = synthesis or (
+      "Readmissions fell 18% in the treatment arm (Patel, 2022).")
+  refs = refs if refs is not None else [{
+      "doi": "10.1/example", "title": "Example Study"}]
+  payloads = {
+      "protocol.md": "# Protocol\n",
+      "corpus.json": json.dumps(corpus),
+      "claims.json": json.dumps(claims),
+      "synthesis.md": synthesis,
+      "refs.json": json.dumps(refs),
+      "project.json": json.dumps({"project": "review"}),
+  }
+  for record in corpus:
+    if (record.get("screening") or {}).get("status") != "included":
+      continue
+    if record.get("role") not in {"evidence", "background"}:
+      continue
+    paper_id = record["ids"]["pmcid"]
+    payloads[f"papers/{paper_id}/fulltext.md"] = (
+        "Thirty-day readmissions fell 18% in the treatment arm relative "
+        "to usual care across all enrolled regional hospitals.")
+  paths = list(payloads)
+  if reverse_creation:
+    paths.reverse()
+  root = tmp_path / ("reverse" if reverse_creation else "review")
+  for relative_path in paths:
+    destination = root / relative_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(payloads[relative_path], encoding="utf-8")
+  return load_workspace(root)
+
+
+def _finding(reason, *, severity=Severity.WARNING, artifact="claims.json",
+             context=None):
+  return Finding(
+      reason_code=reason,
+      severity=severity,
+      artifact=artifact,
+      message="stable test finding",
+      context=context or {},
+  )
+
+
+def test_valid_workspace_scores_100(tmp_path):
+  report = score_integrity(_snapshot(tmp_path), ())
+
+  assert report.integrity_score == 100.0
+  assert report.status is IntegrityStatus.VALID
+  assert list(report.dimensions) == [
+      "quote_authenticity", "citation_binding", "quantitative_grounding",
+      "synthesis_coverage", "bibliography_verification",
+      "prisma_artifact_completeness",
+  ]
+  assert [(dimension.nominal_weight, dimension.effective_weight)
+          for dimension in report.dimensions.values()] == [
+      (25.0, 25.0), (20.0, 20.0), (20.0, 20.0),
+      (15.0, 15.0), (10.0, 10.0), (10.0, 10.0),
+  ]
+  assert {name: dimension.evaluated_units
+          for name, dimension in report.dimensions.items()} == {
+      "quote_authenticity": 1,
+      "citation_binding": 1,
+      "quantitative_grounding": 1,
+      "synthesis_coverage": 1,
+      "bibliography_verification": 1,
+      "prisma_artifact_completeness": 8,
+  }
+
+
+def test_dimension_failure_deducts_only_its_weight(tmp_path):
+  finding = _finding(
+      ReasonCode.ABSTRACT_ONLY_SUPPORT,
+      context={"result_index": 0, "claim_text": "Readmissions fell 18%.",
+               "numbers_missing": []},
+  )
+
+  report = score_integrity(_snapshot(tmp_path), (finding,))
+
+  assert report.integrity_score == 75.0
+  assert report.dimensions["quote_authenticity"].score == 0.0
+  assert all(dimension.score == 100.0 for name, dimension
+             in report.dimensions.items() if name != "quote_authenticity")
+
+
+def test_duplicate_findings_do_not_double_deduct_one_unit(tmp_path):
+  claims = [_claim(), _claim(paper_id="p1")]
+  first = _finding(
+      ReasonCode.FABRICATED_QUOTE,
+      severity=Severity.CRITICAL,
+      context={"result_index": 0, "claim_text": claims[0]["claim"],
+               "numbers_missing": ["18"]},
+  )
+  duplicate_unit = _finding(
+      ReasonCode.CLAIM_NEEDS_REVIEW,
+      context={"result_index": 0, "claim_text": claims[0]["claim"],
+               "numbers_missing": ["18"]},
+  )
+
+  report = score_integrity(
+      _snapshot(tmp_path, claims=claims), (first, duplicate_unit))
+
+  assert report.dimensions["quote_authenticity"].evaluated_units == 2
+  assert report.dimensions["quote_authenticity"].passed_units == 1
+  assert report.dimensions["quote_authenticity"].score == 50.0
+  assert report.dimensions["quantitative_grounding"].passed_units == 1
+  assert len(report.dimensions["quantitative_grounding"].findings) == 2
+
+
+def test_quantitative_units_use_distinct_canonical_non_year_numbers(tmp_path):
+  claim_text = "In 2022, readmissions fell 18%, then settled at 12.5%."
+  assert check_claims.extract_numbers(claim_text) == ["18", "12.5"]
+  finding = _finding(
+      ReasonCode.CLAIM_NEEDS_REVIEW,
+      context={"result_index": 0, "claim_text": claim_text,
+               "numbers_missing": ["12.5"]},
+  )
+
+  report = score_integrity(
+      _snapshot(tmp_path, claims=[_claim(claim=claim_text)]), (finding,))
+
+  dimension = report.dimensions["quantitative_grounding"]
+  assert (dimension.evaluated_units, dimension.passed_units) == (2, 1)
+  assert dimension.score == 50.0
+  assert report.integrity_score == 65.0
+
+
+def test_binding_and_coverage_enumerate_each_claim_and_sentence_identity(
+    tmp_path,
+):
+  claims = [
+      _claim(),
+      _claim(paper_id="p2", citation="Lee, 2021",
+             claim="Mortality fell 12% in the intervention arm."),
+  ]
+  corpus = [
+      _record(),
+      _record(key="paper-two", paper_id="p2", author="Ana Lee", year=2021),
+  ]
+  synthesis = (
+      "Readmissions fell 18% (Patel, 2022; Lee, 2021). "
+      "Mortality fell 12% (Lee, 2021).")
+
+  report = score_integrity(_snapshot(
+      tmp_path, claims=claims, corpus=corpus, synthesis=synthesis), ())
+
+  assert report.dimensions["citation_binding"].evaluated_units == 2
+  assert report.dimensions["synthesis_coverage"].evaluated_units == 3
+
+
+def test_zero_numeric_claims_are_not_applicable_and_weights_renormalize(
+    tmp_path,
+):
+  snapshot = _snapshot(tmp_path, claims=[_claim(
+      claim="Readmissions improved in the treatment arm.")], synthesis=(
+          "Readmissions improved in the treatment arm (Patel, 2022)."))
+
+  report = score_integrity(snapshot, ())
+
+  numeric = report.dimensions["quantitative_grounding"]
+  assert (numeric.applicable, numeric.score, numeric.effective_weight) == (
+      False, None, 0.0)
+  assert (numeric.evaluated_units, numeric.passed_units) == (0, 0)
+  assert [dimension.effective_weight for dimension in
+          report.dimensions.values()] == [31.25, 25.0, 0.0, 18.75, 12.5, 12.5]
+  assert report.integrity_score == 100.0
+  assert report.to_dict()["dimensions"]["quote_authenticity"][
+      "effective_weight"] == 31.2
+
+
+def test_global_claim_incomplete_scores_all_dependent_dimensions_zero(
+    tmp_path,
+):
+  incomplete = _finding(
+      ReasonCode.VALIDATOR_INCOMPLETE,
+      severity=Severity.CRITICAL,
+      context={"validator": "claim"},
+  )
+
+  report = score_integrity(_snapshot(tmp_path), (incomplete,))
+
+  for name in (
+      "quote_authenticity", "citation_binding", "quantitative_grounding",
+      "synthesis_coverage",
+  ):
+    dimension = report.dimensions[name]
+    assert dimension.applicable is True
+    assert dimension.score == 0.0
+  assert report.dimensions["bibliography_verification"].score == 100.0
+
+
+def test_unknown_critical_finding_fails_all_applicable_dimensions(tmp_path):
+  unknown = _finding(
+      ReasonCode.ARTIFACT_TYPE_INVALID,
+      severity=Severity.CRITICAL,
+      artifact="unknown-artifact",
+  )
+
+  report = score_integrity(_snapshot(tmp_path), (unknown,))
+
+  assert all(dimension.score == 0.0
+             for dimension in report.dimensions.values())
+  assert report.integrity_score == 0.0
+  assert report.status is IntegrityStatus.INVALID
+
+
+def test_high_score_cannot_override_critical_invalid_status(tmp_path):
+  refs = [
+      {"doi": "10.1/example", "title": "Example Study"},
+      {"doi": "10.1/other", "title": "Other Study"},
+  ]
+  retracted = _finding(
+      ReasonCode.CITATION_RETRACTED,
+      severity=Severity.CRITICAL,
+      artifact="refs.json",
+      context={"result_index": 1},
+  )
+
+  report = score_integrity(_snapshot(tmp_path, refs=refs), (retracted,))
+
+  assert report.integrity_score == 95.0
+  assert report.status is IntegrityStatus.INVALID
+
+
+def test_unscreened_record_fails_artifact_prisma_dimension_closed(tmp_path):
+  corpus = [_record(), _record(
+      key="paper-two", paper_id="p2", status=None, role="other")]
+  incomplete = _finding(
+      ReasonCode.VALIDATOR_INCOMPLETE,
+      severity=Severity.CRITICAL,
+      artifact="corpus.json",
+      context={"validator": "prisma", "unscreened_indices": [1]},
+  )
+
+  report = score_integrity(_snapshot(tmp_path, corpus=corpus), (incomplete,))
+
+  dimension = report.dimensions["prisma_artifact_completeness"]
+  assert dimension.applicable is True
+  assert dimension.score == 0.0
+
+
+def test_report_round_trip_is_strict_and_recomputes_unrounded_values(tmp_path):
+  report = score_integrity(
+      _snapshot(tmp_path, claims=[_claim(), _claim(), _claim()]), (
+      _finding(
+          ReasonCode.CLAIM_NEEDS_REVIEW,
+          context={"result_index": 0, "claim_text": "claim",
+                   "numbers_missing": []},
+      ),
+  ))
+
+  serialized = report.to_dict()
+  assert serialized["dimensions"]["quote_authenticity"]["score"] == 66.7
+  assert report.dimensions["quote_authenticity"].unrounded_score == (
+      100.0 * 2 / 3)
+  assert PassReport.from_dict(serialized) == report
+  serialized["dimensions"]["quote_authenticity"]["passed_units"] = 3
+  try:
+    PassReport.from_dict(serialized)
+  except ValueError as exc:
+    assert "score" in str(exc) or "units" in str(exc)
+  else:
+    raise AssertionError("inconsistent dimension counts were accepted")
+
+
+def test_output_order_is_independent_of_input_and_creation_order(tmp_path):
+  first = _finding(
+      ReasonCode.CLAIM_NEEDS_REVIEW,
+      context={"result_index": 0, "claim_text": "claim",
+               "numbers_missing": []},
+  )
+  second = _finding(
+      ReasonCode.CITATION_RESOLUTION_UNAVAILABLE,
+      artifact="refs.json", context={"result_index": 0},
+  )
+
+  report_a = score_integrity(
+      _snapshot(tmp_path / "a"), (second, first))
+  report_b = score_integrity(
+      _snapshot(tmp_path / "b", reverse_creation=True), (first, second))
+
+  assert report_a.to_dict() == report_b.to_dict()

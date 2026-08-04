@@ -65,7 +65,9 @@ def test_independent_models_round_trip_with_schema_versions():
       message="citation resolves to multiple records",
   )
   dimension = DimensionResult(
-      name="citation_binding", score=80.0, findings=[finding])
+      name="citation_binding", score=80.0, applicable=True,
+      evaluated_units=5, passed_units=4, nominal_weight=20.0,
+      effective_weight=100.0, findings=[finding])
   passed = PassReport(
       integrity_score=80.0,
       findings=[finding],
@@ -92,7 +94,10 @@ def test_independent_models_round_trip_with_schema_versions():
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), -0.1, 100.1])
 def test_scores_must_be_finite_and_within_0_to_100(value):
   with pytest.raises(ValueError, match="score"):
-    DimensionResult(name="citation_binding", score=value, findings=[])
+    DimensionResult(
+        name="citation_binding", score=value, applicable=True,
+        evaluated_units=1, passed_units=1, nominal_weight=20.0,
+        effective_weight=100.0, findings=[])
   with pytest.raises(ValueError, match="score"):
     IntegrityRunReport(
         pass_report=PassReport(
@@ -131,7 +136,9 @@ def test_rejects_unknown_reason_codes_and_duplicate_dimension_names():
         message="not in the public allowlist",
     )
   dimension = DimensionResult(
-      name="citation_binding", score=100.0, findings=[])
+      name="citation_binding", score=100.0, applicable=True,
+      evaluated_units=1, passed_units=1, nominal_weight=20.0,
+      effective_weight=100.0, findings=[])
   with pytest.raises(ValueError, match="duplicate dimension"):
     PassReport(
         integrity_score=100.0,
@@ -143,7 +150,41 @@ def test_rejects_unknown_reason_codes_and_duplicate_dimension_names():
 
 def test_dimensions_only_accept_the_six_stable_identifiers():
   with pytest.raises(ValueError, match="dimension"):
-    DimensionResult(name="unsupported_dimension", score=100.0, findings=[])
+    DimensionResult(
+        name="unsupported_dimension", score=100.0, applicable=True,
+        evaluated_units=1, passed_units=1, nominal_weight=20.0,
+        effective_weight=100.0, findings=[])
+
+
+@pytest.mark.parametrize("overrides", [
+    {"score": None, "applicable": True},
+    {"score": 0.0, "applicable": False},
+    {"score": None, "applicable": False, "evaluated_units": 1},
+    {"score": 50.0, "evaluated_units": 3, "passed_units": 1},
+    {"score": 100.0, "passed_units": 2},
+    {"nominal_weight": 25.0},
+])
+def test_dimension_rejects_inconsistent_counts_applicability_and_weights(
+    overrides,
+):
+  values = {
+      "name": "citation_binding", "score": 100.0, "applicable": True,
+      "evaluated_units": 1, "passed_units": 1, "nominal_weight": 20.0,
+      "effective_weight": 100.0, "findings": [],
+  }
+  values.update(overrides)
+  with pytest.raises(ValueError):
+    DimensionResult(**values)
+
+
+def test_not_applicable_dimension_round_trips_with_null_score():
+  dimension = DimensionResult(
+      name="quantitative_grounding", score=None, applicable=False,
+      evaluated_units=0, passed_units=0, nominal_weight=20.0,
+      effective_weight=0.0, findings=[])
+
+  assert dimension.to_dict()["score"] is None
+  assert DimensionResult.from_dict(dimension.to_dict()) == dimension
 
 
 def test_finding_context_is_recursively_immutable_and_round_trips():
