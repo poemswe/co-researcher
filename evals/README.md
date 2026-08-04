@@ -110,10 +110,13 @@ quality from one snapshot with integrity from another. Empty repair and attack
 breakdowns are omitted.
 
 Every artifact link is relative to its run directory and carries a SHA-256
-digest. The writer rejects unsafe run IDs, symlinks, and existing run
-directories. `index.json` gives the static dashboard a closed list of known
-runs; selecting one run never scans `results/latest` or combines another run's
-cases.
+digest. Publication stages, validates, and syncs the complete run before one
+atomic rename; a registry lock serializes the matching `index.json` update and
+rollback. The writer and loader reject unsafe IDs, links, aliases, oversized
+files, and non-canonical artifact names. `index.json` gives the static dashboard
+a closed list of known runs. The browser verifies the selected `result.json`
+digest before parsing it, couples its metadata and case count to the registry,
+and recomputes displayed status and attack-family totals from the cases.
 
 The 26-case broad benchmark predates integrity evaluation. Its dashboard rows
 are labeled **Quality-only historical run — not integrity evaluated**. A broad

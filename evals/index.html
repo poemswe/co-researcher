@@ -1635,6 +1635,12 @@
             padding: var(--spacing-md);
         }
 
+        .integrity-run-summary.integrity-run-error {
+            border-color: var(--accent-danger);
+            color: var(--accent-danger);
+            font-weight: 700;
+        }
+
         .integrity-case-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1851,7 +1857,7 @@
         // Configuration - uses relative path for GitHub Pages compatibility
         const GITHUB_RAW_URL = 'benchmark_overview.json';
         const INTEGRITY_RUN_INDEX_URL = 'results/runs/index.json';
-        const INTEGRITY_RUN_ID = /^run[-_][A-Za-z0-9](?:[A-Za-z0-9._-]{0,125}[A-Za-z0-9])?$/;
+        const INTEGRITY_RUN_ID = /^run[-_][a-z0-9](?:[a-z0-9._-]{0,125}[a-z0-9])?$/;
         const QUALITY_ONLY_LABEL = 'Quality-only historical run — not integrity evaluated';
         let globalOverview = null;
         let detailedRuns = {};
@@ -1911,8 +1917,9 @@
             return value;
         }
 
-        function parseIntegrityRunData(value, selectedRunId) {
-            const selected = requireRunId(selectedRunId);
+        function parseIntegrityRunData(value, registryEntry) {
+            const entry = parseIntegrityRunIndexEntry(registryEntry);
+            const selected = entry.run_id;
             const report = requireExactFields(value, [
                 'schema_version', 'evaluation_kind', 'evaluation_label', 'run_id',
                 'timestamp', 'model', 'capability', 'summary', 'cases'
@@ -1928,6 +1935,12 @@
                 typeof report.model !== 'string' || !report.model.trim()) {
                 throw new Error('integrity run metadata is invalid');
             }
+            if (report.timestamp !== entry.timestamp || report.model !== entry.model ||
+                report.capability !== entry.capability ||
+                report.evaluation_kind !== entry.evaluation_kind ||
+                report.evaluation_label !== entry.evaluation_label) {
+                throw new Error('integrity run metadata does not match its registry entry');
+            }
             requireExactFields(report.summary,
                 ['case_count', 'integrity_status_counts'],
                 ['attack_family_breakdown'], 'run summary');
@@ -1939,7 +1952,8 @@
                     return total + count;
                 }, 0);
             if (!Number.isInteger(report.summary.case_count) || report.summary.case_count < 1 ||
-                !Array.isArray(report.cases) || report.cases.length !== report.summary.case_count) {
+                !Array.isArray(report.cases) || report.cases.length !== report.summary.case_count ||
+                report.summary.case_count !== entry.case_count) {
                 throw new Error('selected run total does not match its cases');
             }
             if (statusTotal !== report.summary.case_count) {
@@ -1954,6 +1968,8 @@
                 }
             }
             const seen = new Set();
+            const recomputedCounts = {valid: 0, valid_with_warnings: 0, invalid: 0};
+            const recomputedAttacks = {};
             report.cases.forEach(caseResult => {
                 requireExactFields(caseResult,
                     ['case_id', 'first_pass', 'final', 'artifact'],
@@ -1964,12 +1980,17 @@
                 seen.add(caseResult.case_id);
                 parseIntegritySnapshot(caseResult.first_pass, 'first_pass');
                 parseIntegritySnapshot(caseResult.final, 'final');
+                recomputedCounts[caseResult.final.status] += 1;
                 requireExactFields(caseResult.artifact, ['path', 'sha256'], [], 'artifact');
                 requireArtifactReference(
                     caseResult.artifact, `artifacts/${caseResult.case_id}.json`, 'case');
                 if (Object.prototype.hasOwnProperty.call(caseResult, 'attack_family') &&
                     (typeof caseResult.attack_family !== 'string' || !caseResult.attack_family.trim())) {
                     throw new Error('attack_family is invalid');
+                }
+                if (Object.prototype.hasOwnProperty.call(caseResult, 'attack_family')) {
+                    recomputedAttacks[caseResult.attack_family] =
+                        (recomputedAttacks[caseResult.attack_family] || 0) + 1;
                 }
                 if (Object.prototype.hasOwnProperty.call(caseResult, 'repair_rounds') &&
                     (!Array.isArray(caseResult.repair_rounds) || caseResult.repair_rounds.length === 0)) {
@@ -1995,7 +2016,38 @@
                     });
                 }
             });
+            if (Object.keys(recomputedCounts).some(name =>
+                report.summary.integrity_status_counts[name] !== recomputedCounts[name])) {
+                throw new Error('run summary does not match selected run cases');
+            }
+            const claimedAttacks = report.summary.attack_family_breakdown;
+            const attackNames = Object.keys(recomputedAttacks).sort();
+            if ((attackNames.length === 0) !== (claimedAttacks === undefined) ||
+                (attackNames.length > 0 && (
+                    Object.keys(claimedAttacks).sort().join('\0') !== attackNames.join('\0') ||
+                    attackNames.some(name => claimedAttacks[name] !== recomputedAttacks[name])))) {
+                throw new Error('run summary attack families do not match selected run cases');
+            }
             return report;
+        }
+
+        function parseIntegrityRunIndexEntry(value) {
+            const entry = requireExactFields(value, [
+                'run_id', 'timestamp', 'model', 'capability', 'evaluation_kind',
+                'evaluation_label', 'case_count', 'result_file', 'result_sha256'
+            ], [], 'run index entry');
+            const runId = requireRunId(entry.run_id);
+            if (entry.result_file !== `${runId}/result.json` ||
+                !/^[0-9a-f]{64}$/.test(entry.result_sha256) ||
+                !Number.isInteger(entry.case_count) || entry.case_count < 1 ||
+                typeof entry.timestamp !== 'string' || !entry.timestamp.trim() ||
+                typeof entry.model !== 'string' || !entry.model.trim() ||
+                entry.capability !== 'literature-review-integrity' ||
+                entry.evaluation_kind !== 'quality_and_integrity' ||
+                entry.evaluation_label !== 'Paired quality and integrity evaluation') {
+                throw new Error('invalid run index entry');
+            }
+            return entry;
         }
 
         function parseIntegrityRunIndex(value) {
@@ -2005,26 +2057,17 @@
             }
             const seen = new Set();
             return index.runs.map(value => {
-                const entry = requireExactFields(value, [
-                    'run_id', 'timestamp', 'model', 'capability', 'evaluation_kind',
-                    'evaluation_label', 'result_file', 'result_sha256'
-                ], [], 'run index entry');
-                const runId = requireRunId(entry.run_id);
+                const entry = parseIntegrityRunIndexEntry(value);
+                const runId = entry.run_id;
                 if (seen.has(runId)) throw new Error('duplicate run ID');
                 seen.add(runId);
-                if (entry.result_file !== `${runId}/result.json` ||
-                    !/^[0-9a-f]{64}$/.test(entry.result_sha256) ||
-                    entry.capability !== 'literature-review-integrity' ||
-                    entry.evaluation_kind !== 'quality_and_integrity' ||
-                    entry.evaluation_label !== 'Paired quality and integrity evaluation') {
-                    throw new Error('invalid run index entry');
-                }
                 return entry;
             });
         }
 
         function adaptQualityOnlyHistory(run) {
             if (!isPlainObject(run)) throw new Error('quality history run must be an object');
+            requireRunId(run.run_id, 'quality history run ID');
             return {
                 ...run,
                 evaluation_kind: 'quality_only_history',
@@ -2035,6 +2078,47 @@
             };
         }
 
+        function adaptQualityOnlyHistoryRuns(runs) {
+            if (!Array.isArray(runs)) throw new Error('quality history runs must be an array');
+            const seen = new Set();
+            return runs.map(run => {
+                const adapted = adaptQualityOnlyHistory(run);
+                const portableId = adapted.run_id.toLowerCase();
+                if (seen.has(portableId)) throw new Error('duplicate quality history run ID');
+                seen.add(portableId);
+                return adapted;
+            });
+        }
+
+        async function parseIntegrityRunResponse(entry, response) {
+            if (!response.ok) throw new Error(`cannot load run ID: ${entry.run_id}`);
+            const payload = await response.arrayBuffer();
+            const digest = await crypto.subtle.digest('SHA-256', payload);
+            const actual = Array.from(new Uint8Array(digest), byte =>
+                byte.toString(16).padStart(2, '0')).join('');
+            if (actual !== entry.result_sha256) {
+                throw new Error('selected run result SHA-256 mismatch');
+            }
+            let value;
+            try {
+                value = JSON.parse(new TextDecoder('utf-8', {fatal: true}).decode(payload));
+            } catch (error) {
+                throw new Error(`cannot parse selected run: ${error.message}`);
+            }
+            return parseIntegrityRunData(value, entry);
+        }
+
+        function clearIntegrityRunView(message = 'No isolated integrity run selected.') {
+            selectedIntegrityRun = null;
+            const summary = document.getElementById('integrityRunSummary');
+            summary.textContent = message;
+            summary.classList.toggle('integrity-run-error',
+                message !== 'No isolated integrity run selected.' && message !== 'Loading selected run…');
+            document.getElementById('integrityRunCases').innerHTML = '';
+            document.getElementById('integrityEvaluationLabel').textContent =
+                'Paired quality and integrity evaluation. Quality scores and integrity scores are separate measurements; integrity status is not a quality pass label.';
+        }
+
         async function loadData() {
             try {
                 const response = await fetch(`${GITHUB_RAW_URL}?t=${new Date().getTime()}`);
@@ -2042,7 +2126,7 @@
                 const qualityHistory = await response.json();
                 globalOverview = {
                     ...qualityHistory,
-                    runs: (qualityHistory.runs || []).map(adaptQualityOnlyHistory)
+                    runs: adaptQualityOnlyHistoryRuns(qualityHistory.runs || [])
                 };
                 renderDashboard(globalOverview);
             } catch (error) {
@@ -2075,18 +2159,29 @@
                 await handleIntegrityRunChange();
             } catch (error) {
                 selector.disabled = true;
-                document.getElementById('integrityRunSummary').textContent = error.message;
+                clearIntegrityRunView(error.message);
             }
         }
 
         async function handleIntegrityRunChange() {
-            const runId = requireRunId(document.getElementById('integrityRunFilter').value);
-            const entry = integrityRunIndex.find(value => value.run_id === runId);
-            if (!entry) throw new Error(`unknown run ID: ${runId}`);
-            const response = await fetch(`results/runs/${entry.result_file}`);
-            if (!response.ok) throw new Error(`cannot load run ID: ${runId}`);
-            selectedIntegrityRun = parseIntegrityRunData(await response.json(), runId);
-            renderIntegrityRun();
+            const selector = document.getElementById('integrityRunFilter');
+            clearIntegrityRunView('Loading selected run…');
+            try {
+                const runId = requireRunId(selector.value);
+                const entry = integrityRunIndex.find(value => value.run_id === runId);
+                if (!entry) throw new Error(`unknown run ID: ${runId}`);
+                const response = await fetch(`results/runs/${entry.result_file}`);
+                selectedIntegrityRun = await parseIntegrityRunResponse(entry, response);
+                selector.removeAttribute('aria-invalid');
+                document.getElementById('integrityRunSummary').classList.toggle(
+                    'integrity-run-error', false);
+                renderIntegrityRun();
+                return selectedIntegrityRun;
+            } catch (error) {
+                selector.setAttribute('aria-invalid', 'true');
+                clearIntegrityRunView(`Cannot display selected run: ${error.message}`);
+                return null;
+            }
         }
 
         function setIntegritySnapshot(snapshot) {

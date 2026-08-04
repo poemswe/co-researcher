@@ -1,9 +1,12 @@
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
 import sys
+import threading
+import time
 from types import SimpleNamespace
 from html.parser import HTMLParser
 
@@ -31,6 +34,7 @@ from lib.run_reports import (  # noqa: E402
 from review_integrity.models import IntegrityRunReport  # noqa: E402
 import run_eval  # noqa: E402
 from lib import literature_integrity  # noqa: E402
+from lib import run_reports  # noqa: E402
 
 
 def _evaluation(quality_score: float) -> IntegrityEvalResult:
@@ -197,6 +201,21 @@ def test_run_ids_cannot_escape_the_runs_directory(run_id):
     _run(run_id, 81.0)
 
 
+def test_run_ids_are_lowercase_for_portable_uniqueness():
+  with pytest.raises(ValueError, match="unsafe run_id"):
+    _run("run-Case", 81.0)
+
+
+def test_quality_history_rejects_case_variant_run_ids():
+  history = json.loads((ROOT / "evals/benchmark_overview.json").read_text())
+  duplicate = dict(history["runs"][0])
+  duplicate["run_id"] = "run-Case"
+  history["runs"].append(duplicate)
+
+  with pytest.raises(ValueError, match="unsafe run_id"):
+    adapt_quality_history(history)
+
+
 def test_writer_refuses_a_symlink_at_the_selected_run_id(tmp_path):
   runs = tmp_path / "runs"
   runs.mkdir()
@@ -209,6 +228,40 @@ def test_writer_refuses_a_symlink_at_the_selected_run_id(tmp_path):
   assert tuple(outside.iterdir()) == ()
 
 
+def test_writer_rejects_a_symlinked_registry_lock(tmp_path):
+  runs = tmp_path / "runs"
+  runs.mkdir()
+  outside = tmp_path / "outside.lock"
+  outside.write_text("do not touch")
+  (runs / ".index.lock").symlink_to(outside)
+
+  with pytest.raises((OSError, ValueError)):
+    write_run_report(_run("run-lock-link", 81.0), tmp_path)
+  assert outside.read_text() == "do not touch"
+
+
+def test_writer_rejects_a_hardlinked_registry_lock(tmp_path):
+  runs = tmp_path / "runs"
+  runs.mkdir()
+  outside = tmp_path / "outside.lock"
+  outside.write_text("do not touch")
+  os.link(outside, runs / ".index.lock")
+
+  with pytest.raises(ValueError, match="single-link"):
+    write_run_report(_run("run-lock-hardlink", 81.0), tmp_path)
+  assert outside.read_text() == "do not touch"
+
+
+def test_dashboard_loader_rejects_symlinked_selected_run(tmp_path):
+  run_path = write_run_report(_run("run-linked-load", 81.0), tmp_path)
+  outside = tmp_path / "moved-run"
+  run_path.rename(outside)
+  run_path.symlink_to(outside, target_is_directory=True)
+
+  with pytest.raises(ValueError, match="unknown run_id"):
+    load_dashboard_data(tmp_path, "run-linked-load")
+
+
 def test_dashboard_loader_rejects_a_tampered_task8_artifact(tmp_path):
   run_path = write_run_report(_run("run-tampered", 81.0), tmp_path)
   artifact = run_path / "artifacts" / "case-1.json"
@@ -216,6 +269,89 @@ def test_dashboard_loader_rejects_a_tampered_task8_artifact(tmp_path):
 
   with pytest.raises(ValueError, match="SHA-256 mismatch"):
     load_dashboard_data(tmp_path, "run-tampered")
+
+
+def test_dashboard_loader_couples_case_count_to_registry(tmp_path):
+  write_run_report(_run("run-count", 81.0), tmp_path)
+  index_path = tmp_path / "runs" / "index.json"
+  registry = json.loads(index_path.read_text())
+  registry["runs"][0]["case_count"] = 2
+  index_path.write_text(json.dumps(registry))
+
+  with pytest.raises(ValueError, match="metadata does not match"):
+    load_dashboard_data(tmp_path, "run-count")
+
+
+def _rewrite_result_and_registry(tmp_path, run_id, mutate):
+  result_path = tmp_path / "runs" / run_id / "result.json"
+  result = json.loads(result_path.read_text())
+  mutate(result)
+  payload = (json.dumps(result, indent=2, sort_keys=True) + "\n").encode()
+  result_path.write_bytes(payload)
+  registry_path = tmp_path / "runs" / "index.json"
+  registry = json.loads(registry_path.read_text())
+  entry = next(item for item in registry["runs"] if item["run_id"] == run_id)
+  entry["result_sha256"] = hashlib.sha256(payload).hexdigest()
+  registry_path.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
+
+
+def test_dashboard_loader_rejects_symlinked_artifact_parent(tmp_path):
+  run_path = write_run_report(_run("run-parent-link", 81.0), tmp_path)
+  outside = tmp_path / "outside-artifacts"
+  (run_path / "artifacts").rename(outside)
+  (run_path / "artifacts").symlink_to(outside, target_is_directory=True)
+
+  with pytest.raises(ValueError, match="artifact"):
+    load_dashboard_data(tmp_path, "run-parent-link")
+
+
+def test_dashboard_loader_rejects_hardlinked_artifact(tmp_path):
+  run_path = write_run_report(_run("run-hardlink", 81.0), tmp_path)
+  artifact = run_path / "artifacts" / "case-1.json"
+  second_link = tmp_path / "artifact-hardlink.json"
+  os.link(artifact, second_link)
+
+  with pytest.raises(ValueError, match="single-link"):
+    load_dashboard_data(tmp_path, "run-hardlink")
+
+
+def test_dashboard_loader_rejects_noncanonical_artifact_alias(tmp_path):
+  run_path = write_run_report(_run("run-alias", 81.0), tmp_path)
+  artifact = run_path / "artifacts" / "case-1.json"
+  alias = run_path / "artifacts" / "alias.json"
+  shutil.copyfile(artifact, alias)
+  alias_digest = hashlib.sha256(alias.read_bytes()).hexdigest()
+  _rewrite_result_and_registry(
+      tmp_path, "run-alias",
+      lambda result: result["cases"][0].update(
+          artifact={"path": "artifacts/alias.json", "sha256": alias_digest}),
+  )
+
+  with pytest.raises(ValueError, match="canonical"):
+    load_dashboard_data(tmp_path, "run-alias")
+
+
+def test_dashboard_loader_rejects_unreferenced_artifact(tmp_path):
+  run_path = write_run_report(_run("run-extra-artifact", 81.0), tmp_path)
+  (run_path / "artifacts" / "extra.json").write_text("{}\n")
+
+  with pytest.raises(ValueError, match="unexpected"):
+    load_dashboard_data(tmp_path, "run-extra-artifact")
+
+
+def test_dashboard_loader_rejects_oversized_artifact(tmp_path):
+  run_path = write_run_report(_run("run-oversized", 81.0), tmp_path)
+  artifact = run_path / "artifacts" / "case-1.json"
+  payload = artifact.read_bytes() + b" " * (16 * 1024 * 1024)
+  artifact.write_bytes(payload)
+  digest = hashlib.sha256(payload).hexdigest()
+  _rewrite_result_and_registry(
+      tmp_path, "run-oversized",
+      lambda result: result["cases"][0]["artifact"].update(sha256=digest),
+  )
+
+  with pytest.raises(ValueError, match="size limit"):
+    load_dashboard_data(tmp_path, "run-oversized")
 
 
 def test_dashboard_loader_rejects_boolean_summary_counts(tmp_path):
@@ -258,6 +394,161 @@ def test_writer_refuses_a_registry_with_unknown_fields(tmp_path):
   with pytest.raises(ValueError, match="unknown fields"):
     write_run_report(_run("run-second", 82.0), tmp_path)
   assert not (tmp_path / "runs" / "run-second").exists()
+
+
+def test_failed_run_write_leaves_no_partial_run_and_can_retry(
+    monkeypatch, tmp_path,
+):
+  original = run_reports._write_exclusive
+
+  def fail_result(path, payload):
+    if path.name == "result.json":
+      raise OSError("injected result write failure")
+    return original(path, payload)
+
+  monkeypatch.setattr(run_reports, "_write_exclusive", fail_result)
+  with pytest.raises(OSError, match="injected result write failure"):
+    write_run_report(_run("run-retry-write", 81.0), tmp_path)
+
+  runs = tmp_path / "runs"
+  assert not (runs / "run-retry-write").exists()
+  assert not list(runs.glob(".run-retry-write-*.tmp"))
+  monkeypatch.setattr(run_reports, "_write_exclusive", original)
+  assert write_run_report(_run("run-retry-write", 81.0), tmp_path).is_dir()
+
+
+def test_failed_registry_publication_rolls_back_run_and_registry(
+    monkeypatch, tmp_path,
+):
+  original = run_reports._update_registry
+
+  def publish_then_fail(*args, **kwargs):
+    original(*args, **kwargs)
+    raise OSError("injected post-registry failure")
+
+  monkeypatch.setattr(run_reports, "_update_registry", publish_then_fail)
+  with pytest.raises(OSError, match="injected post-registry failure"):
+    write_run_report(_run("run-retry-registry", 81.0), tmp_path)
+
+  runs = tmp_path / "runs"
+  assert not (runs / "run-retry-registry").exists()
+  if (runs / "index.json").exists():
+    registry = json.loads((runs / "index.json").read_text())
+    assert registry["runs"] == []
+  monkeypatch.setattr(run_reports, "_update_registry", original)
+  assert write_run_report(_run("run-retry-registry", 81.0), tmp_path).is_dir()
+
+
+def test_concurrent_distinct_writers_both_remain_in_registry(
+    monkeypatch, tmp_path,
+):
+  original = run_reports._read_registry
+  rendezvous = threading.Barrier(2)
+  calls = {}
+  calls_lock = threading.Lock()
+
+  def synchronized_read(*args, **kwargs):
+    result = original(*args, **kwargs)
+    thread_id = threading.get_ident()
+    with calls_lock:
+      calls[thread_id] = calls.get(thread_id, 0) + 1
+      update_read = calls[thread_id] == 2
+    if update_read:
+      rendezvous.wait(timeout=5)
+    return result
+
+  monkeypatch.setattr(run_reports, "_read_registry", synchronized_read)
+  outcomes = []
+
+  def worker(run_id, score):
+    try:
+      outcomes.append(write_run_report(_run(run_id, score), tmp_path))
+    except Exception as exc:  # pragma: no cover - asserted below
+      outcomes.append(exc)
+
+  threads = [
+      threading.Thread(target=worker, args=("run-concurrent-one", 81.0)),
+      threading.Thread(target=worker, args=("run-concurrent-two", 82.0)),
+  ]
+  for thread in threads:
+    thread.start()
+  for thread in threads:
+    thread.join(timeout=10)
+
+  assert all(isinstance(outcome, pathlib.Path) for outcome in outcomes), outcomes
+  registry = json.loads((tmp_path / "runs" / "index.json").read_text())
+  assert [entry["run_id"] for entry in registry["runs"]] == [
+      "run-concurrent-one", "run-concurrent-two"]
+
+
+def test_concurrent_same_id_has_exactly_one_success(tmp_path):
+  start = threading.Barrier(2)
+  outcomes = []
+
+  def worker():
+    start.wait(timeout=5)
+    try:
+      outcomes.append(write_run_report(
+          _run("run-concurrent-same", 81.0), tmp_path))
+    except Exception as exc:
+      outcomes.append(exc)
+
+  threads = [threading.Thread(target=worker) for _ in range(2)]
+  for thread in threads:
+    thread.start()
+  for thread in threads:
+    thread.join(timeout=10)
+
+  assert sum(isinstance(outcome, pathlib.Path) for outcome in outcomes) == 1
+  assert sum(isinstance(outcome, FileExistsError) for outcome in outcomes) == 1, outcomes
+
+
+def test_concurrent_processes_preserve_both_registry_entries(tmp_path):
+  inputs = []
+  for run_id, score in (
+      ("run-process-one", 81.0), ("run-process-two", 82.0)):
+    path = tmp_path / f"{run_id}.json"
+    path.write_text(json.dumps(_run(run_id, score).to_dict()))
+    inputs.append(path)
+  go = tmp_path / "go"
+  script = r"""
+import json
+import pathlib
+import sys
+import time
+sys.path.insert(0, sys.argv[1])
+from lib.run_reports import CombinedRunResult, write_run_report
+payload = CombinedRunResult.from_dict(json.loads(pathlib.Path(sys.argv[2]).read_text()))
+pathlib.Path(sys.argv[3]).write_text('ready')
+deadline = time.monotonic() + 10
+while not pathlib.Path(sys.argv[4]).exists():
+  if time.monotonic() >= deadline:
+    raise TimeoutError('process rendezvous timed out')
+  time.sleep(0.01)
+write_run_report(payload, pathlib.Path(sys.argv[5]))
+"""
+  processes = []
+  ready_paths = []
+  for index, input_path in enumerate(inputs):
+    ready = tmp_path / f"ready-{index}"
+    ready_paths.append(ready)
+    processes.append(subprocess.Popen(
+        [sys.executable, "-c", script, str(ROOT / "evals"),
+         str(input_path), str(ready), str(go), str(tmp_path / "results")],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
+  deadline = time.monotonic() + 10
+  while not all(path.exists() for path in ready_paths):
+    if time.monotonic() >= deadline:
+      raise AssertionError("subprocesses did not reach rendezvous")
+    time.sleep(0.01)
+  go.write_text("go")
+  completed = [process.communicate(timeout=15) for process in processes]
+
+  assert [process.returncode for process in processes] == [0, 0], completed
+  registry = json.loads(
+      (tmp_path / "results" / "runs" / "index.json").read_text())
+  assert [entry["run_id"] for entry in registry["runs"]] == [
+      "run-process-one", "run-process-two"]
 
 
 def test_combined_case_deserializes_task8_with_a_closed_schema():
@@ -362,10 +653,31 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
   script_path.write_text(main_script)
   driver = r"""
     const fs = require('fs');
+    const { webcrypto } = require('crypto');
     const vm = require('vm');
+    const classes = new Set();
+    const elements = {
+      integrityRunFilter: {
+        value: '../bad', disabled: false, innerHTML: '',
+        setAttribute(name, value) { this[name] = value; },
+        removeAttribute(name) { delete this[name]; },
+      },
+      integrityRunSummary: {
+        textContent: 'stale summary',
+        classList: { toggle(name, active) {
+          if (active) classes.add(name); else classes.delete(name);
+        }},
+      },
+      integrityRunCases: { innerHTML: 'stale cases' },
+      integrityEvaluationLabel: { textContent: 'stale label' },
+      firstPassToggle: { disabled: false, classList: { toggle() {} } },
+      finalToggle: { disabled: false, classList: { toggle() {} } },
+    };
     const context = {
       window: { addEventListener() {} },
-      document: { body: {} },
+      document: { body: {}, getElementById(id) { return elements[id]; } },
+      crypto: webcrypto,
+      TextDecoder,
       console,
     };
     vm.createContext(context);
@@ -389,20 +701,27 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
         artifact: {path: 'artifacts/case-1.json', sha256: 'c'.repeat(64)},
       }],
     };
-    const selected = context.parseIntegrityRunData(report, 'run-selected');
+    const entry = {
+      run_id: 'run-selected', timestamp: report.timestamp, model: report.model,
+      capability: report.capability, evaluation_kind: report.evaluation_kind,
+      evaluation_label: report.evaluation_label, case_count: 1,
+      result_file: 'run-selected/result.json', result_sha256: 'f'.repeat(64),
+    };
+    const selected = context.parseIntegrityRunData(report, entry);
     if (selected.summary.case_count !== 1) process.exit(2);
     if (selected.cases[0].first_pass.quality_score !== 81) process.exit(3);
     if (selected.cases[0].final.integrity_score !== 100) process.exit(4);
     const traversal = JSON.parse(JSON.stringify(report));
     traversal.cases[0].artifact.path = '../case-1.json';
     try {
-      context.parseIntegrityRunData(traversal, 'run-selected');
+      context.parseIntegrityRunData(traversal, entry);
       process.exit(11);
     } catch (error) {
       if (!String(error).includes('artifact reference')) process.exit(12);
     }
     try {
-      context.parseIntegrityRunData(report, 'run-unknown');
+      context.parseIntegrityRunData(report, {...entry,
+        run_id: 'run-unknown', result_file: 'run-unknown/result.json'});
       process.exit(5);
     } catch (error) {
       if (!String(error).includes('unknown run ID')) process.exit(6);
@@ -413,10 +732,11 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       attempt: 1, integrity_score: 100, status: 'valid', action: 'pass',
       path: 'repair-rounds/case-1-round-01.json', sha256: 'd'.repeat(64),
     }];
-    context.parseIntegrityRunData(withBreakdown, 'run-selected');
+    withBreakdown.summary.attack_family_breakdown = {'citation-substitution': 1};
+    context.parseIntegrityRunData(withBreakdown, entry);
     withBreakdown.cases[0].repair_rounds[0].overall_score = 100;
     try {
-      context.parseIntegrityRunData(withBreakdown, 'run-selected');
+      context.parseIntegrityRunData(withBreakdown, entry);
       process.exit(9);
     } catch (error) {
       if (!String(error).includes('closed schema')) process.exit(10);
@@ -426,6 +746,49 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     });
     if (historical.integrity_score !== null) process.exit(7);
     if (historical.status !== 'not_evaluated') process.exit(8);
+
+    const falseCounts = JSON.parse(JSON.stringify(report));
+    falseCounts.summary.integrity_status_counts = {
+      valid: 0, valid_with_warnings: 0, invalid: 1,
+    };
+    try {
+      context.parseIntegrityRunData(falseCounts, entry);
+      process.exit(13);
+    } catch (error) {
+      if (!String(error).includes('summary')) process.exit(14);
+    }
+    try {
+      context.parseIntegrityRunData(report, {...entry, model: 'other:model'});
+      process.exit(15);
+    } catch (error) {
+      if (!String(error).includes('metadata')) process.exit(16);
+    }
+    try {
+      context.adaptQualityOnlyHistory({run_id: 'run-Case', average_score: 88.5});
+      process.exit(17);
+    } catch (error) {
+      if (!String(error).includes('unsafe')) process.exit(18);
+    }
+
+    (async () => {
+      const bytes = Buffer.from(JSON.stringify(report));
+      const response = {ok: true, async arrayBuffer() {
+        return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      }};
+      try {
+        await context.parseIntegrityRunResponse(entry, response);
+        process.exit(19);
+      } catch (error) {
+        if (!String(error).includes('SHA-256')) process.exit(20);
+      }
+      await context.handleIntegrityRunChange();
+      if (elements.integrityRunCases.innerHTML !== '') process.exit(21);
+      if (!classes.has('integrity-run-error')) process.exit(22);
+      if (!elements.integrityRunSummary.textContent.includes('unsafe')) process.exit(23);
+    })().catch(error => {
+      console.error(error);
+      process.exit(24);
+    });
   """
 
   completed = subprocess.run(
