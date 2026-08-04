@@ -361,6 +361,16 @@ def citation_findings(
 ) -> tuple[Finding, ...]:
   """Map an explicit citation report without constructing a resolver."""
   if report is None:
+    if bibliography == []:
+      return ()
+    if isinstance(bibliography, list) and bibliography:
+      return (Finding(
+          reason_code=ReasonCode.CITATION_RESOLUTION_UNAVAILABLE,
+          severity=Severity.WARNING,
+          artifact="refs.json",
+          message="external citation resolution was not supplied",
+          context={"response_status": "unavailable"},
+      ),)
     return (_incomplete("citation", "refs.json"),)
   valid, _entries = _valid_citation_report(report, bibliography)
   if not valid:

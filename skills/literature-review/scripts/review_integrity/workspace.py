@@ -238,6 +238,15 @@ def _decode_json(payload: bytes, relative_path: str) -> object:
         f"artifact contains malformed JSON: {relative_path}: {exc}") from exc
 
 
+def decode_json_bytes(payload: bytes, label: str) -> object:
+  """Decode retained JSON bytes with the workspace's strict JSON rules."""
+  if type(payload) is not bytes:
+    raise WorkspaceError("JSON payload must be immutable bytes")
+  if type(label) is not str or not label:
+    raise WorkspaceError("JSON input label must be a nonempty string")
+  return _decode_json(payload, label)
+
+
 def _secure_open_flags(*, directory: bool) -> int:
   no_follow = getattr(os, "O_NOFOLLOW", 0)
   directory_only = getattr(os, "O_DIRECTORY", 0)
