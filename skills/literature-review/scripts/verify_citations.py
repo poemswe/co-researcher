@@ -38,6 +38,7 @@ and withdrawn references.
 # ///
 
 import argparse
+from datetime import datetime, timezone
 import difflib
 import json
 import os
@@ -45,6 +46,7 @@ import pathlib
 import re
 import sys
 import urllib.parse
+from typing import Protocol
 
 import http_client
 
@@ -68,6 +70,17 @@ _CROSSREF = http_client.HttpClient(
 
 _DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"'<>]+")
 _TITLE_MATCH_THRESHOLD = 0.85
+
+
+class ResolverUnavailable(RuntimeError):
+  """The resolver could not answer; this is not authoritative not-found."""
+
+
+class CitationResolver(Protocol):
+  identity: str
+
+  def resolve(self, entry: dict) -> dict:
+    """Return one legacy-shaped citation result or raise unavailable."""
 
 
 def _extract_doi(text: str) -> str | None:
@@ -146,7 +159,8 @@ def _pmid_from_openalex(work: dict) -> str | None:
   return pmid_url.rstrip("/").rpartition("/")[2] or None
 
 
-def resolve_doi(doi: str) -> dict | None:
+def resolve_doi(doi: str, *, fail_on_unavailable: bool = False) -> dict | None:
+  openalex_unavailable = False
   try:
     work = _OPENALEX.fetch_json(
         f"https://api.openalex.org/works/https://doi.org/{doi}")
@@ -156,15 +170,22 @@ def resolve_doi(doi: str) -> dict | None:
   except http_client.HttpError as err:
     if err.status_code != 404:
       print(f"OpenAlex error for DOI {doi}: {err}", file=sys.stderr)
+      openalex_unavailable = True
   query = urllib.parse.urlencode(
       {"query": f'DOI:"{doi}"', "format": "json", "pageSize": 1})
   try:
     data = _EPMC.fetch_json(f"search?{query}")
   except http_client.HttpError as err:
     print(f"Europe PMC error for DOI {doi}: {err}", file=sys.stderr)
+    if fail_on_unavailable:
+      raise ResolverUnavailable(
+          f"citation resolver unavailable for DOI {doi}") from err
     return None
   hits = data.get("resultList", {}).get("result", [])
   if not hits:
+    if openalex_unavailable and fail_on_unavailable:
+      raise ResolverUnavailable(
+          f"citation resolver unavailable for DOI {doi}")
     return None
   return {"title": hits[0].get("title"), "doi": hits[0].get("doi") or doi,
           "source": "epmc", "retracted": False, "pmid": hits[0].get("pmid")}
@@ -225,13 +246,16 @@ def retracted_via_epmc(pmid: str) -> bool | None:
              for c in corrections)
 
 
-def resolve_title(title: str) -> dict | None:
+def resolve_title(title: str, *, fail_on_unavailable: bool = False) -> dict | None:
   query = urllib.parse.urlencode(
       {"filter": f"title.search:{title}", "per-page": 1})
   try:
     data = _OPENALEX.fetch_json(f"https://api.openalex.org/works?{query}")
   except http_client.HttpError as err:
     print(f"OpenAlex error for title {title!r}: {err}", file=sys.stderr)
+    if fail_on_unavailable:
+      raise ResolverUnavailable(
+          f"citation resolver unavailable for title {title!r}") from err
     return None
   hits = data.get("results", [])
   if not hits or not titles_match(title, hits[0].get("title") or ""):
@@ -279,12 +303,12 @@ def _retraction_state(hit: dict) -> tuple[bool, bool, str | None]:
   return False, True, "+".join(consulted)
 
 
-def verify_one(entry: dict) -> dict:
+def verify_one(entry: dict, *, fail_on_unavailable: bool = False) -> dict:
   result = {"input": entry["raw"], "status": "not_found",
             "doi": entry.get("doi"), "matched_title": None, "source": None,
             "retraction_checked": False, "retraction_source": None}
   if entry.get("doi"):
-    hit = resolve_doi(entry["doi"])
+    hit = resolve_doi(entry["doi"], fail_on_unavailable=fail_on_unavailable)
     if hit:
       retracted, checked, via = _retraction_state(hit)
       result.update(status="verified", doi=hit["doi"],
@@ -299,7 +323,8 @@ def verify_one(entry: dict) -> dict:
           result["status"] = "mismatched"
     return result
   if entry.get("title"):
-    hit = resolve_title(entry["title"])
+    hit = resolve_title(entry["title"],
+                        fail_on_unavailable=fail_on_unavailable)
     if hit:
       retracted, checked, via = _retraction_state(hit)
       result.update(status="verified", doi=hit["doi"],
@@ -308,6 +333,77 @@ def verify_one(entry: dict) -> dict:
       if retracted:
         result["status"] = "retracted"
   return result
+
+
+class NetworkCitationResolver:
+  """Production resolver backed by the module's configured network clients."""
+
+  identity = "openalex+crossref+europepmc"
+
+  def resolve(self, entry: dict) -> dict:
+    return verify_one(entry, fail_on_unavailable=True)
+
+
+def _unavailable_result(entry: dict, message: str) -> dict:
+  return {"input": entry.get("raw"), "status": "unavailable",
+          "doi": entry.get("doi"), "matched_title": None, "source": None,
+          "retraction_checked": False, "retraction_source": None,
+          "error": message}
+
+
+def _checked_at_iso(checked_at: datetime) -> str:
+  if not isinstance(checked_at, datetime) or checked_at.tzinfo is None:
+    raise ValueError("checked_at must be an aware datetime")
+  offset = checked_at.utcoffset()
+  if offset is None:
+    raise ValueError("checked_at must be an aware datetime")
+  return checked_at.astimezone(timezone.utc).isoformat().replace(
+      "+00:00", "Z")
+
+
+def verify_citation_entries(
+    entries: list[dict], resolver: CitationResolver, checked_at: datetime,
+) -> dict:
+  """Deterministically verify explicit entries with an injected resolver."""
+  if not isinstance(entries, list) or not all(
+      isinstance(entry, dict) for entry in entries):
+    raise ValueError("citation entries must be a list of objects")
+  identity = getattr(resolver, "identity", None)
+  if not isinstance(identity, str) or not identity:
+    raise ValueError("resolver identity must be a non-empty string")
+  checked_at_value = _checked_at_iso(checked_at)
+  results = []
+  for entry in entries:
+    try:
+      result = resolver.resolve(entry)
+    except ResolverUnavailable as exc:
+      result = _unavailable_result(entry, str(exc) or "resolver unavailable")
+    if not isinstance(result, dict):
+      raise ValueError("resolver results must be objects")
+    status = result.get("status")
+    if status not in {
+        "verified", "mismatched", "not_found", "retracted", "unavailable",
+    }:
+      raise ValueError(f"resolver returned invalid status: {status!r}")
+    results.append(dict(result))
+
+  counts = {status: sum(1 for result in results
+                        if result["status"] == status)
+            for status in ("verified", "mismatched", "not_found", "retracted")}
+  unavailable = sum(1 for result in results
+                    if result["status"] == "unavailable")
+  unchecked = sum(1 for result in results
+                  if result["status"] == "verified"
+                  and not result.get("retraction_checked"))
+  if unavailable == len(results) and results:
+    response_status = "unavailable"
+  elif unavailable or unchecked:
+    response_status = "partial"
+  else:
+    response_status = "complete"
+  return {"total": len(results), **counts, "unavailable": unavailable,
+          "resolver": identity, "checked_at": checked_at_value,
+          "response_status": response_status, "results": results}
 
 
 def main(argv=None) -> int:
@@ -319,11 +415,12 @@ def main(argv=None) -> int:
   args = parser.parse_args(argv)
 
   entries = parse_input(args.input)
-  results = [verify_one(e) for e in entries]
-  counts = {s: sum(1 for r in results if r["status"] == s)
-            for s in ("verified", "mismatched", "not_found", "retracted")}
-  print(json.dumps({"total": len(results), **counts, "results": results},
-                   indent=2))
+  report = verify_citation_entries(
+      entries, NetworkCitationResolver(), datetime.now(timezone.utc))
+  results = report["results"]
+  counts = {status: report[status] for status in
+            ("verified", "mismatched", "not_found", "retracted")}
+  print(json.dumps(report, indent=2))
   line = (f"Citations: {counts['verified']} verified, "
           f"{counts['mismatched']} mismatched, "
           f"{counts['not_found']} not found, "

@@ -144,3 +144,38 @@ def test_rejects_unknown_reason_codes_and_duplicate_dimension_names():
 def test_dimensions_only_accept_the_six_stable_identifiers():
   with pytest.raises(ValueError, match="dimension"):
     DimensionResult(name="unsupported_dimension", score=100.0, findings=[])
+
+
+def test_finding_context_is_recursively_immutable_and_round_trips():
+  finding = Finding(
+      reason_code=ReasonCode.CLAIM_NEEDS_REVIEW,
+      severity=Severity.WARNING,
+      artifact="claims.json",
+      message="claim requires review",
+      context={"claim_index": 2, "anchors": {"missing": ["18"]}},
+  )
+
+  assert finding.to_dict()["context"] == {
+      "claim_index": 2, "anchors": {"missing": ["18"]}}
+  assert Finding.from_dict(finding.to_dict()) == finding
+  with pytest.raises(TypeError):
+    finding.context["claim_index"] = 3
+  with pytest.raises(TypeError):
+    finding.context["anchors"]["missing"] = ()
+
+
+@pytest.mark.parametrize("context", [
+    {1: "non-string key"},
+    {"value": float("nan")},
+    {"value": float("inf")},
+    {"value": {"unsupported"}},
+])
+def test_finding_context_rejects_non_json_safe_values(context):
+  with pytest.raises(ValueError, match="context"):
+    Finding(
+        reason_code=ReasonCode.CLAIM_NEEDS_REVIEW,
+        severity=Severity.WARNING,
+        artifact="claims.json",
+        message="claim requires review",
+        context=context,
+    )

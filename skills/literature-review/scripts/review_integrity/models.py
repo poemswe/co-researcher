@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import math
 import re
@@ -126,12 +126,58 @@ def _model_list(value: object, model_type: Type[_T], field: str) -> tuple[_T, ..
   return tuple(result)
 
 
+def _freeze_json(value: object, field_name: str,
+                 active: Optional[set[int]] = None) -> object:
+  """Validate and recursively freeze one JSON-safe value."""
+  if active is None:
+    active = set()
+  if value is None or isinstance(value, (str, bool, int)):
+    return value
+  if isinstance(value, float):
+    if not math.isfinite(value):
+      raise ValueError(f"{field_name} must contain only finite numbers")
+    return value
+  if isinstance(value, Mapping):
+    identity = id(value)
+    if identity in active:
+      raise ValueError(f"{field_name} must not contain recursive values")
+    active.add(identity)
+    result = {}
+    try:
+      for key, item in value.items():
+        if not isinstance(key, str):
+          raise ValueError(f"{field_name} mapping keys must be strings")
+        result[key] = _freeze_json(item, field_name, active)
+    finally:
+      active.remove(identity)
+    return MappingProxyType(result)
+  if isinstance(value, (list, tuple)):
+    identity = id(value)
+    if identity in active:
+      raise ValueError(f"{field_name} must not contain recursive values")
+    active.add(identity)
+    try:
+      return tuple(_freeze_json(item, field_name, active) for item in value)
+    finally:
+      active.remove(identity)
+  raise ValueError(f"{field_name} contains a value that is not JSON-safe")
+
+
+def _thaw_json(value: object) -> object:
+  if isinstance(value, Mapping):
+    return {key: _thaw_json(item) for key, item in value.items()}
+  if isinstance(value, tuple):
+    return [_thaw_json(item) for item in value]
+  return value
+
+
 @dataclass(frozen=True)
 class Finding:
   reason_code: ReasonCode
   severity: Severity
   artifact: str
   message: str
+  context: Mapping[str, Any] = field(default_factory=dict)
 
   def __post_init__(self) -> None:
     object.__setattr__(self, "reason_code", _enum(
@@ -142,26 +188,33 @@ class Finding:
         self.artifact, "artifact"))
     object.__setattr__(self, "message", _nonempty_string(
         self.message, "message"))
+    if not isinstance(self.context, Mapping):
+      raise ValueError("context must be a mapping")
+    object.__setattr__(self, "context", _freeze_json(
+        self.context, "context"))
 
-  def to_dict(self) -> dict[str, str]:
+  def to_dict(self) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "reason_code": self.reason_code.value,
         "severity": self.severity.value,
         "artifact": self.artifact,
         "message": self.message,
+        "context": _thaw_json(self.context),
     }
 
   @classmethod
   def from_dict(cls, value: dict) -> Finding:
     data = _require_fields(value, {
         "schema_version", "reason_code", "severity", "artifact", "message",
+        "context",
     }, cls.__name__)
     return cls(
         reason_code=data["reason_code"],
         severity=data["severity"],
         artifact=data["artifact"],
         message=data["message"],
+        context=data["context"],
     )
 
 

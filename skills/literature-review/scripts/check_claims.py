@@ -434,18 +434,29 @@ def _reference_record(item, records: list[dict]) -> tuple[dict | None, str | Non
   return None, "reference_not_found"
 
 
-def _numeric_reference_map(path: str | None,
-                           records: list[dict]) -> dict[str, dict]:
-  if path is None:
+def _numeric_reference_map_from_items(
+    items: list | None, records: list[dict],
+) -> dict[str, dict]:
+  if items is None:
     return {}
-  items = _read_json(pathlib.Path(path), "references")
   if not isinstance(items, list):
-    sys.exit("references JSON must be an ordered array")
+    raise ValueError("references JSON must be an ordered array")
   mapping = {}
   for index, item in enumerate(items, 1):
     record, reason = _reference_record(item, records)
     mapping[f"number:{index}"] = record if record is not None else {"_binding_error": reason}
   return mapping
+
+
+def _numeric_reference_map(path: str | None,
+                           records: list[dict]) -> dict[str, dict]:
+  if path is None:
+    return {}
+  items = _read_json(pathlib.Path(path), "references")
+  try:
+    return _numeric_reference_map_from_items(items, records)
+  except ValueError as exc:
+    sys.exit(str(exc))
 
 
 def load_source(workspace: pathlib.Path, paper_id: str):
@@ -510,15 +521,14 @@ def _load_normalized(workspace, paper_id: str, cache):
   return entry
 
 
-def check_entry(entry: dict, workspace, source_cache=None) -> dict:
+def _check_entry_loaded(entry: dict, loaded) -> dict:
+  """Run the quote/anchor algorithm against one already-loaded source."""
   result = {"claim": entry.get("claim"), "paper_id": entry.get("paper_id"),
             "citation": entry.get("citation"),
             "supporting_quote": entry.get("supporting_quote"),
             "status": None, "source_scope": None, "quote_match_ratio": None,
             "matched": None, "best_window": None, "quote_is_title": False,
             "context_risks": [], "anchors": None}
-  loaded = _load_normalized(workspace, entry.get("paper_id") or "",
-                            source_cache)
   if loaded is None:
     result["status"] = "source_missing"
     return result
@@ -555,6 +565,12 @@ def check_entry(entry: dict, workspace, source_cache=None) -> dict:
     result["status"] = ("background" if entry.get("role") == "background"
                         else "verified")
   return result
+
+
+def check_entry(entry: dict, workspace, source_cache=None) -> dict:
+  loaded = _load_normalized(workspace, entry.get("paper_id") or "",
+                            source_cache)
+  return _check_entry_loaded(entry, loaded)
 
 
 _YEAR = r"(?:19|20)\d{2}[a-z]?"
@@ -797,19 +813,28 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
   return gaps
 
 
-def validate_entries(entries) -> None:
+def _validate_entries_value(entries) -> None:
   if not isinstance(entries, list) or not entries:
-    sys.exit("claims.json must be a non-empty JSON array of objects")
+    raise ValueError("claims.json must be a non-empty JSON array of objects")
   for index, entry in enumerate(entries):
     if not isinstance(entry, dict):
-      sys.exit(f"claims.json entry {index} must be an object")
+      raise ValueError(f"claims.json entry {index} must be an object")
     role = entry.get("role", "evidence")
     if role not in ("evidence", "background"):
-      sys.exit(f"claims.json entry {index} has invalid role {role!r}")
+      raise ValueError(
+          f"claims.json entry {index} has invalid role {role!r}")
     required = ("claim", "paper_id", "citation", "supporting_quote")
     for field in required:
       if not isinstance(entry.get(field), str) or not entry[field].strip():
-        sys.exit(f"claims.json entry {index} requires non-empty {field!r}")
+        raise ValueError(
+            f"claims.json entry {index} requires non-empty {field!r}")
+
+
+def validate_entries(entries) -> None:
+  try:
+    _validate_entries_value(entries)
+  except ValueError as exc:
+    sys.exit(str(exc))
 
 
 def _invalid_binding(entry: dict, reason_code: str) -> dict:
@@ -822,11 +847,11 @@ def _invalid_binding(entry: dict, reason_code: str) -> dict:
           "context_risks": [], "anchors": None}
 
 
-def validate_citation_bindings(entries: list[dict], workspace,
-                               references: str | None = None) -> list[dict | None]:
-  """Bind every declared citation to trusted corpus/reference metadata."""
-  records = _corpus_records(workspace)
-  numeric = _numeric_reference_map(references, records)
+def _validate_citation_bindings(
+    entries: list[dict], records: list[dict], references: list | None,
+) -> list[dict | None]:
+  """Bind every declared citation to passed trusted metadata."""
+  numeric = _numeric_reference_map_from_items(references, records)
   results = []
   for index, entry in enumerate(entries):
     keys = citation_keys(entry["citation"])
@@ -862,6 +887,94 @@ def validate_citation_bindings(entries: list[dict], workspace,
   return results
 
 
+def validate_citation_bindings(entries: list[dict], workspace,
+                               references: str | None = None) -> list[dict | None]:
+  """Legacy path-loading wrapper around the shared binding algorithm."""
+  records = _corpus_records(workspace)
+  items = None if references is None else _read_json(
+      pathlib.Path(references), "references")
+  try:
+    return _validate_citation_bindings(entries, records, items)
+  except ValueError as exc:
+    sys.exit(str(exc))
+
+
+class SourceTexts(dict):
+  """Text mapping with optional source-scope metadata for pure validation."""
+
+  def __init__(self, *args, scopes=None, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.scopes = dict(scopes or {})
+
+
+def _source_scope(paper_id: str, records: list[dict], source_texts) -> str:
+  safe_id = sanitize_id(paper_id)
+  scopes = getattr(source_texts, "scopes", {})
+  if safe_id in scopes:
+    return scopes[safe_id]
+  record = _record_for_paper_id(records, paper_id)
+  if record and record.get("fulltext") in ("abstract", "abstract-only"):
+    return "abstract"
+  return "fulltext"
+
+
+def _check_entry_from_source_texts(
+    entry: dict, records: list[dict], source_texts: dict[str, str],
+) -> dict:
+  paper_id = entry.get("paper_id") or ""
+  raw = source_texts.get(sanitize_id(paper_id))
+  loaded = None if raw is None else (
+      raw, normalize_text(raw), _source_scope(paper_id, records, source_texts))
+  return _check_entry_loaded(entry, loaded)
+
+
+def check_claims_document(
+    entries: list[dict], corpus_records: list[dict],
+    source_texts: dict[str, str], synthesis: str | None, references: list | None,
+) -> dict:
+  """Validate claims using only explicitly supplied immutable values."""
+  _validate_entries_value(entries)
+  if not isinstance(corpus_records, list) or not all(
+      isinstance(record, dict) for record in corpus_records):
+    raise ValueError("corpus.json must be a JSON array of objects")
+  if not isinstance(source_texts, dict) or not all(
+      isinstance(key, str) and isinstance(value, str)
+      for key, value in source_texts.items()):
+    raise ValueError("source_texts must map paper identifiers to text")
+  bindings = _validate_citation_bindings(
+      entries, corpus_records, references)
+  results = [
+      binding if binding is not None else _check_entry_from_source_texts(
+          entry, corpus_records, source_texts)
+      for entry, binding in zip(entries, bindings)
+  ]
+
+  coverage_checked = synthesis is not None
+  if coverage_checked:
+    if not isinstance(synthesis, str) or not synthesis.strip():
+      raise ValueError("synthesis file must not be empty")
+    if not _citation_records(synthesis):
+      raise ValueError(
+          "synthesis file contains no supported citation identities")
+    for gap in coverage_gaps(synthesis, entries, results):
+      results.append({"claim": gap["sentence"], "paper_id": None,
+                      "citation": gap["citation_key"],
+                      "supporting_quote": None, "status": "uncovered_claim",
+                      "reason_code": gap["reason_code"],
+                      "source_scope": None, "quote_match_ratio": None,
+                      "matched": None, "best_window": None,
+                      "quote_is_title": False, "context_risks": [],
+                      "anchors": None})
+
+  tally = collections.Counter(result["status"] for result in results)
+  counts = {status: tally[status] for status in
+            ("verified", "needs_review", "background", "fabricated_quote",
+             "uncovered_claim", "source_missing", "no_quote",
+             "quote_too_short", "invalid_binding")}
+  return {"total": len(results), **counts,
+          "coverage_checked": coverage_checked, "results": results}
+
+
 def main(argv=None) -> int:
   parser = argparse.ArgumentParser(
       description="Verify claims' supporting quotes against cited sources.")
@@ -877,42 +990,42 @@ def main(argv=None) -> int:
   except (OSError, json.JSONDecodeError) as err:
     sys.exit(f"Cannot read claims file {args.claims}: {err}")
   validate_entries(entries)
-  bindings = validate_citation_bindings(entries, args.workspace, args.references)
+  corpus_records = _corpus_records(args.workspace)
+  references = None
+  if args.references is not None:
+    references = _read_json(pathlib.Path(args.references), "references")
+  source_texts = SourceTexts()
+  for entry in entries:
+    paper_id = entry.get("paper_id") or ""
+    safe_id = sanitize_id(paper_id)
+    if safe_id in source_texts:
+      continue
+    loaded = load_source(pathlib.Path(args.workspace), paper_id)
+    if loaded is not None:
+      source_texts[safe_id] = loaded[0]
+      source_texts.scopes[safe_id] = loaded[1]
 
-  source_cache = {}
-  results = [binding if binding is not None else check_entry(e, args.workspace, source_cache)
-             for e, binding in zip(entries, bindings)]
-
-  coverage_checked = args.synthesis is not None
-  if coverage_checked:
+  synthesis = None
+  if args.synthesis is not None:
     try:
       synthesis = pathlib.Path(args.synthesis).read_text(encoding="utf-8")
     except OSError as err:
       sys.exit(f"Cannot read synthesis file {args.synthesis}: {err}")
-    if not synthesis.strip():
-      sys.exit("synthesis file must not be empty")
-    if not _citation_records(synthesis):
-      sys.exit("synthesis file contains no supported citation identities")
-    for gap in coverage_gaps(synthesis, entries, results):
-      results.append({"claim": gap["sentence"], "paper_id": None,
-                      "citation": gap["citation_key"],
-                      "supporting_quote": None, "status": "uncovered_claim",
-                      "reason_code": gap["reason_code"],
-                      "source_scope": None, "quote_match_ratio": None,
-                      "matched": None, "best_window": None,
-                      "quote_is_title": False, "context_risks": [],
-                      "anchors": None})
+  try:
+    report = check_claims_document(
+        entries, corpus_records, source_texts, synthesis, references)
+  except ValueError as exc:
+    sys.exit(str(exc))
 
-  tally = collections.Counter(r["status"] for r in results)
-  counts = {s: tally[s] for s in
+  results = report["results"]
+  coverage_checked = report["coverage_checked"]
+  counts = {status: report[status] for status in
             ("verified", "needs_review", "background", "fabricated_quote",
              "uncovered_claim", "source_missing", "no_quote",
              "quote_too_short", "invalid_binding")}
   abstract_verified = sum(1 for r in results if r["status"] == "verified"
                           and r["source_scope"] == "abstract")
-  print(json.dumps({"total": len(results), **counts,
-                    "coverage_checked": coverage_checked,
-                    "results": results}, indent=2))
+  print(json.dumps(report, indent=2))
   unresolved = (counts["source_missing"] + counts["no_quote"]
                 + counts["quote_too_short"])
   summary = (f"Claims: {counts['verified']} verified, "
