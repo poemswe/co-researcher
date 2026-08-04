@@ -21,6 +21,13 @@ jobs:
       - name: Run unit tests
         run: python -m pytest -q tests
 
+      - name: Run literature integrity smoke and adversarial tests
+        run: |
+          python -m pytest -q \
+            tests/test_research_smoke.py \
+            tests/test_literature_integrity_attacks.py \
+            tests/test_literature_integrity_separation.py
+
       - name: Run claim-verification evaluations
         run: python -m pytest -q tests/eval_check_claims.py
 

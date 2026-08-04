@@ -170,7 +170,7 @@ The `literature-review` skill ships CLI backends (`skills/literature-review/scri
 
 One-time setup: `bash scripts/setup.sh` (installs `uv`, optionally stores an OpenAlex API key).
 
-### Offline one-pass integrity validation
+### Plugin validation (offline)
 
 Run the shared validation engine directly from any working directory (Python
 3.10 or newer; no package installation is required):
@@ -236,12 +236,35 @@ smoke is slower and environment-dependent; it does not replace scored evals.
 
 ## Evaluation Framework
 
-Verify agent performance with the v2.0 benchmark system:
+### Broad quality evaluation (26 cases)
+
+Run the 26-case broad quality benchmark from the repository root:
 
 ```bash
-cd evals
-python run_eval.py all -j 4 --model "codex:gpt-5.2 high"
+python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high"
 ```
+
+This command requires an authenticated model provider and network access. It
+uses the repository's public quality cases; it does not require a private
+official-case directory. Historical broad-quality scores are
+**Quality-only historical run — not integrity evaluated**: a quality score is
+not an integrity result.
+
+### Dedicated literature integrity evaluation
+
+Run the integrity workflow separately; it keeps quality and integrity results
+separate:
+
+```bash
+python3 evals/run_eval.py literature-review-integrity \
+  --model "codex:gpt-5.2 high"
+```
+
+This command requires an authenticated model provider and network access. Its
+checked-in cases are public synthetic fixtures. Any private official-case
+directory is supplied separately by its owner and must not be added to the
+repository or CI. Each integrity run writes its auditable result bundle to
+`evals/results/runs/<run_id>/`.
 
 ### Features
 - **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag
@@ -261,13 +284,18 @@ Two-file architecture for scalability and transparency:
 - Rubric-by-rubric scoring breakdowns
 - Must-include analysis and justifications
 
-**Arena Dashboard**:
-View live interactive dashboard at **[coresearcher.poemswe.com](https://coresearcher.poemswe.com)**
+### Dashboard server and view
 
-Or run locally:
+Serve the dashboard locally, then open the displayed URL (normally
+`http://localhost:8000`):
+
 ```bash
-open evals/index.html
+python3 -m http.server 8000 --directory evals
 ```
+
+The dashboard reads local public result artifacts. It needs neither a model,
+network service, nor a private official-case directory after the files are on
+disk. A hosted view is also available at **[coresearcher.poemswe.com](https://coresearcher.poemswe.com)**.
 
 Features: Model leaderboards, capability matrices, score trends, and detailed test breakdowns with performance ratings (Excellent/Good/Fair/Poor).
 
@@ -276,7 +304,8 @@ Features: Model leaderboards, capability matrices, score trends, and detailed te
 - `skills/`: Specialized research skills (Markdown). Single source of truth for every platform.
 - `commands/`: Unified platform commands (.md for Claude, .toml for Gemini).
 - `.codex/`: Codex launcher (`co-researcher-codex`) and `bootstrap.md`; it reads `skills/` directly.
-- `evals/`: 22 test cases and Python runner.
+- `evals/`: 26 broad quality cases, a separate literature-integrity mode, and
+  the Python runner.
 - manifests: `.claude-plugin/plugin.json`, `gemini-extension.json`, `GEMINI.md`.
 
 ## Star History

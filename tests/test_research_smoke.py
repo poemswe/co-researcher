@@ -19,6 +19,9 @@ CHECK_CLAIMS = ROOT / "skills/literature-review/scripts/check_claims.py"
 PRISMA_COUNTS = ROOT / "skills/literature-review/scripts/prisma_counts.py"
 VALIDATE_REVIEW = ROOT / "skills/literature-review/scripts/validate_review.py"
 LITERATURE_REVIEW_SKILL = ROOT / "skills/literature-review/SKILL.md"
+PUBLIC_ALTERED_NUMBER_SCENARIO = (
+    ROOT / "evals/test-cases/literature-review-integrity/synthetic-attacks/"
+    "integrity-case-008/input.json")
 INVALID_WARNING = (
     "INVALID EVIDENCE — This draft contains unresolved evidence-integrity "
     "failures\nand must not be treated as verified research."
@@ -79,6 +82,30 @@ def _write_fixture(tmp_path):
       "screening": {"status": "excluded", "reason": "wrong population"},
   }]), encoding="utf-8")
   return workspace, claims, synthesis, corpus
+
+
+def _write_public_altered_number_fixture(tmp_path):
+  """Materialize only the public altered-number scenario for CLI smoke."""
+  scenario = json.loads(PUBLIC_ALTERED_NUMBER_SCENARIO.read_text(
+      encoding="utf-8"))
+  workspace = tmp_path / "review" / "altered-number"
+  payloads = {
+      "project.json": {"project": "offline-public-smoke"},
+      "protocol.md": "# Synthetic protocol\n",
+      "corpus.json": scenario["corpus"],
+      "claims.json": scenario["claims"],
+      "synthesis.md": scenario["synthesis"],
+      "refs.json": scenario["references"],
+  }
+  for paper_id, source in scenario["sources"].items():
+    payloads[f"papers/{paper_id}/fulltext.md"] = source
+  for relative, value in payloads.items():
+    destination = workspace / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        value if isinstance(value, str) else json.dumps(value),
+        encoding="utf-8")
+  return workspace
 
 
 def test_offline_research_workflow_smoke(tmp_path):
@@ -145,12 +172,29 @@ def test_literature_review_delivery_validation_smoke(tmp_path):
 
   assert result.returncode == 0, result.stderr
   report = json.loads(result.stdout)
+  assert report["integrity_score"] == 100.0
+  assert report["status"] == "valid"
   assert report["action"] == "pass"
   assert report["repair_feedback"] == {
       "reason_codes": [], "affected_artifacts": [], "findings": []}
   ledger = json.loads(run_report.read_text(encoding="utf-8"))
   assert ledger["action"] == "pass"
   assert ledger["repairs"] == []
+
+
+def test_literature_review_altered_number_smoke_is_invalid(tmp_path):
+  workspace = _write_public_altered_number_fixture(tmp_path)
+  run_report = tmp_path / "altered-number-run.json"
+
+  result = _run(
+      VALIDATE_REVIEW, "--workspace", workspace,
+      "--run-report", run_report)
+
+  assert result.returncode == 1, result.stderr
+  report = json.loads(result.stdout)
+  assert report["status"] == "invalid"
+  assert "coverage_number_missing" in {
+      finding["reason_code"] for finding in report["findings"]}
 
 
 def test_literature_review_invalid_repair_sequence_smoke(tmp_path):
