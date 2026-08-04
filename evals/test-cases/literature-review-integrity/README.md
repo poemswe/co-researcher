@@ -12,4 +12,3 @@ into the temporary workspace.
 All fixtures and prompts in this directory are synthetic. Runtime-only case
 collections can be loaded by passing their containing directory to
 `load_cases()`; the adapter has no built-in path to a private collection.
-
