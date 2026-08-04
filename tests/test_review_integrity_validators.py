@@ -663,3 +663,109 @@ def test_pure_claim_validation_fails_closed_without_exact_source_scope(
   entries, corpus, sources = _pure_claim_inputs(scope_marker)
   with pytest.raises(ValueError, match="scope|fulltext"):
     check_claims.check_claims_document(entries, corpus, sources, None, [])
+
+
+def test_citation_commitment_includes_raw_and_rejects_replay_collision():
+  verify_citations = importlib.import_module("verify_citations")
+  first = {"doi": "10.1/x", "title": "Title", "raw": "first rendering"}
+  second = {"doi": "10.1/x", "title": "Title", "raw": "second rendering"}
+  assert verify_citations.citation_input_identity(first) != (
+      verify_citations.citation_input_identity(second))
+  assert verify_citations.bibliography_sha256([first]) != (
+      verify_citations.bibliography_sha256([second]))
+
+
+@pytest.mark.parametrize("entry", [
+    {"doi": "10.1/x", "title": None},
+    {"doi": "10.1/x", "title": None, "raw": "x", "extra": True},
+])
+def test_pure_citation_verifier_requires_exact_normalized_entry_schema(entry):
+  verify_citations = importlib.import_module("verify_citations")
+  with pytest.raises(ValueError, match="citation entry|fields|schema"):
+    verify_citations.verify_citation_entries(
+        [entry], _StaticResolver(),
+        datetime(2026, 8, 4, tzinfo=timezone.utc))
+
+
+def test_json_bibliography_raw_is_deterministic_complete_original_object():
+  verify_citations = importlib.import_module("verify_citations")
+  original = {"title": "Title", "doi": "10.1/x", "raw": "spoof",
+              "note": "submitted metadata"}
+  changed = {**original, "note": "changed metadata"}
+  first = verify_citations.normalize_citation_entries([original])[0]
+  second = verify_citations.normalize_citation_entries([changed])[0]
+  assert first["raw"] == json.dumps(
+      original, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+  assert first["raw"] != second["raw"]
+  assert verify_citations.bibliography_sha256([first]) != (
+      verify_citations.bibliography_sha256([second]))
+
+
+@pytest.mark.parametrize(("status", "audit", "checked"), [
+    ("verified", "not_applicable", False),
+    ("mismatched", "not_applicable", False),
+    ("verified", "complete", False),
+    ("verified", "partial", True),
+    ("verified", "unavailable", True),
+])
+def test_citation_adapter_rejects_contradictory_retraction_audits(
+    status, audit, checked,
+):
+  entries = [{"doi": "10.1/x", "title": None, "raw": "x"}]
+  report = _citation_report(entries, _StaticResolver(status=status))
+  result = report["results"][0]
+  result["retraction_status"] = audit
+  result["retraction_checked"] = checked
+  report["response_status"] = "complete"
+  finding = _validators().citation_findings(report, entries)[0]
+  assert finding.reason_code is ReasonCode.VALIDATOR_INCOMPLETE
+
+
+def test_prisma_adapter_rejects_unaccounted_screened_records():
+  report = {
+      "records_by_source": {"openalex": 2}, "after_dedup": 2,
+      "screened": 2, "excluded": {}, "included": 1,
+      "not_retrieved": 0, "in_synthesis": 1,
+  }
+  finding = _validators().prisma_findings(report)[0]
+  assert finding.reason_code is ReasonCode.VALIDATOR_INCOMPLETE
+
+
+def test_prisma_report_rejects_unknown_screening_status():
+  prisma_counts = importlib.import_module("prisma_counts")
+  with pytest.raises(ValueError, match="status"):
+    prisma_counts.prisma_report([{
+        "found_via": "openalex", "screening": {"status": "pending"}}])
+
+
+@pytest.mark.parametrize(("scope", "expected"), [
+    ("abstract", "abstract-only"), ("fulltext", "fulltext"),
+])
+def test_source_scope_enrichment_accepts_exact_loader_scopes(scope, expected):
+  check_claims = importlib.import_module("check_claims")
+  records = [{"key": "paper", "ids": {"pmcid": "p1"},
+              "fulltext": "stale"}]
+  enriched = check_claims.corpus_with_source_scopes(records, {"p1": scope})
+  assert enriched[0]["fulltext"] == expected
+  assert records[0]["fulltext"] == "stale"
+
+
+def test_source_scope_enrichment_accepts_same_scope_for_multiple_aliases():
+  check_claims = importlib.import_module("check_claims")
+  records = [{"key": "paper", "ids": {"pmcid": "p1"},
+              "fulltext": "stale"}]
+  enriched = check_claims.corpus_with_source_scopes(
+      records, {"paper": "abstract", "p1": "abstract"})
+  assert enriched[0]["fulltext"] == "abstract-only"
+
+
+@pytest.mark.parametrize("scopes", [
+    {"p1": "invalid"},
+    {"paper": "abstract", "p1": "fulltext"},
+])
+def test_source_scope_enrichment_rejects_invalid_or_conflicting_aliases(scopes):
+  check_claims = importlib.import_module("check_claims")
+  records = [{"key": "paper", "ids": {"pmcid": "p1"},
+              "fulltext": "stale"}]
+  with pytest.raises(ValueError, match="scope|conflict"):
+    check_claims.corpus_with_source_scopes(records, scopes)

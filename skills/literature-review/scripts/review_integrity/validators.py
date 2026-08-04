@@ -275,8 +275,10 @@ def _valid_citation_result(result: object, entry: dict, index: int) -> bool:
   elif status == "retracted":
     if audit != "complete" or not result["retraction_checked"]:
       return False
-  elif result["retraction_checked"] != (audit == "complete"):
-    return False
+  else:
+    if (audit == "not_applicable"
+        or result["retraction_checked"] != (audit == "complete")):
+      return False
   return True
 
 
@@ -301,10 +303,9 @@ def _valid_citation_report(report: object, bibliography: object) -> tuple[bool, 
   }
   if not isinstance(report, dict) or not required <= set(report):
     return False, []
-  try:
-    entries = verify_citations.normalize_citation_entries(bibliography)
-  except (TypeError, ValueError):
+  if not isinstance(bibliography, list):
     return False, []
+  entries = bibliography
   if not isinstance(report["resolver"], str) or not report["resolver"]:
     return False, entries
   if not _aware_utc_timestamp(report["checked_at"]):
@@ -312,8 +313,12 @@ def _valid_citation_report(report: object, bibliography: object) -> tuple[bool, 
   if report["response_status"] not in {"complete", "partial", "unavailable"}:
     return False, entries
   digest = report["bibliography_sha256"]
+  try:
+    expected_digest = verify_citations.bibliography_sha256(entries)
+  except (TypeError, ValueError):
+    return False, entries
   if (not isinstance(digest, str) or not _SHA256_RE.fullmatch(digest)
-      or digest != verify_citations.bibliography_sha256(entries)):
+      or digest != expected_digest):
     return False, entries
   if not all(_count(report[status]) for status in _CITATION_STATUSES):
     return False, entries
@@ -418,7 +423,7 @@ def prisma_findings(report: dict) -> tuple[Finding, ...]:
     return (_incomplete("prisma", "corpus.json"),)
   if (sum(records_by_source.values()) != report["after_dedup"]
       or report["screened"] > report["after_dedup"]
-      or sum(excluded.values()) + report["included"] > report["screened"]
+      or sum(excluded.values()) + report["included"] != report["screened"]
       or report["not_retrieved"] > report["included"]
       or report["in_synthesis"]
       != report["included"] - report["not_retrieved"]):
@@ -532,7 +537,8 @@ def validate_snapshot(
   run("claim", "claims.json", claims)
   def citations() -> tuple[Finding, ...]:
     references = snapshot.read_json("refs.json")
-    return citation_findings(citation_report, references)
+    entries = verify_citations.normalize_citation_entries(references)
+    return citation_findings(citation_report, entries)
 
   run("citation", "refs.json", citations)
 

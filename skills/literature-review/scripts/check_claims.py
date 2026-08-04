@@ -926,12 +926,21 @@ def corpus_with_source_scopes(
     records: list[dict], source_scopes: dict[str, str],
 ) -> list[dict]:
   """Copy corpus records with loader-observed source scope made explicit."""
+  if not isinstance(source_scopes, dict) or not all(
+      isinstance(identifier, str) and scope in {"abstract", "fulltext"}
+      for identifier, scope in source_scopes.items()):
+    raise ValueError("source scopes must be exact abstract or fulltext values")
+  observed_ids = set(source_scopes)
   enriched = []
   for record in records:
     copied = dict(record)
-    matching = _record_ids(record) & set(source_scopes)
-    if len(matching) == 1:
-      scope = source_scopes[next(iter(matching))]
+    copied.pop("fulltext", None)
+    matching = _record_ids(record) & observed_ids
+    if matching:
+      scopes = {source_scopes[identifier] for identifier in matching}
+      if len(scopes) != 1:
+        raise ValueError("conflicting source scopes for trusted aliases")
+      scope = next(iter(scopes))
       copied["fulltext"] = (
           "abstract-only" if scope == "abstract" else "fulltext")
     enriched.append(copied)

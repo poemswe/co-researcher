@@ -148,14 +148,18 @@ def normalize_citation_entries(items: list) -> list[dict]:
     if title is not None and not isinstance(title, str):
       raise ValueError(f"bibliography entry {index} title must be a string")
     entries.append({"doi": doi, "title": title,
-                    "raw": item.get("raw") if isinstance(item.get("raw"), str)
-                    else json.dumps(item)})
+                    "raw": json.dumps(
+                        item, ensure_ascii=False, sort_keys=True,
+                        separators=(",", ":"))})
   return entries
 
 
 def _canonical_entry(entry: dict) -> dict:
   if not isinstance(entry, dict):
     raise ValueError("citation entry must be an object")
+  if set(entry) != {"doi", "title", "raw"}:
+    raise ValueError(
+        "citation entry schema requires exactly doi, title, and raw fields")
   doi, title, raw = entry.get("doi"), entry.get("title"), entry.get("raw")
   if doi is not None and not isinstance(doi, str):
     raise ValueError("citation doi must be a string or null")
@@ -163,7 +167,7 @@ def _canonical_entry(entry: dict) -> dict:
     raise ValueError("citation title must be a string or null")
   if not isinstance(raw, str):
     raise ValueError("citation raw input must be a string")
-  return {"doi": doi, "title": title}
+  return {"doi": doi, "title": title, "raw": raw}
 
 
 def citation_input_identity(entry: dict) -> str:
@@ -473,6 +477,8 @@ def _valid_resolver_result(result: object, entry: dict) -> bool:
             and resolution == "unavailable")
   if status == "retracted":
     return audit == "complete" and result["retraction_checked"]
+  if audit == "not_applicable":
+    return False
   return result["retraction_checked"] == (audit == "complete")
 
 

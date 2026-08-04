@@ -68,6 +68,8 @@ def prisma_report(records: list[dict]) -> dict:
     screening = record.get("screening") or {}
     if not isinstance(screening, dict):
       raise ValueError(f"corpus record {index} screening must be an object")
+    if screening.get("status") not in (None, "included", "excluded"):
+      raise ValueError(f"corpus record {index} has unknown screening status")
   return compute(records)
 
 
