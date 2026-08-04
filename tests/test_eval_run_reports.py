@@ -795,6 +795,8 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
       literature_integrity, "ProductionModelExecutor", lambda *args: object())
   monkeypatch.setattr(
       literature_integrity, "ProductionQualityJudge", lambda *args: object())
+  monkeypatch.setattr(
+      literature_integrity, "load_adversarial_scores", lambda *args: {})
 
   results = run_eval.run_literature_integrity("codex:test")
 

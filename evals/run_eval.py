@@ -139,6 +139,7 @@ def run_literature_integrity(model: str):
         LiteratureIntegrityRunner,
         ProductionModelExecutor,
         ProductionQualityJudge,
+        load_adversarial_scores,
         load_cases,
     )
     from lib.run_reports import CombinedRunResult, write_run_report
@@ -152,12 +153,17 @@ def run_literature_integrity(model: str):
         scorecard_directory=TEST_CASES_DIR / INTEGRITY_CAPABILITY,
     )
     results = tuple(runner.run_case(case) for case in cases)
+    adversarial_scores = load_adversarial_scores(
+        TEST_CASES_DIR / INTEGRITY_CAPABILITY,
+        {case.case_id: result for case, result in zip(cases, results)},
+    )
     combined = CombinedRunResult.from_results(
         run_id=run_id,
         timestamp=timestamp,
         model=model,
         results=tuple(
             (case.case_id, result) for case, result in zip(cases, results)),
+        adversarial_scores=adversarial_scores,
     )
     run_directory = write_run_report(combined, RESULTS_DIR)
     for case, result in zip(cases, results):

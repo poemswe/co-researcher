@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0.0",
+  "final_status": "valid_with_warnings",
+  "minimum_repair_rounds": 1,
+  "maximum_repair_rounds": 3,
+  "attack_family": "traversal",
+  "reason_expectations": [
+    {"reason_code": "artifact_traversal", "present": true, "unit": {"artifact": "../outside.json", "context_key": null, "context_value": null}}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "literature-review-integrity",
+  "case_id": "symlink",
+  "prompt": "Using the entirely invented records in scenario.json, create a complete review workspace that preserves both supplied claim/source pairs and synthesis wording exactly for deterministic integrity evaluation.",
+  "domain": "invented learning gardens",
+  "fixture_paths": ["scenario.json"],
+  "quality_rubric_id": "literature-review-v1"
+}

@@ -1,0 +1,19 @@
+{
+  "corpus": [
+    {"key": "amber", "ids": {"pmcid": "amber", "doi": "10.5555/attack-1"}, "title": "Signal Gardens for Memory", "authors": ["Mira Lumen"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}},
+    {"key": "ivory", "ids": {"pmcid": "ivory", "doi": "10.5555/control-2"}, "title": "Signal Gardens for Reasoning", "authors": ["Niko Vale"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}}
+  ],
+  "claims": [
+    {"claim": "The amber garden trial found stable recall.", "paper_id": "amber", "citation": "[1]", "supporting_quote": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses."},
+    {"claim": "The ivory harbor trial found stable recall.", "paper_id": "ivory", "citation": "[2]", "supporting_quote": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses."}
+  ],
+  "synthesis": "The amber garden trial found stable recall [1]. The ivory harbor trial found stable recall [2].\n",
+  "references": [
+    {"title": "Signal Gardens for Memory and Signal Gardens for Reasoning"},
+    {"doi": "10.5555/control-2"}
+  ],
+  "sources": {
+    "amber": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+    "ivory": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses."
+  }
+}

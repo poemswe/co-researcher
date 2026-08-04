@@ -17,7 +17,12 @@ from types import MappingProxyType
 
 import fcntl
 
-from .literature_integrity import CAPABILITY, IntegrityEvalResult
+from .literature_integrity import (
+    AdversarialCaseScore,
+    CAPABILITY,
+    IntegrityEvalResult,
+    ReasonMetric,
+)
 
 
 SCHEMA_VERSION = "1.0.0"
@@ -283,6 +288,7 @@ class CombinedCaseResult:
   case_id: str
   evaluation: IntegrityEvalResult | dict
   attack_family: str | None = None
+  adversarial_score: AdversarialCaseScore | dict | None = None
 
   def __post_init__(self) -> None:
     if not isinstance(self.case_id, str) or not _CASE_ID_RE.fullmatch(
@@ -298,8 +304,21 @@ class CombinedCaseResult:
     else:
       raise ValueError("evaluation must be an IntegrityEvalResult")
     object.__setattr__(self, "evaluation", evaluation)
+    adversarial = self.adversarial_score
+    if isinstance(adversarial, dict):
+      adversarial = AdversarialCaseScore.from_dict(adversarial)
+    elif adversarial is not None and not isinstance(
+        adversarial, AdversarialCaseScore):
+      raise ValueError(
+          "adversarial_score must be an AdversarialCaseScore or null")
+    object.__setattr__(self, "adversarial_score", adversarial)
     if self.attack_family is not None:
       _text(self.attack_family, "attack_family")
+    if adversarial is not None:
+      if (self.attack_family is not None
+          and self.attack_family != adversarial.attack_family):
+        raise ValueError("attack_family does not match adversarial_score")
+      object.__setattr__(self, "attack_family", adversarial.attack_family)
 
   def to_dict(self) -> dict:
     value = {
@@ -308,17 +327,20 @@ class CombinedCaseResult:
     }
     if self.attack_family is not None:
       value["attack_family"] = self.attack_family
+    if self.adversarial_score is not None:
+      value["adversarial_score"] = self.adversarial_score.to_dict()
     return value
 
   @classmethod
   def from_dict(cls, value: dict) -> "CombinedCaseResult":
     data = _closed_object(
         value, {"case_id", "evaluation"}, "combined case",
-        optional={"attack_family"})
+        optional={"attack_family", "adversarial_score"})
     return cls(
         case_id=data["case_id"],
         evaluation=data["evaluation"],
         attack_family=data.get("attack_family"),
+        adversarial_score=data.get("adversarial_score"),
     )
 
 
@@ -355,11 +377,17 @@ class CombinedRunResult:
       cls, *, run_id: str, timestamp: str, model: str,
       results: Mapping[str, IntegrityEvalResult] | Sequence[
           tuple[str, IntegrityEvalResult]],
+      adversarial_scores: Mapping[str, AdversarialCaseScore] | None = None,
   ) -> "CombinedRunResult":
     pairs = results.items() if isinstance(results, Mapping) else results
+    scores = {} if adversarial_scores is None else adversarial_scores
+    if not isinstance(scores, Mapping):
+      raise ValueError("adversarial_scores must be a mapping or null")
     return cls(
         run_id=run_id, timestamp=timestamp, model=model,
-        cases=tuple(CombinedCaseResult(case_id, evaluation)
+        cases=tuple(CombinedCaseResult(
+                        case_id, evaluation,
+                        adversarial_score=scores.get(case_id))
                     for case_id, evaluation in pairs),
     )
 
@@ -414,14 +442,35 @@ def _repair_round_view(repair_round, path: str, sha256: str) -> dict:
 def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
   counts = {status: 0 for status in _STATUS_NAMES}
   attack_families: dict[str, int] = {}
+  family_confusion: dict[str, dict[str, int]] = {}
+  reason_counts: dict[str, dict[str, int]] = {}
   for case in cases:
     counts[case.evaluation.system_final.integrity.status.value] += 1
     if case.attack_family is not None:
       attack_families[case.attack_family] = (
           attack_families.get(case.attack_family, 0) + 1)
+    if case.adversarial_score is not None:
+      family = case.adversarial_score.attack_family
+      confusion = family_confusion.setdefault(family, {
+          "true_positive": 0, "false_positive": 0,
+          "true_negative": 0, "false_negative": 0})
+      for name, value in case.adversarial_score.confusion.items():
+        confusion[name] += value
+      for code, metric in case.adversarial_score.reason_metrics.items():
+        combined = reason_counts.setdefault(code, {
+            "true_positive": 0, "false_positive": 0, "false_negative": 0})
+        combined["true_positive"] += metric.true_positive
+        combined["false_positive"] += metric.false_positive
+        combined["false_negative"] += metric.false_negative
   summary = {"case_count": len(cases), "integrity_status_counts": counts}
   if attack_families:
     summary["attack_family_breakdown"] = dict(sorted(attack_families.items()))
+  if family_confusion:
+    summary["attack_family_confusion"] = dict(sorted(family_confusion.items()))
+    summary["reason_code_metrics"] = {
+        code: ReasonMetric(**values).to_dict()
+        for code, values in sorted(reason_counts.items())
+    }
   return summary
 
 
@@ -644,6 +693,8 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
     }
     if case.attack_family is not None:
       view["attack_family"] = case.attack_family
+    if case.adversarial_score is not None:
+      view["adversarial_score"] = case.adversarial_score.to_dict()
     if case.evaluation.repair_rounds:
       round_views = []
       for repair_round in case.evaluation.repair_rounds:
@@ -1096,7 +1147,8 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
       for value in data["cases"]:
         case = _closed_object(value, {
             "case_id", "first_pass", "final", "artifact",
-        }, "run case", optional={"attack_family", "repair_rounds"})
+        }, "run case", optional={
+            "attack_family", "adversarial_score", "repair_rounds"})
         case_id = case["case_id"]
         if (not isinstance(case_id, str) or not _CASE_ID_RE.fullmatch(case_id)
             or case_id in seen):
@@ -1110,7 +1162,8 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
         evaluation = IntegrityEvalResult.from_dict(parsed)
         strict = CombinedCaseResult(
             case_id=case_id, evaluation=evaluation,
-            attack_family=case.get("attack_family"))
+            attack_family=case.get("attack_family"),
+            adversarial_score=case.get("adversarial_score"))
         _validate_snapshot_view(
             case["first_pass"], evaluation.model_first_pass, "first_pass")
         _validate_snapshot_view(case["final"], evaluation.system_final, "final")
@@ -1144,7 +1197,9 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
       expected_summary = _status_summary(strict_cases)
       summary = _closed_object(
           data["summary"], {"case_count", "integrity_status_counts"},
-          "run summary", optional={"attack_family_breakdown"})
+          "run summary", optional={
+              "attack_family_breakdown", "attack_family_confusion",
+              "reason_code_metrics"})
       status_counts = _closed_object(
           summary["integrity_status_counts"], set(_STATUS_NAMES),
           "integrity status counts")

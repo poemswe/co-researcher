@@ -12,7 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -27,6 +27,7 @@ if str(REVIEW_SCRIPTS) not in sys.path:
   sys.path.insert(0, str(REVIEW_SCRIPTS))
 
 from review_integrity.models import (  # noqa: E402
+    Finding,
     IntegrityRunReport,
     PassReport,
     ReasonCode,
@@ -617,7 +618,16 @@ def _load_case(path: Path) -> CaseDefinition:
   base = path.parent.resolve()
   sources: list[tuple[str, Path]] = []
   for item in data["fixture_paths"]:
-    candidate = (base / item).resolve()
+    relative = Path(item)
+    if (relative.is_absolute() or "." in relative.parts
+        or ".." in relative.parts):
+      raise ValueError("fixture paths must be canonical relative paths")
+    unresolved = base
+    for component in relative.parts:
+      unresolved = unresolved / component
+      if unresolved.is_symlink():
+        raise ValueError("fixture paths must not contain symlinks")
+    candidate = unresolved.resolve()
     try:
       candidate.relative_to(base)
     except ValueError as exc:
@@ -647,12 +657,13 @@ def _load_case(path: Path) -> CaseDefinition:
 
 
 def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
-  root = Path(directory).resolve()
+  supplied = Path(directory)
+  if supplied.is_symlink():
+    raise ValueError("case directory must not be a symlink")
+  root = supplied.resolve()
   if not root.is_dir():
     raise ValueError("case directory must exist")
-  paths = sorted(root.glob("*/case.json"))
-  if not paths and (root / "case.json").is_file():
-    paths = [root / "case.json"]
+  paths = sorted(root.glob("**/case.json"))
   cases = tuple(_load_case(path) for path in paths)
   if not cases:
     raise ValueError("case directory does not contain case definitions")
@@ -663,14 +674,49 @@ def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
 
 class _ScorecardStore:
   def __init__(self, directory: Path | str | None):
-    self._directory = (
-        None if directory is None else Path(directory).resolve())
+    if directory is None:
+      self._directory = None
+      return
+    supplied = Path(directory)
+    if supplied.is_symlink():
+      raise ValueError("scorecard directory must not be a symlink")
+    self._directory = supplied.resolve()
 
   def load(self, case_id: str) -> dict:
     if self._directory is None:
       raise ValueError("scorecard directory was not supplied")
-    path = self._directory / case_id / "expected.json"
-    return _read_json(path, "scorecard")
+    matches = [
+        path for path in self._directory.glob("**/expected.json")
+        if path.parent.name == case_id
+    ]
+    if len(matches) != 1 or matches[0].is_symlink():
+      raise ValueError(f"scorecard lookup is not unique: {case_id}")
+    return _read_json(matches[0], "scorecard")
+
+
+_ROBUSTNESS_SCORECARD_FIELDS = {
+    "schema_version", "final_status", "minimum_repair_rounds",
+    "maximum_repair_rounds",
+}
+_ADVERSARIAL_SCORECARD_FIELDS = {"attack_family", "reason_expectations"}
+
+
+def _scorecard_object(value: object) -> dict:
+  if not isinstance(value, dict):
+    raise ValueError("scorecard must be a JSON object")
+  unknown = (set(value) - _ROBUSTNESS_SCORECARD_FIELDS
+             - _ADVERSARIAL_SCORECARD_FIELDS)
+  missing = _ROBUSTNESS_SCORECARD_FIELDS - set(value)
+  if unknown:
+    raise ValueError(f"scorecard has unknown fields: {sorted(unknown)}")
+  if missing:
+    raise ValueError(f"scorecard is missing fields: {sorted(missing)}")
+  has_family = "attack_family" in value
+  has_expectations = "reason_expectations" in value
+  if has_family != has_expectations:
+    raise ValueError(
+        "scorecard adversarial fields must be supplied together")
+  return value
 
 
 def _score_robustness(
@@ -678,12 +724,7 @@ def _score_robustness(
     repair_count: int,
 ) -> RobustnessResult:
   try:
-    fields = {
-        "schema_version", "final_status", "minimum_repair_rounds",
-        "maximum_repair_rounds",
-    }
-    data = _closed_object(
-        scorecards.load(case_id), fields, "scorecard")
+    data = _scorecard_object(scorecards.load(case_id))
     if data["schema_version"] != SCHEMA_VERSION:
       raise ValueError("unsupported scorecard schema_version")
     expected = data["final_status"]
@@ -713,6 +754,212 @@ def _score_robustness(
         expectation_met=None,
         error=str(exc).strip() or exc.__class__.__name__,
     )
+
+
+@dataclass(frozen=True, slots=True)
+class ReasonMetric:
+  true_positive: int
+  false_positive: int
+  false_negative: int
+
+  def __post_init__(self) -> None:
+    for value, label in (
+        (self.true_positive, "true_positive"),
+        (self.false_positive, "false_positive"),
+        (self.false_negative, "false_negative"),
+    ):
+      if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{label} must be a nonnegative integer")
+
+  @property
+  def precision(self) -> float | None:
+    denominator = self.true_positive + self.false_positive
+    return None if denominator == 0 else self.true_positive / denominator
+
+  @property
+  def recall(self) -> float | None:
+    denominator = self.true_positive + self.false_negative
+    return None if denominator == 0 else self.true_positive / denominator
+
+  def to_dict(self) -> dict:
+    return {
+        "true_positive": self.true_positive,
+        "false_positive": self.false_positive,
+        "false_negative": self.false_negative,
+        "precision": self.precision,
+        "recall": self.recall,
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> "ReasonMetric":
+    data = _closed_object(value, {
+        "true_positive", "false_positive", "false_negative",
+        "precision", "recall",
+    }, "reason metric")
+    metric = cls(
+        true_positive=data["true_positive"],
+        false_positive=data["false_positive"],
+        false_negative=data["false_negative"],
+    )
+    if data["precision"] != metric.precision or data["recall"] != metric.recall:
+      raise ValueError("reason metric rates do not match counts")
+    return metric
+
+
+@dataclass(frozen=True, slots=True)
+class AdversarialCaseScore:
+  attack_family: str
+  confusion: Mapping[str, int]
+  reason_metrics: Mapping[str, ReasonMetric]
+
+  def __post_init__(self) -> None:
+    _text(self.attack_family, "attack_family")
+    expected_confusion = {
+        "true_positive", "false_positive", "true_negative", "false_negative"}
+    if set(self.confusion) != expected_confusion:
+      raise ValueError("adversarial confusion fields are invalid")
+    frozen_confusion = {}
+    for name in sorted(expected_confusion):
+      value = self.confusion[name]
+      if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError("adversarial confusion counts must be nonnegative")
+      frozen_confusion[name] = value
+    metrics = {}
+    for code, metric in self.reason_metrics.items():
+      reason = ReasonCode(code).value
+      if reason in metrics:
+        raise ValueError("reason metrics must be unique")
+      metrics[reason] = (
+          metric if isinstance(metric, ReasonMetric)
+          else ReasonMetric.from_dict(metric))
+    if not metrics:
+      raise ValueError("reason metrics must not be empty")
+    object.__setattr__(self, "confusion", MappingProxyType(frozen_confusion))
+    object.__setattr__(
+        self, "reason_metrics", MappingProxyType(dict(sorted(metrics.items()))))
+
+  def to_dict(self) -> dict:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "attack_family": self.attack_family,
+        "confusion": dict(self.confusion),
+        "reason_metrics": {
+            code: metric.to_dict()
+            for code, metric in self.reason_metrics.items()
+        },
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> "AdversarialCaseScore":
+    data = _wire_object(value, {
+        "attack_family", "confusion", "reason_metrics",
+    }, "adversarial case score")
+    if not isinstance(data["confusion"], dict):
+      raise ValueError("adversarial confusion must be a dictionary")
+    if not isinstance(data["reason_metrics"], dict):
+      raise ValueError("reason metrics must be a dictionary")
+    return cls(
+        attack_family=data["attack_family"],
+        confusion=data["confusion"],
+        reason_metrics=data["reason_metrics"],
+    )
+
+
+def _observed_findings(value: object) -> tuple[Finding, ...]:
+  if isinstance(value, IntegrityEvalResult):
+    return value.model_first_pass.integrity.findings
+  if not isinstance(value, Iterable) or isinstance(value, (str, bytes, dict)):
+    raise ValueError("observed attack findings must be an iterable")
+  findings = []
+  for item in value:
+    if isinstance(item, Finding):
+      findings.append(item)
+    elif isinstance(item, dict):
+      findings.append(Finding.from_dict(item))
+    else:
+      raise ValueError("observed attack finding is invalid")
+  return tuple(findings)
+
+
+def _attack_expectations(value: object) -> tuple[dict, ...]:
+  if not isinstance(value, list) or not value:
+    raise ValueError("reason_expectations must be a nonempty list")
+  expectations = []
+  for item in value:
+    data = _closed_object(
+        item, {"reason_code", "present", "unit"}, "reason expectation")
+    reason = ReasonCode(data["reason_code"])
+    if not isinstance(data["present"], bool):
+      raise ValueError("reason expectation present must be a boolean")
+    unit = _closed_object(
+        data["unit"], {"artifact", "context_key", "context_value"},
+        "reason expectation unit")
+    artifact = _text(unit["artifact"], "reason expectation artifact")
+    key = unit["context_key"]
+    context_value = unit["context_value"]
+    if key is None:
+      if context_value is not None:
+        raise ValueError("context_value must be null without context_key")
+    elif (key not in {"result_index", "synthesis_sentence_index"}
+          or type(context_value) is not int or context_value < 0):
+      raise ValueError("reason expectation context unit is invalid")
+    expectations.append({
+        "reason_code": reason, "present": data["present"],
+        "artifact": artifact, "context_key": key,
+        "context_value": context_value,
+    })
+  return tuple(expectations)
+
+
+def load_adversarial_scores(
+    scorecard_directory: Path | str,
+    observed_by_case: Mapping[str, object],
+) -> Mapping[str, AdversarialCaseScore]:
+  """Read scorer-only expectations after runs and return count-only scores."""
+  if not isinstance(observed_by_case, Mapping):
+    raise ValueError("observed_by_case must be a mapping")
+  store = _ScorecardStore(scorecard_directory)
+  scores = {}
+  for case_id, observed_value in observed_by_case.items():
+    if not isinstance(case_id, str) or not _CASE_ID_RE.fullmatch(case_id):
+      raise ValueError("adversarial score case_id is invalid")
+    data = _scorecard_object(store.load(case_id))
+    if "attack_family" not in data:
+      continue
+    family = _text(data["attack_family"], "attack_family")
+    expectations = _attack_expectations(data["reason_expectations"])
+    findings = _observed_findings(observed_value)
+    confusion = dict.fromkeys((
+        "true_positive", "false_positive", "true_negative", "false_negative"
+    ), 0)
+    reason_counts: dict[str, dict[str, int]] = {}
+    for expectation in expectations:
+      code = expectation["reason_code"].value
+      matched = any(
+          finding.reason_code is expectation["reason_code"]
+          and finding.artifact == expectation["artifact"]
+          and (expectation["context_key"] is None
+               or finding.context.get(expectation["context_key"])
+               == expectation["context_value"])
+          for finding in findings)
+      if expectation["present"]:
+        outcome = "true_positive" if matched else "false_negative"
+      else:
+        outcome = "false_positive" if matched else "true_negative"
+      confusion[outcome] += 1
+      counts = reason_counts.setdefault(code, {
+          "true_positive": 0, "false_positive": 0, "false_negative": 0})
+      if outcome in counts:
+        counts[outcome] += 1
+    scores[case_id] = AdversarialCaseScore(
+        attack_family=family,
+        confusion=confusion,
+        reason_metrics={
+            code: ReasonMetric(**counts)
+            for code, counts in reason_counts.items()
+        },
+    )
+  return MappingProxyType(scores)
 
 
 class LiteratureIntegrityRunner:
@@ -984,9 +1231,11 @@ class ProductionModelExecutor:
 
 
 __all__ = [
-    "CAPABILITY", "CAPTURE_PROMPT_SHA256", "CAPTURE_PROMPT_VERSION",
-    "CaseDefinition", "IntegrityEvalResult", "LiteratureIntegrityRunner",
+    "AdversarialCaseScore", "CAPABILITY", "CAPTURE_PROMPT_SHA256",
+    "CAPTURE_PROMPT_VERSION", "CaseDefinition", "IntegrityEvalResult",
+    "LiteratureIntegrityRunner",
     "ModelExecutor", "ModelUsage", "ProductionModelExecutor",
     "ProductionQualityJudge", "QualityJudge", "QualityResult", "RepairCost",
-    "RepairRound", "RobustnessResult", "SnapshotEvaluation", "load_cases",
+    "ReasonMetric", "RepairRound", "RobustnessResult", "SnapshotEvaluation",
+    "load_adversarial_scores", "load_cases",
 ]

@@ -8,6 +8,7 @@ manifest, so later validators never need to reopen an artifact pathname.
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
+import errno
 import hashlib
 import json
 import math
@@ -17,6 +18,8 @@ import re
 import stat
 from types import MappingProxyType
 from typing import Any, Mapping, Optional
+
+from .models import ReasonCode
 
 
 SCHEMA_VERSION = "1.0.0"
@@ -38,6 +41,13 @@ _LOADER_TOKEN = object()
 class WorkspaceError(ValueError):
   """The workspace cannot be snapshotted without weakening the contract."""
 
+  def __init__(
+      self, message: str,
+      reason_code: ReasonCode = ReasonCode.ARTIFACT_MALFORMED,
+  ):
+    super().__init__(message)
+    self.reason_code = ReasonCode(reason_code)
+
 
 def _valid_unicode(value: str, field_name: str) -> str:
   if type(value) is not str:
@@ -54,7 +64,9 @@ def _canonical_relative_path(raw: object) -> str:
   path = pathlib.PurePosixPath(value)
   if (not value or path.is_absolute() or "." in path.parts
       or ".." in path.parts or path.as_posix() != value):
-    raise WorkspaceError(f"artifact path is not canonical and relative: {value!r}")
+    raise WorkspaceError(
+        f"artifact path is not canonical and relative: {value!r}",
+        ReasonCode.ARTIFACT_TRAVERSAL)
   return value
 
 
@@ -291,7 +303,8 @@ def _open_root(root: pathlib.Path) -> int:
     raise
   except Exception as exc:
     raise WorkspaceError(
-        f"cannot securely open workspace root (symlinks are forbidden): {exc}"
+        f"cannot securely open workspace root (symlinks are forbidden): {exc}",
+        ReasonCode.ARTIFACT_SYMLINK,
     ) from exc
 
 
@@ -370,8 +383,12 @@ class _SnapshotReader:
     except WorkspaceError:
       raise
     except Exception as exc:
+      reason = (ReasonCode.ARTIFACT_SYMLINK
+                if isinstance(exc, OSError) and exc.errno == errno.ELOOP
+                else ReasonCode.ARTIFACT_TYPE_INVALID)
       raise WorkspaceError(
-          f"cannot securely read artifact {relative_path}: {exc}") from exc
+          f"cannot securely read artifact {relative_path}: {exc}",
+          reason) from exc
     self.total_size += len(payload)
     if self.total_size > MAX_TOTAL_ARTIFACT_BYTES:
       raise WorkspaceError(
@@ -383,7 +400,9 @@ class _SnapshotReader:
   def required(self, relative_path: str) -> bytes:
     payload = self.optional(relative_path)
     if payload is None:
-      raise WorkspaceError(f"required artifact is missing: {relative_path}")
+      raise WorkspaceError(
+          f"required artifact is missing: {relative_path}",
+          ReasonCode.ARTIFACT_MISSING)
     return payload
 
 

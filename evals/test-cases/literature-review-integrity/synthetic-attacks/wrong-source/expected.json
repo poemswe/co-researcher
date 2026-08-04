@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "final_status": "valid_with_warnings",
+  "minimum_repair_rounds": 1,
+  "maximum_repair_rounds": 3,
+  "attack_family": "wrong-source",
+  "reason_expectations": [
+    {"reason_code": "citation_identity_mismatch", "present": true, "unit": {"artifact": "claims.json", "context_key": "result_index", "context_value": 0}},
+    {"reason_code": "citation_identity_mismatch", "present": false, "unit": {"artifact": "claims.json", "context_key": "result_index", "context_value": 1}}
+  ]
+}
