@@ -2,16 +2,18 @@
 
 from __future__ import annotations
 
+import atexit
 import hashlib
 import json
 import math
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
 from typing import Protocol
@@ -24,7 +26,12 @@ REVIEW_SCRIPTS = REPOSITORY_ROOT / "skills/literature-review/scripts"
 if str(REVIEW_SCRIPTS) not in sys.path:
   sys.path.insert(0, str(REVIEW_SCRIPTS))
 
-from review_integrity.models import PassReport  # noqa: E402
+from review_integrity.models import (  # noqa: E402
+    IntegrityRunReport,
+    PassReport,
+    ReasonCode,
+    RepairRecord,
+)
 from review_integrity.repair import RepairController  # noqa: E402
 from review_integrity.scoring import score_integrity  # noqa: E402
 from review_integrity.validators import validate_snapshot  # noqa: E402
@@ -57,6 +64,18 @@ score, or deliver the review. Stop immediately after updating the artifacts.
 """
 REPAIR_PROMPT_SHA256 = hashlib.sha256(
     REPAIR_INSTRUCTION.encode("utf-8")).hexdigest()
+_CLAUDE_CAPTURE_TOOLS = (
+    "WebSearch,WebFetch,Read,Grep,Glob,Write,Edit,Bash")
+_CLAUDE_REPAIR_TOOLS = "Read,Grep,Glob,Write,Edit,Bash"
+_FIXTURE_STAGING_ROOTS: list[Path] = []
+
+
+def _cleanup_fixture_staging() -> None:
+  for root in _FIXTURE_STAGING_ROOTS:
+    shutil.rmtree(root, ignore_errors=True)
+
+
+atexit.register(_cleanup_fixture_staging)
 
 
 def _closed_object(value: object, fields: set[str], label: str) -> dict:
@@ -100,7 +119,6 @@ class CaseDefinition:
   domain: str
   fixture_paths: tuple[Path, ...]
   quality_rubric_id: str
-  _scorecard_path: Path = field(repr=False, compare=False)
 
   def __post_init__(self) -> None:
     if not isinstance(self.case_id, str) or not _CASE_ID_RE.fullmatch(
@@ -115,8 +133,6 @@ class CaseDefinition:
         isinstance(path, Path) and path.is_absolute()
         for path in self.fixture_paths):
       raise ValueError("fixture_paths must contain absolute paths")
-    if not isinstance(self._scorecard_path, Path):
-      raise ValueError("scorecard path must be a path")
 
 
 @dataclass(frozen=True, slots=True)
@@ -274,6 +290,7 @@ class RepairRound:
   previous_integrity: PassReport
   integrity: PassReport
   workspace_manifest_sha256: str
+  reason_codes: tuple[ReasonCode, ...]
   action: str
   model_usage: ModelUsage
 
@@ -287,6 +304,17 @@ class RepairRound:
       raise ValueError("integrity must be a PassReport")
     if self.integrity.manifest_sha256 != self.workspace_manifest_sha256:
       raise ValueError("repair integrity must match its snapshot")
+    if not isinstance(self.reason_codes, (list, tuple)):
+      raise ValueError("reason_codes must be a list")
+    try:
+      reason_codes = tuple(ReasonCode(code) for code in self.reason_codes)
+    except (TypeError, ValueError) as exc:
+      raise ValueError("reason_codes contain an unknown value") from exc
+    expected_reason_codes = tuple(dict.fromkeys(
+        finding.reason_code for finding in self.integrity.findings))
+    if reason_codes != expected_reason_codes:
+      raise ValueError("reason_codes must match repair integrity findings")
+    object.__setattr__(self, "reason_codes", reason_codes)
     if self.action not in {"repair", "pass", "stop_invalid"}:
       raise ValueError("unknown repair action")
     if not isinstance(self.model_usage, ModelUsage):
@@ -299,6 +327,7 @@ class RepairRound:
         "previous_integrity": self.previous_integrity.to_dict(),
         "integrity": self.integrity.to_dict(),
         "workspace_manifest_sha256": self.workspace_manifest_sha256,
+        "reason_codes": [code.value for code in self.reason_codes],
         "action": self.action,
         "model_usage": self.model_usage.to_dict(),
     }
@@ -307,13 +336,14 @@ class RepairRound:
   def from_dict(cls, value: dict) -> "RepairRound":
     data = _wire_object(value, {
         "attempt", "previous_integrity", "integrity",
-        "workspace_manifest_sha256", "action", "model_usage",
+        "workspace_manifest_sha256", "reason_codes", "action", "model_usage",
     }, "repair round")
     return cls(
         attempt=data["attempt"],
         previous_integrity=PassReport.from_dict(data["previous_integrity"]),
         integrity=PassReport.from_dict(data["integrity"]),
         workspace_manifest_sha256=data["workspace_manifest_sha256"],
+        reason_codes=data["reason_codes"],
         action=data["action"],
         model_usage=ModelUsage.from_dict(data["model_usage"]),
     )
@@ -391,6 +421,8 @@ class RepairCost:
 class RobustnessResult:
   expected_final_status: str | None
   observed_final_status: str
+  minimum_repair_rounds: int | None
+  maximum_repair_rounds: int | None
   expectation_met: bool | None
   error: str | None
 
@@ -399,12 +431,21 @@ class RobustnessResult:
     if self.observed_final_status not in statuses:
       raise ValueError("observed_final_status is invalid")
     if self.expected_final_status is None:
+      if (self.minimum_repair_rounds is not None
+          or self.maximum_repair_rounds is not None):
+        raise ValueError("repair bounds must be null without an expectation")
       if self.expectation_met is not None:
         raise ValueError("expectation_met must be null without an expectation")
       _text(self.error, "robustness error")
     else:
       if self.expected_final_status not in statuses:
         raise ValueError("expected_final_status is invalid")
+      minimum = self.minimum_repair_rounds
+      maximum = self.maximum_repair_rounds
+      if (isinstance(minimum, bool) or not isinstance(minimum, int)
+          or isinstance(maximum, bool) or not isinstance(maximum, int)
+          or minimum < 0 or maximum < minimum or maximum > 3):
+        raise ValueError("robustness repair bounds are invalid")
       if not isinstance(self.expectation_met, bool):
         raise ValueError("expectation_met must be a boolean")
       if self.error is not None:
@@ -415,6 +456,8 @@ class RobustnessResult:
         "schema_version": SCHEMA_VERSION,
         "expected_final_status": self.expected_final_status,
         "observed_final_status": self.observed_final_status,
+        "minimum_repair_rounds": self.minimum_repair_rounds,
+        "maximum_repair_rounds": self.maximum_repair_rounds,
         "expectation_met": self.expectation_met,
         "error": self.error,
     }
@@ -423,7 +466,7 @@ class RobustnessResult:
   def from_dict(cls, value: dict) -> "RobustnessResult":
     data = _wire_object(value, {
         "expected_final_status", "observed_final_status", "expectation_met",
-        "error",
+        "minimum_repair_rounds", "maximum_repair_rounds", "error",
     }, "robustness result")
     return cls(**{key: data[key] for key in data if key != "schema_version"})
 
@@ -451,6 +494,32 @@ class IntegrityEvalResult:
       if repair_round.previous_integrity != previous_integrity:
         raise ValueError("repair round previous integrity breaks the chain")
       previous_integrity = repair_round.integrity
+    initial_action = "repair" if self.repair_rounds else "pass"
+    try:
+      strict_run = IntegrityRunReport(
+          pass_report=self.model_first_pass.integrity,
+          workspace_manifest_sha256=(
+              self.model_first_pass.workspace_manifest_sha256),
+          action=initial_action,
+          quality_score=None,
+          repairs=tuple(RepairRecord(
+              attempt=repair_round.attempt,
+              pass_report=repair_round.integrity,
+              workspace_manifest_sha256=(
+                  repair_round.workspace_manifest_sha256),
+              reason_codes=repair_round.reason_codes,
+              action=repair_round.action,
+              resolved=(repair_round.integrity.status.value != "invalid"),
+          ) for repair_round in self.repair_rounds),
+      )
+      RepairController.from_run_report(strict_run)
+    except ValueError as exc:
+      raise ValueError(f"repair policy replay failed: {exc}") from exc
+    final_action = (
+        self.repair_rounds[-1].action if self.repair_rounds
+        else strict_run.action)
+    if final_action not in {"pass", "stop_invalid"}:
+      raise ValueError("repair policy replay did not reach a terminal action")
     if not isinstance(self.system_final, SnapshotEvaluation):
       raise ValueError("system_final must be a SnapshotEvaluation")
     expected_final = (
@@ -458,6 +527,11 @@ class IntegrityEvalResult:
         else self.model_first_pass.integrity)
     if self.system_final.integrity != expected_final:
       raise ValueError("system_final integrity must be the final snapshot")
+    expected_usage = (
+        self.repair_rounds[-1].model_usage if self.repair_rounds
+        else self.model_first_pass.model_usage)
+    if self.system_final.model_usage != expected_usage:
+      raise ValueError("system_final usage must match the final model pass")
     if (not isinstance(self.repair_cost, RepairCost)
         or self.repair_cost != RepairCost.from_rounds(self.repair_rounds)):
       raise ValueError("repair_cost must match repair_rounds")
@@ -466,6 +540,15 @@ class IntegrityEvalResult:
     if (self.robustness.observed_final_status
         != self.system_final.integrity.status.value):
       raise ValueError("robustness must describe system_final")
+    if self.robustness.expected_final_status is not None:
+      expected_robustness = (
+          self.robustness.observed_final_status
+          == self.robustness.expected_final_status
+          and self.robustness.minimum_repair_rounds
+          <= len(self.repair_rounds)
+          <= self.robustness.maximum_repair_rounds)
+      if self.robustness.expectation_met != expected_robustness:
+        raise ValueError("robustness expectation does not match retained bounds")
 
   def to_dict(self) -> dict:
     return {
@@ -532,7 +615,7 @@ def _load_case(path: Path) -> CaseDefinition:
       isinstance(item, str) and item for item in data["fixture_paths"]):
     raise ValueError("fixture_paths must be a list of nonempty text paths")
   base = path.parent.resolve()
-  fixtures = []
+  sources: list[tuple[str, Path]] = []
   for item in data["fixture_paths"]:
     candidate = (base / item).resolve()
     try:
@@ -541,14 +624,25 @@ def _load_case(path: Path) -> CaseDefinition:
       raise ValueError("fixture paths must remain inside the case directory") from exc
     if not candidate.is_file():
       raise ValueError(f"fixture path is not a file: {item}")
-    fixtures.append(candidate)
+    sources.append((item, candidate))
+  fixtures = []
+  if sources:
+    staging = Path(tempfile.mkdtemp(
+        prefix=f"{data['case_id']}-fixtures-",
+        dir=Path(tempfile.gettempdir()).resolve(),
+    )).resolve()
+    _FIXTURE_STAGING_ROOTS.append(staging)
+    for relative, source in sources:
+      destination = staging / relative
+      destination.parent.mkdir(parents=True, exist_ok=True)
+      destination.write_bytes(source.read_bytes())
+      fixtures.append(destination)
   return CaseDefinition(
       case_id=data["case_id"],
       prompt=_text(data["prompt"], "prompt"),
       domain=_text(data["domain"], "domain"),
       fixture_paths=tuple(fixtures),
       quality_rubric_id=data["quality_rubric_id"],
-      _scorecard_path=path.parent / "expected.json",
   )
 
 
@@ -567,8 +661,21 @@ def load_cases(directory: Path | str) -> tuple[CaseDefinition, ...]:
   return cases
 
 
+class _ScorecardStore:
+  def __init__(self, directory: Path | str | None):
+    self._directory = (
+        None if directory is None else Path(directory).resolve())
+
+  def load(self, case_id: str) -> dict:
+    if self._directory is None:
+      raise ValueError("scorecard directory was not supplied")
+    path = self._directory / case_id / "expected.json"
+    return _read_json(path, "scorecard")
+
+
 def _score_robustness(
-    case: CaseDefinition, status: str, repair_count: int,
+    scorecards: _ScorecardStore, case_id: str, status: str,
+    repair_count: int,
 ) -> RobustnessResult:
   try:
     fields = {
@@ -576,7 +683,7 @@ def _score_robustness(
         "maximum_repair_rounds",
     }
     data = _closed_object(
-        _read_json(case._scorecard_path, "scorecard"), fields, "scorecard")
+        scorecards.load(case_id), fields, "scorecard")
     if data["schema_version"] != SCHEMA_VERSION:
       raise ValueError("unsupported scorecard schema_version")
     expected = data["final_status"]
@@ -591,6 +698,8 @@ def _score_robustness(
     return RobustnessResult(
         expected_final_status=expected,
         observed_final_status=status,
+        minimum_repair_rounds=minimum,
+        maximum_repair_rounds=maximum,
         expectation_met=(
             status == expected and minimum <= repair_count <= maximum),
         error=None,
@@ -599,6 +708,8 @@ def _score_robustness(
     return RobustnessResult(
         expected_final_status=None,
         observed_final_status=status,
+        minimum_repair_rounds=None,
+        maximum_repair_rounds=None,
         expectation_met=None,
         error=str(exc).strip() or exc.__class__.__name__,
     )
@@ -611,12 +722,14 @@ class LiteratureIntegrityRunner:
       quality_judge: QualityJudge,
       *,
       workspace_parent: Path | str | None = None,
+      scorecard_directory: Path | str | None = None,
   ):
     self._executor = executor
     self._quality_judge = quality_judge
     self._workspace_parent = (
         Path(workspace_parent).resolve() if workspace_parent is not None
         else Path(tempfile.gettempdir()).resolve())
+    self._scorecards = _ScorecardStore(scorecard_directory)
 
   def _quality(self, case: CaseDefinition, synthesis: str) -> QualityResult:
     try:
@@ -675,6 +788,8 @@ class LiteratureIntegrityRunner:
             previous_integrity=previous_integrity,
             integrity=current_integrity,
             workspace_manifest_sha256=current_snapshot.manifest_sha256,
+            reason_codes=tuple(dict.fromkeys(
+                finding.reason_code for finding in current_integrity.findings)),
             action=decision.action,
             model_usage=usage,
         ))
@@ -694,7 +809,8 @@ class LiteratureIntegrityRunner:
       # Scoring-only data is deliberately read after model work, validation,
       # repair feedback, and quality judging are all complete.
       robustness = _score_robustness(
-          case, final.integrity.status.value, len(immutable_rounds))
+          self._scorecards, case.case_id, final.integrity.status.value,
+          len(immutable_rounds))
       return IntegrityEvalResult(
           model_first_pass=first,
           repair_rounds=immutable_rounds,
@@ -745,13 +861,34 @@ class ProductionQualityJudge:
         AgentResult(success=True, output=synthesis, duration=0.0),
         self._model,
     )
-    if report.judge_output.startswith("Judge error:"):
-      raise RuntimeError(report.judge_output.removeprefix("Judge error:").strip())
-    return QualityResult(
-        quality_score=report.overall_score,
-        scores={name: report.scores[name] for name in QUALITY_DIMENSIONS},
-        error=None,
-    )
+    try:
+      output = report.judge_output
+      if not isinstance(output, str) or not output.strip():
+        raise ValueError("quality judge returned empty output")
+      if output.startswith("Judge error:"):
+        detail = output.removeprefix("Judge error:").strip()
+        raise ValueError(detail or "quality judge failed")
+
+      def explicit_score(key: str) -> float:
+        matches = re.findall(
+            rf"(?im)^\s*[*`]*{re.escape(key)}[*`]*\s*[:=]\s*"
+            rf"(\d+(?:\.\d+)?)\s*(?:/100)?\s*$",
+            output,
+        )
+        if len(matches) != 1:
+          raise ValueError(
+              f"quality judge output must contain one explicit {key}")
+        return _finite_score(float(matches[0]), key)
+
+      scores = {
+          name: explicit_score(name.replace("-", "_").upper())
+          for name in QUALITY_DIMENSIONS
+      }
+      overall = explicit_score("OVERALL_SCORE")
+      return QualityResult(
+          quality_score=overall, scores=scores, error=None)
+    except Exception as exc:
+      return QualityResult.failed(exc)
 
 
 class ProductionModelExecutor:
@@ -765,7 +902,7 @@ class ProductionModelExecutor:
 
   def _run(
       self, prompt: str, workspace: Path, *, prompt_version: str,
-      prompt_sha256: str,
+      prompt_sha256: str, allow_research: bool,
   ) -> ModelUsage:
     parts = self._model.split(":")
     provider = parts[0].lower()
@@ -784,7 +921,10 @@ class ProductionModelExecutor:
       command += ["--model", model_name]
     if extra and provider == "codex":
       command += ["-c", f'reasoning="{extra}"']
-    command += config["tools"]
+    command += (
+        ["--tools", (_CLAUDE_CAPTURE_TOOLS if allow_research
+                     else _CLAUDE_REPAIR_TOOLS)]
+        if provider == "claude" else config["tools"])
     stdin = prompt if config.get("stdin") else None
     command += ["-"] if stdin is not None else ["-p", prompt]
     started = time.monotonic()
@@ -827,6 +967,7 @@ class ProductionModelExecutor:
         prompt, workspace,
         prompt_version=CAPTURE_PROMPT_VERSION,
         prompt_sha256=CAPTURE_PROMPT_SHA256,
+        allow_research=True,
     )
 
   def repair(self, feedback: dict, workspace: Path) -> ModelUsage:
@@ -838,6 +979,7 @@ class ProductionModelExecutor:
         prompt, workspace,
         prompt_version=REPAIR_PROMPT_VERSION,
         prompt_sha256=REPAIR_PROMPT_SHA256,
+        allow_research=False,
     )
 
 

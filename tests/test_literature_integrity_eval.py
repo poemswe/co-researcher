@@ -2,6 +2,8 @@ import json
 import pathlib
 import subprocess
 import sys
+from dataclasses import fields, is_dataclass
+from types import SimpleNamespace
 
 import pytest
 
@@ -14,9 +16,16 @@ from lib.literature_integrity import (  # noqa: E402
     IntegrityEvalResult,
     LiteratureIntegrityRunner,
     ModelUsage,
+    ProductionModelExecutor,
+    ProductionQualityJudge,
     QualityResult,
+    RepairCost,
+    RobustnessResult,
+    SnapshotEvaluation,
     load_cases,
 )
+from lib import literature_integrity  # noqa: E402
+from review_integrity.models import IntegrityRunReport  # noqa: E402
 
 
 def _write_workspace(workspace: pathlib.Path, state: int) -> None:
@@ -121,7 +130,34 @@ def _case(tmp_path, case_id="synthetic-case", expected_status="invalid"):
 def _runner(tmp_path, executor=None, judge=None):
   return LiteratureIntegrityRunner(
       executor or FakeExecutor(), judge or RecordingJudge(),
-      workspace_parent=tmp_path / "workspaces")
+      workspace_parent=tmp_path / "workspaces",
+      scorecard_directory=tmp_path / "cases")
+
+
+def _reachable_strings(value, seen=None):
+  seen = set() if seen is None else seen
+  if id(value) in seen:
+    return []
+  seen.add(id(value))
+  if isinstance(value, pathlib.Path):
+    return [str(value)]
+  if isinstance(value, str):
+    return [value]
+  if isinstance(value, dict):
+    return [
+        item
+        for key, nested in value.items()
+        for item in (*_reachable_strings(key, seen),
+                     *_reachable_strings(nested, seen))
+    ]
+  if isinstance(value, (tuple, list, set)):
+    return [item for nested in value
+            for item in _reachable_strings(nested, seen)]
+  if is_dataclass(value):
+    return [item for definition in fields(value)
+            for item in _reachable_strings(
+                getattr(value, definition.name), seen)]
+  return []
 
 
 def test_integrity_mode_is_listed_by_cli():
@@ -238,6 +274,18 @@ def test_eval_result_rejects_repair_cost_that_does_not_match_usage(tmp_path):
     IntegrityEvalResult.from_dict(serialized)
 
 
+def test_repair_round_retains_and_validates_reason_chain(tmp_path):
+  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  expected = list(dict.fromkeys(
+      finding["reason_code"]
+      for finding in serialized["repair_rounds"][0]["integrity"]["findings"]))
+
+  assert serialized["repair_rounds"][0]["reason_codes"] == expected
+  serialized["repair_rounds"][0]["reason_codes"] = []
+  with pytest.raises(ValueError, match="reason_codes"):
+    IntegrityEvalResult.from_dict(serialized)
+
+
 def test_quality_failure_is_explicit_and_does_not_change_integrity(tmp_path):
   judge = RecordingJudge(fail_on="final synthesis 3\n")
 
@@ -280,3 +328,228 @@ def test_case_sidecars_never_enter_workspace_or_quality_input(tmp_path):
   assert all("expected" not in synthesis for synthesis in judge.syntheses)
   assert all("final_status" not in json.dumps(item)
              for item in executor.feedback)
+
+
+def test_case_scoring_material_is_not_reachable_by_executor_or_judge(tmp_path):
+  observed = []
+
+  class IntrospectionExecutor(FakeExecutor):
+    def first_pass(self, case, workspace):
+      observed.extend(_reachable_strings((case, workspace)))
+      observed.extend(str(path) for path in workspace.rglob("*"))
+      return super().first_pass(case, workspace)
+
+    def repair(self, feedback, workspace):
+      observed.extend(_reachable_strings((feedback, workspace)))
+      observed.extend(str(path) for path in workspace.rglob("*"))
+      return super().repair(feedback, workspace)
+
+  class IntrospectionJudge(RecordingJudge):
+    def score(self, case, synthesis):
+      observed.extend(_reachable_strings((case, synthesis)))
+      return super().score(case, synthesis)
+
+  case = _case(tmp_path, expected_status="valid_with_warnings")
+  _runner(
+      tmp_path, IntrospectionExecutor(), IntrospectionJudge()).run_case(case)
+  reachable = "\n".join(observed)
+
+  assert "expected.json" not in reachable
+  assert "valid_with_warnings" not in reachable
+  assert str(tmp_path / "cases") not in reachable
+  assert not any("score" in definition.name.lower()
+                 for definition in fields(case))
+
+
+def test_scorecard_is_loaded_after_both_quality_judgments(tmp_path):
+  case = _case(tmp_path, expected_status="valid_with_warnings")
+  scorecard = tmp_path / "cases" / case.case_id / "expected.json"
+
+  class FinalJudge(RecordingJudge):
+    def score(self, case, synthesis):
+      result = super().score(case, synthesis)
+      if len(self.syntheses) == 2:
+        scorecard.write_text(json.dumps({
+            "schema_version": "1.0.0",
+            "final_status": "invalid",
+            "minimum_repair_rounds": 3,
+            "maximum_repair_rounds": 3,
+        }), encoding="utf-8")
+      return result
+
+  result = _runner(tmp_path, judge=FinalJudge()).run_case(case)
+
+  assert result.robustness.expected_final_status == "invalid"
+  assert result.robustness.expectation_met is True
+
+
+def _capture_executor_calls(monkeypatch):
+  calls = []
+  monkeypatch.setattr(
+      literature_integrity, "find_cli",
+      lambda provider: pathlib.Path(f"/fake/{provider}"))
+
+  def fake_run(command, **kwargs):
+    calls.append((command, kwargs))
+    return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+  monkeypatch.setattr(literature_integrity.subprocess, "run", fake_run)
+  return calls
+
+
+def test_claude_executor_can_create_and_repair_workspace(
+    monkeypatch, tmp_path,
+):
+  calls = _capture_executor_calls(monkeypatch)
+  case = _case(tmp_path)
+  executor = ProductionModelExecutor("claude", ROOT)
+  workspace = tmp_path / "model-workspace"
+  workspace.mkdir()
+
+  executor.first_pass(case, workspace)
+  executor.repair({
+      "reason_codes": [], "affected_artifacts": [], "findings": [],
+  }, workspace)
+
+  for index, (command, _kwargs) in enumerate(calls):
+    tools = command[command.index("--tools") + 1].split(",")
+    assert {"Read", "Write", "Edit", "Bash"} <= set(tools)
+    if index == 0:
+      assert {"WebSearch", "WebFetch"} <= set(tools)
+    else:
+      assert not {"WebSearch", "WebFetch"} & set(tools)
+    prompt = command[command.index("-p") + 1]
+    assert "expected.json" not in prompt
+    assert "final_status" not in prompt
+    assert str(tmp_path / "cases") not in prompt
+
+
+@pytest.mark.parametrize("provider", ["codex", "gemini"])
+def test_non_claude_executor_commands_keep_provider_write_mode(
+    monkeypatch, tmp_path, provider,
+):
+  calls = _capture_executor_calls(monkeypatch)
+  case = _case(tmp_path)
+  workspace = tmp_path / f"{provider}-workspace"
+  workspace.mkdir()
+
+  ProductionModelExecutor(provider, ROOT).first_pass(case, workspace)
+
+  command, kwargs = calls[0]
+  assert command[-1] == "-"
+  assert kwargs["input"]
+  assert ("--full-auto" in command) if provider == "codex" else (
+      "--yolo" in command)
+
+
+def _legacy_quality_report(output):
+  return SimpleNamespace(
+      judge_output=output,
+      overall_score=0.0,
+      scores={name: 0 for name in (
+          "research-quality", "analytical-quality", "output-structure")},
+  )
+
+
+@pytest.mark.parametrize("output", [
+    "unparseable response",
+    "RESEARCH_QUALITY: 10\nANALYTICAL_QUALITY: 20\nOVERALL_SCORE: 15",
+    "Judge error: unavailable",
+])
+def test_production_quality_judge_fails_closed_on_incomplete_output(
+    monkeypatch, tmp_path, output,
+):
+  monkeypatch.setattr(
+      literature_integrity, "evaluate_output",
+      lambda *args: _legacy_quality_report(output))
+
+  result = ProductionQualityJudge("claude").score(_case(tmp_path), "text")
+
+  assert result.quality_score is None
+  assert result.scores == {}
+  assert result.error
+
+
+def test_production_quality_judge_accepts_explicit_zero_scores(
+    monkeypatch, tmp_path,
+):
+  output = (
+      "RESEARCH_QUALITY: 0\n"
+      "ANALYTICAL_QUALITY: 0\n"
+      "OUTPUT_STRUCTURE: 0\n"
+      "OVERALL_SCORE: 0\n")
+  monkeypatch.setattr(
+      literature_integrity, "evaluate_output",
+      lambda *args: _legacy_quality_report(output))
+
+  result = ProductionQualityJudge("claude").score(_case(tmp_path), "text")
+
+  assert result.quality_score == 0.0
+  assert result.scores == {
+      "research-quality": 0.0,
+      "analytical-quality": 0.0,
+      "output-structure": 0.0,
+  }
+  assert result.error is None
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda value: value["repair_rounds"][0].update(action="pass"),
+    lambda value: value["repair_rounds"].pop(),
+    lambda value: value["repair_rounds"][-1].update(action="repair"),
+    lambda value: value["robustness"].update(expectation_met=False),
+    lambda value: value["system_final"]["model_usage"].update(
+        prompt_version="forged-final-usage"),
+    lambda value: value["repair_rounds"][1].update(
+        workspace_manifest_sha256="f" * 64),
+])
+def test_eval_result_rejects_policy_and_commitment_tampering(
+    tmp_path, mutation,
+):
+  serialized = _runner(tmp_path).run_case(_case(tmp_path)).to_dict()
+  mutation(serialized)
+
+  with pytest.raises(ValueError):
+    IntegrityEvalResult.from_dict(serialized)
+
+
+def test_eval_result_rejects_nonterminal_first_pass_without_repairs():
+  report = IntegrityRunReport.example_valid().pass_report
+  usage = FakeExecutor._usage(cost=0.0)
+  quality = QualityResult(
+      quality_score=0.0,
+      scores={name: 0.0 for name in (
+          "research-quality", "analytical-quality", "output-structure")},
+      error=None,
+  )
+  first = SnapshotEvaluation(
+      workspace_manifest_sha256=report.manifest_sha256,
+      quality=quality, integrity=report, model_usage=usage)
+  forged_usage = ModelUsage(
+      duration_seconds=usage.duration_seconds,
+      input_tokens=usage.input_tokens,
+      output_tokens=usage.output_tokens,
+      estimated_cost_usd=usage.estimated_cost_usd,
+      executor_version=usage.executor_version,
+      prompt_version="forged-final-usage",
+      prompt_sha256=usage.prompt_sha256,
+  )
+  forged_final = SnapshotEvaluation(
+      workspace_manifest_sha256=report.manifest_sha256,
+      quality=quality, integrity=report, model_usage=forged_usage)
+
+  with pytest.raises(ValueError, match="usage"):
+    IntegrityEvalResult(
+        model_first_pass=first,
+        repair_rounds=(),
+        system_final=forged_final,
+        repair_cost=RepairCost.from_rounds(()),
+        robustness=RobustnessResult(
+            expected_final_status="valid",
+            observed_final_status="valid",
+            minimum_repair_rounds=0,
+            maximum_repair_rounds=0,
+            expectation_met=True,
+            error=None,
+        ),
+    )

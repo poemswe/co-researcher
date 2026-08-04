@@ -148,6 +148,7 @@ def run_literature_integrity(model: str):
     runner = LiteratureIntegrityRunner(
         ProductionModelExecutor(model, EVALS_DIR.parent),
         ProductionQualityJudge(model),
+        scorecard_directory=TEST_CASES_DIR / INTEGRITY_CAPABILITY,
     )
     results = runner.run_cases(cases, run_directory)
     for case, result in zip(cases, results):
