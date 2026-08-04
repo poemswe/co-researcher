@@ -270,6 +270,59 @@ def test_authentic_control_matches_attack_length_and_structure(case_id):
   assert type(attacked["citation"]) is type(control["citation"])
 
 
+@pytest.mark.parametrize(
+    ("case_id", "mutation", "control_artifact"), [
+        ("integrity-case-010", "missing", "claims.json"),
+        ("integrity-case-011", "malformed", "refs.json"),
+        ("integrity-case-012", "symlink", "refs.json"),
+        ("integrity-case-013", "traversal", "refs.json"),
+    ])
+def test_operational_attack_has_a_matched_valid_artifact_control(
+    tmp_path, case_id, mutation, control_artifact,
+):
+  scenario = _scenario(case_id)
+  workspace = tmp_path / case_id
+  _write_workspace(workspace, scenario)
+  _artifact_failure(mutation, workspace, scenario)
+
+  control = workspace / control_artifact
+  assert control.is_file() and not control.is_symlink()
+  json.loads(control.read_text(encoding="utf-8"))
+  expected = json.loads((ATTACKS / case_id / "expected.json").read_text())
+  negative = [item for item in expected["reason_expectations"]
+              if item["present"] is False]
+  assert len(negative) == 1
+  assert negative[0]["unit"] == {
+      "artifact": control_artifact,
+      "context_key": None,
+      "context_value": None,
+  }
+
+
+@pytest.mark.parametrize(
+    ("case_id", "mutation", "false_positives"), [
+        ("integrity-case-010", "missing", 0),
+        ("integrity-case-011", "malformed", 1),
+        ("integrity-case-012", "symlink", 0),
+        ("integrity-case-013", "traversal", 0),
+    ])
+def test_operational_controls_contribute_true_negatives(
+    tmp_path, case_id, mutation, false_positives,
+):
+  case = next(item for item in load_cases(ATTACKS) if item.case_id == case_id)
+  result = literature_integrity.LiteratureIntegrityRunner(
+      _ScenarioExecutor(mutation), _ScenarioJudge(),
+      workspace_parent=tmp_path / "workspaces",
+      scorecard_directory=ATTACKS).run_case(case)
+
+  score = literature_integrity.load_adversarial_scores(
+      ATTACKS, {case_id: result})[case_id]
+  assert dict(score.confusion) == {
+      "true_positive": 1, "false_positive": false_positives,
+      "true_negative": 1, "false_negative": 0,
+  }
+
+
 def test_ambiguous_title_control_matches_reference_binding_structure():
   scenario = _scenario("integrity-case-005")
 

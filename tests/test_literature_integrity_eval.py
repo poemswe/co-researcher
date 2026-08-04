@@ -175,6 +175,29 @@ def test_integrity_mode_is_listed_by_cli():
   assert "literature-review-integrity" in help_result.stdout
 
 
+def test_cli_list_recursively_reports_all_integrity_cases_in_sorted_order():
+  command = [sys.executable, str(ROOT / "evals/run_eval.py"), "list"]
+  first = subprocess.run(
+      command, check=False, capture_output=True, text=True, timeout=10)
+  second = subprocess.run(
+      command, check=False, capture_output=True, text=True, timeout=10)
+
+  assert first.returncode == second.returncode == 0
+  assert first.stdout == second.stdout
+  section = first.stdout.split("  literature-review-integrity\n", 1)[1]
+  entries = []
+  for line in section.splitlines():
+    if line.startswith("    - "):
+      entries.append(line.removeprefix("    - "))
+    elif entries:
+      break
+  assert len(entries) == 15
+  assert entries == sorted(entries)
+  assert entries[:2] == ["integrity-case-001", "integrity-case-002"]
+  assert entries[-2:] == ["synthetic-invalid-number", "synthetic-valid"]
+  assert "expected.json" not in first.stdout
+
+
 def test_eval_uses_isolated_workspace_per_case(tmp_path):
   executor = FakeExecutor()
   first = _case(tmp_path, "one")

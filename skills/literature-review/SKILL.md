@@ -157,6 +157,8 @@ INVALID EVIDENCE — This draft contains unresolved evidence-integrity failures
 and must not be treated as verified research.
 ```
 
+   Treat validator exit 2, or missing, empty, unparseable, or schema-invalid JSON output, as an operational validation failure. Repair the validator inputs and rerun when possible. If a valid report still cannot be produced, deliver the draft with the same prominent `INVALID EVIDENCE` warning, give `validator_incomplete` as the unresolved reason and name the affected validator input or output artifact. In this state, never mark any claim as verified, even if an earlier or partial validator output appeared to pass.
+
    Keep `$RUN_REPORT` outside `$WS`, reuse it after every submitted repair, and never edit or replace its retained passes. A `stop_invalid` draft is not verified or publication-ready; do not describe it with either label.
 </protocol>
 

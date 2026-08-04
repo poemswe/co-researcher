@@ -142,7 +142,12 @@ quality from one snapshot with integrity from another. Empty repair and attack
 breakdowns are omitted.
 
 Every artifact link is relative to its run directory and carries a SHA-256
-digest. Publication stages, validates, and syncs the complete run before one
+digest. Report schema `1.1.0` also commits `summary.md` by SHA-256 in
+`result.json`, the registry entry, and `publication.json`; Python recovery and
+the browser verify that commitment before using a run. Legacy `1.0.0` records
+remain readable only through the closed legacy shape and a deterministic
+summary reconstruction check. New records missing the `1.1.0` commitment fail
+closed. Publication stages, validates, and syncs the complete run before one
 atomic rename; a registry lock serializes the matching `index.json` update and
 rollback. The writer and loader reject unsafe IDs, links, aliases, oversized
 files, and non-canonical artifact names. `index.json` gives the static dashboard

@@ -256,3 +256,7 @@ def test_literature_review_skill_pins_delivery_repair_contract():
   assert "unresolved `reason_codes` and `affected_artifacts`" in skill
   assert "not verified or publication-ready" in skill
   assert "do not describe it with either label" in skill
+  assert "exit 2" in skill
+  assert "missing, empty, unparseable, or schema-invalid JSON" in skill
+  assert "`validator_incomplete`" in skill
+  assert "never mark any claim as verified" in skill

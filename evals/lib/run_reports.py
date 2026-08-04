@@ -29,6 +29,7 @@ from .literature_integrity import (
 
 
 SCHEMA_VERSION = "1.0.0"
+REPORT_SCHEMA_VERSION = "1.1.0"
 INTEGRITY_EVALUATION_KIND = "quality_and_integrity"
 INTEGRITY_EVALUATION_LABEL = "Paired quality and integrity evaluation"
 QUALITY_HISTORY_KIND = "quality_only_history"
@@ -44,7 +45,10 @@ _MAX_REPORT_BYTES = 16 * 1024 * 1024
 _REGISTRY_FIELDS = {
     "run_id", "timestamp", "model", "capability", "evaluation_kind",
     "evaluation_label", "case_count", "result_file", "result_sha256",
+    "report_schema_version", "summary_sha256",
 }
+_LEGACY_REGISTRY_FIELDS = _REGISTRY_FIELDS - {
+    "report_schema_version", "summary_sha256"}
 
 
 def _text(value: object, label: str) -> str:
@@ -530,7 +534,9 @@ def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
       + "\n".join(rows) + "\n")
 
 
-def _registry_entry(result: CombinedRunResult, result_sha256: str) -> dict:
+def _registry_entry(
+    result: CombinedRunResult, result_sha256: str, summary_sha256: str,
+) -> dict:
   return {
       "run_id": result.run_id,
       "timestamp": result.timestamp,
@@ -541,11 +547,18 @@ def _registry_entry(result: CombinedRunResult, result_sha256: str) -> dict:
       "case_count": len(result.cases),
       "result_file": f"{result.run_id}/result.json",
       "result_sha256": result_sha256,
+      "report_schema_version": REPORT_SCHEMA_VERSION,
+      "summary_sha256": summary_sha256,
   }
 
 
 def _validate_registry_entry(value: object) -> dict:
-  entry = _closed_object(value, _REGISTRY_FIELDS, "run registry entry")
+  if not isinstance(value, dict):
+    raise ValueError("run registry entry must be a JSON object")
+  legacy = set(value) == _LEGACY_REGISTRY_FIELDS
+  entry = _closed_object(
+      value, _LEGACY_REGISTRY_FIELDS if legacy else _REGISTRY_FIELDS,
+      "run registry entry")
   entry_run_id = _run_id(entry["run_id"])
   _text(entry["timestamp"], "run registry timestamp")
   _text(entry["model"], "run registry model")
@@ -566,6 +579,12 @@ def _validate_registry_entry(value: object) -> dict:
   if (not isinstance(entry["result_sha256"], str)
       or not _SHA256_RE.fullmatch(entry["result_sha256"])):
     raise ValueError("run registry result_sha256 is invalid")
+  if not legacy:
+    if entry["report_schema_version"] != REPORT_SCHEMA_VERSION:
+      raise ValueError("run registry report_schema_version is invalid")
+    if (not isinstance(entry["summary_sha256"], str)
+        or not _SHA256_RE.fullmatch(entry["summary_sha256"])):
+      raise ValueError("run registry summary_sha256 is invalid")
   return entry
 
 
@@ -738,7 +757,7 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
       view["repair_rounds"] = round_views
     case_views.append(view)
   report = {
-      "schema_version": SCHEMA_VERSION,
+      "schema_version": REPORT_SCHEMA_VERSION,
       "evaluation_kind": INTEGRITY_EVALUATION_KIND,
       "evaluation_label": INTEGRITY_EVALUATION_LABEL,
       "run_id": result.run_id,
@@ -748,40 +767,49 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
       "summary": _status_summary(result.cases),
       "cases": case_views,
   }
+  summary_payload = _summary_markdown(result, case_views).encode("utf-8")
+  report["summary_sha256"] = _digest(summary_payload)
   return {
       "report": report,
       "case_views": case_views,
       "result": _json_bytes(report),
-      "summary": _summary_markdown(result, case_views).encode("utf-8"),
+      "summary": summary_payload,
       "artifacts": artifact_payloads,
       "repair_rounds": repair_payloads,
   }
 
 
 def _publication_payload(
-    result: CombinedRunResult, result_sha256: str, nonce: str,
+    result: CombinedRunResult, result_sha256: str, summary_sha256: str,
+    nonce: str,
 ) -> bytes:
   return _json_bytes({
-      "schema_version": SCHEMA_VERSION,
+      "schema_version": REPORT_SCHEMA_VERSION,
       "run_id": result.run_id,
       "result_sha256": result_sha256,
+      "summary_sha256": summary_sha256,
       "nonce": nonce,
   })
 
 
 def _validate_publication_marker(
     payload: bytes, run_id: str, result_sha256: str,
+    summary_sha256: str | None,
 ) -> dict:
   try:
     marker = json.loads(payload)
   except (UnicodeError, json.JSONDecodeError) as exc:
     raise ValueError(f"publication marker is not valid JSON: {exc}") from exc
-  data = _closed_object(marker, {
-      "schema_version", "run_id", "result_sha256", "nonce",
-  }, "publication marker")
-  if (data["schema_version"] != SCHEMA_VERSION
+  legacy = summary_sha256 is None
+  fields = {"schema_version", "run_id", "result_sha256", "nonce"}
+  if not legacy:
+    fields.add("summary_sha256")
+  data = _closed_object(marker, fields, "publication marker")
+  if (data["schema_version"] != (
+          SCHEMA_VERSION if legacy else REPORT_SCHEMA_VERSION)
       or data["run_id"] != run_id
       or data["result_sha256"] != result_sha256
+      or (not legacy and data["summary_sha256"] != summary_sha256)
       or not isinstance(data["nonce"], str)
       or not _NONCE_RE.fullmatch(data["nonce"])):
     raise ValueError("publication marker does not match the requested run")
@@ -825,9 +853,15 @@ def _validate_and_sync_staging(
     raise ValueError("staged result does not match the run report")
   marker_payload = _read_owned_file(
       destination / "publication.json", "publication marker")
+  summary_payload = _read_owned_file(
+      destination / "summary.md", "run summary")
+  summary_sha256 = _digest(summary_payload)
+  if (summary_payload != prepared["summary"]
+      or summary_sha256 != report["summary_sha256"]):
+    raise ValueError("staged run summary SHA-256 mismatch")
   _validate_publication_marker(
-      marker_payload, report["run_id"], _digest(result_payload))
-  _read_owned_file(destination / "summary.md", "run summary")
+      marker_payload, report["run_id"], _digest(result_payload),
+      summary_sha256)
   _fsync_directory(destination / "artifacts")
   _fsync_directory(destination / "repair-rounds")
   _fsync_directory(destination)
@@ -855,11 +889,13 @@ def _validate_matching_orphan(
     result_sha256 = _digest(result_payload)
     marker_payload = _read_regular_at(
         run_descriptor, "publication.json", "publication marker")
-    _validate_publication_marker(
-        marker_payload, result.run_id, result_sha256)
-    if (_read_regular_at(
+    summary_payload = _read_regular_at(
         run_descriptor, "summary.md", "orphan run summary")
-        != prepared["summary"]):
+    summary_sha256 = _digest(summary_payload)
+    _validate_publication_marker(
+        marker_payload, result.run_id, result_sha256, summary_sha256)
+    if (summary_payload != prepared["summary"]
+        or summary_sha256 != prepared["report"]["summary_sha256"]):
       raise ValueError("unregistered run summary does not match")
 
     for directory_name, expected in (
@@ -892,7 +928,8 @@ def _register_matching_orphan(
       root_descriptor, result, prepared)
   try:
     _update_registry(
-        runs_root, _registry_entry(result, result_sha256),
+        runs_root, _registry_entry(
+            result, result_sha256, prepared["report"]["summary_sha256"]),
         root_descriptor=root_descriptor, entries=entries)
   except BaseException:
     _restore_registry_locked(
@@ -954,7 +991,9 @@ def write_run_report(result: CombinedRunResult, root: Path) -> Path:
     _write_exclusive(destination / "summary.md", prepared["summary"])
     _write_exclusive(
         destination / "publication.json",
-        _publication_payload(result, result_sha256, secrets.token_hex(16)))
+        _publication_payload(
+            result, result_sha256, prepared["report"]["summary_sha256"],
+            secrets.token_hex(16)))
     result_payload = _validate_and_sync_staging(destination, prepared)
 
     with _registry_lock(runs_root) as root_descriptor:
@@ -981,7 +1020,9 @@ def write_run_report(result: CombinedRunResult, root: Path) -> Path:
         os.fsync(root_descriptor)
         registry_started = True
         _update_registry(
-            runs_root, _registry_entry(result, _digest(result_payload)),
+            runs_root, _registry_entry(
+                result, _digest(result_payload),
+                prepared["report"]["summary_sha256"]),
             root_descriptor=root_descriptor, entries=entries)
       except BaseException:
         if published:
@@ -1140,20 +1181,44 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
           run_descriptor, "result.json", "selected run result")
       if _digest(report_payload) != registry_entry["result_sha256"]:
         raise ValueError("selected run result SHA-256 mismatch")
+      summary_payload = _read_regular_at(
+          run_descriptor, "summary.md", "run summary markdown")
+      summary_sha256 = _digest(summary_payload)
+      committed_summary_sha256 = registry_entry.get("summary_sha256")
+      if (committed_summary_sha256 is not None
+          and summary_sha256 != committed_summary_sha256):
+        raise ValueError("selected run summary SHA-256 mismatch")
       marker_payload = _read_regular_at(
           run_descriptor, "publication.json", "publication marker")
       _validate_publication_marker(
-          marker_payload, selected, registry_entry["result_sha256"])
+          marker_payload, selected, registry_entry["result_sha256"],
+          committed_summary_sha256)
       try:
         report = json.loads(report_payload)
       except (UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError(f"cannot read selected run: {exc}") from exc
-      data = _closed_object(report, {
-          "schema_version", "evaluation_kind", "evaluation_label", "run_id",
-          "timestamp", "model", "capability", "summary", "cases",
-      }, "run report")
-      if data["schema_version"] != SCHEMA_VERSION:
+      report_version = report.get("schema_version") if isinstance(
+          report, dict) else None
+      if report_version == REPORT_SCHEMA_VERSION:
+        report_fields = {
+            "schema_version", "evaluation_kind", "evaluation_label", "run_id",
+            "timestamp", "model", "capability", "summary", "cases",
+            "summary_sha256",
+        }
+      elif report_version == SCHEMA_VERSION:
+        report_fields = {
+            "schema_version", "evaluation_kind", "evaluation_label", "run_id",
+            "timestamp", "model", "capability", "summary", "cases",
+        }
+      else:
         raise ValueError("unsupported run report schema_version")
+      data = _closed_object(report, report_fields,
+          "run report")
+      new_report = data["schema_version"] == REPORT_SCHEMA_VERSION
+      if new_report != (committed_summary_sha256 is not None):
+        raise ValueError("run report summary commitment version mismatch")
+      if new_report and data["summary_sha256"] != summary_sha256:
+        raise ValueError("run report summary SHA-256 mismatch")
       if data["evaluation_kind"] != INTEGRITY_EVALUATION_KIND:
         raise ValueError("run report is not a paired integrity evaluation")
       if data["evaluation_label"] != INTEGRITY_EVALUATION_LABEL:
@@ -1242,8 +1307,6 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
           raise ValueError("repair-round directory contains unexpected entries")
       finally:
         os.close(rounds_descriptor)
-      _read_regular_at(run_descriptor, "summary.md", "run summary markdown")
-
       expected_summary = _status_summary(strict_cases)
       summary = _closed_object(
           data["summary"], {"case_count", "integrity_status_counts"},
@@ -1269,6 +1332,14 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
           raise ValueError("attack_family_breakdown is invalid")
       if summary != expected_summary:
         raise ValueError("run summary does not match selected run cases")
+      expected_summary_payload = _summary_markdown(
+          CombinedRunResult(
+              run_id=selected, timestamp=data["timestamp"], model=data["model"],
+              capability=data["capability"], cases=tuple(strict_cases)),
+          data["cases"],
+      ).encode("utf-8")
+      if summary_payload != expected_summary_payload:
+        raise ValueError("run summary markdown does not match selected run")
       return data
     finally:
       os.close(run_descriptor)

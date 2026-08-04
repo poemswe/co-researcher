@@ -127,8 +127,12 @@ def list_tests():
             continue
         if agent_dir.name == INTEGRITY_CAPABILITY:
             tests = [
-                path.name for path in sorted(agent_dir.iterdir())
-                if path.is_dir() and (path / "case.json").is_file()
+                path.parent.name
+                for path in sorted(
+                    agent_dir.rglob("case.json"),
+                    key=lambda value: value.relative_to(
+                        agent_dir).as_posix().encode("utf-8"))
+                if path.is_file()
             ]
         else:
             tests = [f.stem.replace("test-", "") for f in sorted(agent_dir.glob("test-*.md"))]

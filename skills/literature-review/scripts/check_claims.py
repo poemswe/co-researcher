@@ -55,7 +55,8 @@ _GAP_POLARITY_RE = re.compile(
     r"reduce[ds]?|raise[ds]?|lower(?:ed|s)?|improve[ds]?|worsen(?:ed|s)?)\b"
     r"|[%<>=\u2264\u2265\u00b1]")
 _PAGE_GAP_RE = re.compile(
-    r"(?:running\s+header\s+)?(?:page\s+)?\d+(?:\s+of\s+\d+)?$")
+    r"(?:(?:running\s+header\s+)?page\s+|p\.\s*)"
+    r"\d+(?:\s+of\s+\d+)?$")
 _AUTHOR_HEADER_RE = re.compile(
     r"(?P<author>.+?\bet\s+al\.?)\s+(?:19|20)\d{2}(?:\s+\d+)?$")
 _LOWERCASE_ET_AL_HEADER_RE = re.compile(
@@ -250,10 +251,44 @@ research paper authors evidence
 """.split())
 
 _NUMBER_RE = re.compile(r"[-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)")
+_COUNT_UNIT_AFTER_YEAR_RE = re.compile(
+    r"^\s*(?:%|percent(?:age)?|participants?|patients?|people|persons?|"
+    r"subjects?|adults?|children|women|men|hospitals?|sites?|cent(?:er|re)s?|"
+    r"clinics?|cases?|events?|observations?|records?|samples?|respondents?|"
+    r"households?|schools?|articles?|papers?|studies|trials?|groups?|arms?|"
+    r"visits?|admissions?|deaths?|points?|days?|weeks?|months?|years?)\b",
+    re.IGNORECASE)
+_CLEAR_YEAR_PREFIX_RE = re.compile(
+    r"(?:\b(?:in|during|since|before|after|until|through|by|circa|around|"
+    r"year)\s+|\b(?:between|from)\s+(?:19|20)\d{2}\s+(?:and|to)\s+)$",
+    re.IGNORECASE)
+_CLEAR_YEAR_SUFFIX_RE = re.compile(
+    r"^\s*(?:,|\b(?:study|trial|report|paper|article|publication|guideline|"
+    r"survey|census|cohort)\b)", re.IGNORECASE)
 
 
 def _norm_num(token: str) -> str:
   return token.replace(",", "")
+
+
+def _is_contextual_year(text: str, start: int, end: int, token: str) -> bool:
+  """Return true only when a 1900–2099 integer is clearly a date/year.
+
+  Four-digit values are quantities by default.  A nearby count/effect unit
+  always wins; otherwise a value is a year only in an explicit temporal or
+  bibliographic construction.  Citation spans are removed by coverage callers
+  before this classifier runs.
+  """
+  digits = token.lstrip("+-")
+  if (token != digits or len(digits) != 4 or not digits.isdigit()
+      or not 1900 <= int(digits) <= 2099):
+    return False
+  after = text[end:end + 40]
+  if _COUNT_UNIT_AFTER_YEAR_RE.match(after):
+    return False
+  before = text[max(0, start - 48):start]
+  return bool(_CLEAR_YEAR_PREFIX_RE.search(before)
+              or _CLEAR_YEAR_SUFFIX_RE.match(after))
 
 
 def extract_number_spans(text: str,
@@ -271,8 +306,8 @@ def extract_number_spans(text: str,
   for m in _NUMBER_RE.finditer(text):
     plain = _norm_num(m.group())
     digits = plain.lstrip("+-")
-    if (exclude_years and len(digits) == 4 and digits.isdigit()
-        and 1900 <= int(digits) <= 2099):
+    if exclude_years and _is_contextual_year(
+        text, m.start(), m.end(), plain):
       continue
     spans.append((m.start(), m.end(), plain))
   return spans
@@ -549,8 +584,11 @@ def _check_entry_loaded(entry: dict, loaded) -> dict:
     result["status"] = "fabricated_quote"
     result["best_window"] = match["window"]
     return result
+  claim_text = entry.get("claim") or ""
+  claim_without_citations = _strip_citations(
+      claim_text, _citation_records(claim_text))
   anchors, numbers_ok = _anchor_check(
-      normalize_text(entry.get("claim") or ""), quote_norm)
+      normalize_text(claim_without_citations), quote_norm)
   result["anchors"] = anchors
   result["context_risks"] = _boundary_context_risks(
       source_norm, match["start"], match["end"])

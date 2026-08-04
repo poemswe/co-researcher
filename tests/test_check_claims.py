@@ -354,11 +354,50 @@ def test_author_year_running_header_is_accepted():
   assert cc.find_quote(q, source)["method"] == "fuzzy"
 
 
+@pytest.mark.parametrize("gap", ["18", "18 of 20"])
+def test_bare_numeric_gap_is_never_a_structured_artifact(gap):
+  assert not cc._is_structured_artifact_gap(gap)
+
+
+@pytest.mark.parametrize("gap", ["page 18", "p. 18", "page 18 of 20"])
+def test_explicit_page_gap_is_a_structured_artifact(gap):
+  assert cc._is_structured_artifact_gap(gap)
+
+
+@pytest.mark.parametrize(("source", "quote"), [
+    ("The study enrolled 18 participants across all regional hospitals "
+     "during the prospective observation period.",
+     "The study enrolled participants across all regional hospitals during "
+     "the prospective observation period."),
+    ("The intervention reached 18 percent of eligible adults across all "
+     "regional centers during follow-up.",
+     "The intervention reached percent of eligible adults across all regional "
+     "centers during follow-up."),
+    ("The program included 18 hospitals across the regional health system "
+     "during the prospective study period.",
+     "The program included hospitals across the regional health system during "
+     "the prospective study period."),
+])
+def test_find_quote_rejects_omitted_quantitative_gap(source, quote):
+  assert cc.find_quote(
+      cc.normalize_text(quote), cc.normalize_text(source))["method"] is None
+
+
 def test_extract_numbers_keeps_stats_drops_years():
   nums = cc.extract_numbers("In 2022, 814 patients showed an 18% drop "
                             "(p<0.01)")
   assert "814" in nums and "18" in nums and "0.01" in nums
   assert "2022" not in nums
+
+
+def test_extract_numbers_keeps_four_digit_counts():
+  assert cc.extract_numbers("The trial enrolled 2020 participants.") == [
+      "2020"]
+
+
+def test_extract_numbers_distinguishes_year_and_count_in_one_sentence():
+  assert cc.extract_numbers(
+      "In 2020, the trial enrolled 2019 participants.") == ["2019"]
 
 
 def test_extract_words_drops_stoplist_and_filler():
@@ -412,6 +451,39 @@ def test_needs_review_when_claim_has_unanchored_number(tmp_path):
   assert r["status"] == "needs_review"
   assert "814" in r["anchors"]["numbers_found"]
   assert "22" in r["anchors"]["numbers_missing"]
+
+
+def test_needs_review_when_four_digit_count_is_unanchored(tmp_path):
+  source = ("In 2020, the trial enrolled participants from regional clinics "
+            "during a prospective observation period.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim="In 2020, the trial enrolled 2019 participants from clinics.",
+      quote=source), ws)
+  assert r["status"] == "needs_review"
+  assert r["anchors"]["numbers_missing"] == ["2019"]
+
+
+def test_narrative_year_does_not_require_numeric_anchor(tmp_path):
+  source = ("The trial enrolled participants from regional clinics during a "
+            "prospective observation period.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim="In 2020, the trial enrolled participants from regional clinics.",
+      quote=source), ws)
+  assert r["status"] == "verified"
+
+
+def test_claim_anchor_removes_citation_year_before_grounding(tmp_path):
+  source = ("The trial enrolled 2019 participants from regional clinics "
+            "during a prospective observation period.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim=("In 2020, the trial enrolled 2019 participants from regional "
+             "clinics (Patel, 2022)."),
+      quote=source), ws)
+  assert r["status"] == "verified"
+  assert r["anchors"]["numbers_found"] == ["2019"]
 
 
 def test_fabricated_quote_hard_fails(tmp_path):
@@ -509,6 +581,25 @@ def test_coverage_rejects_added_number_for_each_identity():
   claims = [_entry(claim="Readmissions fell in the treatment arm.")]
   gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
   assert gaps[0]["reason_code"] == "coverage_number_missing"
+
+
+def test_coverage_rejects_ungrounded_four_digit_count_but_not_year():
+  synthesis = ("In 2020, the trial enrolled 2019 participants from regional "
+               "clinics (Patel, 2022).")
+  claims = [_entry(
+      claim="In 2020, the trial enrolled participants from regional clinics.")]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [(gap["citation_key"], gap["reason_code"]) for gap in gaps] == [
+      ("author:patel:2022", "coverage_number_missing")]
+
+
+def test_coverage_allows_genuine_narrative_year_without_numeric_anchor():
+  synthesis = ("In 2020, the trial enrolled participants from regional "
+               "clinics (Patel, 2022).")
+  claims = [_entry(
+      claim="The trial enrolled participants from regional clinics.")]
+  assert cc.coverage_gaps(
+      synthesis, claims, _trusted_results(claims)) == []
 
 
 def test_background_cannot_cover_numbered_sentence():

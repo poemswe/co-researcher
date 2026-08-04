@@ -5,6 +5,7 @@
   "maximum_repair_rounds": 3,
   "attack_family": "symlink",
   "reason_expectations": [
-    {"reason_code": "artifact_symlink", "present": true, "unit": {"artifact": "claims.json", "context_key": null, "context_value": null}}
+    {"reason_code": "artifact_symlink", "present": true, "unit": {"artifact": "claims.json", "context_key": null, "context_value": null}},
+    {"reason_code": "artifact_symlink", "present": false, "unit": {"artifact": "refs.json", "context_key": null, "context_value": null}}
   ]
 }

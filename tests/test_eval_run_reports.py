@@ -315,6 +315,67 @@ def test_dashboard_loader_rejects_a_tampered_task8_artifact(tmp_path):
     load_dashboard_data(tmp_path, "run-tampered")
 
 
+def test_summary_digest_is_committed_in_result_registry_and_publication(tmp_path):
+  run_path = write_run_report(_run("run-summary-commitment", 81.0), tmp_path)
+  summary_digest = hashlib.sha256((run_path / "summary.md").read_bytes()).hexdigest()
+  result = json.loads((run_path / "result.json").read_text())
+  registry = json.loads((tmp_path / "runs/index.json").read_text())["runs"][0]
+  publication = json.loads((run_path / "publication.json").read_text())
+
+  assert result["schema_version"] == "1.1.0"
+  assert result["summary_sha256"] == summary_digest
+  assert registry["report_schema_version"] == "1.1.0"
+  assert registry["summary_sha256"] == summary_digest
+  assert publication["schema_version"] == "1.1.0"
+  assert publication["summary_sha256"] == summary_digest
+
+
+def test_dashboard_loader_rejects_tampered_summary(tmp_path):
+  run_path = write_run_report(_run("run-summary-tampered", 81.0), tmp_path)
+  summary = run_path / "summary.md"
+  summary.write_bytes(summary.read_bytes().replace(b"81.0", b"99.0"))
+
+  with pytest.raises(ValueError, match="summary.*SHA-256"):
+    load_dashboard_data(tmp_path, "run-summary-tampered")
+
+
+def test_legacy_summary_is_accepted_only_when_deterministically_reconstructed(
+    tmp_path,
+):
+  run_path = write_run_report(_run("run-legacy-summary", 81.0), tmp_path)
+  result_path = run_path / "result.json"
+  result = json.loads(result_path.read_text())
+  result["schema_version"] = "1.0.0"
+  result.pop("summary_sha256")
+  result_payload = (json.dumps(
+      result, indent=2, sort_keys=True) + "\n").encode()
+  result_path.write_bytes(result_payload)
+  result_digest = hashlib.sha256(result_payload).hexdigest()
+
+  registry_path = tmp_path / "runs/index.json"
+  registry = json.loads(registry_path.read_text())
+  entry = registry["runs"][0]
+  entry.pop("report_schema_version")
+  entry.pop("summary_sha256")
+  entry["result_sha256"] = result_digest
+  registry_path.write_text(json.dumps(
+      registry, indent=2, sort_keys=True) + "\n")
+  publication_path = run_path / "publication.json"
+  publication = json.loads(publication_path.read_text())
+  publication["schema_version"] = "1.0.0"
+  publication.pop("summary_sha256")
+  publication["result_sha256"] = result_digest
+  publication_path.write_text(json.dumps(
+      publication, indent=2, sort_keys=True) + "\n")
+
+  assert load_dashboard_data(tmp_path, "run-legacy-summary")[
+      "schema_version"] == "1.0.0"
+  (run_path / "summary.md").write_bytes(
+      (run_path / "summary.md").read_bytes() + b"tampered\n")
+  with pytest.raises(ValueError, match="summary markdown"):
+    load_dashboard_data(tmp_path, "run-legacy-summary")
+
+
 def test_dashboard_loader_couples_case_count_to_registry(tmp_path):
   write_run_report(_run("run-count", 81.0), tmp_path)
   index_path = tmp_path / "runs" / "index.json"
@@ -645,7 +706,7 @@ def test_mismatched_process_death_orphan_fails_closed(tmp_path):
   assert not (tmp_path / "runs" / "index.json").exists()
 
 
-@pytest.mark.parametrize("tamper", ["artifact", "marker"])
+@pytest.mark.parametrize("tamper", ["artifact", "marker", "summary"])
 def test_process_death_marker_cannot_bypass_full_orphan_validation(
     tmp_path, tamper,
 ):
@@ -654,10 +715,13 @@ def test_process_death_marker_cannot_bypass_full_orphan_validation(
   if tamper == "artifact":
     artifact = orphan / "artifacts" / "case-1.json"
     artifact.write_bytes(artifact.read_bytes() + b" ")
+  elif tamper == "summary":
+    summary = orphan / "summary.md"
+    summary.write_bytes(summary.read_bytes() + b"tampered\n")
   else:
     (orphan / "publication.json").unlink()
 
-  with pytest.raises(ValueError, match="unregistered|publication"):
+  with pytest.raises(ValueError, match="unregistered|publication|summary"):
     write_run_report(expected, tmp_path)
 
   assert orphan.is_dir()
@@ -977,11 +1041,30 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     }
     const withBreakdown = JSON.parse(JSON.stringify(report));
     withBreakdown.cases[0].attack_family = 'citation-substitution';
+    withBreakdown.cases[0].adversarial_score = {
+      schema_version: '2.0.0', attack_family: 'citation-substitution',
+      confusion: {true_positive: 1, false_positive: 0,
+        true_negative: 0, false_negative: 0},
+      reason_metrics: {citation_identity_mismatch: {
+        true_positive: 1, false_positive: 0,
+        true_negative: 0, false_negative: 0,
+        precision: 1, recall: 1,
+      }},
+    };
     withBreakdown.cases[0].repair_rounds = [{
       attempt: 1, integrity_score: 100, status: 'valid', action: 'pass',
       path: 'repair-rounds/case-1-round-01.json', sha256: 'd'.repeat(64),
     }];
     withBreakdown.summary.attack_family_breakdown = {'citation-substitution': 1};
+    withBreakdown.summary.attack_family_confusion = {'citation-substitution': {
+      true_positive: 1, false_positive: 0,
+      true_negative: 0, false_negative: 0,
+    }};
+    withBreakdown.summary.reason_code_metrics = {citation_identity_mismatch: {
+      true_positive: 1, false_positive: 0,
+      true_negative: 0, false_negative: 0,
+      precision: 1, recall: 1,
+    }};
     context.parseIntegrityRunData(withBreakdown, entry);
     withBreakdown.cases[0].repair_rounds[0].overall_score = 100;
     try {
@@ -1109,4 +1192,121 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       ["node", "-e", driver, str(script_path)],
       check=False, capture_output=True, text=True)
 
+  assert completed.returncode == 0, completed.stderr
+
+
+def test_dashboard_parser_accepts_real_attack_and_operational_unions(tmp_path):
+  score = AdversarialCaseScore(
+      attack_family="citation-substitution",
+      confusion={
+          "true_positive": 1, "false_positive": 0,
+          "true_negative": 1, "false_negative": 0},
+      reason_metrics={
+          "citation_identity_mismatch": ReasonMetric(1, 0, 1, 0)})
+  attack = CombinedRunResult(
+      run_id="run-browser-attack", timestamp="2026-08-04T12:00:00Z",
+      model="codex:test", cases=(CombinedCaseResult(
+          case_id="case-attack", evaluation=_evaluation(81.0),
+          adversarial_score=score),))
+  operational = CombinedRunResult(
+      run_id="run-browser-operational", timestamp="2026-08-04T12:00:00Z",
+      model="codex:test", cases=(CombinedCaseResult(
+          case_id="case-operational",
+          evaluation=_operational_evaluation()),))
+  payloads = []
+  for run in (attack, operational):
+    run_path = write_run_report(run, tmp_path / "browser-results")
+    registry = json.loads(
+        (tmp_path / "browser-results/runs/index.json").read_text())
+    payloads.append({
+        "result_text": (run_path / "result.json").read_text(),
+        "summary_text": (run_path / "summary.md").read_text(),
+        "report": json.loads((run_path / "result.json").read_text()),
+        "entry": next(item for item in registry["runs"]
+                      if item["run_id"] == run.run_id),
+    })
+  fixture_path = tmp_path / "real-report-unions.json"
+  fixture_path.write_text(json.dumps(payloads), encoding="utf-8")
+
+  collector = _ScriptCollector()
+  collector.feed((ROOT / "evals/index.html").read_text())
+  main_script = next(
+      script for script in collector.scripts if "GITHUB_RAW_URL" in script)
+  script_path = tmp_path / "dashboard-unions.js"
+  script_path.write_text(main_script, encoding="utf-8")
+  driver = r"""
+    const fs = require('fs');
+    const {webcrypto} = require('crypto');
+    const vm = require('vm');
+    const elements = {
+      integrityRunSummary: {innerHTML: '', textContent: '',
+        classList: {toggle() {}}},
+      integrityRunCases: {innerHTML: 'stale'},
+      integrityEvaluationLabel: {textContent: ''},
+      firstPassToggle: {classList: {toggle() {}}},
+      finalToggle: {classList: {toggle() {}}},
+    };
+    const context = {
+      window: {addEventListener() {}, location: {search: ''}},
+      document: {body: {}, getElementById(id) { return elements[id]; }},
+      URLSearchParams, TextDecoder, console, crypto: webcrypto,
+    };
+    vm.createContext(context);
+    vm.runInContext(fs.readFileSync(process.argv[1], 'utf8'), context);
+    const fixtures = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+    const attack = context.parseIntegrityRunData(
+      fixtures[0].report, fixtures[0].entry);
+    if (attack.cases[0].adversarial_score.schema_version !== '2.0.0') {
+      process.exit(2);
+    }
+    const operational = context.parseIntegrityRunData(
+      fixtures[1].report, fixtures[1].entry);
+    context.fixture = operational;
+    vm.runInContext("selectedIntegrityRun = fixture; integritySnapshot = 'final'; renderIntegrityRun();", context);
+    if (!elements.integrityRunCases.innerHTML.includes('N/A') ||
+        elements.integrityRunCases.innerHTML.includes('stale')) process.exit(3);
+    vm.runInContext("integritySnapshot = 'first_pass'; renderIntegrityRun();", context);
+    if (!elements.integrityRunCases.innerHTML.includes('N/A')) process.exit(4);
+
+    const mixed = JSON.parse(JSON.stringify(fixtures[0].report));
+    mixed.cases[0].operational_failure =
+      fixtures[1].report.cases[0].operational_failure;
+    try {
+      context.parseIntegrityRunData(mixed, fixtures[0].entry);
+      process.exit(5);
+    } catch (error) {
+      if (!String(error).includes('union')) process.exit(6);
+    }
+    const missingFailure = JSON.parse(JSON.stringify(fixtures[1].report));
+    delete missingFailure.cases[0].operational_failure;
+    try {
+      context.parseIntegrityRunData(missingFailure, fixtures[1].entry);
+      process.exit(7);
+    } catch (error) {
+      if (!String(error).includes('union')) process.exit(8);
+    }
+    const responseFor = text => {
+      const payload = Buffer.from(text);
+      return {ok: true, async arrayBuffer() {
+        return payload.buffer.slice(
+          payload.byteOffset, payload.byteOffset + payload.byteLength);
+      }};
+    };
+    (async () => {
+      await context.parseIntegrityRunResponse(
+        fixtures[0].entry, responseFor(fixtures[0].result_text),
+        responseFor(fixtures[0].summary_text));
+      try {
+        await context.parseIntegrityRunResponse(
+          fixtures[0].entry, responseFor(fixtures[0].result_text),
+          responseFor(fixtures[0].summary_text + 'tampered'));
+        process.exit(9);
+      } catch (error) {
+        if (!String(error).includes('summary SHA-256')) process.exit(10);
+      }
+    })().catch(error => { console.error(error); process.exit(11); });
+  """
+  completed = subprocess.run(
+      ["node", "-e", driver, str(script_path), str(fixture_path)],
+      check=False, capture_output=True, text=True)
   assert completed.returncode == 0, completed.stderr

@@ -343,7 +343,14 @@ def _open_root(root: pathlib.Path) -> int:
         except Exception:
           os.close(child)
           raise
-        os.close(current)
+        try:
+          os.close(current)
+        except Exception:
+          try:
+            os.close(child)
+          except Exception:
+            pass
+          raise
         current = child
       if not stat.S_ISDIR(os.fstat(current).st_mode):
         raise WorkspaceError(

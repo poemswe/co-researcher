@@ -122,6 +122,40 @@ def test_non_directory_workspace_root_is_type_invalid(tmp_path):
   assert captured.value.artifact == "."
 
 
+def test_open_root_closes_child_when_parent_close_handoff_fails(
+    monkeypatch, tmp_path,
+):
+  root = tmp_path / "review"
+  root.mkdir()
+  real_open = workspace.os.open
+  real_close = workspace.os.close
+  opened = []
+  injected = False
+
+  def recording_open(*args, **kwargs):
+    descriptor = real_open(*args, **kwargs)
+    opened.append(descriptor)
+    return descriptor
+
+  def failing_close(descriptor):
+    nonlocal injected
+    if not injected and opened and descriptor == opened[0]:
+      injected = True
+      raise OSError(errno.EIO, "injected parent close failure")
+    return real_close(descriptor)
+
+  monkeypatch.setattr(workspace.os, "open", recording_open)
+  monkeypatch.setattr(workspace.os, "close", failing_close)
+
+  with pytest.raises(WorkspaceError, match="injected parent close failure"):
+    workspace._open_root(root)
+
+  assert injected and len(opened) >= 2
+  with pytest.raises(OSError) as captured:
+    os.fstat(opened[1])
+  assert captured.value.errno == errno.EBADF
+
+
 def test_workspace_root_permission_error_is_validator_incomplete(
     monkeypatch, tmp_path,
 ):
