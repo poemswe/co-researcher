@@ -1,0 +1,375 @@
+"""Immutable, fail-closed result schema for literature-review integrity runs."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+import math
+import re
+from types import MappingProxyType
+from typing import Any, Iterable, Mapping, Optional, Type, TypeVar, Union
+
+
+try:  # Python 3.11+
+  from enum import StrEnum as _StringEnum
+except ImportError:  # Python 3.10 compatibility
+  class _StringEnum(str, Enum):
+    """Compatibility implementation of :class:`enum.StrEnum`."""
+
+
+SCHEMA_VERSION = "1.0.0"
+REASON_CODE_SCHEMA_VERSION = SCHEMA_VERSION
+
+DIMENSION_NAMES = frozenset({
+    "quote_authenticity",
+    "citation_binding",
+    "quantitative_grounding",
+    "synthesis_coverage",
+    "bibliography_verification",
+    "prisma_artifact_completeness",
+})
+
+
+class Severity(_StringEnum):
+  INFO = "info"
+  WARNING = "warning"
+  CRITICAL = "critical"
+
+
+class IntegrityStatus(_StringEnum):
+  VALID = "valid"
+  VALID_WITH_WARNINGS = "valid_with_warnings"
+  INVALID = "invalid"
+
+
+class ReasonCode(_StringEnum):
+  """The versioned, closed reason-code vocabulary for integrity findings."""
+
+  FABRICATED_QUOTE = "fabricated_quote"
+  CITATION_IDENTITY_MISMATCH = "citation_identity_mismatch"
+  CITATION_AMBIGUOUS = "citation_ambiguous"
+  CITATION_RETRACTED = "citation_retracted"
+  CITATION_RESOLUTION_UNAVAILABLE = "citation_resolution_unavailable"
+  CLAIM_NEEDS_REVIEW = "claim_needs_review"
+  COVERAGE_NUMBER_MISSING = "coverage_number_missing"
+  COVERAGE_CLAIM_MISSING = "coverage_claim_missing"
+  COVERAGE_ROLE_INVALID = "coverage_role_invalid"
+  BIBLIOGRAPHY_INCOMPLETE = "bibliography_incomplete"
+  PRISMA_EXCLUSION_REASON_MISSING = "prisma_exclusion_reason_missing"
+  ABSTRACT_ONLY_SUPPORT = "abstract_only_support"
+  ARTIFACT_MISSING = "artifact_missing"
+  ARTIFACT_MALFORMED = "artifact_malformed"
+  ARTIFACT_SYMLINK = "artifact_symlink"
+  ARTIFACT_TRAVERSAL = "artifact_traversal"
+  ARTIFACT_TYPE_INVALID = "artifact_type_invalid"
+  ARTIFACT_SIZE_LIMIT = "artifact_size_limit"
+  MANIFEST_MISMATCH = "manifest_mismatch"
+  VALIDATOR_INCOMPLETE = "validator_incomplete"
+
+
+_SHA256_RE = re.compile(r"[0-9a-fA-F]{64}\Z")
+_T = TypeVar("_T")
+
+
+def _require_fields(value: object, expected: set[str], model: str) -> dict[str, Any]:
+  if not isinstance(value, dict):
+    raise ValueError(f"{model} must be a dictionary")
+  unknown = set(value) - expected
+  if unknown:
+    raise ValueError(f"{model} contains unknown fields: {sorted(unknown)!r}")
+  missing = expected - set(value)
+  if missing:
+    raise ValueError(f"{model} is missing fields: {sorted(missing)!r}")
+  if value["schema_version"] != SCHEMA_VERSION:
+    raise ValueError(
+        f"unsupported schema_version: {value['schema_version']!r}")
+  return value
+
+
+def _enum(value: object, enum_type: Type[_T], field: str) -> _T:
+  if isinstance(value, enum_type):
+    return value
+  if not isinstance(value, str):
+    raise ValueError(f"{field} must be a string")
+  try:
+    return enum_type(value)
+  except ValueError as exc:
+    raise ValueError(f"unknown {field}: {value!r}") from exc
+
+
+def _nonempty_string(value: object, field: str) -> str:
+  if not isinstance(value, str) or not value:
+    raise ValueError(f"{field} must be a non-empty string")
+  return value
+
+
+def _score(value: object, field: str) -> float:
+  if isinstance(value, bool) or not isinstance(value, (int, float)):
+    raise ValueError(f"{field} must be a finite score from 0 to 100")
+  result = float(value)
+  if not math.isfinite(result) or not 0.0 <= result <= 100.0:
+    raise ValueError(f"{field} must be a finite score from 0 to 100")
+  return result
+
+
+def _model_list(value: object, model_type: Type[_T], field: str) -> tuple[_T, ...]:
+  if not isinstance(value, (list, tuple)):
+    raise ValueError(f"{field} must be a list")
+  result = []
+  for item in value:
+    if isinstance(item, model_type):
+      result.append(item)
+    elif isinstance(item, dict):
+      result.append(model_type.from_dict(item))
+    else:
+      raise ValueError(f"{field} contains an invalid {model_type.__name__}")
+  return tuple(result)
+
+
+@dataclass(frozen=True)
+class Finding:
+  reason_code: ReasonCode
+  severity: Severity
+  artifact: str
+  message: str
+
+  def __post_init__(self) -> None:
+    object.__setattr__(self, "reason_code", _enum(
+        self.reason_code, ReasonCode, "reason_code"))
+    object.__setattr__(self, "severity", _enum(
+        self.severity, Severity, "severity"))
+    object.__setattr__(self, "artifact", _nonempty_string(
+        self.artifact, "artifact"))
+    object.__setattr__(self, "message", _nonempty_string(
+        self.message, "message"))
+
+  def to_dict(self) -> dict[str, str]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "reason_code": self.reason_code.value,
+        "severity": self.severity.value,
+        "artifact": self.artifact,
+        "message": self.message,
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> Finding:
+    data = _require_fields(value, {
+        "schema_version", "reason_code", "severity", "artifact", "message",
+    }, cls.__name__)
+    return cls(
+        reason_code=data["reason_code"],
+        severity=data["severity"],
+        artifact=data["artifact"],
+        message=data["message"],
+    )
+
+
+@dataclass(frozen=True)
+class DimensionResult:
+  name: str
+  score: float
+  findings: tuple[Finding, ...]
+
+  def __post_init__(self) -> None:
+    if self.name not in DIMENSION_NAMES:
+      raise ValueError(f"unknown dimension: {self.name!r}")
+    object.__setattr__(self, "score", _score(self.score, "score"))
+    object.__setattr__(self, "findings", _model_list(
+        self.findings, Finding, "findings"))
+
+  def to_dict(self) -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "name": self.name,
+        "score": self.score,
+        "findings": [finding.to_dict() for finding in self.findings],
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> DimensionResult:
+    data = _require_fields(value, {
+        "schema_version", "name", "score", "findings",
+    }, cls.__name__)
+    return cls(
+        name=data["name"], score=data["score"], findings=data["findings"])
+
+
+DimensionsInput = Union[
+    Mapping[str, DimensionResult], Iterable[DimensionResult],
+]
+
+
+def _dimensions(value: DimensionsInput) -> Mapping[str, DimensionResult]:
+  if isinstance(value, Mapping):
+    pairs = value.items()
+  else:
+    pairs = ((dimension.name, dimension) for dimension in value)
+  result: dict[str, DimensionResult] = {}
+  for name, dimension in pairs:
+    if not isinstance(name, str):
+      raise ValueError("dimension names must be strings")
+    if not isinstance(dimension, DimensionResult):
+      raise ValueError("dimensions must contain DimensionResult values")
+    if name != dimension.name:
+      raise ValueError("dimension mapping keys must match dimension names")
+    if name in result:
+      raise ValueError(f"duplicate dimension name: {name!r}")
+    result[name] = dimension
+  return MappingProxyType(result)
+
+
+@dataclass(frozen=True)
+class PassReport:
+  integrity_score: float
+  findings: tuple[Finding, ...]
+  dimensions: DimensionsInput
+  manifest_sha256: str
+
+  def __post_init__(self) -> None:
+    object.__setattr__(self, "integrity_score", _score(
+        self.integrity_score, "integrity_score"))
+    object.__setattr__(self, "findings", _model_list(
+        self.findings, Finding, "findings"))
+    object.__setattr__(self, "dimensions", _dimensions(self.dimensions))
+    if not isinstance(self.manifest_sha256, str) or not _SHA256_RE.fullmatch(
+        self.manifest_sha256):
+      raise ValueError("manifest_sha256 must be a 64-character hexadecimal hash")
+
+  @property
+  def status(self) -> IntegrityStatus:
+    if any(f.severity is Severity.CRITICAL for f in self.findings):
+      return IntegrityStatus.INVALID
+    if self.findings:
+      return IntegrityStatus.VALID_WITH_WARNINGS
+    return IntegrityStatus.VALID
+
+  def to_dict(self) -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "integrity_score": self.integrity_score,
+        "findings": [finding.to_dict() for finding in self.findings],
+        "dimensions": {
+            name: dimension.to_dict()
+            for name, dimension in self.dimensions.items()
+        },
+        "manifest_sha256": self.manifest_sha256,
+        "status": self.status.value,
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> PassReport:
+    data = _require_fields(value, {
+        "schema_version", "integrity_score", "findings", "dimensions",
+        "manifest_sha256", "status",
+    }, cls.__name__)
+    if not isinstance(data["dimensions"], dict):
+      raise ValueError("dimensions must be a dictionary")
+    dimensions = {}
+    for name, serialized in data["dimensions"].items():
+      if not isinstance(serialized, dict):
+        raise ValueError("dimensions must contain dictionaries")
+      dimensions[name] = DimensionResult.from_dict(serialized)
+    report = cls(
+        integrity_score=data["integrity_score"],
+        findings=data["findings"],
+        dimensions=dimensions,
+        manifest_sha256=data["manifest_sha256"],
+    )
+    if data["status"] != report.status.value:
+      raise ValueError("status does not match the fail-closed finding status")
+    return report
+
+
+@dataclass(frozen=True)
+class RepairRecord:
+  attempt: int
+  reason_codes: tuple[ReasonCode, ...]
+  action: str
+  resolved: bool
+
+  def __post_init__(self) -> None:
+    if isinstance(self.attempt, bool) or not isinstance(self.attempt, int) or self.attempt < 1:
+      raise ValueError("attempt must be a positive integer")
+    if not isinstance(self.reason_codes, (list, tuple)):
+      raise ValueError("reason_codes must be a list")
+    object.__setattr__(self, "reason_codes", tuple(
+        _enum(code, ReasonCode, "reason_code") for code in self.reason_codes))
+    object.__setattr__(self, "action", _nonempty_string(self.action, "action"))
+    if not isinstance(self.resolved, bool):
+      raise ValueError("resolved must be a boolean")
+
+  def to_dict(self) -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "attempt": self.attempt,
+        "reason_codes": [code.value for code in self.reason_codes],
+        "action": self.action,
+        "resolved": self.resolved,
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> RepairRecord:
+    data = _require_fields(value, {
+        "schema_version", "attempt", "reason_codes", "action", "resolved",
+    }, cls.__name__)
+    return cls(
+        attempt=data["attempt"],
+        reason_codes=data["reason_codes"],
+        action=data["action"],
+        resolved=data["resolved"],
+    )
+
+
+@dataclass(frozen=True)
+class IntegrityRunReport:
+  pass_report: PassReport
+  quality_score: Optional[float]
+  repairs: tuple[RepairRecord, ...]
+
+  def __post_init__(self) -> None:
+    if not isinstance(self.pass_report, PassReport):
+      raise ValueError("pass_report must be a PassReport")
+    if self.quality_score is not None:
+      object.__setattr__(self, "quality_score", _score(
+          self.quality_score, "quality_score"))
+    object.__setattr__(self, "repairs", _model_list(
+        self.repairs, RepairRecord, "repairs"))
+
+  def to_dict(self) -> dict[str, Any]:
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "pass_report": self.pass_report.to_dict(),
+        "quality_score": self.quality_score,
+        "repairs": [repair.to_dict() for repair in self.repairs],
+    }
+
+  @classmethod
+  def from_dict(cls, value: dict) -> IntegrityRunReport:
+    data = _require_fields(value, {
+        "schema_version", "pass_report", "quality_score", "repairs",
+    }, cls.__name__)
+    if not isinstance(data["pass_report"], dict):
+      raise ValueError("pass_report must be a dictionary")
+    return cls(
+        pass_report=PassReport.from_dict(data["pass_report"]),
+        quality_score=data["quality_score"],
+        repairs=data["repairs"],
+    )
+
+  @classmethod
+  def example_valid(cls) -> IntegrityRunReport:
+    dimensions = {
+        name: DimensionResult(name=name, score=100.0, findings=[])
+        for name in sorted(DIMENSION_NAMES)
+    }
+    return cls(
+        pass_report=PassReport(
+            integrity_score=100.0,
+            findings=[],
+            dimensions=dimensions,
+            manifest_sha256="0" * 64,
+        ),
+        quality_score=None,
+        repairs=[],
+    )
