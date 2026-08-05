@@ -404,8 +404,10 @@ def test_extract_numbers_distinguishes_year_and_count_in_one_sentence():
     "N = 2020, participants completed follow-up.",
     "The 2020 study participants completed follow-up.",
     "Scores increased by 2020 units during follow-up.",
+    "Enrollment was around 2020.",
     "Scores ranged from 2019 to 2020.",
     "Scores: from 2019 to 2020.",
+    "Scores ranged 2019–2020.",
     "Enrollment ranged between 2019 and 2020 participants.",
 ])
 def test_extract_numbers_grounds_ambiguous_four_digit_values(text):
@@ -420,6 +422,8 @@ def test_extract_numbers_grounds_ambiguous_four_digit_values(text):
     "Between 2019 and 2020, the study collected outcomes.",
     "The trial was conducted between 2019 and 2020.",
     "The year 2020 marked the start of recruitment.",
+    "Around 2020, the study began recruitment.",
+    "The study ran 2019–2020.",
 ])
 def test_extract_numbers_excludes_only_complete_temporal_constructions(text):
   assert cc.extract_numbers(text) == []
@@ -428,6 +432,11 @@ def test_extract_numbers_excludes_only_complete_temporal_constructions(text):
 def test_extract_numbers_separates_temporal_and_quantitative_same_value():
   assert cc.extract_numbers(
       "In 2020, enrollment increased by 2020 participants.") == ["2020"]
+
+
+def test_extract_numbers_excludes_coordinated_temporal_years():
+  assert cc.extract_numbers(
+      "The study began in 2020 and ended in 2021.") == []
 
 
 def test_extract_words_drops_stoplist_and_filler():
@@ -528,6 +537,26 @@ def test_claim_anchor_requires_ambiguous_four_digit_values(tmp_path, claim):
   result = cc.check_entry(_entry(claim=claim, quote=source), ws)
   assert result["status"] == "needs_review"
   assert result["anchors"]["numbers_missing"] == ["2020"]
+
+
+def test_claim_anchor_requires_approximate_four_digit_quantity(tmp_path):
+  source = ("Participants enrolled from regional clinics during a prospective "
+            "observation period with complete follow-up.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  result = cc.check_entry(_entry(
+      claim="Enrollment was around 2020.", quote=source), ws)
+  assert result["status"] == "needs_review"
+  assert result["anchors"]["numbers_missing"] == ["2020"]
+
+
+def test_claim_anchor_allows_coordinated_temporal_years(tmp_path):
+  source = ("The study began recruitment and ended recruitment at regional "
+            "clinics after the planned observation period.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  result = cc.check_entry(_entry(
+      claim="The study began in 2020 and ended in 2021.", quote=source), ws)
+  assert result["status"] == "verified"
+  assert result["anchors"]["numbers_missing"] == []
 
 
 def test_fabricated_quote_hard_fails(tmp_path):
@@ -673,6 +702,24 @@ def test_claim_citation_year_cannot_ground_a_synthesis_count():
             "(Patel, 2022).")]
   gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
   assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
+
+
+def test_coverage_requires_approximate_four_digit_quantity():
+  synthesis = "Enrollment was around 2020 (Patel, 2022)."
+  claims = [_entry(claim="Enrollment was around target.")]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
+
+
+def test_coverage_allows_coordinated_temporal_years():
+  synthesis = (
+      "The study began recruitment in 2020 and ended recruitment in 2021 at "
+      "regional clinics (Patel, 2022).")
+  claims = [_entry(
+      claim="The study began recruitment and ended recruitment at regional "
+            "clinics.")]
+  assert cc.coverage_gaps(
+      synthesis, claims, _trusted_results(claims)) == []
 
 
 def test_background_cannot_cover_numbered_sentence():
