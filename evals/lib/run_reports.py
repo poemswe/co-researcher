@@ -502,7 +502,8 @@ def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
         else "ERROR" if first["quality_score"] is None
         else f"{first['quality_score']:.1f}")
     quality_final = (
-        "ERROR" if final["quality_score"] is None
+        "N/A" if "operational_failure" in case
+        else "ERROR" if final["quality_score"] is None
         else f"{final['quality_score']:.1f}")
     artifact = case["artifact"]
     first_integrity = (

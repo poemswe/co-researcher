@@ -7,6 +7,7 @@ import subprocess
 import sys
 import threading
 import time
+from dataclasses import replace
 from types import SimpleNamespace
 from html.parser import HTMLParser
 
@@ -132,7 +133,31 @@ def test_operational_failure_round_trips_through_report_and_dashboard(tmp_path):
       "quality_score": None, "integrity_score": None, "status": "invalid",
       "workspace_manifest_sha256": None}
   assert case["operational_failure"]["reason_code"] == "artifact_missing"
-  assert "N/A" in (run_path / "summary.md").read_text()
+  summary_row = next(
+      line for line in (run_path / "summary.md").read_text().splitlines()
+      if line.startswith("| case-one |"))
+  assert summary_row.startswith(
+      "| case-one | N/A | N/A | N/A | N/A (invalid) |")
+  assert "ERROR" not in summary_row
+
+
+def test_judge_failure_remains_error_in_summary(tmp_path):
+  evaluation = _evaluation(81.0)
+  failed = replace(
+      evaluation.system_final,
+      quality=QualityResult.failed("synthetic judge failure"))
+  evaluation = replace(evaluation, system_final=failed)
+  run = CombinedRunResult(
+      run_id="run-judge-failure", timestamp="2026-08-04T12:00:00Z",
+      model="codex:test", cases=(CombinedCaseResult(
+          case_id="case-one", evaluation=evaluation),))
+
+  run_path = write_run_report(run, tmp_path)
+  summary_row = next(
+      line for line in (run_path / "summary.md").read_text().splitlines()
+      if line.startswith("| case-one |"))
+
+  assert "| ERROR |" in summary_row
 
 
 def test_two_runs_do_not_share_result_files(tmp_path):

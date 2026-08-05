@@ -400,6 +400,36 @@ def test_extract_numbers_distinguishes_year_and_count_in_one_sentence():
       "In 2020, the trial enrolled 2019 participants.") == ["2019"]
 
 
+@pytest.mark.parametrize("text", [
+    "N = 2020, participants completed follow-up.",
+    "The 2020 study participants completed follow-up.",
+    "Scores increased by 2020 units during follow-up.",
+    "Scores ranged from 2019 to 2020.",
+    "Scores: from 2019 to 2020.",
+    "Enrollment ranged between 2019 and 2020 participants.",
+])
+def test_extract_numbers_grounds_ambiguous_four_digit_values(text):
+  assert "2020" in cc.extract_numbers(text)
+
+
+@pytest.mark.parametrize("text", [
+    "In 2020, the study began recruitment.",
+    "The study began during 2020.",
+    "The study ran from 2019 to 2020.",
+    "From 2019 to 2020, the study collected outcomes.",
+    "Between 2019 and 2020, the study collected outcomes.",
+    "The trial was conducted between 2019 and 2020.",
+    "The year 2020 marked the start of recruitment.",
+])
+def test_extract_numbers_excludes_only_complete_temporal_constructions(text):
+  assert cc.extract_numbers(text) == []
+
+
+def test_extract_numbers_separates_temporal_and_quantitative_same_value():
+  assert cc.extract_numbers(
+      "In 2020, enrollment increased by 2020 participants.") == ["2020"]
+
+
 def test_extract_words_drops_stoplist_and_filler():
   words = cc.extract_words("The study results suggest readmission rates "
                            "declined")
@@ -484,6 +514,20 @@ def test_claim_anchor_removes_citation_year_before_grounding(tmp_path):
       quote=source), ws)
   assert r["status"] == "verified"
   assert r["anchors"]["numbers_found"] == ["2019"]
+
+
+@pytest.mark.parametrize("claim", [
+    "N = 2020, participants enrolled from regional clinics.",
+    "The 2020 study participants enrolled from regional clinics.",
+    "Enrollment increased by 2020 units across regional clinics.",
+])
+def test_claim_anchor_requires_ambiguous_four_digit_values(tmp_path, claim):
+  source = ("Participants enrolled from regional clinics during a prospective "
+            "observation period with complete follow-up.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  result = cc.check_entry(_entry(claim=claim, quote=source), ws)
+  assert result["status"] == "needs_review"
+  assert result["anchors"]["numbers_missing"] == ["2020"]
 
 
 def test_fabricated_quote_hard_fails(tmp_path):
@@ -600,6 +644,35 @@ def test_coverage_allows_genuine_narrative_year_without_numeric_anchor():
       claim="The trial enrolled participants from regional clinics.")]
   assert cc.coverage_gaps(
       synthesis, claims, _trusted_results(claims)) == []
+
+
+@pytest.mark.parametrize(("claim", "citation"), [
+    ("Participants enrolled from regional clinics (Patel, 2022).",
+     "Patel, 2022"),
+    ("Patel (2022) found that participants enrolled from regional clinics.",
+     "Patel, 2022"),
+    ("Participants enrolled from regional clinics [1].", "[1]"),
+])
+def test_coverage_strips_claim_citations_before_matching_and_numbers(
+    claim, citation,
+):
+  synthesis_citation = "[1]" if citation == "[1]" else "(Patel, 2022)"
+  synthesis = (
+      "Participants enrolled from regional clinics " + synthesis_citation + ".")
+  claims = [_entry(claim=claim, citation=citation)]
+  assert cc.coverage_gaps(
+      synthesis, claims, _trusted_results(claims)) == []
+
+
+def test_claim_citation_year_cannot_ground_a_synthesis_count():
+  synthesis = (
+      "The trial enrolled 2022 participants from regional clinics "
+      "(Patel, 2022).")
+  claims = [_entry(
+      claim="The trial enrolled participants from regional clinics "
+            "(Patel, 2022).")]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
 
 
 def test_background_cannot_cover_numbered_sentence():

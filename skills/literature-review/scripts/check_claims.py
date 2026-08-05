@@ -251,44 +251,59 @@ research paper authors evidence
 """.split())
 
 _NUMBER_RE = re.compile(r"[-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)")
-_COUNT_UNIT_AFTER_YEAR_RE = re.compile(
-    r"^\s*(?:%|percent(?:age)?|participants?|patients?|people|persons?|"
-    r"subjects?|adults?|children|women|men|hospitals?|sites?|cent(?:er|re)s?|"
-    r"clinics?|cases?|events?|observations?|records?|samples?|respondents?|"
-    r"households?|schools?|articles?|papers?|studies|trials?|groups?|arms?|"
-    r"visits?|admissions?|deaths?|points?|days?|weeks?|months?|years?)\b",
+_YEAR_TOKEN = r"(?:19|20)\d{2}"
+_TEMPORAL_YEAR_RE = re.compile(
+    rf"\b(?:in|during|since|before|after|until|through|circa|around)\s+"
+    rf"(?P<year>{_YEAR_TOKEN})(?=\s*(?:[,.;:!?)\]]|$))",
     re.IGNORECASE)
-_CLEAR_YEAR_PREFIX_RE = re.compile(
-    r"(?:\b(?:in|during|since|before|after|until|through|by|circa|around|"
-    r"year)\s+|\b(?:between|from)\s+(?:19|20)\d{2}\s+(?:and|to)\s+)$",
+_LABELED_YEAR_RE = re.compile(
+    rf"\b(?:the\s+)?year\s+(?P<year>{_YEAR_TOKEN})\b", re.IGNORECASE)
+_FROM_YEAR_RANGE_RE = re.compile(
+    rf"\bfrom\s+(?P<first>{_YEAR_TOKEN})\s+"
+    rf"(?:to|through|until)\s+(?P<last>{_YEAR_TOKEN})"
+    rf"(?=\s*(?:[,.;:!?)\]]|$))",
     re.IGNORECASE)
-_CLEAR_YEAR_SUFFIX_RE = re.compile(
-    r"^\s*(?:,|\b(?:study|trial|report|paper|article|publication|guideline|"
-    r"survey|census|cohort)\b)", re.IGNORECASE)
+_BETWEEN_YEAR_RANGE_RE = re.compile(
+    rf"\bbetween\s+(?P<first>{_YEAR_TOKEN})\s+and\s+"
+    rf"(?P<last>{_YEAR_TOKEN})(?=\s*(?:[,.;:!?)\]]|$))",
+    re.IGNORECASE)
+_TEMPORAL_RANGE_PREFIX_RE = re.compile(
+    r"(?:\b(?:study|trial|survey|cohort|follow-up|recruitment|observation|"
+    r"analysis|data collection)\s+(?:ran|spanned|lasted|occurred)|"
+    r"\b(?:study|trial|survey|analysis)\s+was\s+conducted|"
+    r"\bdata\s+(?:were\s+)?collected)\s*$",
+    re.IGNORECASE)
 
 
 def _norm_num(token: str) -> str:
   return token.replace(",", "")
 
 
-def _is_contextual_year(text: str, start: int, end: int, token: str) -> bool:
-  """Return true only when a 1900–2099 integer is clearly a date/year.
+def _range_has_temporal_context(text: str, start: int) -> bool:
+  """Require a sentence boundary or an explicit temporal range predicate."""
+  boundary = max(text.rfind(mark, 0, start) for mark in ".!?\n")
+  prefix = text[boundary + 1:start].strip()
+  return not prefix or bool(_TEMPORAL_RANGE_PREFIX_RE.search(prefix))
 
-  Four-digit values are quantities by default.  A nearby count/effect unit
-  always wins; otherwise a value is a year only in an explicit temporal or
-  bibliographic construction.  Citation spans are removed by coverage callers
-  before this classifier runs.
+
+def _unambiguous_year_spans(text: str) -> set[tuple[int, int]]:
+  """Return spans proved to be years by complete temporal constructions.
+
+  This is deliberately an allowlist, not a proximity heuristic. Ambiguous
+  values such as ``the 2020 study``, ``by 2020 units``, and quantitative
+  ranges remain groundable numbers.
   """
-  digits = token.lstrip("+-")
-  if (token != digits or len(digits) != 4 or not digits.isdigit()
-      or not 1900 <= int(digits) <= 2099):
-    return False
-  after = text[end:end + 40]
-  if _COUNT_UNIT_AFTER_YEAR_RE.match(after):
-    return False
-  before = text[max(0, start - 48):start]
-  return bool(_CLEAR_YEAR_PREFIX_RE.search(before)
-              or _CLEAR_YEAR_SUFFIX_RE.match(after))
+  spans = {
+      match.span("year")
+      for pattern in (_TEMPORAL_YEAR_RE, _LABELED_YEAR_RE)
+      for match in pattern.finditer(text)
+  }
+  for pattern in (_FROM_YEAR_RANGE_RE, _BETWEEN_YEAR_RANGE_RE):
+    for match in pattern.finditer(text):
+      if _range_has_temporal_context(text, match.start()):
+        spans.add(match.span("first"))
+        spans.add(match.span("last"))
+  return spans
 
 
 def extract_number_spans(text: str,
@@ -303,11 +318,10 @@ def extract_number_spans(text: str,
   merely falls in the year range must not be waved through).
   """
   spans = []
+  year_spans = _unambiguous_year_spans(text) if exclude_years else set()
   for m in _NUMBER_RE.finditer(text):
     plain = _norm_num(m.group())
-    digits = plain.lstrip("+-")
-    if exclude_years and _is_contextual_year(
-        text, m.start(), m.end(), plain):
+    if m.span() in year_spans:
       continue
     spans.append((m.start(), m.end(), plain))
   return spans
@@ -817,7 +831,9 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
   for claim, result in zip(claims, results):
     if result.get("status") not in ("verified", "background"):
       continue
-    claim_norm = normalize_text(claim.get("claim") or "")
+    claim_text = claim.get("claim") or ""
+    claim_records = _citation_records(claim_text)
+    claim_norm = normalize_text(_strip_citations(claim_text, claim_records))
     claim_data.append({
         "text": claim_norm,
         "keys": citation_keys(claim.get("citation") or ""),
