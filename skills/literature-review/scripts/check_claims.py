@@ -250,8 +250,16 @@ significant significantly participants patients group groups trial trials
 research paper authors evidence
 """.split())
 
-_NUMBER_RE = re.compile(r"[-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)")
+_NUMBER_RE = re.compile(
+    r"(?<![\w.])[-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)")
 _YEAR_TOKEN = r"(?:19|20)\d{2}"
+_TEMPORAL_SUBJECT = (
+    r"(?:the\s+)?(?:study|trial|survey|cohort|recruitment|follow-up|"
+    r"observation|analysis|data(?:\s+collection)?)")
+_TEMPORAL_EVENT = (
+    r"(?:began|started|opened|occurred|ran|ended|finished|closed|concluded|"
+    r"continued|published|analyzed|was\s+conducted|was\s+collected|"
+    r"were\s+collected)")
 _TEMPORAL_YEAR_RE = re.compile(
     rf"\b(?:in|during|since|before|after|until|through)\s+"
     rf"(?P<year>{_YEAR_TOKEN})(?=\s*(?:[,.;:!?)\]]|$))",
@@ -259,6 +267,10 @@ _TEMPORAL_YEAR_RE = re.compile(
 _CLAUSE_OPENING_APPROXIMATE_YEAR_RE = re.compile(
     rf"(?:^|[.!?\n])\s*(?:around|circa)\s+"
     rf"(?P<year>{_YEAR_TOKEN})(?=\s*,)", re.IGNORECASE)
+_PREDICATE_APPROXIMATE_YEAR_RE = re.compile(
+    rf"\b{_TEMPORAL_SUBJECT}\s+{_TEMPORAL_EVENT}"
+    rf"(?:\s+[^\W\d_]+){{0,2}}\s+(?:around|circa)\s+"
+    rf"(?P<year>{_YEAR_TOKEN})\b", re.IGNORECASE)
 _LABELED_YEAR_RE = re.compile(
     rf"\b(?:the\s+)?year\s+(?P<year>{_YEAR_TOKEN})\b", re.IGNORECASE)
 _FROM_YEAR_RANGE_RE = re.compile(
@@ -271,7 +283,7 @@ _BETWEEN_YEAR_RANGE_RE = re.compile(
     rf"(?P<last>{_YEAR_TOKEN})(?=\s*(?:[,.;:!?)\]]|$))",
     re.IGNORECASE)
 _DASHED_YEAR_RANGE_RE = re.compile(
-    rf"(?<!\w)(?P<first>{_YEAR_TOKEN})\s*[–—]\s*"
+    rf"(?<!\w)(?P<first>{_YEAR_TOKEN})\s*[-–—]\s*"
     rf"(?P<last>{_YEAR_TOKEN})(?!\w)")
 _TEMPORAL_RANGE_PREFIX_RE = re.compile(
     r"(?:\b(?:study|trial|survey|cohort|follow-up|recruitment|observation|"
@@ -280,15 +292,11 @@ _TEMPORAL_RANGE_PREFIX_RE = re.compile(
     r"\bdata\s+(?:were\s+)?collected)\s*$",
     re.IGNORECASE)
 _COORDINATED_TEMPORAL_YEARS_RE = re.compile(
-    rf"\b(?:the\s+)?(?:study|trial|survey|cohort|recruitment|follow-up|"
-    rf"observation|analysis|data\s+collection|data)\s+"
-    rf"(?:began|started|opened|occurred|ran|ended|finished|closed|concluded|"
-    rf"continued|published|was\s+conducted|was\s+collected|were\s+collected)"
+    rf"\b{_TEMPORAL_SUBJECT}\s+{_TEMPORAL_EVENT}"
     rf"(?:\s+[^\W\d_]+){{0,2}}\s+(?:in|during)\s+"
     rf"(?P<first>{_YEAR_TOKEN})\s+and\s+"
-    rf"(?:began|started|opened|occurred|ran|ended|finished|closed|concluded|"
-    rf"continued|published|analyzed|was\s+conducted|was\s+collected|"
-    rf"were\s+collected)(?:\s+[^\W\d_]+){{0,2}}\s+"
+    rf"(?:(?:it|{_TEMPORAL_SUBJECT})\s+)?{_TEMPORAL_EVENT}"
+    rf"(?:\s+[^\W\d_]+){{0,2}}\s+"
     rf"(?:in|during)\s+(?P<last>{_YEAR_TOKEN})\b",
     re.IGNORECASE)
 
@@ -315,7 +323,7 @@ def _unambiguous_year_spans(text: str) -> set[tuple[int, int]]:
       match.span("year")
       for pattern in (
           _TEMPORAL_YEAR_RE, _CLAUSE_OPENING_APPROXIMATE_YEAR_RE,
-          _LABELED_YEAR_RE)
+          _PREDICATE_APPROXIMATE_YEAR_RE, _LABELED_YEAR_RE)
       for match in pattern.finditer(text)
   }
   for match in _COORDINATED_TEMPORAL_YEARS_RE.finditer(text):
