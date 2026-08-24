@@ -106,9 +106,9 @@ def _numbers_grounded(quote: str, source: str, locate) -> bool:
   blocks every number-fabrication class seen so far — swap, neighbour, digit
   subset/superset (`18` vs `108`/`118`/`181`), decimal shift (`2.5` vs `12.5`,
   `5` vs `.5`), and sign flip (`18` vs `-18`) — on both the exact and fuzzy
-  paths. Years are excluded from grounding, by design.
+  paths. Years and ranges are substantive and follow the same rule.
   """
-  for qs, qe, qtok in extract_number_spans(quote, exclude_years=False):
+  for qs, qe, qtok in extract_number_spans(quote):
     pos = locate(qs, qe)
     if pos is None or _source_number_covering(source, pos) != qtok:
       return False
@@ -252,110 +252,23 @@ research paper authors evidence
 
 _NUMBER_RE = re.compile(
     r"(?<![\w.])[-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)")
-_YEAR_TOKEN = r"(?:19|20)\d{2}"
-_TEMPORAL_SUBJECT = (
-    r"(?:the\s+)?(?:study|trial|survey|cohort|recruitment|follow-up|"
-    r"observation|analysis|data(?:\s+collection)?)")
-_TEMPORAL_EVENT = (
-    r"(?:began|started|opened|occurred|ran|ended|finished|closed|concluded|"
-    r"continued|published|analyzed|was\s+conducted|was\s+collected|"
-    r"were\s+collected)")
-_TEMPORAL_YEAR_RE = re.compile(
-    rf"\b(?:in|during|since|before|after|until|through)\s+"
-    rf"(?P<year>{_YEAR_TOKEN})(?=\s*(?:[,.;:!?)\]]|$))",
-    re.IGNORECASE)
-_CLAUSE_OPENING_APPROXIMATE_YEAR_RE = re.compile(
-    rf"(?:^|[.!?\n])\s*(?:around|circa)\s+"
-    rf"(?P<year>{_YEAR_TOKEN})(?=\s*,)", re.IGNORECASE)
-_PREDICATE_APPROXIMATE_YEAR_RE = re.compile(
-    rf"\b{_TEMPORAL_SUBJECT}\s+{_TEMPORAL_EVENT}"
-    rf"(?:\s+[^\W\d_]+){{0,2}}\s+(?:around|circa)\s+"
-    rf"(?P<year>{_YEAR_TOKEN})\b", re.IGNORECASE)
-_LABELED_YEAR_RE = re.compile(
-    rf"\b(?:the\s+)?year\s+(?P<year>{_YEAR_TOKEN})\b", re.IGNORECASE)
-_FROM_YEAR_RANGE_RE = re.compile(
-    rf"\bfrom\s+(?P<first>{_YEAR_TOKEN})\s+"
-    rf"(?:to|through|until)\s+(?P<last>{_YEAR_TOKEN})"
-    rf"(?=\s*(?:[,.;:!?)\]]|$))",
-    re.IGNORECASE)
-_BETWEEN_YEAR_RANGE_RE = re.compile(
-    rf"\bbetween\s+(?P<first>{_YEAR_TOKEN})\s+and\s+"
-    rf"(?P<last>{_YEAR_TOKEN})(?=\s*(?:[,.;:!?)\]]|$))",
-    re.IGNORECASE)
-_DASHED_YEAR_RANGE_RE = re.compile(
-    rf"(?<!\w)(?P<first>{_YEAR_TOKEN})\s*[-–—]\s*"
-    rf"(?P<last>{_YEAR_TOKEN})(?!\w)")
-_TEMPORAL_RANGE_PREFIX_RE = re.compile(
-    r"(?:\b(?:study|trial|survey|cohort|follow-up|recruitment|observation|"
-    r"analysis|data collection)\s+(?:ran|spanned|lasted|occurred)|"
-    r"\b(?:study|trial|survey|analysis)\s+was\s+conducted|"
-    r"\bdata\s+(?:were\s+)?collected)\s*$",
-    re.IGNORECASE)
-_COORDINATED_TEMPORAL_YEARS_RE = re.compile(
-    rf"\b{_TEMPORAL_SUBJECT}\s+{_TEMPORAL_EVENT}"
-    rf"(?:\s+[^\W\d_]+){{0,2}}\s+(?:in|during)\s+"
-    rf"(?P<first>{_YEAR_TOKEN})\s+and\s+"
-    rf"(?:(?:it|{_TEMPORAL_SUBJECT})\s+)?{_TEMPORAL_EVENT}"
-    rf"(?:\s+[^\W\d_]+){{0,2}}\s+"
-    rf"(?:in|during)\s+(?P<last>{_YEAR_TOKEN})\b",
-    re.IGNORECASE)
 
 
 def _norm_num(token: str) -> str:
   return token.replace(",", "")
 
 
-def _range_has_temporal_context(text: str, start: int) -> bool:
-  """Require a sentence boundary or an explicit temporal range predicate."""
-  boundary = max(text.rfind(mark, 0, start) for mark in ".!?\n")
-  prefix = text[boundary + 1:start].strip()
-  return not prefix or bool(_TEMPORAL_RANGE_PREFIX_RE.search(prefix))
-
-
-def _unambiguous_year_spans(text: str) -> set[tuple[int, int]]:
-  """Return spans proved to be years by complete temporal constructions.
-
-  This is deliberately an allowlist, not a proximity heuristic. Ambiguous
-  values such as ``the 2020 study``, ``by 2020 units``, and quantitative
-  ranges remain groundable numbers.
-  """
-  spans = {
-      match.span("year")
-      for pattern in (
-          _TEMPORAL_YEAR_RE, _CLAUSE_OPENING_APPROXIMATE_YEAR_RE,
-          _PREDICATE_APPROXIMATE_YEAR_RE, _LABELED_YEAR_RE)
-      for match in pattern.finditer(text)
-  }
-  for match in _COORDINATED_TEMPORAL_YEARS_RE.finditer(text):
-    spans.add(match.span("first"))
-    spans.add(match.span("last"))
-  for pattern in (
-      _FROM_YEAR_RANGE_RE, _BETWEEN_YEAR_RANGE_RE, _DASHED_YEAR_RANGE_RE,
-  ):
-    for match in pattern.finditer(text):
-      if _range_has_temporal_context(text, match.start()):
-        spans.add(match.span("first"))
-        spans.add(match.span("last"))
-  return spans
-
-
-def extract_number_spans(text: str,
-                         exclude_years: bool = True) -> list[tuple[int, int, str]]:
+def extract_number_spans(text: str) -> list[tuple[int, int, str]]:
   """(start, end, normalized token) per number.
 
   Tokens keep a leading sign and decimals (`-18`, `.5`, `12.5`) so grounding
-  compares whole numbers, not digit fragments. `exclude_years` drops 4-digit
-  years — right for the claim/anchor check (a citation year need not appear in
-  the quote), wrong for quote-vs-source grounding (a year in the quoted
-  passage must genuinely appear in the source, and a fabricated value that
-  merely falls in the year range must not be waved through).
+  compares whole numbers, not digit fragments. Every numeric token is
+  substantive. Callers must remove parsed citation spans before enumeration;
+  no temporal grammar is allowed to waive a grounding obligation.
   """
   spans = []
-  year_spans = _unambiguous_year_spans(text) if exclude_years else set()
   for m in _NUMBER_RE.finditer(text):
     plain = _norm_num(m.group())
-    if m.span() in year_spans:
-      continue
     spans.append((m.start(), m.end(), plain))
   return spans
 
@@ -375,11 +288,8 @@ def _source_number_covering(source: str, pos: int) -> str | None:
 
 
 def extract_numbers(text: str) -> list[str]:
-  numbers = []
-  for _, _, plain in extract_number_spans(text):
-    if plain not in numbers:
-      numbers.append(plain)
-  return numbers
+  """Return normalized numeric tokens in occurrence order, with duplicates."""
+  return [plain for _, _, plain in extract_number_spans(text)]
 
 
 def extract_words(text: str) -> list[str]:
@@ -559,13 +469,21 @@ def _words_in(quote_words: set, word: str) -> bool:
 
 
 def _anchor_check(claim_norm: str, quote_norm: str) -> tuple[dict, bool]:
-  quote_numbers = set(extract_numbers(quote_norm))
+  quote_numbers = collections.Counter(extract_numbers(quote_norm))
   quote_words = set(re.findall(r"[a-z]+", quote_norm))
   numbers = extract_numbers(claim_norm)
   words = extract_words(claim_norm)
+  numbers_found = []
+  numbers_missing = []
+  for number in numbers:
+    if quote_numbers[number]:
+      numbers_found.append(number)
+      quote_numbers[number] -= 1
+    else:
+      numbers_missing.append(number)
   anchors = {
-      "numbers_found": [n for n in numbers if n in quote_numbers],
-      "numbers_missing": [n for n in numbers if n not in quote_numbers],
+      "numbers_found": numbers_found,
+      "numbers_missing": numbers_missing,
       "words_found": [w for w in words if _words_in(quote_words, w)],
       "words_missing": [w for w in words if not _words_in(quote_words, w)],
   }
@@ -616,7 +534,8 @@ def _check_entry_loaded(entry: dict, loaded) -> dict:
     return result
   source_raw, source_norm, scope = loaded
   result["source_scope"] = scope
-  quote_norm = normalize_text(entry.get("supporting_quote") or "")
+  quote_text = entry.get("supporting_quote") or ""
+  quote_norm = normalize_text(quote_text)
   if not quote_norm:
     result["status"] = "no_quote"
     return result
@@ -634,8 +553,11 @@ def _check_entry_loaded(entry: dict, loaded) -> dict:
   claim_text = entry.get("claim") or ""
   claim_without_citations = _strip_citations(
       claim_text, _citation_records(claim_text))
+  quote_without_citations = _strip_citations(
+      quote_text, _citation_records(quote_text))
   anchors, numbers_ok = _anchor_check(
-      normalize_text(claim_without_citations), quote_norm)
+      normalize_text(claim_without_citations),
+      normalize_text(quote_without_citations))
   result["anchors"] = anchors
   result["context_risks"] = _boundary_context_risks(
       source_norm, match["start"], match["end"])
@@ -871,7 +793,7 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
         "text": claim_norm,
         "keys": citation_keys(claim.get("citation") or ""),
         "role": claim.get("role", "evidence"),
-        "numbers": set(extract_numbers(claim_norm)),
+        "numbers": collections.Counter(extract_numbers(claim_norm)),
     })
   gaps = []
   for sentence_index, sentence in enumerate(_split_sentences(synthesis)):
@@ -880,7 +802,7 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
     if not sentence_keys:
       continue
     sent_norm = normalize_text(_strip_citations(sentence, records))
-    sentence_numbers = set(extract_numbers(sent_norm))
+    sentence_numbers = collections.Counter(extract_numbers(sent_norm))
     for key in sorted(sentence_keys):
       matching = [item for item in claim_data
                   if key in item["keys"]
@@ -890,11 +812,16 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
       elif sentence_numbers and any(item["role"] == "background"
                                     for item in matching):
         reason = "coverage_role_invalid"
-      elif sentence_numbers - set().union(
-          *(item["numbers"] for item in matching)):
-        reason = "coverage_number_missing"
       else:
-        continue
+        available_numbers = collections.Counter()
+        for item in matching:
+          for number, count in item["numbers"].items():
+            available_numbers[number] = max(
+                available_numbers[number], count)
+        if sentence_numbers - available_numbers:
+          reason = "coverage_number_missing"
+        else:
+          continue
       gaps.append({
           "sentence": sentence.strip(),
           "synthesis_sentence_index": sentence_index,

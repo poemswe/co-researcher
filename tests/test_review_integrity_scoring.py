@@ -163,9 +163,11 @@ def test_duplicate_findings_do_not_double_deduct_one_unit(tmp_path):
   assert len(report.dimensions["quantitative_grounding"].findings) == 2
 
 
-def test_quantitative_units_use_distinct_canonical_non_year_numbers(tmp_path):
-  claim_text = "In 2022, readmissions fell 18%, then settled at 12.5%."
-  assert check_claims.extract_numbers(claim_text) == ["18", "12.5"]
+def test_quantitative_units_use_all_non_citation_numbers(tmp_path):
+  claim_text = (
+      "In 2022, readmissions fell 18%, then settled at 12.5% (Patel, 2024).")
+  assert check_claims.extract_numbers(claim_text) == [
+      "2022", "18", "12.5", "2024"]
   finding = _finding(
       ReasonCode.CLAIM_NEEDS_REVIEW,
       context={"result_index": 0, "claim_text": claim_text,
@@ -176,9 +178,25 @@ def test_quantitative_units_use_distinct_canonical_non_year_numbers(tmp_path):
       _snapshot(tmp_path, claims=[_claim(claim=claim_text)]), (finding,))
 
   dimension = report.dimensions["quantitative_grounding"]
+  assert (dimension.evaluated_units, dimension.passed_units) == (3, 2)
+  assert dimension.score == pytest.approx(200 / 3)
+  assert report.integrity_score == pytest.approx(205 / 3)
+
+
+def test_quantitative_units_count_repeated_number_occurrences(tmp_path):
+  claim_text = "In 2020, the trial enrolled 2020 participants."
+  finding = _finding(
+      ReasonCode.CLAIM_NEEDS_REVIEW,
+      context={"result_index": 0, "claim_text": claim_text,
+               "numbers_missing": ["2020"]},
+  )
+
+  report = score_integrity(
+      _snapshot(tmp_path, claims=[_claim(claim=claim_text)]), (finding,))
+
+  dimension = report.dimensions["quantitative_grounding"]
   assert (dimension.evaluated_units, dimension.passed_units) == (2, 1)
   assert dimension.score == 50.0
-  assert report.integrity_score == 65.0
 
 
 def test_binding_and_coverage_enumerate_each_claim_and_sentence_identity(

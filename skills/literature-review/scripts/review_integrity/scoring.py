@@ -229,9 +229,11 @@ def score_integrity(
   quote_units = {index for index in range(len(claims))}
   binding_units = set(quote_units)
   numeric_units = {
-      (index, number)
+      (index, occurrence, number)
       for index, claim in enumerate(claims)
-      for number in check_claims.extract_numbers(claim["claim"])
+      for occurrence, number in enumerate(check_claims.extract_numbers(
+          check_claims._strip_citations(
+              claim["claim"], check_claims._citation_records(claim["claim"]))))
   }
   bibliography_units = set(range(len(refs)))
 
@@ -335,9 +337,17 @@ def score_integrity(
         mapped |= fail_unit("citation_binding", result_index, finding)
       missing = context.get("numbers_missing")
       if isinstance(missing, (list, tuple)):
+        missing_occurrences: dict[object, int] = {}
         for number in missing:
-          mapped |= fail_unit(
-              "quantitative_grounding", (result_index, number), finding)
+          ordinal = missing_occurrences.get(number, 0)
+          candidates = sorted(
+              (unit for unit in numeric_units
+               if unit[0] == result_index and unit[2] == number),
+              key=lambda unit: unit[1])
+          if ordinal < len(candidates):
+            mapped |= fail_unit(
+                "quantitative_grounding", candidates[ordinal], finding)
+          missing_occurrences[number] = ordinal + 1
       if reason is ReasonCode.FABRICATED_QUOTE:
         for unit in numeric_units:
           if unit[0] == result_index:

@@ -383,11 +383,11 @@ def test_find_quote_rejects_omitted_quantitative_gap(source, quote):
       cc.normalize_text(quote), cc.normalize_text(source))["method"] is None
 
 
-def test_extract_numbers_keeps_stats_drops_years():
+def test_extract_numbers_keeps_stats_and_substantive_years():
   nums = cc.extract_numbers("In 2022, 814 patients showed an 18% drop "
                             "(p<0.01)")
   assert "814" in nums and "18" in nums and "0.01" in nums
-  assert "2022" not in nums
+  assert "2022" in nums
 
 
 def test_extract_numbers_keeps_four_digit_counts():
@@ -395,9 +395,9 @@ def test_extract_numbers_keeps_four_digit_counts():
       "2020"]
 
 
-def test_extract_numbers_distinguishes_year_and_count_in_one_sentence():
+def test_extract_numbers_keeps_year_and_count_in_one_sentence():
   assert cc.extract_numbers(
-      "In 2020, the trial enrolled 2019 participants.") == ["2019"]
+      "In 2020, the trial enrolled 2019 participants.") == ["2020", "2019"]
 
 
 @pytest.mark.parametrize("text", [
@@ -405,42 +405,45 @@ def test_extract_numbers_distinguishes_year_and_count_in_one_sentence():
     "The 2020 study participants completed follow-up.",
     "Scores increased by 2020 units during follow-up.",
     "Enrollment was around 2020.",
+    "The study analyzed around 2020 participants.",
     "Scores ranged from 2019 to 2020.",
     "Scores: from 2019 to 2020.",
     "Scores ranged 2019–2020.",
     "Scores ranged 2019-2020.",
+    "2019–2020 participants completed follow-up.",
     "Enrollment ranged between 2019 and 2020 participants.",
 ])
 def test_extract_numbers_grounds_ambiguous_four_digit_values(text):
   assert "2020" in cc.extract_numbers(text)
 
 
-@pytest.mark.parametrize("text", [
-    "In 2020, the study began recruitment.",
-    "The study began during 2020.",
-    "The study ran from 2019 to 2020.",
-    "From 2019 to 2020, the study collected outcomes.",
-    "Between 2019 and 2020, the study collected outcomes.",
-    "The trial was conducted between 2019 and 2020.",
-    "The year 2020 marked the start of recruitment.",
-    "Around 2020, the study began recruitment.",
-    "The study began around 2020.",
-    "The study ran 2019–2020.",
+@pytest.mark.parametrize(("text", "expected"), [
+    ("In 2020, the study began recruitment.", ["2020"]),
+    ("The study began during 2020.", ["2020"]),
+    ("The study ran from 2019 to 2020.", ["2019", "2020"]),
+    ("From 2019 to 2020, the study collected outcomes.", ["2019", "2020"]),
+    ("Between 2019 and 2020, the study collected outcomes.", ["2019", "2020"]),
+    ("The trial was conducted between 2019 and 2020.", ["2019", "2020"]),
+    ("The year 2020 marked the start of recruitment.", ["2020"]),
+    ("Around 2020, the study began recruitment.", ["2020"]),
+    ("The study began around 2020.", ["2020"]),
+    ("The study ran 2019–2020.", ["2019", "2020"]),
 ])
-def test_extract_numbers_excludes_only_complete_temporal_constructions(text):
-  assert cc.extract_numbers(text) == []
+def test_extract_numbers_keeps_every_temporal_construction(text, expected):
+  assert cc.extract_numbers(text) == expected
 
 
 def test_extract_numbers_separates_temporal_and_quantitative_same_value():
   assert cc.extract_numbers(
-      "In 2020, enrollment increased by 2020 participants.") == ["2020"]
+      "In 2020, enrollment increased by 2020 participants.") == [
+          "2020", "2020"]
 
 
-def test_extract_numbers_excludes_coordinated_temporal_years():
+def test_extract_numbers_keeps_coordinated_temporal_years():
   assert cc.extract_numbers(
-      "The study began in 2020 and ended in 2021.") == []
+      "The study began in 2020 and ended in 2021.") == ["2020", "2021"]
   assert cc.extract_numbers(
-      "The study began in 2020 and it ended in 2021.") == []
+      "The study began in 2020 and it ended in 2021.") == ["2020", "2021"]
 
 
 def test_extract_words_drops_stoplist_and_filler():
@@ -507,18 +510,19 @@ def test_needs_review_when_four_digit_count_is_unanchored(tmp_path):
   assert r["anchors"]["numbers_missing"] == ["2019"]
 
 
-def test_narrative_year_does_not_require_numeric_anchor(tmp_path):
+def test_narrative_year_requires_numeric_anchor(tmp_path):
   source = ("The trial enrolled participants from regional clinics during a "
             "prospective observation period.")
   ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
   r = cc.check_entry(_entry(
       claim="In 2020, the trial enrolled participants from regional clinics.",
       quote=source), ws)
-  assert r["status"] == "verified"
+  assert r["status"] == "needs_review"
+  assert r["anchors"]["numbers_missing"] == ["2020"]
 
 
 def test_claim_anchor_removes_citation_year_before_grounding(tmp_path):
-  source = ("The trial enrolled 2019 participants from regional clinics "
+  source = ("In 2020, the trial enrolled 2019 participants from regional clinics "
             "during a prospective observation period.")
   ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
   r = cc.check_entry(_entry(
@@ -526,7 +530,7 @@ def test_claim_anchor_removes_citation_year_before_grounding(tmp_path):
              "clinics (Patel, 2022)."),
       quote=source), ws)
   assert r["status"] == "verified"
-  assert r["anchors"]["numbers_found"] == ["2019"]
+  assert r["anchors"]["numbers_found"] == ["2020", "2019"]
 
 
 @pytest.mark.parametrize("claim", [
@@ -553,28 +557,76 @@ def test_claim_anchor_requires_approximate_four_digit_quantity(tmp_path):
   assert result["anchors"]["numbers_missing"] == ["2020"]
 
 
-def test_claim_anchor_allows_coordinated_temporal_years(tmp_path):
-  source = ("The study began recruitment and ended recruitment at regional "
-            "clinics after the planned observation period.")
+def test_claim_anchor_requires_approximate_count_after_study_predicate(
+    tmp_path,
+):
+  source = ("Participants completed follow-up at regional clinics during a "
+            "prospective observation period.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  result = cc.check_entry(_entry(
+      claim="The study analyzed around 2020 participants.", quote=source), ws)
+  assert result["status"] == "needs_review"
+  assert result["anchors"]["numbers_missing"] == ["2020"]
+
+
+def test_claim_anchor_requires_clause_opening_dashed_counts(tmp_path):
+  source = ("Participants completed follow-up at regional clinics during a "
+            "prospective observation period.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  result = cc.check_entry(_entry(
+      claim="2019–2020 participants completed follow-up.", quote=source), ws)
+  assert result["status"] == "needs_review"
+  assert result["anchors"]["numbers_missing"] == ["2019", "2020"]
+
+
+def test_claim_anchor_consumes_repeated_number_occurrences(tmp_path):
+  source = ("In 2020, participants enrolled from regional clinics during a "
+            "prospective observation period.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  result = cc.check_entry(_entry(
+      claim=("In 2020, the trial enrolled 2020 participants from regional "
+             "clinics."), quote=source), ws)
+  assert result["status"] == "needs_review"
+  assert result["anchors"]["numbers_found"] == ["2020"]
+  assert result["anchors"]["numbers_missing"] == ["2020"]
+
+
+def test_claim_anchor_does_not_use_quote_citation_year(tmp_path):
+  source = ("Participants enrolled from regional clinics during the planned "
+            "observation period (Lee, 2020).")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  result = cc.check_entry(_entry(
+      claim="In 2020, participants enrolled from regional clinics.",
+      quote=source), ws)
+  assert result["status"] == "needs_review"
+  assert result["anchors"]["numbers_missing"] == ["2020"]
+
+
+def test_claim_anchor_grounds_coordinated_temporal_years(tmp_path):
+  source = ("The study began in 2020 and ended in 2021 at regional clinics "
+            "after the planned observation period.")
   ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
   result = cc.check_entry(_entry(
       claim="The study began in 2020 and ended in 2021.", quote=source), ws)
   assert result["status"] == "verified"
   assert result["anchors"]["numbers_missing"] == []
+  assert result["anchors"]["numbers_found"] == ["2020", "2021"]
 
 
-@pytest.mark.parametrize("claim", [
-    "The study ran 2019–2020.",
-    "The study began around 2020.",
-    "The study began in 2020 and it ended in 2021.",
+@pytest.mark.parametrize(("claim", "missing"), [
+    ("The study ran 2019–2020.", ["2019", "2020"]),
+    ("The study began around 2020.", ["2020"]),
+    ("The study began in 2020 and it ended in 2021.", ["2020", "2021"]),
 ])
-def test_claim_anchor_allows_normalized_temporal_variants(tmp_path, claim):
+def test_claim_anchor_requires_normalized_temporal_variants(
+    tmp_path, claim, missing,
+):
   source = ("The study began recruitment and ended recruitment at regional "
             "clinics after the planned observation period.")
   ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
   result = cc.check_entry(_entry(claim=claim, quote=source), ws)
-  assert result["status"] == "verified"
-  assert result["anchors"]["numbers_missing"] == []
+  assert result["status"] == "needs_review"
+  assert result["anchors"]["numbers_missing"] == missing
 
 
 def test_fabricated_quote_hard_fails(tmp_path):
@@ -684,13 +736,13 @@ def test_coverage_rejects_ungrounded_four_digit_count_but_not_year():
       ("author:patel:2022", "coverage_number_missing")]
 
 
-def test_coverage_allows_genuine_narrative_year_without_numeric_anchor():
+def test_coverage_requires_genuine_narrative_year_anchor():
   synthesis = ("In 2020, the trial enrolled participants from regional "
                "clinics (Patel, 2022).")
   claims = [_entry(
       claim="The trial enrolled participants from regional clinics.")]
-  assert cc.coverage_gaps(
-      synthesis, claims, _trusted_results(claims)) == []
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
 
 
 @pytest.mark.parametrize(("claim", "citation"), [
@@ -729,15 +781,50 @@ def test_coverage_requires_approximate_four_digit_quantity():
   assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
 
 
-def test_coverage_allows_coordinated_temporal_years():
+@pytest.mark.parametrize(("synthesis", "claim"), [
+    ("The study analyzed around 2020 participants (Patel, 2022).",
+     "The study analyzed participants."),
+    ("2019–2020 participants completed follow-up (Patel, 2022).",
+     "Participants completed follow-up."),
+])
+def test_coverage_requires_ambiguous_approximate_and_dashed_counts(
+    synthesis, claim,
+):
+  claims = [_entry(claim=claim)]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
+
+
+def test_coverage_consumes_repeated_number_occurrences():
+  synthesis = (
+      "In 2020, the trial enrolled 2020 participants from regional clinics "
+      "(Patel, 2022).")
+  claims = [_entry(
+      claim="In 2020, the trial enrolled participants from regional clinics.")]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
+
+
+def test_coverage_duplicate_claims_do_not_inflate_number_occurrences():
+  synthesis = (
+      "In 2020, the trial enrolled 2020 participants from regional clinics "
+      "(Patel, 2022).")
+  claim = _entry(
+      claim="In 2020, the trial enrolled participants from regional clinics.")
+  claims = [claim, dict(claim)]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
+
+
+def test_coverage_requires_coordinated_temporal_years():
   synthesis = (
       "The study began recruitment in 2020 and ended recruitment in 2021 at "
       "regional clinics (Patel, 2022).")
   claims = [_entry(
       claim="The study began recruitment and ended recruitment at regional "
             "clinics.")]
-  assert cc.coverage_gaps(
-      synthesis, claims, _trusted_results(claims)) == []
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
 
 
 @pytest.mark.parametrize(("synthesis", "claim"), [
@@ -749,10 +836,10 @@ def test_coverage_allows_coordinated_temporal_years():
       "(Patel, 2022)."),
      "The study began and it ended at regional clinics."),
 ])
-def test_coverage_allows_normalized_temporal_variants(synthesis, claim):
+def test_coverage_requires_normalized_temporal_variants(synthesis, claim):
   claims = [_entry(claim=claim)]
-  assert cc.coverage_gaps(
-      synthesis, claims, _trusted_results(claims)) == []
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
 
 
 def test_background_cannot_cover_numbered_sentence():
