@@ -392,6 +392,18 @@ def test_unknown_critical_finding_fails_all_applicable_dimensions(tmp_path):
   assert report.status is IntegrityStatus.INVALID
 
 
+def test_source_abstract_only_warning_attaches_to_quote_dimension(tmp_path):
+  finding = _finding(
+      ReasonCode.ABSTRACT_ONLY_SUPPORT, artifact="papers/p1/abstract.md",
+      context={"paper_id": "p1", "source_scope": "abstract"})
+
+  report = score_integrity(_snapshot(tmp_path), (finding,))
+
+  assert report.status is IntegrityStatus.VALID_WITH_WARNINGS
+  assert report.dimensions["quote_authenticity"].findings == (finding,)
+  assert report.integrity_score == 100.0
+
+
 def test_high_score_cannot_override_critical_invalid_status(tmp_path):
   refs = [
       {"doi": "10.1/example", "title": "Example Study"},

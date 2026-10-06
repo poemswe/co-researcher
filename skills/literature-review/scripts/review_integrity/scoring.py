@@ -452,6 +452,11 @@ def score_integrity(
         zero("prisma_artifact_completeness", finding)
         mapped = True
 
+    if (reason is ReasonCode.ABSTRACT_ONLY_SUPPORT
+        and finding.artifact.startswith("papers/") and not mapped):
+      attach("quote_authenticity", finding)
+      mapped = True
+
     if not mapped and finding.severity is Severity.CRITICAL:
       for name in DIMENSION_ORDER:
         zero(name, finding)
