@@ -114,6 +114,17 @@ def test_claim_finding_context_retains_numeric_anchor_failures():
   assert finding.context["numbers_missing"] == ("18",)
 
 
+def test_claim_number_missing_from_quote_is_critical():
+  finding = _validators().claim_findings(_claim_report([_claim_result(
+      "needs_review", claim="Rates fell 18%.",
+      anchors={"numbers_found": [], "numbers_missing": ["18"],
+               "words_found": [], "words_missing": []},
+  )]))[0]
+
+  assert (finding.reason_code, finding.severity) == (
+      ReasonCode.CLAIM_NEEDS_REVIEW, Severity.CRITICAL)
+
+
 def test_ambiguous_binding_maps_to_distinct_stable_reason():
   validators = _validators()
   report = _claim_report([_claim_result(

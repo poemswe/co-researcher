@@ -714,6 +714,12 @@ def test_source_missing_hard_fails(tmp_path):
 
 # --- coverage ---
 
+def _uncited_number_gaps(gaps):
+  assert all((gap["citation_key"], gap["reason_code"])
+             == (None, "coverage_number_missing") for gap in gaps)
+  return [gap["synthesis_sentence_index"] for gap in gaps]
+
+
 def _trusted_results(claims):
   return [{"status": "background" if claim.get("role") == "background"
            else "verified"} for claim in claims]
@@ -888,6 +894,38 @@ def test_coverage_flags_uncited_claimless_sentence():
   assert "Mortality" in gaps[0]["sentence"]
 
 
+@pytest.mark.parametrize("sentence", [
+    "Across sites readmissions fell 87% overall.",
+    "Readmissions fell 87% in the treatment arm (Patel 2022).",
+])
+def test_coverage_flags_number_without_parsed_citation(sentence):
+  synthesis = f"Readmissions fell 18% in the treatment arm (Patel, 2022). {sentence}"
+  claims = [_entry()]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [(gap["synthesis_sentence_index"], gap["citation_key"],
+           gap["reason_code"]) for gap in gaps] == [
+      (1, None, "coverage_number_missing")]
+
+
+@pytest.mark.parametrize("sentence", [
+    "Readmissions did not fall in the treatment arm (Patel, 2022).",
+    "Readmissions never fell in the treatment arm (Patel, 2022).",
+    "No readmissions fell in the treatment arm (Patel, 2022).",
+    "Readmissions rose in the treatment arm (Patel, 2022).",
+])
+def test_coverage_rejects_reversed_claim_polarity(sentence):
+  claims = [_entry(claim="Readmissions fell in the treatment arm.")]
+  gaps = cc.coverage_gaps(sentence, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_identity_missing"]
+
+
+def test_coverage_rejects_reversed_comparative():
+  synthesis = "The amber garden trial reported weaker recall (Patel, 2022)."
+  claims = [_entry(claim="The amber garden trial reported stronger recall.")]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_identity_missing"]
+
+
 def test_coverage_matches_lightly_edited_claim():
   synthesis = "Thirty-day readmissions fell by 18% in the arm (Patel, 2022)."
   claims = [_entry(claim="Readmissions fell by 18% in the arm.")]
@@ -991,12 +1029,12 @@ def test_short_corpus_surname_binds(name, citation):
       key, {"authors": [name], "year": 2022})
 
 
-def test_coverage_ignores_non_citation_parenthetical_years():
+def test_coverage_requires_grounding_for_non_citation_parenthetical_years():
   synthesis = ("Usage has grown rapidly (since 2020). Readmissions fell 18% "
                "in the treatment arm of the trial (Patel, 2022).")
   claims = [_entry()]
-  assert cc.coverage_gaps(
-      synthesis, claims, _trusted_results(claims)) == []
+  assert _uncited_number_gaps(cc.coverage_gaps(
+      synthesis, claims, _trusted_results(claims))) == [0]
 
 
 def test_coverage_paper_id_needs_word_boundary():
@@ -1035,11 +1073,11 @@ def test_coverage_detects_narrative_author_year():
   assert "Lee et al." in gaps[0]["sentence"]
 
 
-def test_coverage_narrative_year_only_needs_a_surname():
+def test_coverage_bare_parenthetical_year_is_an_uncited_number():
   synthesis = "Adoption grew rapidly (2020) and then plateaued sharply."
   claims = [_entry()]
-  assert cc.coverage_gaps(
-      synthesis, claims, _trusted_results(claims)) == []
+  assert _uncited_number_gaps(cc.coverage_gaps(
+      synthesis, claims, _trusted_results(claims))) == [0]
 
 
 def test_coverage_detects_citation_with_page_locator():
@@ -1072,14 +1110,16 @@ def test_grouped_numeric_citation_requires_every_source_trace():
       synthesis, claims, _trusted_results(claims)) == []
 
 
-def test_coverage_ignores_capitalized_non_citation_year_parenthetical():
+def test_coverage_capitalized_year_parenthetical_is_an_uncited_number():
   synthesis = "The sample was assembled in stages (Data collected in 2020)."
-  assert cc.coverage_gaps(synthesis, [], _trusted_results([])) == []
+  assert _uncited_number_gaps(
+      cc.coverage_gaps(synthesis, [], _trusted_results([]))) == [0]
 
 
-def test_coverage_ignores_comma_year_prose_parenthetical():
+def test_coverage_comma_year_prose_parenthetical_is_an_uncited_number():
   synthesis = "Enrollment closed after the final wave (In the final sample, 2020)."
-  assert cc.coverage_gaps(synthesis, [], _trusted_results([])) == []
+  assert _uncited_number_gaps(
+      cc.coverage_gaps(synthesis, [], _trusted_results([]))) == [0]
 
 
 # --- main ---

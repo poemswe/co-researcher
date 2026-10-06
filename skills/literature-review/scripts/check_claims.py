@@ -771,6 +771,28 @@ def _claim_text_matches(claim_norm: str, sent_norm: str) -> bool:
                       >= _COVERAGE_MATCH_THRESHOLD))
 
 
+_NEGATION_RE = re.compile(
+    r"\b(?:no|not|never|neither|nor|none|without|cannot)\b|n't\b")
+_DIRECTION_POLES = {
+    **dict.fromkeys(
+        "increase increased increases increasing rise rises rose risen rising "
+        "higher more greater larger stronger better improve improved improves "
+        "improving gain gained gains elevated".split(), "up"),
+    **dict.fromkeys(
+        "decrease decreased decreases decreasing fall falls fell fallen "
+        "falling lower less fewer smaller weaker worse worsen worsened "
+        "worsens reduce reduced reduces reducing decline declined declines "
+        "declining drop dropped drops loss".split(), "down"),
+}
+
+
+def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
+  poles = frozenset(_DIRECTION_POLES[word]
+                    for word in re.findall(r"[a-z]+", text_norm)
+                    if word in _DIRECTION_POLES)
+  return len(_NEGATION_RE.findall(text_norm)) % 2, poles
+
+
 def _split_sentences(text: str) -> list[str]:
   marker = "\u0000"
   protected = re.sub(
@@ -799,14 +821,23 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
   for sentence_index, sentence in enumerate(_split_sentences(synthesis)):
     records = _citation_records(sentence)
     sentence_keys = {r["key"] for r in records}
-    if not sentence_keys:
-      continue
     sent_norm = normalize_text(_strip_citations(sentence, records))
     sentence_numbers = collections.Counter(extract_numbers(sent_norm))
+    if not sentence_keys:
+      if sentence_numbers:
+        gaps.append({
+            "sentence": sentence.strip(),
+            "synthesis_sentence_index": sentence_index,
+            "citation_key": None,
+            "reason_code": "coverage_number_missing",
+        })
+      continue
+    sent_polarity = _polarity(sent_norm)
     for key in sorted(sentence_keys):
       matching = [item for item in claim_data
                   if key in item["keys"]
-                  and _claim_text_matches(item["text"], sent_norm)]
+                  and _claim_text_matches(item["text"], sent_norm)
+                  and _polarity(item["text"]) == sent_polarity]
       if not matching:
         reason = "coverage_identity_missing"
       elif sentence_numbers and any(item["role"] == "background"

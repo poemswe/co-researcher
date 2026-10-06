@@ -186,9 +186,13 @@ def claim_findings(report: dict) -> tuple[Finding, ...]:
             "synthesis statement lacks a complete verified claim trace",
             result, index))
     elif status == "needs_review":
+      anchors = result["anchors"] or {}
+      ungrounded = bool(anchors.get("numbers_missing"))
       findings.append(_claim_finding(
-          ReasonCode.CLAIM_NEEDS_REVIEW, Severity.WARNING,
-          "claim support requires review", result, index))
+          ReasonCode.CLAIM_NEEDS_REVIEW,
+          Severity.CRITICAL if ungrounded else Severity.WARNING,
+          "claim number is absent from its supporting quote" if ungrounded
+          else "claim support requires review", result, index))
     elif status in {"source_missing", "no_quote", "quote_too_short"}:
       findings.append(_claim_finding(
           ReasonCode.VALIDATOR_INCOMPLETE, Severity.CRITICAL,
