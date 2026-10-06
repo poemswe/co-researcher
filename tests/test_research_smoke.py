@@ -242,6 +242,14 @@ def test_literature_review_invalid_repair_sequence_smoke(tmp_path):
   assert ledger["repairs"][-1]["action"] == "stop_invalid"
 
 
+def test_literature_review_skill_creates_the_project_link_at_scope():
+  skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
+  scope = skill[skill.index("1. **Scope**"):skill.index("2. **Search**")]
+
+  assert '"$WS/project.json"' in scope
+  assert "research/{slug}/project.json" in scope
+
+
 def test_literature_review_skill_pins_delivery_repair_contract():
   skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
 
