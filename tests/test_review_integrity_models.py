@@ -255,3 +255,63 @@ def test_pass_report_rejects_forged_wire_with_no_applicable_dimension():
 
   with pytest.raises(ValueError, match="applicable|denominator"):
     PassReport.from_dict(report)
+
+
+def _single_finding_report(reason, severity):
+  finding = Finding(
+      reason_code=reason, severity=severity, artifact="claims.json",
+      message="finding")
+  dimension = DimensionResult(
+      name="quote_authenticity", score=0.0, applicable=True,
+      evaluated_units=1, passed_units=0, nominal_weight=25.0,
+      effective_weight=100.0, findings=[finding])
+  return PassReport(
+      integrity_score=0.0, findings=[finding],
+      dimensions={"quote_authenticity": dimension},
+      manifest_sha256="c" * 64)
+
+
+@pytest.mark.parametrize("reason, severity, expected", [
+    (ReasonCode.FABRICATED_QUOTE, Severity.CRITICAL, True),
+    (ReasonCode.CLAIM_NEEDS_REVIEW, Severity.WARNING, True),
+    (ReasonCode.BIBLIOGRAPHY_INCOMPLETE, Severity.WARNING, True),
+    (ReasonCode.PRISMA_EXCLUSION_REASON_MISSING, Severity.WARNING, True),
+    (ReasonCode.ABSTRACT_ONLY_SUPPORT, Severity.WARNING, False),
+    (ReasonCode.CITATION_RESOLUTION_UNAVAILABLE, Severity.WARNING, False),
+])
+def test_pass_report_requires_repair_for_critical_or_repairable(
+    reason, severity, expected):
+  assert _single_finding_report(reason, severity).repair_required is expected
+
+
+def test_initial_action_must_repair_a_repairable_warning():
+  report = _single_finding_report(
+      ReasonCode.CLAIM_NEEDS_REVIEW, Severity.WARNING)
+  with pytest.raises(ValueError, match="initial action"):
+    IntegrityRunReport(
+        pass_report=report, workspace_manifest_sha256="a" * 64,
+        action="pass", quality_score=None, repairs=[])
+
+
+def test_repair_record_may_repair_a_resolved_warning_report():
+  report = _single_finding_report(
+      ReasonCode.CLAIM_NEEDS_REVIEW, Severity.WARNING)
+  record = RepairRecord(
+      attempt=1, pass_report=report, workspace_manifest_sha256="d" * 64,
+      reason_codes=[ReasonCode.CLAIM_NEEDS_REVIEW], action="repair",
+      resolved=True)
+  assert RepairRecord.from_dict(record.to_dict()) == record
+
+
+@pytest.mark.parametrize("severity, action, resolved", [
+    (Severity.CRITICAL, "pass", False),
+    (Severity.WARNING, "stop_invalid", True),
+])
+def test_repair_record_rejects_action_contradicting_status(
+    severity, action, resolved):
+  report = _single_finding_report(ReasonCode.CLAIM_NEEDS_REVIEW, severity)
+  with pytest.raises(ValueError):
+    RepairRecord(
+        attempt=1, pass_report=report, workspace_manifest_sha256="d" * 64,
+        reason_codes=[ReasonCode.CLAIM_NEEDS_REVIEW], action=action,
+        resolved=resolved)

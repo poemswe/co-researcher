@@ -545,8 +545,7 @@ def _replay_repair_chain(
     if repair_round.previous_integrity != previous_integrity:
       raise ValueError("repair round previous integrity breaks the chain")
     previous_integrity = repair_round.integrity
-  initial_action = (
-      "repair" if first.integrity.status.value == "invalid" else "pass")
+  initial_action = "repair" if first.integrity.repair_required else "pass"
   try:
     strict_run = IntegrityRunReport(
         pass_report=first.integrity,

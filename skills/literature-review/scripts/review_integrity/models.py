@@ -73,6 +73,13 @@ class ReasonCode(_StringEnum):
   VALIDATOR_INCOMPLETE = "validator_incomplete"
 
 
+REPAIRABLE_WARNINGS = frozenset({
+    ReasonCode.CLAIM_NEEDS_REVIEW,
+    ReasonCode.BIBLIOGRAPHY_INCOMPLETE,
+    ReasonCode.PRISMA_EXCLUSION_REASON_MISSING,
+})
+
+
 _SHA256_RE = re.compile(r"[0-9a-fA-F]{64}\Z")
 _T = TypeVar("_T")
 
@@ -416,6 +423,12 @@ class PassReport:
     return IntegrityStatus.VALID
 
   @property
+  def repair_required(self) -> bool:
+    return any(f.severity is Severity.CRITICAL
+               or f.reason_code in REPAIRABLE_WARNINGS
+               for f in self.findings)
+
+  @property
   def unrounded_integrity_score(self) -> float:
     applicable = [dimension for dimension in self.dimensions.values()
                   if dimension.applicable]
@@ -526,8 +539,10 @@ class RepairRecord:
       raise ValueError("resolved must be a boolean")
     if self.resolved != (self.pass_report.status is not IntegrityStatus.INVALID):
       raise ValueError("resolved must match the pass report status")
-    if self.resolved != (self.action == "pass"):
-      raise ValueError("resolved must match the controller action")
+    if self.action == "pass" and not self.resolved:
+      raise ValueError("an invalid pass report cannot pass")
+    if self.action == "stop_invalid" and self.resolved:
+      raise ValueError("a resolved pass report cannot stop invalid")
 
   def to_dict(self) -> dict[str, Any]:
     return {
@@ -575,8 +590,8 @@ class IntegrityRunReport:
           "workspace_manifest_sha256 must be a 64-character hexadecimal hash")
     if self.action not in REPAIR_ACTIONS:
       raise ValueError(f"unknown repair action: {self.action!r}")
-    if ((self.pass_report.status is IntegrityStatus.INVALID)
-        == (self.action == "pass")):
+    if self.action != (
+        "repair" if self.pass_report.repair_required else "pass"):
       raise ValueError("initial action must match the pass report status")
     if self.quality_score is not None:
       object.__setattr__(self, "quality_score", _score(

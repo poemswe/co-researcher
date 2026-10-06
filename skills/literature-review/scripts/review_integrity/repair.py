@@ -75,7 +75,7 @@ class RepairController:
 
   def _action_for(self, observations: tuple[tuple[PassReport, str], ...]) -> str:
     report, _workspace_hash = observations[-1]
-    if report.status is not IntegrityStatus.INVALID:
+    if not report.repair_required:
       return "pass"
     repair_count = len(observations) - 1
     best_score = observations[0][0].unrounded_integrity_score
@@ -91,7 +91,8 @@ class RepairController:
       seen_hashes.add(prior_hash)
     if (repair_count >= self._max_rounds
         or no_progress >= self._no_progress_limit):
-      return "stop_invalid"
+      return ("stop_invalid" if report.status is IntegrityStatus.INVALID
+              else "pass")
     return "repair"
 
   def _replay_actions(

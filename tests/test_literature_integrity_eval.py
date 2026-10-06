@@ -918,3 +918,30 @@ def test_eval_result_rejects_nonterminal_first_pass_without_repairs():
             error=None,
         ),
     )
+
+
+def test_replay_requires_repair_for_repairable_warning_first_pass():
+  from review_integrity.models import (
+      DimensionResult, Finding, PassReport, ReasonCode, Severity)
+  finding = Finding(
+      reason_code=ReasonCode.CLAIM_NEEDS_REVIEW, severity=Severity.WARNING,
+      artifact="claims.json", message="claim support requires review")
+  dimension = DimensionResult(
+      name="quote_authenticity", score=0.0, applicable=True,
+      evaluated_units=1, passed_units=0, nominal_weight=25.0,
+      effective_weight=100.0, findings=[finding])
+  report = PassReport(
+      integrity_score=0.0, findings=[finding],
+      dimensions={"quote_authenticity": dimension},
+      manifest_sha256="c" * 64)
+  quality = QualityResult(
+      quality_score=0.0,
+      scores={name: 0.0 for name in (
+          "research-quality", "analytical-quality", "output-structure")},
+      error=None,
+  )
+  first = SnapshotEvaluation(
+      workspace_manifest_sha256=report.manifest_sha256, quality=quality,
+      integrity=report, model_usage=FakeExecutor._usage(cost=0.0))
+
+  assert literature_integrity._replay_repair_chain(first, ()) == "repair"

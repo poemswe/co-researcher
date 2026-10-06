@@ -38,10 +38,11 @@ def _snapshot(root, marker):
   return load_workspace(root)
 
 
-def _report(*, passed, evaluated=1, manifest="a", valid=False, context=None):
+def _report(*, passed, evaluated=1, manifest="a", valid=False, context=None,
+            reason=ReasonCode.FABRICATED_QUOTE, severity=Severity.CRITICAL):
   finding = None if valid else Finding(
-      reason_code=ReasonCode.FABRICATED_QUOTE,
-      severity=Severity.CRITICAL,
+      reason_code=reason,
+      severity=severity,
       artifact="claims.json",
       message="quote does not authenticate",
       context={} if context is None else context,
@@ -157,6 +158,89 @@ def test_repeated_workspace_hash_is_no_progress(tmp_path):
   decision = controller.record(_report(passed=1, manifest="b"), snapshot)
 
   assert decision.action == "stop_invalid"
+
+
+def _warning(reason, **kwargs):
+  return _report(reason=reason, severity=Severity.WARNING, **kwargs)
+
+
+@pytest.mark.parametrize("reason", [
+    ReasonCode.CLAIM_NEEDS_REVIEW,
+    ReasonCode.BIBLIOGRAPHY_INCOMPLETE,
+    ReasonCode.PRISMA_EXCLUSION_REASON_MISSING,
+])
+def test_controller_repairs_repairable_warning(tmp_path, reason):
+  decision = RepairController().record(
+      _warning(reason, passed=0), _snapshot(tmp_path / "review", "first"))
+
+  assert decision.action == "repair"
+
+
+@pytest.mark.parametrize("reason", [
+    ReasonCode.ABSTRACT_ONLY_SUPPORT,
+    ReasonCode.CITATION_RESOLUTION_UNAVAILABLE,
+])
+def test_controller_passes_policy_warning_without_repair(tmp_path, reason):
+  decision = RepairController().record(
+      _warning(reason, passed=0), _snapshot(tmp_path / "review", "first"))
+
+  assert decision.action == "pass"
+
+
+def test_controller_passes_resolved_repairable_warning(tmp_path):
+  controller = RepairController()
+  review = tmp_path / "review"
+  first = controller.record(
+      _warning(ReasonCode.CLAIM_NEEDS_REVIEW, passed=0, manifest="a"),
+      _snapshot(review, "initial"))
+  second = controller.record(
+      _report(passed=1, manifest="b", valid=True),
+      _snapshot(review, "repair-one"))
+
+  assert [first.action, second.action] == ["repair", "pass"]
+  assert controller.run_report.repairs[0].resolved is True
+
+
+def test_controller_passes_with_warnings_after_repair_limit(tmp_path):
+  controller = RepairController()
+  review = tmp_path / "review"
+  actions = [controller.record(
+      _warning(ReasonCode.CLAIM_NEEDS_REVIEW, passed=0, manifest="a"),
+      _snapshot(review, "initial")).action]
+  for index, marker in enumerate(("repair-one", "repair-two", "repair-three"), 1):
+    actions.append(controller.record(
+        _warning(ReasonCode.CLAIM_NEEDS_REVIEW, passed=index, evaluated=10,
+                 manifest=chr(97 + index)),
+        _snapshot(review, marker)).action)
+
+  assert actions == ["repair", "repair", "repair", "pass"]
+
+
+def test_controller_passes_with_warnings_after_no_progress(tmp_path):
+  controller = RepairController()
+  review = tmp_path / "review"
+  actions = [controller.record(
+      _warning(ReasonCode.BIBLIOGRAPHY_INCOMPLETE, passed=1, evaluated=2,
+               manifest=manifest),
+      _snapshot(review, marker)).action
+      for manifest, marker in (("a", "initial"), ("b", "one"), ("c", "two"))]
+
+  assert actions == ["repair", "repair", "pass"]
+
+
+def test_repair_report_with_warning_round_trips(tmp_path):
+  controller = RepairController()
+  review = tmp_path / "review"
+  controller.record(
+      _warning(ReasonCode.CLAIM_NEEDS_REVIEW, passed=0, manifest="a"),
+      _snapshot(review, "initial"))
+  controller.record(
+      _warning(ReasonCode.CLAIM_NEEDS_REVIEW, passed=0, manifest="b"),
+      _snapshot(review, "repair-one"))
+
+  restored = RepairController.from_run_report(controller.run_report)
+
+  assert restored.run_report == controller.run_report
 
 
 def test_feedback_contains_reason_codes_but_not_gold_fields():
