@@ -250,6 +250,14 @@ def test_literature_review_skill_creates_the_project_link_at_scope():
   assert "research/{slug}/project.json" in scope
 
 
+def test_literature_review_skill_requires_claims_to_restate_synthesis():
+  skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
+  verify = skill[skill.index("9. **Verify claims**"):skill.index("10. **Validate")]
+
+  assert "copy that synthesis sentence" in verify
+  assert "interpretation" in verify
+
+
 def test_literature_review_skill_pins_delivery_repair_contract():
   skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
 
