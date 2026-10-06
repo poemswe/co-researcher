@@ -226,8 +226,9 @@ def retracted_via_epmc(pmid: str) -> bool | None:
 
 
 def resolve_title(title: str) -> dict | None:
+  safe_title = title.replace('"', "'")
   query = urllib.parse.urlencode(
-      {"filter": f"title.search:{title}", "per-page": 1})
+      {"filter": f'title.search:"{safe_title}"', "per-page": 1})
   try:
     data = _OPENALEX.fetch_json(f"https://api.openalex.org/works?{query}")
   except http_client.HttpError as err:
