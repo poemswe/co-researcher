@@ -4,9 +4,11 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**v2.6.0 released (2026-07-10).** 14 skills. The literature funnel is tooled end to end: search backends -> `build_corpus.py` -> screening -> `read_paper.py` -> `prisma_counts.py` -> `verify_citations.py`. 125 tests across 9 files. Nothing in flight; no open PRs.
+**v2.6.2 released (2026-10-06)**, containing only the OpenAlex comma-title fix (#30).
 
-The differentiator, established by competitive analysis this session, is **retraction detection inside the agent that writes**. The closest open-source peer (HalluCiteChecker, arXiv Apr 2026) detects fabricated citations but not withdrawn ones. Screening workbenches (Covidence, Rayyan) and AI search tools (Elicit) don't gate the agent's own output.
+**PR #28 (`fix/claim-verifier-hardening`)** is at Task 12 of the integrity-integration plan. The code review is done, and its red-team findings plus the remaining gaps against the spec are fixed. The changes cover uncited synthesis numbers, reversed claim polarity, critical treatment of numbers missing from quotes, a repair loop that repairs fixable warnings, and specificity and domain reporting. What remains: the private pilot handoff (Task 12 step 5, done by the user), taking the PR out of draft, and merging. Hold the merge until the feature is complete (see the PR #19 merge gate).
+
+PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock directory left by a killed process hangs every later call. It is planned for the next minor or major release, together with #28.
 
 Next open item is the Semantic Scholar backend (see Open Threads).
 
@@ -19,6 +21,7 @@ Next open item is the Semantic Scholar backend (see Open Threads).
 
 ## Recent Decisions
 
+- **2026-10-06**: Coverage strictness: every synthesis number, years included, must be grounded, and an uncited number is critical. Warnings that edits can fix (`claim_needs_review`, `bibliography_incomplete`, `prisma_exclusion_reason_missing`) trigger repair. `abstract_only_support` and `citation_resolution_unavailable` do not.
 - **2026-07-10**: Retraction detection reworked twice, both times driven by measurement rather than assumption. v2.5.0 added a Crossref/Retraction Watch cross-check after finding OpenAlex's `is_retracted` missed 3 of 40 sampled retracted DOIs. v2.6.0 then found the ladder stopped too early: sampling Europe PMC's retracted publications, **Crossref missed 19 of 50**, so a clean answer from one source no longer ends the check — every available source is consulted and any retraction wins. Results now carry `retraction_checked` + `retraction_source` (renamed from `crossref_checked`) so an unrunnable check never reads as clean.
 - **2026-07-10**: Rejected resolving DOIs from titles via Crossref bibliographic search. Crossref returns a top hit for *any* string (a fabricated title matched a Thomas Aquinas essay; AlphaFold's title matched a "Faculty Opinions recommendation of…" record that our substring `titles_match` would have accepted). It would have manufactured retraction verdicts.
 - **2026-07-10**: v2.4.0 shipped `build_corpus.py` after the first live end-to-end funnel run exposed that step 3 had no tool.
