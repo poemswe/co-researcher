@@ -52,7 +52,7 @@ def _temp_tree(root: pathlib.Path) -> tuple[tuple[str, bytes], ...]:
 def test_public_cases_and_fixtures_do_not_serialize_scorer_material():
   for case_path in ATTACKS.glob("*/case.json"):
     public = json.loads(case_path.read_text())
-    assert set(public) == PUBLIC_FIELDS
+    assert set(public) - {"workspace_tamper"} == PUBLIC_FIELDS
     assert case_path.parent.name == public["case_id"]
     assert public["case_id"].startswith("integrity-case-")
     assert public["fixture_paths"] == ["input.json"]

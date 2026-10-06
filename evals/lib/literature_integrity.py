@@ -171,6 +171,36 @@ class PublicFixture:
       raise ValueError("public fixture content must be immutable bytes")
 
 
+WORKSPACE_TAMPERS = frozenset({"missing", "malformed", "symlink", "traversal"})
+_TAMPER_MANIFEST_ARTIFACTS = (
+    "protocol.md", "corpus.json", "claims.json", "synthesis.md", "refs.json")
+
+
+def apply_workspace_tamper(tamper: str, workspace: Path) -> None:
+  """Corrupt a submitted workspace the way an operational attack would."""
+  if tamper == "missing":
+    (workspace / "refs.json").unlink(missing_ok=True)
+  elif tamper == "malformed":
+    (workspace / "claims.json").write_text("{not-json", encoding="utf-8")
+  elif tamper == "symlink":
+    claims = workspace / "claims.json"
+    target = workspace / "claims.target.json"
+    claims.replace(target)
+    claims.symlink_to(target.name)
+  elif tamper == "traversal":
+    (workspace / "project.json").unlink(missing_ok=True)
+    papers = sorted(
+        path.relative_to(workspace).as_posix()
+        for path in (workspace / "papers").rglob("*")
+        if path.is_file() and path.name in {"fulltext.md", "abstract.md"})
+    (workspace / "run-manifest.json").write_text(json.dumps({
+        "schema_version": "1.0.0",
+        "artifacts": [*_TAMPER_MANIFEST_ARTIFACTS, *papers, "../outside.json"],
+    }), encoding="utf-8")
+  else:
+    raise ValueError(f"unknown workspace_tamper: {tamper!r}")
+
+
 @dataclass(frozen=True, slots=True)
 class CaseDefinition:
   case_id: str
@@ -178,8 +208,13 @@ class CaseDefinition:
   domain: str
   fixture_files: tuple[PublicFixture, ...]
   quality_rubric_id: str
+  workspace_tamper: str | None = None
 
   def __post_init__(self) -> None:
+    if (self.workspace_tamper is not None
+        and self.workspace_tamper not in WORKSPACE_TAMPERS):
+      raise ValueError(
+          f"unknown workspace_tamper: {self.workspace_tamper!r}")
     if not isinstance(self.case_id, str) or not _CASE_ID_RE.fullmatch(
         self.case_id):
       raise ValueError("case_id must be a lowercase hyphenated identifier")
@@ -832,9 +867,10 @@ def _load_case(
       "schema_version", "capability", "case_id", "prompt", "domain",
       "fixture_paths", "quality_rubric_id",
   }
-  data = _closed_object(
-      _read_json_bytes(definition.content, "case definition"), fields,
-      "case definition")
+  raw = _read_json_bytes(definition.content, "case definition")
+  if isinstance(raw, dict) and "workspace_tamper" in raw:
+    fields.add("workspace_tamper")
+  data = _closed_object(raw, fields, "case definition")
   if data["schema_version"] != SCHEMA_VERSION:
     raise ValueError("unsupported case schema_version")
   if data["capability"] != CAPABILITY:
@@ -863,6 +899,7 @@ def _load_case(
       domain=_text(data["domain"], "domain"),
       fixture_files=tuple(fixtures),
       quality_rubric_id=data["quality_rubric_id"],
+      workspace_tamper=data.get("workspace_tamper"),
   )
 
 
@@ -1441,6 +1478,8 @@ class LiteratureIntegrityRunner:
       first_usage = self._executor.first_pass(case, workspace)
       if not isinstance(first_usage, ModelUsage):
         raise ValueError("executor returned invalid first-pass usage")
+      if case.workspace_tamper is not None:
+        apply_workspace_tamper(case.workspace_tamper, workspace)
       try:
         first_snapshot = load_workspace(workspace)
       except WorkspaceError as exc:
@@ -1742,5 +1781,6 @@ __all__ = [
     "ProductionQualityJudge", "PublicFixture", "QualityJudge",
     "QualityResult", "RepairCost",
     "ReasonMetric", "RepairRound", "RobustnessResult", "SnapshotEvaluation",
+    "WORKSPACE_TAMPERS", "apply_workspace_tamper",
     "decode_integrity_result", "load_adversarial_scores", "load_cases",
 ]

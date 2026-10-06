@@ -1,6 +1,7 @@
 import json
 import pathlib
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -101,30 +102,6 @@ def _write_workspace(root, scenario):
       path.write_text(json.dumps(value), encoding="utf-8")
 
 
-def _artifact_failure(mutation, root, scenario):
-  if mutation == "missing":
-    (root / "refs.json").unlink()
-  elif mutation == "malformed":
-    (root / "claims.json").write_text("{not-json", encoding="utf-8")
-  elif mutation == "symlink":
-    outside = root.parent / "outside-claims.json"
-    outside.write_text("[]", encoding="utf-8")
-    (root / "claims.json").unlink()
-    (root / "claims.json").symlink_to(outside)
-  elif mutation == "traversal":
-    (root / "project.json").unlink()
-    artifacts = [
-        "protocol.md", "corpus.json", "claims.json", "synthesis.md",
-        "refs.json", *(
-            f"papers/{paper_id}/fulltext.md"
-            for paper_id in scenario["sources"]),
-        "../outside.json",
-    ]
-    (root / "run-manifest.json").write_text(json.dumps({
-        "schema_version": "1.0.0", "artifacts": artifacts,
-    }), encoding="utf-8")
-
-
 def test_public_attack_case_definitions_cover_every_family_once():
   cases = load_cases(ATTACKS)
 
@@ -132,7 +109,7 @@ def test_public_attack_case_definitions_cover_every_family_once():
       case for case, _family, _reason, _mutation in ATTACK_EXPECTATIONS}
   for case in cases:
     public = json.loads((ATTACKS / case.case_id / "case.json").read_text())
-    assert set(public) == {
+    assert set(public) - {"workspace_tamper"} == {
         "schema_version", "capability", "case_id", "prompt", "domain",
         "fixture_paths", "quality_rubric_id",
     }
@@ -150,8 +127,7 @@ def test_public_attack_case_definitions_cover_every_family_once():
 
 
 class _ScenarioExecutor:
-  def __init__(self, mutation):
-    self.mutation = mutation
+  def __init__(self):
     self.feedback = []
 
   @staticmethod
@@ -164,8 +140,6 @@ class _ScenarioExecutor:
   def first_pass(self, case, workspace):
     scenario = json.loads(case.fixture_files[0].content.decode("utf-8"))
     _write_workspace(workspace, scenario)
-    if self.mutation is not None:
-      _artifact_failure(self.mutation, workspace, scenario)
     return self._usage()
 
   def repair(self, feedback, workspace):
@@ -192,7 +166,7 @@ def test_critical_attack_is_detected_at_its_expected_unit(
     tmp_path, case_id, family, reason_code, mutation,
 ):
   case = next(item for item in load_cases(ATTACKS) if item.case_id == case_id)
-  executor = _ScenarioExecutor(mutation)
+  executor = _ScenarioExecutor()
   judge = _ScenarioJudge()
   runner = literature_integrity.LiteratureIntegrityRunner(
       executor, judge, workspace_parent=tmp_path / "workspaces",
@@ -232,13 +206,9 @@ def test_repair_operational_failure_keeps_latest_trusted_findings(tmp_path):
       if item.case_id == "integrity-case-001")
 
   class SymlinkRepairExecutor(_ScenarioExecutor):
-    def __init__(self):
-      super().__init__(None)
-
     def repair(self, feedback, workspace):
       self.feedback.append(feedback)
-      scenario = json.loads(case.fixture_files[0].content.decode("utf-8"))
-      _artifact_failure("symlink", workspace, scenario)
+      literature_integrity.apply_workspace_tamper("symlink", workspace)
       return self._usage()
 
   result = literature_integrity.LiteratureIntegrityRunner(
@@ -287,7 +257,7 @@ def test_operational_attack_has_a_matched_valid_artifact_control(
   scenario = _scenario(case_id)
   workspace = tmp_path / case_id
   _write_workspace(workspace, scenario)
-  _artifact_failure(mutation, workspace, scenario)
+  literature_integrity.apply_workspace_tamper(mutation, workspace)
 
   control = workspace / control_artifact
   assert control.is_file() and not control.is_symlink()
@@ -315,7 +285,7 @@ def test_operational_controls_contribute_true_negatives(
 ):
   case = next(item for item in load_cases(ATTACKS) if item.case_id == case_id)
   result = literature_integrity.LiteratureIntegrityRunner(
-      _ScenarioExecutor(mutation), _ScenarioJudge(),
+      _ScenarioExecutor(), _ScenarioJudge(),
       workspace_parent=tmp_path / "workspaces",
       scorecard_directory=ATTACKS).run_case(case)
 
@@ -641,3 +611,69 @@ def test_scorer_requires_a_domain_for_every_scored_case(tmp_path):
   with pytest.raises(ValueError, match="domain"):
     literature_integrity.load_adversarial_scores(
         tmp_path, {"integrity-case-900": []}, domains={})
+
+
+_OPERATIONAL_TAMPERS = {
+    "integrity-case-010": "missing", "integrity-case-011": "malformed",
+    "integrity-case-012": "symlink", "integrity-case-013": "traversal",
+}
+
+
+def test_operational_cases_declare_a_public_workspace_tamper():
+  cases = {case.case_id: case for case in load_cases(ATTACKS)}
+
+  assert {case_id: case.workspace_tamper
+          for case_id, case in cases.items()
+          if case.workspace_tamper is not None} == _OPERATIONAL_TAMPERS
+
+
+@pytest.mark.parametrize("case_id", [
+    "integrity-case-010", "integrity-case-012", "integrity-case-013"])
+def test_unloadable_tamper_cases_expect_fail_closed_invalid(case_id):
+  expected = json.loads((ATTACKS / case_id / "expected.json").read_text())
+
+  assert expected["final_status"] == "invalid"
+  assert expected["minimum_repair_rounds"] == 0
+  assert expected["maximum_repair_rounds"] == 0
+
+
+def test_case_loader_rejects_unknown_workspace_tamper(tmp_path):
+  case_dir = tmp_path / "integrity-case-900"
+  case_dir.mkdir()
+  (case_dir / "input.json").write_text("{}")
+  (case_dir / "case.json").write_text(json.dumps({
+      "schema_version": "1.0.0", "capability": "literature-review-integrity",
+      "case_id": "integrity-case-900", "prompt": "Build it.",
+      "domain": "synthetic", "fixture_paths": ["input.json"],
+      "quality_rubric_id": "literature-review-v1",
+      "workspace_tamper": "delete-everything",
+  }))
+
+  with pytest.raises(ValueError, match="workspace_tamper"):
+    load_cases(tmp_path)
+
+
+@pytest.mark.parametrize("tamper", sorted(set(_OPERATIONAL_TAMPERS.values())))
+def test_capture_prompt_never_reveals_the_workspace_tamper(
+    monkeypatch, tmp_path, tamper,
+):
+  case_id = next(key for key, value in _OPERATIONAL_TAMPERS.items()
+                 if value == tamper)
+  case = next(item for item in load_cases(ATTACKS) if item.case_id == case_id)
+  calls = []
+  monkeypatch.setattr(
+      literature_integrity, "find_cli",
+      lambda provider: pathlib.Path(f"/fake/{provider}"))
+  monkeypatch.setattr(
+      literature_integrity.subprocess, "run",
+      lambda command, **kwargs: calls.append(command) or SimpleNamespace(
+          returncode=0, stdout="", stderr=""))
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+
+  literature_integrity.ProductionModelExecutor("claude", ROOT).first_pass(
+      case, workspace)
+
+  prompt = calls[0][calls[0].index("-p") + 1]
+  assert "workspace_tamper" not in prompt
+  assert tamper not in prompt
