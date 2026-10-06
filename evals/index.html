@@ -2145,7 +2145,7 @@
                 requireExactFields(caseResult,
                     ['case_id', 'first_pass', 'final', 'artifact'],
                     ['attack_family', 'adversarial_score', 'operational_failure',
-                     'repair_rounds'], 'integrity case');
+                     'repair_rounds', 'snapshots'], 'integrity case');
                 if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(caseResult.case_id) || seen.has(caseResult.case_id)) {
                     throw new Error('integrity case IDs must be unique canonical IDs');
                 }
@@ -2233,6 +2233,27 @@
                         requireArtifactReference(round,
                             `repair-rounds/${caseResult.case_id}-round-${roundNumber}.json`,
                             'repair round');
+                    });
+                }
+                if (Object.prototype.hasOwnProperty.call(caseResult, 'snapshots')) {
+                    const rounds = Array.isArray(caseResult.repair_rounds) ?
+                        caseResult.repair_rounds.length : 0;
+                    if (!Array.isArray(caseResult.snapshots) ||
+                        caseResult.first_pass === null ||
+                        caseResult.snapshots.length !== rounds + 1) {
+                        throw new Error('workspace snapshot references do not match the case');
+                    }
+                    caseResult.snapshots.forEach((snapshot, index) => {
+                        requireExactFields(snapshot, ['label', 'path', 'sha256'], [],
+                            'workspace snapshot');
+                        const label = index === 0 ? 'first-pass' :
+                            `round-${String(index).padStart(2, '0')}`;
+                        if (snapshot.label !== label || !/^[0-9a-f]{64}$/.test(snapshot.sha256)) {
+                            throw new Error('workspace snapshot reference is invalid');
+                        }
+                        requireArtifactReference(snapshot,
+                            `snapshots/${caseResult.case_id}-${label}.json`,
+                            'workspace snapshot');
                     });
                 }
             });

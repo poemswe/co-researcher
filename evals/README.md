@@ -155,7 +155,16 @@ If a model CLI fails on a case (a non-zero exit, a timeout, or a usage
 limit), that case is left out of scoring and listed under the optional
 `execution_errors`, and `summary.md` names it as not evaluated. The run keeps
 going. Errors in the harness itself still stop the run, and a run where no
-case completes writes no report. Publication stages, validates, and syncs the complete run before one
+case completes writes no report.
+
+Each run also keeps the workspace the model actually wrote, under
+`snapshots/<case_id>-first-pass.json` and `snapshots/<case_id>-round-NN.json`
+(one per repair round). A snapshot stores every artifact's bytes with its
+size and SHA-256, and the case view references it by path and digest. The
+Python loader recomputes each snapshot's manifest and requires it to match
+the manifest recorded for that pass, so a snapshot cannot be swapped or
+edited. A workspace that failed to load has no snapshot. Runs written before
+snapshots existed stay readable. Publication stages, validates, and syncs the complete run before one
 atomic rename; a registry lock serializes the matching `index.json` update and
 rollback. The writer and loader reject unsafe IDs, links, aliases, oversized
 files, and non-canonical artifact names. `index.json` gives the static dashboard

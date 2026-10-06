@@ -202,7 +202,10 @@ def run_literature_integrity(model: str):
         provenance=provenance,
         execution_errors=execution_errors,
     )
-    run_directory = write_run_report(combined, RESULTS_DIR)
+    run_directory = write_run_report(
+        combined, RESULTS_DIR,
+        snapshots={case.case_id: runner.snapshots[case.case_id]
+                   for case in cases if case.case_id in runner.snapshots})
     for case, result in zip(cases, results):
         if isinstance(result, OperationalIntegrityEvalResult):
             failure = result.operational_failure

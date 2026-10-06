@@ -1064,6 +1064,8 @@ def _two_case_cli(monkeypatch, tmp_path, failing):
            SimpleNamespace(case_id="case-two", domain="synthetic"))
 
   class FlakyRunner:
+    snapshots = {}
+
     def __init__(self, *args, **kwargs):
       pass
 
@@ -1151,6 +1153,8 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
   cases = (SimpleNamespace(case_id="case-one", domain="synthetic"),)
 
   class FakeRunner:
+    snapshots = {}
+
     def __init__(self, *args, **kwargs):
       pass
 
@@ -1285,6 +1289,17 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     const v12Entry = {...committedEntry, report_schema_version: '1.2.0'};
     const v12 = {...v11, schema_version: '1.2.0', provenance};
     context.parseIntegrityRunData(v12, v12Entry);
+    const withSnapshots = JSON.parse(JSON.stringify(report));
+    withSnapshots.cases[0].snapshots = [{label: 'first-pass',
+      path: 'snapshots/case-1-first-pass.json', sha256: 'd'.repeat(64)}];
+    context.parseIntegrityRunData(withSnapshots, entry);
+    withSnapshots.cases[0].snapshots[0].label = 'round-01';
+    try {
+      context.parseIntegrityRunData(withSnapshots, entry);
+      process.exit(40);
+    } catch (error) {
+      if (!String(error).includes('workspace snapshot')) process.exit(41);
+    }
     const withErrors = {...v12, execution_errors: [
       {case_id: 'case-9', message: 'model executor exited 1: usage limit'}]};
     context.parseIntegrityRunData(withErrors, v12Entry);

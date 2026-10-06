@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import math
@@ -25,6 +26,11 @@ from .literature_integrity import (
     OperationalIntegrityEvalResult,
     ReasonMetric,
     decode_integrity_result,
+)
+from review_integrity.workspace import (  # noqa: E402
+    CANONICALIZATION,
+    WorkspaceSnapshot,
+    canonical_manifest_bytes,
 )
 
 
@@ -816,10 +822,137 @@ def _read_owned_file(path: Path, label: str) -> bytes:
     os.close(descriptor)
 
 
-def _prepare_run_payloads(result: CombinedRunResult) -> dict:
+def _snapshot_label(index: int) -> str:
+  return "first-pass" if index == 0 else f"round-{index:02d}"
+
+
+def _expected_snapshot_manifests(evaluation: IntegrityResult) -> tuple[str, ...]:
+  if evaluation.model_first_pass is None:
+    return ()
+  return (
+      evaluation.model_first_pass.workspace_manifest_sha256,
+      *(item.workspace_manifest_sha256 for item in evaluation.repair_rounds))
+
+
+def _validated_snapshots(
+    result: CombinedRunResult, snapshots: Mapping | None,
+) -> dict[str, tuple[WorkspaceSnapshot, ...]]:
+  if snapshots is None:
+    return {}
+  if not isinstance(snapshots, Mapping):
+    raise ValueError("workspace snapshots must be a mapping")
+  cases = {case.case_id: case for case in result.cases}
+  validated = {}
+  for case_id, values in snapshots.items():
+    if case_id not in cases:
+      raise ValueError(f"workspace snapshots name an unknown case: {case_id}")
+    values = tuple(values)
+    if not all(isinstance(value, WorkspaceSnapshot) for value in values):
+      raise ValueError("workspace snapshots must be WorkspaceSnapshot values")
+    if tuple(value.manifest_sha256 for value in values) != (
+        _expected_snapshot_manifests(cases[case_id].evaluation)):
+      raise ValueError(
+          "workspace snapshots do not match the recorded manifests")
+    if values:
+      validated[case_id] = values
+  return validated
+
+
+def _snapshot_payload(
+    case_id: str, label: str, snapshot: WorkspaceSnapshot,
+) -> bytes:
+  files = []
+  for artifact in snapshot.files:
+    try:
+      content, encoding = artifact.payload.decode("utf-8"), "utf-8"
+    except UnicodeDecodeError:
+      content = base64.b64encode(artifact.payload).decode("ascii")
+      encoding = "base64"
+    files.append({
+        "path": artifact.relative_path, "size": artifact.size,
+        "sha256": artifact.sha256, "encoding": encoding, "content": content,
+    })
+  return _json_bytes({
+      "schema_version": SCHEMA_VERSION, "case_id": case_id, "label": label,
+      "canonicalization": snapshot.canonicalization,
+      "manifest_sha256": snapshot.manifest_sha256, "files": files,
+  })
+
+
+def _verify_snapshot(
+    value: object, case_id: str, label: str, expected_manifest: str,
+) -> None:
+  data = _closed_object(value, {
+      "schema_version", "case_id", "label", "canonicalization",
+      "manifest_sha256", "files",
+  }, "workspace snapshot")
+  if (data["schema_version"] != SCHEMA_VERSION
+      or data["case_id"] != case_id or data["label"] != label
+      or data["canonicalization"] != CANONICALIZATION
+      or data["manifest_sha256"] != expected_manifest
+      or not isinstance(data["files"], list)):
+    raise ValueError("workspace snapshot does not match its case")
+  records = []
+  for item in data["files"]:
+    entry = _closed_object(item, {
+        "path", "size", "sha256", "encoding", "content",
+    }, "workspace snapshot file")
+    if (not isinstance(entry["path"], str)
+        or type(entry["size"]) is not int
+        or not isinstance(entry["content"], str)
+        or entry["encoding"] not in {"utf-8", "base64"}):
+      raise ValueError("workspace snapshot file is malformed")
+    try:
+      payload = (entry["content"].encode("utf-8")
+                 if entry["encoding"] == "utf-8"
+                 else base64.b64decode(entry["content"], validate=True))
+    except ValueError as exc:
+      raise ValueError("workspace snapshot file is malformed") from exc
+    if (entry["size"] != len(payload)
+        or entry["sha256"] != hashlib.sha256(payload).hexdigest()):
+      raise ValueError("workspace snapshot file does not match its digest")
+    records.append({
+        "path": entry["path"], "size": entry["size"],
+        "sha256": entry["sha256"]})
+  digest = hashlib.sha256(canonical_manifest_bytes({
+      "canonicalization": data["canonicalization"], "files": records,
+  })).hexdigest()
+  if digest != expected_manifest:
+    raise ValueError("workspace snapshot manifest does not match its files")
+
+
+def _validate_snapshot_views(
+    value: object, evaluation: IntegrityResult, run_descriptor: int,
+    case_id: str,
+) -> set[str]:
+  expected = _expected_snapshot_manifests(evaluation)
+  if not isinstance(value, list) or len(value) != len(expected) or not value:
+    raise ValueError("workspace snapshot references do not match the case")
+  names = set()
+  for index, (item, manifest) in enumerate(zip(value, expected)):
+    data = _closed_object(item, {"label", "path", "sha256"},
+                          "workspace snapshot reference")
+    label = _snapshot_label(index)
+    if data["label"] != label:
+      raise ValueError("workspace snapshot labels are out of order")
+    name = f"{case_id}-{label}.json"
+    parsed = _artifact_payload(
+        run_descriptor, {"path": data["path"], "sha256": data["sha256"]},
+        "workspace snapshot", f"snapshots/{name}")
+    _verify_snapshot(parsed, case_id, label, manifest)
+    names.add(name)
+  return names
+
+
+def _prepare_run_payloads(
+    result: CombinedRunResult,
+    snapshots: Mapping[str, tuple[WorkspaceSnapshot, ...]] | None = None,
+) -> dict:
+  snapshots = snapshots or {}
   case_views = []
   artifact_payloads = {}
   repair_payloads = {}
+  snapshot_payloads = {}
   for case in sorted(result.cases, key=lambda item: item.case_id):
     artifact_path = f"artifacts/{case.case_id}.json"
     artifact_payload = _json_bytes(case.evaluation.to_dict())
@@ -858,6 +991,17 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
         round_views.append(_repair_round_view(
             repair_round, relative, _digest(payload)))
       view["repair_rounds"] = round_views
+    if case.case_id in snapshots:
+      references = []
+      for index, snapshot in enumerate(snapshots[case.case_id]):
+        label = _snapshot_label(index)
+        name = f"{case.case_id}-{label}.json"
+        payload = _snapshot_payload(case.case_id, label, snapshot)
+        snapshot_payloads[name] = payload
+        references.append({
+            "label": label, "path": f"snapshots/{name}",
+            "sha256": _digest(payload)})
+      view["snapshots"] = references
     case_views.append(view)
   report = {
       "schema_version": REPORT_SCHEMA_VERSION,
@@ -882,6 +1026,7 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
       "summary": summary_payload,
       "artifacts": artifact_payloads,
       "repair_rounds": repair_payloads,
+      "snapshots": snapshot_payloads,
   }
 
 
@@ -934,10 +1079,12 @@ def _validate_and_sync_staging(
       for case in case_views for round_view in case.get("repair_rounds", [])
   }
   if set(os.listdir(destination)) != {
-      "artifacts", "repair-rounds", "result.json", "summary.md",
+      "artifacts", "repair-rounds", "snapshots", "result.json", "summary.md",
       "publication.json",
   }:
     raise ValueError("staged run contains unexpected top-level entries")
+  if set(os.listdir(destination / "snapshots")) != set(prepared["snapshots"]):
+    raise ValueError("staged snapshots do not match result references")
   if set(os.listdir(destination / "artifacts")) != expected_artifacts:
     raise ValueError("staged run artifacts do not match result references")
   if set(os.listdir(destination / "repair-rounds")) != expected_rounds:
@@ -953,6 +1100,11 @@ def _validate_and_sync_staging(
           destination / round_view["path"], "repair round artifact")
       if _digest(payload) != round_view["sha256"]:
         raise ValueError("staged repair round digest mismatch")
+    for snapshot_view in case.get("snapshots", []):
+      payload = _read_owned_file(
+          destination / snapshot_view["path"], "workspace snapshot")
+      if _digest(payload) != snapshot_view["sha256"]:
+        raise ValueError("staged workspace snapshot digest mismatch")
   result_payload = _read_owned_file(
       destination / "result.json", "run result")
   if json.loads(result_payload) != report:
@@ -970,6 +1122,7 @@ def _validate_and_sync_staging(
       summary_sha256)
   _fsync_directory(destination / "artifacts")
   _fsync_directory(destination / "repair-rounds")
+  _fsync_directory(destination / "snapshots")
   _fsync_directory(destination)
   return result_payload
 
@@ -984,8 +1137,8 @@ def _validate_matching_orphan(
     raise ValueError("unregistered run directory is not recoverable") from exc
   try:
     if set(os.listdir(run_descriptor)) != {
-        "artifacts", "repair-rounds", "result.json", "summary.md",
-        "publication.json",
+        "artifacts", "repair-rounds", "snapshots", "result.json",
+        "summary.md", "publication.json",
     }:
       raise ValueError("unregistered run has a non-canonical layout")
     result_payload = _read_regular_at(
@@ -1007,6 +1160,7 @@ def _validate_matching_orphan(
     for directory_name, expected in (
         ("artifacts", prepared["artifacts"]),
         ("repair-rounds", prepared["repair_rounds"]),
+        ("snapshots", prepared["snapshots"]),
     ):
       descriptor = _open_child_directory(
           run_descriptor, directory_name, f"orphan {directory_name}")
@@ -1043,8 +1197,15 @@ def _register_matching_orphan(
     raise
 
 
-def write_run_report(result: CombinedRunResult, root: Path) -> Path:
-  """Write one append-only run below ``root/runs`` and return its directory."""
+def write_run_report(
+    result: CombinedRunResult, root: Path,
+    snapshots: Mapping[str, Sequence[WorkspaceSnapshot]] | None = None,
+) -> Path:
+  """Write one append-only run below ``root/runs`` and return its directory.
+
+  ``snapshots`` maps a case ID to the workspace snapshots the runner loaded,
+  in order: the first pass, then each repair round.
+  """
   if not isinstance(result, CombinedRunResult):
     if not isinstance(result, dict):
       raise ValueError("result must be a CombinedRunResult")
@@ -1063,7 +1224,8 @@ def write_run_report(result: CombinedRunResult, root: Path) -> Path:
   if runs_root.is_symlink():
     raise ValueError("runs directory must not be a symlink")
   runs_root.mkdir(exist_ok=True)
-  prepared = _prepare_run_payloads(result)
+  prepared = _prepare_run_payloads(
+      result, _validated_snapshots(result, snapshots))
   final_destination = runs_root / result.run_id
   with _registry_lock(runs_root) as root_descriptor:
     existing, previous_registry = _read_registry_locked(
@@ -1089,6 +1251,9 @@ def write_run_report(result: CombinedRunResult, root: Path) -> Path:
     repair_rounds = destination / "repair-rounds"
     artifacts.mkdir()
     repair_rounds.mkdir()
+    (destination / "snapshots").mkdir()
+    for name, payload in prepared["snapshots"].items():
+      _write_exclusive(destination / "snapshots" / name, payload)
     for name, payload in prepared["artifacts"].items():
       _write_exclusive(artifacts / name, payload)
     for name, payload in prepared["repair_rounds"].items():
@@ -1280,7 +1445,9 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
     except OSError as exc:
       raise ValueError(f"unknown run_id: {selected}") from exc
     try:
-      if set(os.listdir(run_descriptor)) != {
+      entries = set(os.listdir(run_descriptor))
+      has_snapshot_directory = "snapshots" in entries
+      if entries - {"snapshots"} != {
           "artifacts", "repair-rounds", "result.json", "summary.md",
           "publication.json",
       }:
@@ -1357,12 +1524,13 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
       strict_cases = []
       expected_artifacts = set()
       expected_rounds = set()
+      expected_snapshots = set()
       for value in data["cases"]:
         case = _closed_object(value, {
             "case_id", "first_pass", "final", "artifact",
         }, "run case", optional={
             "attack_family", "adversarial_score", "repair_rounds",
-            "operational_failure"})
+            "operational_failure", "snapshots"})
         case_id = case["case_id"]
         if (not isinstance(case_id, str) or not _CASE_ID_RE.fullmatch(case_id)
             or case_id in seen):
@@ -1399,6 +1567,9 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
               case["first_pass"], evaluation.model_first_pass, "first_pass")
           _validate_snapshot_view(
               case["final"], evaluation.system_final, "final")
+        if "snapshots" in case:
+          expected_snapshots.update(_validate_snapshot_views(
+              case["snapshots"], evaluation, run_descriptor, case_id))
         has_rounds = bool(evaluation.repair_rounds)
         if has_rounds != ("repair_rounds" in case):
           raise ValueError("repair_rounds presence does not match Task 8 result")
@@ -1424,6 +1595,17 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
           raise ValueError("repair-round directory contains unexpected entries")
       finally:
         os.close(rounds_descriptor)
+      if has_snapshot_directory:
+        snapshots_descriptor = _open_child_directory(
+            run_descriptor, "snapshots", "workspace snapshot directory")
+        try:
+          if set(os.listdir(snapshots_descriptor)) != expected_snapshots:
+            raise ValueError(
+                "workspace snapshot directory contains unexpected entries")
+        finally:
+          os.close(snapshots_descriptor)
+      elif expected_snapshots:
+        raise ValueError("workspace snapshots are referenced but missing")
       expected_summary = _status_summary(strict_cases)
       summary = _closed_object(
           data["summary"], {"case_count", "integrity_status_counts"},

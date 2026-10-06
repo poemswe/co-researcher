@@ -1433,6 +1433,7 @@ class LiteratureIntegrityRunner:
         Path(workspace_parent).resolve() if workspace_parent is not None
         else Path(tempfile.gettempdir()).resolve())
     self._scorecards = _ScorecardStore(scorecard_directory)
+    self.snapshots: dict[str, tuple] = {}
 
   def _quality(self, case: CaseDefinition, synthesis: str) -> QualityResult:
     try:
@@ -1472,8 +1473,16 @@ class LiteratureIntegrityRunner:
     )
 
   def run_case(self, case: CaseDefinition) -> IntegrityResult:
+    """Evaluate one case and retain every loaded workspace snapshot."""
     if not isinstance(case, CaseDefinition):
       raise ValueError("case must be a CaseDefinition")
+    retained = []
+    try:
+      return self._run_case(case, retained)
+    finally:
+      self.snapshots[case.case_id] = tuple(retained)
+
+  def _run_case(self, case: CaseDefinition, retained: list) -> IntegrityResult:
     self._workspace_parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(
         prefix="literature-run-", dir=self._workspace_parent,
@@ -1490,6 +1499,7 @@ class LiteratureIntegrityRunner:
         return self._operational_result(
             case, phase="initial_load", attempt=0, error=exc,
             usage=first_usage)
+      retained.append(first_snapshot)
 
       # The quality judge sees retained first-pass text before any finding or
       # repair feedback exists.
@@ -1520,6 +1530,7 @@ class LiteratureIntegrityRunner:
               case, phase="repair_load", attempt=len(rounds) + 1,
               error=exc, usage=usage, first=first,
               rounds=tuple(rounds))
+        retained.append(current_snapshot)
         current_integrity = self._integrity(current_snapshot)
         decision = controller.record(current_integrity, current_snapshot)
         rounds.append(RepairRound(

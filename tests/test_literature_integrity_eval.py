@@ -25,6 +25,8 @@ from lib.literature_integrity import (  # noqa: E402
     load_cases,
 )
 from lib import literature_integrity  # noqa: E402
+from lib.run_reports import (  # noqa: E402
+    CombinedRunResult, load_dashboard_data, write_run_report)
 from review_integrity.models import IntegrityRunReport  # noqa: E402
 from review_integrity.repair import safe_repair_feedback  # noqa: E402
 
@@ -1003,3 +1005,76 @@ def test_executor_timeout_is_a_model_execution_error(monkeypatch, tmp_path):
 
   with pytest.raises(literature_integrity.ModelExecutionError, match="timed out"):
     ProductionModelExecutor("claude", ROOT).first_pass(_case(tmp_path), workspace)
+
+
+_SNAPSHOT_PROVENANCE = {
+    "target_commit": None, "target_dirty": None, "engine_version": "1.0.0",
+    "validator_versions": {"claims": "1.0.0"},
+}
+
+
+def _snapshot_run(tmp_path):
+  case = _case(tmp_path)
+  runner = _runner(tmp_path)
+  result = runner.run_case(case)
+  run = CombinedRunResult.from_results(
+      run_id="run-snapshots", timestamp="2026-10-06T12:00:00Z",
+      model="fake", results=((case.case_id, result),),
+      provenance=_SNAPSHOT_PROVENANCE)
+  return case, runner, result, run
+
+
+def test_runner_keeps_one_snapshot_per_loaded_pass(tmp_path):
+  case, runner, result, _run = _snapshot_run(tmp_path)
+
+  assert [snapshot.manifest_sha256
+          for snapshot in runner.snapshots[case.case_id]] == [
+      result.model_first_pass.workspace_manifest_sha256,
+      *(item.workspace_manifest_sha256 for item in result.repair_rounds)]
+
+
+def test_run_report_retains_verifiable_workspace_snapshots(tmp_path):
+  case, runner, _result, run = _snapshot_run(tmp_path)
+  root = tmp_path / "results"
+
+  run_path = write_run_report(run, root, snapshots=runner.snapshots)
+  selected = load_dashboard_data(root, "run-snapshots")
+
+  references = selected["cases"][0]["snapshots"]
+  assert [item["label"] for item in references] == [
+      "first-pass", "round-01", "round-02", "round-03"]
+  final = json.loads((run_path / references[-1]["path"]).read_text())
+  files = {item["path"]: item["content"] for item in final["files"]}
+  assert files["synthesis.md"] == "final synthesis 3\n"
+
+
+def test_tampered_snapshot_is_rejected_on_load(tmp_path):
+  _case, runner, _result, run = _snapshot_run(tmp_path)
+  root = tmp_path / "results"
+  run_path = write_run_report(run, root, snapshots=runner.snapshots)
+  first = run_path / "snapshots" / "synthetic-case-first-pass.json"
+  first.write_text(first.read_text().replace('"claims.json"', '"claimz.json"'))
+
+  with pytest.raises(ValueError, match="snapshot"):
+    load_dashboard_data(root, "run-snapshots")
+
+
+def test_snapshots_must_match_the_recorded_manifests(tmp_path):
+  case, runner, _result, run = _snapshot_run(tmp_path)
+  reordered = {case.case_id: tuple(reversed(runner.snapshots[case.case_id]))}
+
+  with pytest.raises(ValueError, match="snapshot"):
+    write_run_report(run, tmp_path / "results", snapshots=reordered)
+
+
+def test_unloadable_workspace_has_no_snapshot(tmp_path):
+  class EmptyExecutor(FakeExecutor):
+    def first_pass(self, case, workspace):
+      return self._usage(cost=0.0)
+
+  case = _case(tmp_path)
+  runner = _runner(tmp_path, executor=EmptyExecutor())
+
+  runner.run_case(case)
+
+  assert runner.snapshots[case.case_id] == ()
