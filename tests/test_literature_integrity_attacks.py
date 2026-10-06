@@ -7,6 +7,10 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 EVALS = ROOT / "evals"
+_PROVENANCE = {
+    "target_commit": None, "target_dirty": None, "engine_version": "1.0.0",
+    "validator_versions": {"claims": "1.0.0"},
+}
 ATTACKS = (
     EVALS / "test-cases/literature-review-integrity/synthetic-attacks")
 SCRIPTS = ROOT / "skills/literature-review/scripts"
@@ -509,7 +513,8 @@ def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
   )
   run = CombinedRunResult(
       run_id="run-attack-metrics", timestamp="2026-08-04T12:00:00Z",
-      model="codex:test", cases=(
+      model="codex:test",
+      provenance=_PROVENANCE, cases=(
           CombinedCaseResult(
               case_id="attack-one", evaluation=_valid_evaluation(),
               adversarial_score=first),

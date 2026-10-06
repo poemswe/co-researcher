@@ -147,7 +147,10 @@ digest. Report schema `1.1.0` also commits `summary.md` by SHA-256 in
 the browser verify that commitment before using a run. Legacy `1.0.0` records
 remain readable only through the closed legacy shape and a deterministic
 summary reconstruction check. New records missing the `1.1.0` commitment fail
-closed. Publication stages, validates, and syncs the complete run before one
+closed. Report schema `1.2.0` adds `provenance`, captured when the run starts:
+the target commit, whether tracked files were dirty, the engine version, and
+the validator versions. `summary.md` repeats the commit. The writer refuses a
+new run without provenance, and `1.1.0` runs without it stay readable. Publication stages, validates, and syncs the complete run before one
 atomic rename; a registry lock serializes the matching `index.json` update and
 rollback. The writer and loader reject unsafe IDs, links, aliases, oversized
 files, and non-canonical artifact names. `index.json` gives the static dashboard

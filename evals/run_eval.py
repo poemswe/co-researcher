@@ -153,7 +153,16 @@ def run_literature_integrity(model: str):
         load_cases,
     )
     from lib.run_reports import CombinedRunResult, write_run_report
+    from review_integrity.reporting import ENGINE_VERSION, VALIDATOR_VERSIONS
+    from validate_review import git_provenance
 
+    target_commit, target_dirty = git_provenance(EVALS_DIR.parent)
+    provenance = {
+        "target_commit": target_commit,
+        "target_dirty": target_dirty,
+        "engine_version": ENGINE_VERSION,
+        "validator_versions": dict(VALIDATOR_VERSIONS),
+    }
     cases = load_cases(TEST_CASES_DIR / INTEGRITY_CAPABILITY)
     run_id = generate_run_id()
     timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -175,6 +184,7 @@ def run_literature_integrity(model: str):
         results=tuple(
             (case.case_id, result) for case, result in zip(cases, results)),
         adversarial_scores=adversarial_scores,
+        provenance=provenance,
     )
     run_directory = write_run_report(combined, RESULTS_DIR)
     for case, result in zip(cases, results):

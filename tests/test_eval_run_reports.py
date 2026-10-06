@@ -83,11 +83,23 @@ def _evaluation(quality_score: float) -> IntegrityEvalResult:
   )
 
 
+_PROVENANCE = {
+    "target_commit": "a" * 40,
+    "target_dirty": False,
+    "engine_version": "1.0.0",
+    "validator_versions": {
+        "claims": "1.0.0", "citation": "1.0.0", "prisma": "1.0.0",
+        "artifact_scoring": "1.0.0",
+    },
+}
+
+
 def _run(run_id: str, *quality_scores: float) -> CombinedRunResult:
   return CombinedRunResult(
       run_id=run_id,
       timestamp="2026-08-04T12:00:00Z",
       model="codex:test",
+      provenance=_PROVENANCE,
       cases=tuple(
           CombinedCaseResult(
               case_id=f"case-{index}", evaluation=_evaluation(score))
@@ -120,7 +132,8 @@ def _operational_evaluation() -> OperationalIntegrityEvalResult:
 def test_operational_failure_round_trips_through_report_and_dashboard(tmp_path):
   run = CombinedRunResult(
       run_id="run-operational", timestamp="2026-08-04T12:00:00Z",
-      model="codex:test", cases=(CombinedCaseResult(
+      model="codex:test",
+      provenance=_PROVENANCE, cases=(CombinedCaseResult(
           case_id="case-one", evaluation=_operational_evaluation()),))
 
   run_path = write_run_report(run, tmp_path)
@@ -149,7 +162,8 @@ def test_judge_failure_remains_error_in_summary(tmp_path):
   evaluation = replace(evaluation, system_final=failed)
   run = CombinedRunResult(
       run_id="run-judge-failure", timestamp="2026-08-04T12:00:00Z",
-      model="codex:test", cases=(CombinedCaseResult(
+      model="codex:test",
+      provenance=_PROVENANCE, cases=(CombinedCaseResult(
           case_id="case-one", evaluation=evaluation),))
 
   run_path = write_run_report(run, tmp_path)
@@ -347,11 +361,11 @@ def test_summary_digest_is_committed_in_result_registry_and_publication(tmp_path
   registry = json.loads((tmp_path / "runs/index.json").read_text())["runs"][0]
   publication = json.loads((run_path / "publication.json").read_text())
 
-  assert result["schema_version"] == "1.1.0"
+  assert result["schema_version"] == "1.2.0"
   assert result["summary_sha256"] == summary_digest
-  assert registry["report_schema_version"] == "1.1.0"
+  assert registry["report_schema_version"] == "1.2.0"
   assert registry["summary_sha256"] == summary_digest
-  assert publication["schema_version"] == "1.1.0"
+  assert publication["schema_version"] == "1.2.0"
   assert publication["summary_sha256"] == summary_digest
 
 
@@ -364,14 +378,110 @@ def test_dashboard_loader_rejects_tampered_summary(tmp_path):
     load_dashboard_data(tmp_path, "run-summary-tampered")
 
 
+def test_run_report_records_provenance(tmp_path):
+  run_path = write_run_report(_run("run-provenance", 81.0), tmp_path)
+
+  result = json.loads((run_path / "result.json").read_text())
+  assert result["schema_version"] == "1.2.0"
+  assert result["provenance"] == _PROVENANCE
+  assert f"**Target commit**: {'a' * 40} (clean)" in (
+      run_path / "summary.md").read_text()
+  assert load_dashboard_data(tmp_path, "run-provenance")[
+      "provenance"] == _PROVENANCE
+
+
+def test_write_run_report_requires_provenance(tmp_path):
+  run = CombinedRunResult(
+      run_id="run-no-provenance", timestamp="2026-08-04T12:00:00Z",
+      model="codex:test",
+      cases=(CombinedCaseResult(
+          case_id="case-1", evaluation=_evaluation(81.0)),))
+
+  with pytest.raises(ValueError, match="provenance"):
+    write_run_report(run, tmp_path)
+
+
+@pytest.mark.parametrize("change", [
+    {"target_commit": "abc"},
+    {"target_commit": None},
+    {"target_dirty": "no"},
+    {"engine_version": ""},
+    {"validator_versions": {}},
+    {"extra": 1},
+])
+def test_provenance_rejects_malformed_values(change):
+  with pytest.raises(ValueError, match="provenance"):
+    CombinedRunResult(
+        run_id="run-bad-provenance", timestamp="2026-08-04T12:00:00Z",
+        model="codex:test", provenance={**_PROVENANCE, **change},
+        cases=(CombinedCaseResult(
+            case_id="case-1", evaluation=_evaluation(81.0)),))
+
+
+def test_provenance_allows_unavailable_git_state():
+  run = CombinedRunResult(
+      run_id="run-no-git", timestamp="2026-08-04T12:00:00Z",
+      model="codex:test",
+      provenance={**_PROVENANCE, "target_commit": None, "target_dirty": None},
+      cases=(CombinedCaseResult(
+          case_id="case-1", evaluation=_evaluation(81.0)),))
+
+  assert run.provenance["target_commit"] is None
+
+
+def test_pre_provenance_report_still_loads(tmp_path):
+  run_path = write_run_report(_run("run-pre-provenance", 81.0), tmp_path)
+  summary_path = run_path / "summary.md"
+  summary = summary_path.read_text()
+  summary = "".join(
+      line for line in summary.splitlines(keepends=True)
+      if not line.startswith(("**Target commit**", "**Engine**")))
+  summary_path.write_text(summary)
+  summary_digest = hashlib.sha256(summary.encode()).hexdigest()
+  result_path = run_path / "result.json"
+  result = json.loads(result_path.read_text())
+  result["schema_version"] = "1.1.0"
+  result.pop("provenance")
+  result["summary_sha256"] = summary_digest
+  result_payload = (json.dumps(
+      result, indent=2, sort_keys=True) + "\n").encode()
+  result_path.write_bytes(result_payload)
+  result_digest = hashlib.sha256(result_payload).hexdigest()
+  registry_path = tmp_path / "runs/index.json"
+  registry = json.loads(registry_path.read_text())
+  entry = registry["runs"][0]
+  entry["report_schema_version"] = "1.1.0"
+  entry["summary_sha256"] = summary_digest
+  entry["result_sha256"] = result_digest
+  registry_path.write_text(json.dumps(
+      registry, indent=2, sort_keys=True) + "\n")
+  publication_path = run_path / "publication.json"
+  publication = json.loads(publication_path.read_text())
+  publication["schema_version"] = "1.1.0"
+  publication["summary_sha256"] = summary_digest
+  publication["result_sha256"] = result_digest
+  publication_path.write_text(json.dumps(
+      publication, indent=2, sort_keys=True) + "\n")
+
+  selected = load_dashboard_data(tmp_path, "run-pre-provenance")
+
+  assert selected["schema_version"] == "1.1.0"
+  assert "provenance" not in selected
+
+
 def test_legacy_summary_is_accepted_only_when_deterministically_reconstructed(
     tmp_path,
 ):
   run_path = write_run_report(_run("run-legacy-summary", 81.0), tmp_path)
+  summary_path = run_path / "summary.md"
+  summary_path.write_text("".join(
+      line for line in summary_path.read_text().splitlines(keepends=True)
+      if not line.startswith(("**Target commit**", "**Engine**"))))
   result_path = run_path / "result.json"
   result = json.loads(result_path.read_text())
   result["schema_version"] = "1.0.0"
   result.pop("summary_sha256")
+  result.pop("provenance")
   result_payload = (json.dumps(
       result, indent=2, sort_keys=True) + "\n").encode()
   result_path.write_bytes(result_payload)
@@ -895,6 +1005,7 @@ def test_attack_family_breakdown_is_written_only_when_present(tmp_path):
       run_id="run-attacks",
       timestamp="2026-08-04T12:00:00Z",
       model="codex:test",
+      provenance=_PROVENANCE,
       cases=(
           CombinedCaseResult(
               case_id="case-one", evaluation=_evaluation(81.0),
@@ -924,6 +1035,7 @@ def test_summary_reports_rates_by_attack_family_and_domain(tmp_path):
   run = CombinedRunResult(
       run_id="run-rates", timestamp="2026-08-04T12:00:00Z",
       model="codex:test",
+      provenance=_PROVENANCE,
       cases=(
           CombinedCaseResult(
               case_id="case-one", evaluation=_evaluation(81.0),
@@ -990,7 +1102,14 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
   results = run_eval.run_literature_integrity("codex:test")
 
   assert results == (_evaluation(81.0),)
-  assert load_dashboard_data(tmp_path, "run-cli")["summary"]["case_count"] == 1
+  selected = load_dashboard_data(tmp_path, "run-cli")
+  assert selected["summary"]["case_count"] == 1
+  head = subprocess.run(
+      ["git", "-C", str(ROOT), "rev-parse", "HEAD"],
+      capture_output=True, text=True, check=True).stdout.strip()
+  assert selected["provenance"]["target_commit"] == head
+  assert isinstance(selected["provenance"]["target_dirty"], bool)
+  assert selected["provenance"]["engine_version"] == "1.0.0"
   assert not (tmp_path / "literature-review-integrity").exists()
 
 
@@ -1084,6 +1203,35 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     if (selected.summary.case_count !== 1) process.exit(2);
     if (selected.cases[0].first_pass.quality_score !== 81) process.exit(3);
     if (selected.cases[0].final.integrity_score !== 100) process.exit(4);
+    const committedEntry = {...entry, report_schema_version: '1.1.0',
+      summary_sha256: 'e'.repeat(64)};
+    const v11 = {...JSON.parse(JSON.stringify(report)), schema_version: '1.1.0',
+      summary_sha256: 'e'.repeat(64)};
+    context.parseIntegrityRunData(v11, committedEntry);
+    const provenance = {target_commit: 'a'.repeat(40), target_dirty: false,
+      engine_version: '1.0.0', validator_versions: {claims: '1.0.0'}};
+    const v12Entry = {...committedEntry, report_schema_version: '1.2.0'};
+    const v12 = {...v11, schema_version: '1.2.0', provenance};
+    context.parseIntegrityRunData(v12, v12Entry);
+    try {
+      context.parseIntegrityRunData(
+        {...v12, provenance: {...provenance, target_commit: 'abc'}}, v12Entry);
+      process.exit(30);
+    } catch (error) {
+      if (!String(error).includes('provenance')) process.exit(31);
+    }
+    try {
+      context.parseIntegrityRunData(v11, v12Entry);
+      process.exit(32);
+    } catch (error) {
+      if (!String(error).includes('summary commitment')) process.exit(33);
+    }
+    try {
+      context.parseIntegrityRunData({...v11, provenance}, committedEntry);
+      process.exit(34);
+    } catch (error) {
+      if (!String(error).includes('closed schema')) process.exit(35);
+    }
     const traversal = JSON.parse(JSON.stringify(report));
     traversal.cases[0].artifact.path = '../case-1.json';
     try {
@@ -1273,12 +1421,14 @@ def test_dashboard_parser_accepts_real_attack_and_operational_unions(tmp_path):
           "citation_identity_mismatch": ReasonMetric(1, 0, 1, 0)})
   attack = CombinedRunResult(
       run_id="run-browser-attack", timestamp="2026-08-04T12:00:00Z",
-      model="codex:test", cases=(CombinedCaseResult(
+      model="codex:test",
+      provenance=_PROVENANCE, cases=(CombinedCaseResult(
           case_id="case-attack", evaluation=_evaluation(81.0),
           adversarial_score=score),))
   operational = CombinedRunResult(
       run_id="run-browser-operational", timestamp="2026-08-04T12:00:00Z",
-      model="codex:test", cases=(CombinedCaseResult(
+      model="codex:test",
+      provenance=_PROVENANCE, cases=(CombinedCaseResult(
           case_id="case-operational",
           evaluation=_operational_evaluation()),))
   payloads = []

@@ -29,7 +29,10 @@ from .literature_integrity import (
 
 
 SCHEMA_VERSION = "1.0.0"
-REPORT_SCHEMA_VERSION = "1.1.0"
+REPORT_SCHEMA_VERSION = "1.2.0"
+_PRE_PROVENANCE_REPORT_VERSION = "1.1.0"
+_COMMITTED_REPORT_VERSIONS = frozenset({
+    _PRE_PROVENANCE_REPORT_VERSION, REPORT_SCHEMA_VERSION})
 INTEGRITY_EVALUATION_KIND = "quality_and_integrity"
 INTEGRITY_EVALUATION_LABEL = "Paired quality and integrity evaluation"
 QUALITY_HISTORY_KIND = "quality_only_history"
@@ -39,6 +42,7 @@ _RUN_ID_RE = re.compile(
     r"run[-_][a-z0-9](?:[a-z0-9._-]{0,125}[a-z0-9])?\Z")
 _CASE_ID_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
+_COMMIT_RE = re.compile(r"[0-9a-f]{40}\Z")
 _NONCE_RE = re.compile(r"[0-9a-f]{32}\Z")
 _STATUS_NAMES = ("valid", "valid_with_warnings", "invalid")
 _MAX_REPORT_BYTES = 16 * 1024 * 1024
@@ -77,6 +81,33 @@ def _closed_object(
   if missing:
     raise ValueError(f"{label} is missing fields: {sorted(missing)}")
   return value
+
+
+def _provenance(value: object) -> dict:
+  data = _closed_object(value, {
+      "target_commit", "target_dirty", "engine_version", "validator_versions",
+  }, "run provenance")
+  commit, dirty = data["target_commit"], data["target_dirty"]
+  if (commit is None) != (dirty is None):
+    raise ValueError("run provenance commit and dirty state must share availability")
+  if commit is not None and (
+      not isinstance(commit, str) or not _COMMIT_RE.fullmatch(commit)):
+    raise ValueError("run provenance target_commit must be a 40-character hash")
+  if dirty is not None and type(dirty) is not bool:
+    raise ValueError("run provenance target_dirty must be boolean")
+  if not isinstance(data["engine_version"], str) or not data["engine_version"]:
+    raise ValueError("run provenance engine_version must be a string")
+  versions = data["validator_versions"]
+  if (not isinstance(versions, dict) or not versions
+      or any(not isinstance(name, str) or not name
+             or not isinstance(version, str) or not version
+             for name, version in versions.items())):
+    raise ValueError("run provenance validator_versions are invalid")
+  return {
+      "target_commit": commit, "target_dirty": dirty,
+      "engine_version": data["engine_version"],
+      "validator_versions": dict(sorted(versions.items())),
+  }
 
 
 def _json_bytes(value: object) -> bytes:
@@ -355,9 +386,14 @@ class CombinedRunResult:
   model: str
   cases: tuple[CombinedCaseResult, ...] | Sequence[CombinedCaseResult]
   capability: str = CAPABILITY
+  provenance: Mapping | None = None
 
   def __post_init__(self) -> None:
     object.__setattr__(self, "run_id", _run_id(self.run_id))
+    if self.provenance is not None:
+      object.__setattr__(self, "provenance", _provenance(
+          self.provenance if isinstance(self.provenance, dict)
+          else dict(self.provenance)))
     _text(self.timestamp, "timestamp")
     _text(self.model, "model")
     if self.capability != CAPABILITY:
@@ -380,6 +416,7 @@ class CombinedRunResult:
       results: Mapping[str, IntegrityResult] | Sequence[
           tuple[str, IntegrityResult]],
       adversarial_scores: Mapping[str, AdversarialCaseScore] | None = None,
+      provenance: Mapping | None = None,
   ) -> "CombinedRunResult":
     pairs = results.items() if isinstance(results, Mapping) else results
     scores = {} if adversarial_scores is None else adversarial_scores
@@ -387,6 +424,7 @@ class CombinedRunResult:
       raise ValueError("adversarial_scores must be a mapping or null")
     return cls(
         run_id=run_id, timestamp=timestamp, model=model,
+        provenance=provenance,
         cases=tuple(CombinedCaseResult(
                         case_id, evaluation,
                         adversarial_score=scores.get(case_id))
@@ -401,6 +439,8 @@ class CombinedRunResult:
         "model": self.model,
         "capability": self.capability,
         "cases": [case.to_dict() for case in self.cases],
+        **({} if self.provenance is None
+           else {"provenance": self.provenance}),
     }
 
   @classmethod
@@ -408,7 +448,7 @@ class CombinedRunResult:
     data = _closed_object(value, {
         "schema_version", "run_id", "timestamp", "model", "capability",
         "cases",
-    }, "combined run")
+    }, "combined run", optional={"provenance"})
     if data["schema_version"] != SCHEMA_VERSION:
       raise ValueError("unsupported combined run schema_version")
     if not isinstance(data["cases"], list):
@@ -416,6 +456,7 @@ class CombinedRunResult:
     return cls(
         run_id=data["run_id"], timestamp=data["timestamp"],
         model=data["model"], capability=data["capability"],
+        provenance=data.get("provenance"),
         cases=tuple(CombinedCaseResult.from_dict(item)
                     for item in data["cases"]),
     )
@@ -502,6 +543,20 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
   return summary
 
 
+def _provenance_markdown(provenance: Mapping | None) -> str:
+  if provenance is None:
+    return ""
+  commit = provenance["target_commit"]
+  state = ("unavailable" if commit is None
+           else "dirty" if provenance["target_dirty"] else "clean")
+  versions = ", ".join(
+      f"{name}={version}"
+      for name, version in provenance["validator_versions"].items())
+  return (
+      f"**Target commit**: {commit or 'unknown'} ({state})  \n"
+      f"**Engine**: {provenance['engine_version']} ({versions})  \n")
+
+
 def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
   counts = _status_summary(result.cases)["integrity_status_counts"]
   rows = []
@@ -534,6 +589,7 @@ def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
       f"**Capability**: {result.capability}  \n"
       f"**Model**: {result.model}  \n"
       f"**Timestamp**: {result.timestamp}  \n"
+      + _provenance_markdown(result.provenance) +
       f"**Cases**: {len(cases)}  \n"
       f"**Final integrity statuses**: valid={counts['valid']}, "
       f"valid_with_warnings={counts['valid_with_warnings']}, "
@@ -592,7 +648,7 @@ def _validate_registry_entry(value: object) -> dict:
       or not _SHA256_RE.fullmatch(entry["result_sha256"])):
     raise ValueError("run registry result_sha256 is invalid")
   if not legacy:
-    if entry["report_schema_version"] != REPORT_SCHEMA_VERSION:
+    if entry["report_schema_version"] not in _COMMITTED_REPORT_VERSIONS:
       raise ValueError("run registry report_schema_version is invalid")
     if (not isinstance(entry["summary_sha256"], str)
         or not _SHA256_RE.fullmatch(entry["summary_sha256"])):
@@ -776,6 +832,7 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
       "timestamp": result.timestamp,
       "model": result.model,
       "capability": result.capability,
+      "provenance": result.provenance,
       "summary": _status_summary(result.cases),
       "cases": case_views,
   }
@@ -817,8 +874,8 @@ def _validate_publication_marker(
   if not legacy:
     fields.add("summary_sha256")
   data = _closed_object(marker, fields, "publication marker")
-  if (data["schema_version"] != (
-          SCHEMA_VERSION if legacy else REPORT_SCHEMA_VERSION)
+  if ((data["schema_version"] != SCHEMA_VERSION if legacy
+       else data["schema_version"] not in _COMMITTED_REPORT_VERSIONS)
       or data["run_id"] != run_id
       or data["result_sha256"] != result_sha256
       or (not legacy and data["summary_sha256"] != summary_sha256)
@@ -958,6 +1015,8 @@ def write_run_report(result: CombinedRunResult, root: Path) -> Path:
   else:
     # Strictly deserialize even an already-constructed value at the boundary.
     result = CombinedRunResult.from_dict(result.to_dict())
+  if result.provenance is None:
+    raise ValueError("a new run report requires run provenance")
 
   root = Path(root)
   if root.is_symlink():
@@ -1211,12 +1270,14 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
         raise ValueError(f"cannot read selected run: {exc}") from exc
       report_version = report.get("schema_version") if isinstance(
           report, dict) else None
-      if report_version == REPORT_SCHEMA_VERSION:
+      if report_version in _COMMITTED_REPORT_VERSIONS:
         report_fields = {
             "schema_version", "evaluation_kind", "evaluation_label", "run_id",
             "timestamp", "model", "capability", "summary", "cases",
             "summary_sha256",
         }
+        if report_version == REPORT_SCHEMA_VERSION:
+          report_fields.add("provenance")
       elif report_version == SCHEMA_VERSION:
         report_fields = {
             "schema_version", "evaluation_kind", "evaluation_label", "run_id",
@@ -1226,7 +1287,12 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
         raise ValueError("unsupported run report schema_version")
       data = _closed_object(report, report_fields,
           "run report")
-      new_report = data["schema_version"] == REPORT_SCHEMA_VERSION
+      new_report = data["schema_version"] in _COMMITTED_REPORT_VERSIONS
+      if new_report and (
+          data["schema_version"] != registry_entry["report_schema_version"]):
+        raise ValueError("run report schema_version does not match registry")
+      provenance = (_provenance(data["provenance"]) if "provenance" in data
+                    else None)
       if new_report != (committed_summary_sha256 is not None):
         raise ValueError("run report summary commitment version mismatch")
       if new_report and data["summary_sha256"] != summary_sha256:
@@ -1347,7 +1413,8 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
       expected_summary_payload = _summary_markdown(
           CombinedRunResult(
               run_id=selected, timestamp=data["timestamp"], model=data["model"],
-              capability=data["capability"], cases=tuple(strict_cases)),
+              capability=data["capability"], provenance=provenance,
+              cases=tuple(strict_cases)),
           data["cases"],
       ).encode("utf-8")
       if summary_payload != expected_summary_payload:

@@ -2029,15 +2029,41 @@
             return value;
         }
 
+        const COMMITTED_REPORT_VERSIONS = ['1.1.0', '1.2.0'];
+
+        function parseRunProvenance(value) {
+            const provenance = requireExactFields(value, [
+                'target_commit', 'target_dirty', 'engine_version', 'validator_versions'
+            ], [], 'run provenance');
+            const commit = provenance.target_commit;
+            const dirty = provenance.target_dirty;
+            const versions = provenance.validator_versions;
+            if ((commit === null) !== (dirty === null) ||
+                (commit !== null && (typeof commit !== 'string' ||
+                    !/^[0-9a-f]{40}$/.test(commit))) ||
+                (dirty !== null && typeof dirty !== 'boolean') ||
+                typeof provenance.engine_version !== 'string' ||
+                !provenance.engine_version ||
+                !isPlainObject(versions) || Object.keys(versions).length === 0 ||
+                Object.entries(versions).some(([name, version]) =>
+                    !name || typeof version !== 'string' || !version)) {
+                throw new Error('run provenance is invalid');
+            }
+            return provenance;
+        }
+
         function parseIntegrityRunData(value, registryEntry) {
             const entry = parseIntegrityRunIndexEntry(registryEntry);
             const selected = entry.run_id;
             const reportVersion = isPlainObject(value) ? value.schema_version : null;
+            const committedVersion = COMMITTED_REPORT_VERSIONS.includes(reportVersion);
             const report = requireExactFields(value, [
                 'schema_version', 'evaluation_kind', 'evaluation_label', 'run_id',
-                'timestamp', 'model', 'capability', 'summary', 'cases'
-            ], reportVersion === '1.1.0' ? ['summary_sha256'] : [], 'integrity run');
-            if (!['1.0.0', '1.1.0'].includes(report.schema_version) ||
+                'timestamp', 'model', 'capability', 'summary', 'cases',
+                ...(committedVersion ? ['summary_sha256'] : []),
+                ...(reportVersion === '1.2.0' ? ['provenance'] : [])
+            ], [], 'integrity run');
+            if (!['1.0.0', ...COMMITTED_REPORT_VERSIONS].includes(report.schema_version) ||
                 report.evaluation_kind !== 'quality_and_integrity' ||
                 report.evaluation_label !== 'Paired quality and integrity evaluation' ||
                 report.capability !== 'literature-review-integrity') {
@@ -2045,12 +2071,14 @@
             }
             const committedSummary = Object.prototype.hasOwnProperty.call(
                 entry, 'summary_sha256');
-            if ((report.schema_version === '1.1.0') !== committedSummary ||
+            if (committedVersion !== committedSummary ||
+                (committedSummary && report.schema_version !== entry.report_schema_version) ||
                 (committedSummary && (
                     !/^[0-9a-f]{64}$/.test(report.summary_sha256) ||
                     report.summary_sha256 !== entry.summary_sha256))) {
                 throw new Error('integrity run summary commitment is invalid');
             }
+            if (report.schema_version === '1.2.0') parseRunProvenance(report.provenance);
             if (report.run_id !== selected) throw new Error(`unknown run ID: ${selected}`);
             if (typeof report.timestamp !== 'string' || !report.timestamp.trim() ||
                 typeof report.model !== 'string' || !report.model.trim()) {
@@ -2265,7 +2293,7 @@
                 entry.evaluation_label !== 'Paired quality and integrity evaluation') {
                 throw new Error('invalid run index entry');
             }
-            if (modern && (entry.report_schema_version !== '1.1.0' ||
+            if (modern && (!COMMITTED_REPORT_VERSIONS.includes(entry.report_schema_version) ||
                 !/^[0-9a-f]{64}$/.test(entry.summary_sha256))) {
                 throw new Error('invalid run index summary commitment');
             }
@@ -2467,8 +2495,11 @@
                     .map(([name, count]) => `${escapeHtml(name)}=${count}`).join(', ')}` : '';
             document.getElementById('integrityEvaluationLabel').textContent =
                 `${report.evaluation_label}. Quality and integrity remain separate measurements.`;
+            const commit = report.provenance && report.provenance.target_commit ?
+                ` · commit ${escapeHtml(report.provenance.target_commit.slice(0, 7))}` +
+                (report.provenance.target_dirty ? ' (dirty)' : '') : '';
             document.getElementById('integrityRunSummary').innerHTML = `
-                <strong>${escapeHtml(report.run_id)}</strong> · ${report.summary.case_count} selected-run cases ·
+                <strong>${escapeHtml(report.run_id)}</strong>${commit} · ${report.summary.case_count} selected-run cases ·
                 integrity status: ${counts.valid} valid, ${counts.valid_with_warnings} warnings,
                 ${counts.invalid} invalid${attacks}
             `;

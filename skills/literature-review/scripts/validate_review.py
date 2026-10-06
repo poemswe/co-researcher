@@ -162,7 +162,7 @@ def _read_regular_bytes(path: os.PathLike[str] | str, label: str) -> bytes:
     os.close(parent)
 
 
-def _git_provenance(workspace: pathlib.Path) -> tuple[Optional[str], Optional[bool]]:
+def git_provenance(workspace: pathlib.Path) -> tuple[Optional[str], Optional[bool]]:
   environment = dict(os.environ)
   environment.update({"GIT_OPTIONAL_LOCKS": "0", "LC_ALL": "C"})
   common = {
@@ -261,7 +261,7 @@ def _retained_validation(
     bibliography = snapshot.read_json("refs.json")
   except WorkspaceError:
     bibliography = None
-  target_commit, target_dirty = _git_provenance(workspace_path)
+  target_commit, target_dirty = git_provenance(workspace_path)
   report = {
       "schema_version": SCHEMA_VERSION,
       "engine_version": ENGINE_VERSION,
