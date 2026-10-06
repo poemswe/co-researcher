@@ -2062,7 +2062,7 @@
                 'timestamp', 'model', 'capability', 'summary', 'cases',
                 ...(committedVersion ? ['summary_sha256'] : []),
                 ...(reportVersion === '1.2.0' ? ['provenance'] : [])
-            ], [], 'integrity run');
+            ], reportVersion === '1.2.0' ? ['execution_errors'] : [], 'integrity run');
             if (!['1.0.0', ...COMMITTED_REPORT_VERSIONS].includes(report.schema_version) ||
                 report.evaluation_kind !== 'quality_and_integrity' ||
                 report.evaluation_label !== 'Paired quality and integrity evaluation' ||
@@ -2080,6 +2080,24 @@
             }
             if (report.schema_version === '1.2.0') parseRunProvenance(report.provenance);
             if (report.run_id !== selected) throw new Error(`unknown run ID: ${selected}`);
+            if (Object.prototype.hasOwnProperty.call(report, 'execution_errors')) {
+                const evaluated = new Set(Array.isArray(report.cases) ?
+                    report.cases.map(caseResult => caseResult && caseResult.case_id) : []);
+                const errored = new Set();
+                if (!Array.isArray(report.execution_errors) ||
+                    report.execution_errors.some(error => {
+                        const item = requireExactFields(
+                            error, ['case_id', 'message'], [], 'execution error');
+                        const invalid = typeof item.case_id !== 'string' ||
+                            !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.case_id) ||
+                            evaluated.has(item.case_id) || errored.has(item.case_id) ||
+                            typeof item.message !== 'string' || !item.message.trim();
+                        errored.add(item.case_id);
+                        return invalid;
+                    })) {
+                    throw new Error('execution error list is invalid');
+                }
+            }
             if (typeof report.timestamp !== 'string' || !report.timestamp.trim() ||
                 typeof report.model !== 'string' || !report.model.trim()) {
                 throw new Error('integrity run metadata is invalid');
@@ -2501,7 +2519,9 @@
             document.getElementById('integrityRunSummary').innerHTML = `
                 <strong>${escapeHtml(report.run_id)}</strong>${commit} · ${report.summary.case_count} selected-run cases ·
                 integrity status: ${counts.valid} valid, ${counts.valid_with_warnings} warnings,
-                ${counts.invalid} invalid${attacks}
+                ${counts.invalid} invalid${attacks}${Array.isArray(report.execution_errors) ?
+                    ` · not evaluated: ${report.execution_errors
+                        .map(error => escapeHtml(error.case_id)).join(', ')}` : ''}
             `;
             document.getElementById('integrityRunCases').innerHTML = report.cases.map(caseResult => {
                 const snapshot = caseResult[integritySnapshot];

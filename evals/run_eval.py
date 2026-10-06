@@ -146,6 +146,7 @@ def list_tests():
 def run_literature_integrity(model: str):
     from lib.literature_integrity import (
         LiteratureIntegrityRunner,
+        ModelExecutionError,
         OperationalIntegrityEvalResult,
         ProductionModelExecutor,
         ProductionQualityJudge,
@@ -171,7 +172,21 @@ def run_literature_integrity(model: str):
         ProductionQualityJudge(model),
         scorecard_directory=TEST_CASES_DIR / INTEGRITY_CAPABILITY,
     )
-    results = tuple(runner.run_case(case) for case in cases)
+    completed = []
+    execution_errors = []
+    for case in cases:
+        try:
+            completed.append((case, runner.run_case(case)))
+        except ModelExecutionError as exc:
+            execution_errors.append(
+                {"case_id": case.case_id, "message": str(exc)})
+            print(f"{case.case_id}: not evaluated: {exc}")
+    if not completed:
+        raise RuntimeError(
+            "no case completed; every model call failed, so no report was "
+            "written")
+    cases = tuple(case for case, _result in completed)
+    results = tuple(result for _case, result in completed)
     adversarial_scores = load_adversarial_scores(
         TEST_CASES_DIR / INTEGRITY_CAPABILITY,
         {case.case_id: result for case, result in zip(cases, results)},
@@ -185,6 +200,7 @@ def run_literature_integrity(model: str):
             (case.case_id, result) for case, result in zip(cases, results)),
         adversarial_scores=adversarial_scores,
         provenance=provenance,
+        execution_errors=execution_errors,
     )
     run_directory = write_run_report(combined, RESULTS_DIR)
     for case, result in zip(cases, results):

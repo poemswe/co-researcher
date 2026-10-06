@@ -746,7 +746,8 @@ def test_first_pass_stages_only_public_bytes_and_cleans_immediately(
   workspace.mkdir()
 
   if returncode:
-    with pytest.raises(RuntimeError, match="exited 17"):
+    with pytest.raises(
+        literature_integrity.ModelExecutionError, match="exited 17"):
       ProductionModelExecutor("claude", ROOT).first_pass(case, workspace)
   else:
     ProductionModelExecutor("claude", ROOT).first_pass(case, workspace)
@@ -967,3 +968,38 @@ def test_replay_requires_repair_for_repairable_warning_first_pass():
       integrity=report, model_usage=FakeExecutor._usage(cost=0.0))
 
   assert literature_integrity._replay_repair_chain(first, ()) == "repair"
+
+
+def test_executor_error_keeps_only_the_last_output_line(monkeypatch, tmp_path):
+  monkeypatch.setattr(
+      literature_integrity, "find_cli",
+      lambda provider: pathlib.Path(f"/fake/{provider}"))
+  monkeypatch.setattr(
+      literature_integrity.subprocess, "run",
+      lambda command, **kwargs: SimpleNamespace(
+          returncode=1, stdout="",
+          stderr="banner\nprompt echo\nERROR: You've hit your usage limit.\n"))
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+
+  with pytest.raises(literature_integrity.ModelExecutionError) as error:
+    ProductionModelExecutor("codex", ROOT).first_pass(_case(tmp_path), workspace)
+
+  assert str(error.value) == (
+      "model executor exited 1: ERROR: You've hit your usage limit.")
+
+
+def test_executor_timeout_is_a_model_execution_error(monkeypatch, tmp_path):
+  monkeypatch.setattr(
+      literature_integrity, "find_cli",
+      lambda provider: pathlib.Path(f"/fake/{provider}"))
+
+  def timeout(command, **kwargs):
+    raise literature_integrity.subprocess.TimeoutExpired(command, 5)
+
+  monkeypatch.setattr(literature_integrity.subprocess, "run", timeout)
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+
+  with pytest.raises(literature_integrity.ModelExecutionError, match="timed out"):
+    ProductionModelExecutor("claude", ROOT).first_pass(_case(tmp_path), workspace)

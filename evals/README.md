@@ -150,7 +150,12 @@ summary reconstruction check. New records missing the `1.1.0` commitment fail
 closed. Report schema `1.2.0` adds `provenance`, captured when the run starts:
 the target commit, whether tracked files were dirty, the engine version, and
 the validator versions. `summary.md` repeats the commit. The writer refuses a
-new run without provenance, and `1.1.0` runs without it stay readable. Publication stages, validates, and syncs the complete run before one
+new run without provenance, and `1.1.0` runs without it stay readable.
+If a model CLI fails on a case (a non-zero exit, a timeout, or a usage
+limit), that case is left out of scoring and listed under the optional
+`execution_errors`, and `summary.md` names it as not evaluated. The run keeps
+going. Errors in the harness itself still stop the run, and a run where no
+case completes writes no report. Publication stages, validates, and syncs the complete run before one
 atomic rename; a registry lock serializes the matching `index.json` update and
 rollback. The writer and loader reject unsafe IDs, links, aliases, oversized
 files, and non-canonical artifact names. `index.json` gives the static dashboard

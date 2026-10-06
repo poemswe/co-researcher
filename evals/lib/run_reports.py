@@ -110,6 +110,25 @@ def _provenance(value: object) -> dict:
   }
 
 
+def _execution_errors(value: object, case_ids: set[str]) -> tuple[dict, ...]:
+  if not isinstance(value, (list, tuple)):
+    raise ValueError("execution errors must be a list")
+  errors = []
+  seen = set()
+  for item in value:
+    data = _closed_object(item, {"case_id", "message"}, "execution error")
+    case_id = data["case_id"]
+    if (not isinstance(case_id, str) or not _CASE_ID_RE.fullmatch(case_id)
+        or case_id in seen or case_id in case_ids):
+      raise ValueError(
+          "execution error case_id must be unique and not evaluated")
+    if not isinstance(data["message"], str) or not data["message"].strip():
+      raise ValueError("execution error message must be text")
+    seen.add(case_id)
+    errors.append({"case_id": case_id, "message": data["message"]})
+  return tuple(sorted(errors, key=lambda error: error["case_id"]))
+
+
 def _json_bytes(value: object) -> bytes:
   return (json.dumps(
       value, indent=2, sort_keys=True, ensure_ascii=False,
@@ -387,6 +406,7 @@ class CombinedRunResult:
   cases: tuple[CombinedCaseResult, ...] | Sequence[CombinedCaseResult]
   capability: str = CAPABILITY
   provenance: Mapping | None = None
+  execution_errors: Sequence[Mapping] = ()
 
   def __post_init__(self) -> None:
     object.__setattr__(self, "run_id", _run_id(self.run_id))
@@ -409,6 +429,8 @@ class CombinedRunResult:
     if len({case.case_id for case in cases}) != len(cases):
       raise ValueError("case identifiers must be unique")
     object.__setattr__(self, "cases", cases)
+    object.__setattr__(self, "execution_errors", _execution_errors(
+        self.execution_errors, {case.case_id for case in cases}))
 
   @classmethod
   def from_results(
@@ -417,6 +439,7 @@ class CombinedRunResult:
           tuple[str, IntegrityResult]],
       adversarial_scores: Mapping[str, AdversarialCaseScore] | None = None,
       provenance: Mapping | None = None,
+      execution_errors: Sequence[Mapping] = (),
   ) -> "CombinedRunResult":
     pairs = results.items() if isinstance(results, Mapping) else results
     scores = {} if adversarial_scores is None else adversarial_scores
@@ -424,7 +447,7 @@ class CombinedRunResult:
       raise ValueError("adversarial_scores must be a mapping or null")
     return cls(
         run_id=run_id, timestamp=timestamp, model=model,
-        provenance=provenance,
+        provenance=provenance, execution_errors=execution_errors,
         cases=tuple(CombinedCaseResult(
                         case_id, evaluation,
                         adversarial_score=scores.get(case_id))
@@ -441,6 +464,8 @@ class CombinedRunResult:
         "cases": [case.to_dict() for case in self.cases],
         **({} if self.provenance is None
            else {"provenance": self.provenance}),
+        **({"execution_errors": list(self.execution_errors)}
+           if self.execution_errors else {}),
     }
 
   @classmethod
@@ -448,7 +473,7 @@ class CombinedRunResult:
     data = _closed_object(value, {
         "schema_version", "run_id", "timestamp", "model", "capability",
         "cases",
-    }, "combined run", optional={"provenance"})
+    }, "combined run", optional={"provenance", "execution_errors"})
     if data["schema_version"] != SCHEMA_VERSION:
       raise ValueError("unsupported combined run schema_version")
     if not isinstance(data["cases"], list):
@@ -457,6 +482,7 @@ class CombinedRunResult:
         run_id=data["run_id"], timestamp=data["timestamp"],
         model=data["model"], capability=data["capability"],
         provenance=data.get("provenance"),
+        execution_errors=data.get("execution_errors", ()),
         cases=tuple(CombinedCaseResult.from_dict(item)
                     for item in data["cases"]),
     )
@@ -557,6 +583,14 @@ def _provenance_markdown(provenance: Mapping | None) -> str:
       f"**Engine**: {provenance['engine_version']} ({versions})  \n")
 
 
+def _execution_errors_markdown(errors: Sequence[Mapping]) -> str:
+  if not errors:
+    return ""
+  listed = "; ".join(
+      f"{error['case_id']} ({error['message']})" for error in errors)
+  return f"**Not evaluated**: {listed}  \n"
+
+
 def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
   counts = _status_summary(result.cases)["integrity_status_counts"]
   rows = []
@@ -591,6 +625,7 @@ def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
       f"**Timestamp**: {result.timestamp}  \n"
       + _provenance_markdown(result.provenance) +
       f"**Cases**: {len(cases)}  \n"
+      + _execution_errors_markdown(result.execution_errors) +
       f"**Final integrity statuses**: valid={counts['valid']}, "
       f"valid_with_warnings={counts['valid_with_warnings']}, "
       f"invalid={counts['invalid']}\n\n"
@@ -836,6 +871,8 @@ def _prepare_run_payloads(result: CombinedRunResult) -> dict:
       "summary": _status_summary(result.cases),
       "cases": case_views,
   }
+  if result.execution_errors:
+    report["execution_errors"] = list(result.execution_errors)
   summary_payload = _summary_markdown(result, case_views).encode("utf-8")
   report["summary_sha256"] = _digest(summary_payload)
   return {
@@ -1278,6 +1315,8 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
         }
         if report_version == REPORT_SCHEMA_VERSION:
           report_fields.add("provenance")
+          if "execution_errors" in report:
+            report_fields.add("execution_errors")
       elif report_version == SCHEMA_VERSION:
         report_fields = {
             "schema_version", "evaluation_kind", "evaluation_label", "run_id",
@@ -1414,6 +1453,7 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
           CombinedRunResult(
               run_id=selected, timestamp=data["timestamp"], model=data["model"],
               capability=data["capability"], provenance=provenance,
+              execution_errors=data.get("execution_errors", ()),
               cases=tuple(strict_cases)),
           data["cases"],
       ).encode("utf-8")

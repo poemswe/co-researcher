@@ -1059,6 +1059,78 @@ def test_summary_reports_rates_by_attack_family_and_domain(tmp_path):
   }
 
 
+def _two_case_cli(monkeypatch, tmp_path, failing):
+  cases = (SimpleNamespace(case_id="case-one", domain="synthetic"),
+           SimpleNamespace(case_id="case-two", domain="synthetic"))
+
+  class FlakyRunner:
+    def __init__(self, *args, **kwargs):
+      pass
+
+    def run_case(self, case):
+      if case.case_id in failing:
+        raise literature_integrity.ModelExecutionError(
+            "model executor exited 1: ERROR: usage limit")
+      return _evaluation(81.0)
+
+  monkeypatch.setattr(run_eval, "RESULTS_DIR", tmp_path)
+  monkeypatch.setattr(run_eval, "generate_run_id", lambda: "run-flaky")
+  monkeypatch.setattr(literature_integrity, "load_cases", lambda _path: cases)
+  monkeypatch.setattr(
+      literature_integrity, "LiteratureIntegrityRunner", FlakyRunner)
+  monkeypatch.setattr(
+      literature_integrity, "ProductionModelExecutor", lambda *args: object())
+  monkeypatch.setattr(
+      literature_integrity, "ProductionQualityJudge", lambda *args: object())
+  monkeypatch.setattr(
+      literature_integrity, "load_adversarial_scores",
+      lambda *args, domains: {})
+
+
+def test_integrity_cli_records_model_errors_and_keeps_running(
+    monkeypatch, tmp_path,
+):
+  _two_case_cli(monkeypatch, tmp_path, failing={"case-one"})
+
+  results = run_eval.run_literature_integrity("codex:test")
+
+  assert results == (_evaluation(81.0),)
+  selected = load_dashboard_data(tmp_path, "run-flaky")
+  assert [case["case_id"] for case in selected["cases"]] == ["case-two"]
+  assert selected["execution_errors"] == [{
+      "case_id": "case-one",
+      "message": "model executor exited 1: ERROR: usage limit"}]
+  summary = (tmp_path / "runs/run-flaky/summary.md").read_text()
+  assert "**Not evaluated**: case-one" in summary
+
+
+def test_integrity_cli_writes_no_report_when_every_case_errors(
+    monkeypatch, tmp_path,
+):
+  _two_case_cli(monkeypatch, tmp_path, failing={"case-one", "case-two"})
+
+  with pytest.raises(RuntimeError, match="no case completed"):
+    run_eval.run_literature_integrity("codex:test")
+
+  assert not (tmp_path / "runs").exists()
+
+
+@pytest.mark.parametrize("errors", [
+    [{"case_id": "case-1", "message": "overlaps an evaluated case"}],
+    [{"case_id": "case-9", "message": ""}],
+    [{"case_id": "case-9", "message": "x"}, {"case_id": "case-9", "message": "y"}],
+    [{"case_id": "case-9", "message": "x", "extra": 1}],
+])
+def test_execution_errors_are_validated(errors):
+  with pytest.raises(ValueError, match="execution error"):
+    CombinedRunResult(
+        run_id="run-bad-errors", timestamp="2026-08-04T12:00:00Z",
+        model="codex:test", provenance=_PROVENANCE,
+        execution_errors=errors,
+        cases=(CombinedCaseResult(
+            case_id="case-1", evaluation=_evaluation(81.0)),))
+
+
 def test_combined_case_rejects_caller_supplied_attack_family():
   with pytest.raises(TypeError):
     CombinedCaseResult(
@@ -1213,6 +1285,22 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     const v12Entry = {...committedEntry, report_schema_version: '1.2.0'};
     const v12 = {...v11, schema_version: '1.2.0', provenance};
     context.parseIntegrityRunData(v12, v12Entry);
+    const withErrors = {...v12, execution_errors: [
+      {case_id: 'case-9', message: 'model executor exited 1: usage limit'}]};
+    context.parseIntegrityRunData(withErrors, v12Entry);
+    try {
+      context.parseIntegrityRunData({...v12, execution_errors: [
+        {case_id: 'case-1', message: 'already evaluated'}]}, v12Entry);
+      process.exit(36);
+    } catch (error) {
+      if (!String(error).includes('execution error')) process.exit(37);
+    }
+    try {
+      context.parseIntegrityRunData({...v11, execution_errors: []}, committedEntry);
+      process.exit(38);
+    } catch (error) {
+      if (!String(error).includes('closed schema')) process.exit(39);
+    }
     try {
       context.parseIntegrityRunData(
         {...v12, provenance: {...provenance, target_commit: 'abc'}}, v12Entry);

@@ -171,6 +171,10 @@ class PublicFixture:
       raise ValueError("public fixture content must be immutable bytes")
 
 
+class ModelExecutionError(RuntimeError):
+  """A model CLI failed to run; the case was not evaluated."""
+
+
 WORKSPACE_TAMPERS = frozenset({"missing", "malformed", "symlink", "traversal"})
 _TAMPER_MANIFEST_ARTIFACTS = (
     "protocol.md", "corpus.json", "claims.json", "synthesis.md", "refs.json")
@@ -1700,21 +1704,28 @@ class ProductionModelExecutor:
     stdin = prompt if config.get("stdin") else None
     command += ["-"] if stdin is not None else ["-p", prompt]
     started = time.monotonic()
-    completed = subprocess.run(
-        command,
-        cwd=workspace,
-        env=self._child_environment(workspace, provider),
-        input=stdin,
-        capture_output=True,
-        text=True,
-        timeout=self._timeout,
-        check=False,
-    )
+    try:
+      completed = subprocess.run(
+          command,
+          cwd=workspace,
+          env=self._child_environment(workspace, provider),
+          input=stdin,
+          capture_output=True,
+          text=True,
+          timeout=self._timeout,
+          check=False,
+      )
+    except subprocess.TimeoutExpired as exc:
+      raise ModelExecutionError(
+          f"model executor timed out after {self._timeout} seconds") from exc
+    except OSError as exc:
+      raise ModelExecutionError(f"model executor could not start: {exc}") from exc
     duration = time.monotonic() - started
     if completed.returncode != 0:
-      detail = (completed.stderr or completed.stdout).strip()
-      raise RuntimeError(
-          f"model executor exited {completed.returncode}: {detail}")
+      lines = (completed.stderr or completed.stdout).strip().splitlines()
+      raise ModelExecutionError(
+          f"model executor exited {completed.returncode}: "
+          f"{lines[-1].strip() if lines else 'no output'}")
     return ModelUsage(
         duration_seconds=duration,
         input_tokens=None,
@@ -1781,6 +1792,6 @@ __all__ = [
     "ProductionQualityJudge", "PublicFixture", "QualityJudge",
     "QualityResult", "RepairCost",
     "ReasonMetric", "RepairRound", "RobustnessResult", "SnapshotEvaluation",
-    "WORKSPACE_TAMPERS", "apply_workspace_tamper",
+    "ModelExecutionError", "WORKSPACE_TAMPERS", "apply_workspace_tamper",
     "decode_integrity_result", "load_adversarial_scores", "load_cases",
 ]
