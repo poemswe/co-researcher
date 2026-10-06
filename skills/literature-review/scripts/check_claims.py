@@ -793,14 +793,46 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
   return len(_NEGATION_RE.findall(text_norm)) % 2, poles
 
 
+_HEADING_RE = re.compile(r"\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*\Z")
+_REFERENCE_HEADINGS = frozenset(
+    {"references", "reference list", "bibliography", "works cited"})
+
+
+def _prose_paragraphs(text: str) -> list[str]:
+  paragraphs = []
+  current = []
+  skip_level = None
+  for line in text.splitlines():
+    heading = _HEADING_RE.fullmatch(line)
+    if heading or not line.strip():
+      if current:
+        paragraphs.append("\n".join(current))
+        current = []
+    if heading:
+      level = len(heading.group(1))
+      if skip_level is not None and level <= skip_level:
+        skip_level = None
+      if heading.group(2).strip(" *_:").lower() in _REFERENCE_HEADINGS:
+        skip_level = level
+      continue
+    if line.strip() and skip_level is None:
+      current.append(line)
+  if current:
+    paragraphs.append("\n".join(current))
+  return paragraphs
+
+
 def _split_sentences(text: str) -> list[str]:
   marker = "\u0000"
-  protected = re.sub(
-      r"\b(?:et al|pp?|e\.g|i\.e)\.",
-      lambda match: match.group().replace(".", marker), text,
-      flags=re.IGNORECASE)
-  return [sentence.replace(marker, ".") for sentence in
-          re.split(r"(?<=[.!?])\s+", protected)]
+  sentences = []
+  for paragraph in _prose_paragraphs(text):
+    protected = re.sub(
+        r"\b(?:et al|pp?|e\.g|i\.e)\.",
+        lambda match: match.group().replace(".", marker), paragraph,
+        flags=re.IGNORECASE)
+    sentences.extend(sentence.replace(marker, ".") for sentence in
+                     re.split(r"(?<=[.!?])\s+", protected.strip()))
+  return sentences
 
 
 def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:

@@ -926,6 +926,65 @@ def test_coverage_rejects_reversed_comparative():
   assert [gap["reason_code"] for gap in gaps] == ["coverage_identity_missing"]
 
 
+def test_split_sentences_keeps_headings_out_of_sentences():
+  synthesis = ("# Review\n\n## 2. Results\n\n### Immediate performance: a "
+               "positive signal\n\nReadmissions fell 18% (Patel, 2022). "
+               "A second sentence follows.")
+
+  assert cc._split_sentences(synthesis) == [
+      "Readmissions fell 18% (Patel, 2022).", "A second sentence follows."]
+
+
+def test_split_sentences_does_not_join_separate_paragraphs():
+  synthesis = "First paragraph without a period\n\nSecond paragraph."
+
+  assert cc._split_sentences(synthesis) == [
+      "First paragraph without a period", "Second paragraph."]
+
+
+@pytest.mark.parametrize("heading", [
+    "## References", "## Reference list", "### Bibliography",
+    "## Works Cited",
+])
+def test_split_sentences_skips_reference_sections(heading):
+  synthesis = (f"Findings (Patel, 2022).\n\n{heading}\n\n"
+               "- Patel, P. (2022). Example study. Journal, 4(2), 1-9.\n"
+               "- Lee, K. (2021). Another study.\n\n"
+               "## Appendix\n\nMore text.")
+
+  assert cc._split_sentences(synthesis) == [
+      "Findings (Patel, 2022).", "More text."]
+
+
+def test_split_sentences_resumes_after_reference_subsection_ends():
+  synthesis = ("## Background\n\n### References\n\n- Lee, K. (2021). Study."
+               "\n\n## Discussion\n\nText resumes.")
+
+  assert cc._split_sentences(synthesis) == ["Text resumes."]
+
+
+def test_coverage_ignores_headings_and_reference_list():
+  synthesis = ("## 1. Thematic synthesis\n\n### Immediate performance: a "
+               "positive signal that shrinks under stronger designs\n\n"
+               "Readmissions fell 18% in the treatment arm of the trial "
+               "(Patel, 2022).\n\n## References\n\n"
+               "- Patel, P. (2022). Example study.\n")
+  claims = [_entry()]
+
+  assert cc.coverage_gaps(synthesis, claims, _trusted_results(claims)) == []
+
+
+def test_coverage_still_checks_annotated_bibliography_prose():
+  synthesis = ("Readmissions fell 18% in the treatment arm of the trial "
+               "(Patel, 2022).\n\n## Annotated bibliography\n\n"
+               "- Its 212 participants were drawn from one site.")
+  claims = [_entry()]
+
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [(gap["citation_key"], gap["reason_code"]) for gap in gaps] == [
+      (None, "coverage_number_missing")]
+
+
 def test_coverage_matches_lightly_edited_claim():
   synthesis = "Thirty-day readmissions fell by 18% in the arm (Patel, 2022)."
   claims = [_entry(claim="Readmissions fell by 18% in the arm.")]
