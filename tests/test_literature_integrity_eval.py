@@ -693,6 +693,23 @@ def test_claude_executor_can_create_and_repair_workspace(
       assert all(not path.exists() for path in staged_paths)
 
 
+def test_capture_prompt_anchors_the_workspace_at_the_current_directory(
+    monkeypatch, tmp_path,
+):
+  calls = _capture_executor_calls(monkeypatch)
+  workspace = tmp_path / "model-workspace"
+  workspace.mkdir()
+
+  ProductionModelExecutor("claude", ROOT).first_pass(_case(tmp_path), workspace)
+
+  prompt = calls[0][0][calls[0][0].index("-p") + 1]
+  assert 'WS="$(pwd)"' in prompt
+  assert "Do not create review/{slug}" in prompt
+  assert "$WS/project.json" in prompt
+  assert literature_integrity.CAPTURE_PROMPT_VERSION == (
+      "literature-integrity-capture-v2")
+
+
 @pytest.mark.parametrize("returncode", [0, 17])
 def test_first_pass_stages_only_public_bytes_and_cleans_immediately(
     monkeypatch, tmp_path, returncode,

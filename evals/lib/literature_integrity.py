@@ -52,10 +52,13 @@ _SHA256_RE = re.compile(r"[0-9a-f]{64}\Z")
 _CASE_ID_RE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 
 EXECUTOR_VERSION = "1.0.0"
-CAPTURE_PROMPT_VERSION = "literature-integrity-capture-v1"
+CAPTURE_PROMPT_VERSION = "literature-integrity-capture-v2"
 CAPTURE_INSTRUCTION = """Evaluation capture mode.
 Read and follow the repository literature-review skill at the supplied path.
 Create the complete literature-review workspace in the current directory.
+Use the current directory itself as the review workspace: set WS="$(pwd)"
+in step 1. Do not create review/{slug} or any other workspace subdirectory.
+Write $WS/project.json as the skill's scope step describes.
 Stop immediately after writing the workspace artifacts. Do not run the
 plugin validation, repair, or delivery phase; the evaluation harness owns
 those phases. Do not ask for or infer evaluator-only expectations.
