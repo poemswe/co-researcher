@@ -760,8 +760,13 @@ def test_non_claude_executor_commands_keep_provider_write_mode(
   command, kwargs = calls[0]
   assert command[-1] == "-"
   assert kwargs["input"]
-  assert ("--full-auto" in command) if provider == "codex" else (
-      "--yolo" in command)
+  if provider == "codex":
+    assert "--full-auto" not in command
+    sandbox = command.index("--sandbox")
+    assert command[sandbox + 1] == "workspace-write"
+    assert "--skip-git-repo-check" in command
+  else:
+    assert "--yolo" in command
 
 
 @pytest.mark.parametrize(("provider", "credential", "config_home"), [

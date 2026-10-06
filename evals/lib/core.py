@@ -18,8 +18,8 @@ BENCHMARK_CAPABILITY_ALIASES = {
 CLI_CONFIG = {
     "claude": {"base": ["--print", "--verbose"], "tools": ["--tools", "WebSearch,WebFetch,Read,Grep,Glob"]},
     "gemini": {"base": [], "tools": ["--yolo"], "stdin": True},
-    "codex": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
-    "gpt": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
+    "codex": {"base": ["--search", "--enable", "web_search_request", "exec", "--sandbox", "workspace-write", "--skip-git-repo-check"], "tools": [], "stdin": True},
+    "gpt": {"base": ["--search", "--enable", "web_search_request", "exec", "--sandbox", "workspace-write", "--skip-git-repo-check"], "tools": [], "stdin": True},
 }
 
 
