@@ -1929,7 +1929,7 @@
                 'true_negative', 'false_negative'
             ];
             const metric = requireExactFields(
-                value, includeRates ? [...required, 'precision', 'recall'] : required,
+                value, includeRates ? [...required, 'precision', 'recall', 'specificity'] : required,
                 [], label);
             required.forEach(name => {
                 if (!Number.isInteger(metric[name]) || metric[name] < 0) {
@@ -1943,7 +1943,11 @@
                     metric.true_positive / precisionDenominator;
                 const recall = recallDenominator === 0 ? null :
                     metric.true_positive / recallDenominator;
-                if (metric.precision !== precision || metric.recall !== recall) {
+                const specificityDenominator = metric.true_negative + metric.false_positive;
+                const specificity = specificityDenominator === 0 ? null :
+                    metric.true_negative / specificityDenominator;
+                if (metric.precision !== precision || metric.recall !== recall ||
+                    metric.specificity !== specificity) {
                     throw new Error(`${label} rates do not match counts`);
                 }
             }
@@ -1952,10 +1956,11 @@
 
         function parseAdversarialScore(value, label) {
             const score = requireExactFields(value, [
-                'schema_version', 'attack_family', 'confusion', 'reason_metrics'
+                'schema_version', 'attack_family', 'domain', 'confusion', 'reason_metrics'
             ], [], label);
-            if (score.schema_version !== '2.0.0' ||
-                typeof score.attack_family !== 'string' || !score.attack_family.trim()) {
+            if (score.schema_version !== '3.0.0' ||
+                typeof score.attack_family !== 'string' || !score.attack_family.trim() ||
+                typeof score.domain !== 'string' || !score.domain.trim()) {
                 throw new Error(`${label} is invalid`);
             }
             parseCountMetric(score.confusion, `${label} confusion`);
@@ -2060,7 +2065,7 @@
             requireExactFields(report.summary,
                 ['case_count', 'integrity_status_counts'],
                 ['attack_family_breakdown', 'attack_family_confusion',
-                 'reason_code_metrics'], 'run summary');
+                 'domain_confusion', 'reason_code_metrics'], 'run summary');
             requireExactFields(report.summary.integrity_status_counts,
                 ['valid', 'valid_with_warnings', 'invalid'], [], 'status counts');
             const statusTotal = Object.values(report.summary.integrity_status_counts)
@@ -2088,6 +2093,7 @@
             const recomputedCounts = {valid: 0, valid_with_warnings: 0, invalid: 0};
             const recomputedAttacks = {};
             const recomputedConfusion = {};
+            const recomputedDomains = {};
             const recomputedReasons = {};
             report.cases.forEach(caseResult => {
                 requireExactFields(caseResult,
@@ -2143,6 +2149,14 @@
                         family[name] += score.confusion[name];
                     });
                     recomputedConfusion[caseResult.attack_family] = family;
+                    const domain = recomputedDomains[score.domain] || {
+                        true_positive: 0, false_positive: 0,
+                        true_negative: 0, false_negative: 0
+                    };
+                    Object.keys(domain).forEach(name => {
+                        domain[name] += score.confusion[name];
+                    });
+                    recomputedDomains[score.domain] = domain;
                     Object.entries(score.reason_metrics).forEach(([reason, metric]) => {
                         const total = recomputedReasons[reason] || {
                             true_positive: 0, false_positive: 0,
@@ -2189,23 +2203,35 @@
                 throw new Error('run summary attack families do not match selected run cases');
             }
             const claimedConfusion = report.summary.attack_family_confusion;
+            const claimedDomains = report.summary.domain_confusion;
             const claimedReasons = report.summary.reason_code_metrics;
+            const domainNames = Object.keys(recomputedDomains).sort();
             if ((attackNames.length === 0) !== (claimedConfusion === undefined) ||
+                (attackNames.length === 0) !== (claimedDomains === undefined) ||
                 (attackNames.length === 0) !== (claimedReasons === undefined)) {
                 throw new Error('run summary attack metrics do not match selected run cases');
             }
             if (attackNames.length > 0) {
                 if (!isPlainObject(claimedConfusion) || !isPlainObject(claimedReasons) ||
+                    !isPlainObject(claimedDomains) ||
                     Object.keys(claimedConfusion).sort().join('\0') !== attackNames.join('\0') ||
+                    Object.keys(claimedDomains).sort().join('\0') !== domainNames.join('\0') ||
                     Object.keys(claimedReasons).sort().join('\0') !==
                         Object.keys(recomputedReasons).sort().join('\0')) {
                     throw new Error('run summary attack metrics do not match selected run cases');
                 }
                 attackNames.forEach(family => {
-                    parseCountMetric(claimedConfusion[family], 'summary family confusion');
+                    parseCountMetric(claimedConfusion[family], 'summary family confusion', true);
                     if (Object.keys(recomputedConfusion[family]).some(name =>
                         claimedConfusion[family][name] !==
                             recomputedConfusion[family][name])) {
+                        throw new Error('run summary attack metrics do not match selected run cases');
+                    }
+                });
+                domainNames.forEach(domain => {
+                    parseCountMetric(claimedDomains[domain], 'summary domain confusion', true);
+                    if (Object.keys(recomputedDomains[domain]).some(name =>
+                        claimedDomains[domain][name] !== recomputedDomains[domain][name])) {
                         throw new Error('run summary attack metrics do not match selected run cases');
                     }
                 });

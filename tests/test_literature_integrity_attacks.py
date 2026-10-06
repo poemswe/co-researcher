@@ -242,7 +242,7 @@ def test_repair_operational_failure_keeps_latest_trusted_findings(tmp_path):
       workspace_parent=tmp_path / "workspaces",
       scorecard_directory=ATTACKS).run_case(case)
   score = literature_integrity.load_adversarial_scores(
-      ATTACKS, {case.case_id: result})[case.case_id]
+      ATTACKS, {case.case_id: result}, domains={case.case_id: "synthetic"})[case.case_id]
 
   assert result.operational_failure.phase == "repair_load"
   assert dict(score.confusion) == {
@@ -316,7 +316,7 @@ def test_operational_controls_contribute_true_negatives(
       scorecard_directory=ATTACKS).run_case(case)
 
   score = literature_integrity.load_adversarial_scores(
-      ATTACKS, {case_id: result})[case_id]
+      ATTACKS, {case_id: result}, domains={case_id: "synthetic"})[case_id]
   assert dict(score.confusion) == {
       "true_positive": 1, "false_positive": false_positives,
       "true_negative": 1, "false_negative": 0,
@@ -367,7 +367,7 @@ def test_scorer_produces_per_family_confusion_and_reason_metrics(tmp_path):
   }]
 
   scores = load_adversarial_scores(
-      scorecards, {"unicode-substitution": observed})
+      scorecards, {"unicode-substitution": observed}, domains={"unicode-substitution": "synthetic"})
   score = scores["unicode-substitution"]
 
   assert score.attack_family == "unicode-substitution"
@@ -416,7 +416,7 @@ def test_scorer_matches_one_to_one_and_counts_duplicates_and_extras(tmp_path):
   ]
 
   score = literature_integrity.load_adversarial_scores(
-      tmp_path, {"integrity-case-900": observed})["integrity-case-900"]
+      tmp_path, {"integrity-case-900": observed}, domains={"integrity-case-900": "synthetic"})["integrity-case-900"]
 
   assert dict(score.confusion) == {
       "true_positive": 1, "false_positive": 3,
@@ -435,7 +435,7 @@ def test_scorer_rejects_contradictory_expectations_for_the_same_unit(tmp_path):
 
   with pytest.raises(ValueError, match="duplicate|contradictory"):
     literature_integrity.load_adversarial_scores(
-        tmp_path, {"integrity-case-900": []})
+        tmp_path, {"integrity-case-900": []}, domains={"integrity-case-900": "synthetic"})
 
 
 @pytest.mark.parametrize(("expectations", "confusion", "precision", "recall"), [
@@ -456,7 +456,7 @@ def test_scorer_has_explicit_zero_denominator_behavior(
   _write_adversarial_scorecard(tmp_path, expectations)
 
   score = literature_integrity.load_adversarial_scores(
-      tmp_path, {"integrity-case-900": []})["integrity-case-900"]
+      tmp_path, {"integrity-case-900": []}, domains={"integrity-case-900": "synthetic"})["integrity-case-900"]
   metric = score.reason_metrics["fabricated_quote"]
 
   assert dict(score.confusion) == confusion
@@ -491,6 +491,7 @@ def _valid_evaluation():
 def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
   first = AdversarialCaseScore(
       attack_family="unicode-substitution",
+      domain="synthetic",
       confusion={
           "true_positive": 1, "false_positive": 0,
           "true_negative": 1, "false_negative": 0},
@@ -499,6 +500,7 @@ def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
   )
   second = AdversarialCaseScore(
       attack_family="unicode-substitution",
+      domain="synthetic",
       confusion={
           "true_positive": 0, "false_positive": 1,
           "true_negative": 0, "false_negative": 1},
@@ -520,14 +522,12 @@ def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
   report = load_dashboard_data(tmp_path, "run-attack-metrics")
 
   assert report["summary"]["attack_family_confusion"] == {
-      "unicode-substitution": {
-          "true_positive": 1, "false_positive": 1,
-          "true_negative": 1, "false_negative": 1}}
+      "unicode-substitution": ReasonMetric(1, 1, 1, 1).to_dict()}
   assert report["summary"]["reason_code_metrics"] == {
       "fabricated_quote": {
           "true_positive": 1, "false_positive": 1, "true_negative": 1,
           "false_negative": 1,
-          "precision": 0.5, "recall": 0.5}}
+          "precision": 0.5, "recall": 0.5, "specificity": 0.5}}
   serialized = json.dumps(report)
   assert "reason_expectations" not in serialized
   assert "context_value" not in serialized
@@ -536,6 +536,7 @@ def test_task9_aggregates_count_only_attack_and_reason_metrics(tmp_path):
 def test_count_only_adversarial_schema_rejects_unknown_and_forged_metrics():
   score = AdversarialCaseScore(
       attack_family="unicode-substitution",
+      domain="synthetic",
       confusion={
           "true_positive": 1, "false_positive": 0,
           "true_negative": 1, "false_negative": 0},
@@ -556,6 +557,7 @@ def test_adversarial_schema_rejects_confusion_that_disagrees_with_reasons():
   with pytest.raises(ValueError, match="reconcile|confusion"):
     AdversarialCaseScore(
         attack_family="unicode-substitution",
+        domain="synthetic",
         confusion={
             "true_positive": 2, "false_positive": 0,
             "true_negative": 0, "false_negative": 0},
@@ -566,13 +568,14 @@ def test_adversarial_schema_rejects_forged_true_negative_count():
   with pytest.raises(ValueError, match="reconcile|confusion"):
     AdversarialCaseScore(
         attack_family="unicode-substitution",
+        domain="synthetic",
         confusion={
             "true_positive": 1, "false_positive": 0,
             "true_negative": 1, "false_negative": 0},
         reason_metrics={"fabricated_quote": {
             "true_positive": 1, "false_positive": 0,
             "true_negative": 0, "false_negative": 0,
-            "precision": 1.0, "recall": 1.0}})
+            "precision": 1.0, "recall": 1.0, "specificity": None}})
 
 
 def test_adversarial_v1_wire_artifact_is_explicitly_rejected():
@@ -580,6 +583,7 @@ def test_adversarial_v1_wire_artifact_is_explicitly_rejected():
     AdversarialCaseScore.from_dict({
         "schema_version": "1.0.0",
         "attack_family": "unicode-substitution",
+        "domain": "synthetic",
         "confusion": {
             "true_positive": 1, "false_positive": 0,
             "true_negative": 0, "false_negative": 0},
@@ -588,3 +592,47 @@ def test_adversarial_v1_wire_artifact_is_explicitly_rejected():
             "true_negative": 0, "false_negative": 0,
             "precision": 1.0, "recall": 1.0}},
     })
+
+
+@pytest.mark.parametrize(("counts", "specificity"), [
+    ((1, 1, 3, 0), 0.75),
+    ((1, 0, 0, 0), None),
+])
+def test_reason_metric_reports_specificity(counts, specificity):
+  metric = ReasonMetric(*counts)
+
+  assert metric.specificity == specificity
+  assert metric.to_dict()["specificity"] == specificity
+  assert ReasonMetric.from_dict(metric.to_dict()) == metric
+
+
+def test_reason_metric_rejects_forged_specificity():
+  forged = {**ReasonMetric(1, 1, 3, 0).to_dict(), "specificity": 1.0}
+
+  with pytest.raises(ValueError, match="rates"):
+    ReasonMetric.from_dict(forged)
+
+
+def test_scorer_records_case_domain(tmp_path):
+  _write_adversarial_scorecard(tmp_path, [
+      {"reason_code": "fabricated_quote", "present": True,
+       "unit": {"artifact": "claims.json", "context_key": "result_index",
+                "context_value": 0}}])
+
+  score = literature_integrity.load_adversarial_scores(
+      tmp_path, {"integrity-case-900": []},
+      domains={"integrity-case-900": "clinical"})["integrity-case-900"]
+
+  assert score.domain == "clinical"
+  assert AdversarialCaseScore.from_dict(score.to_dict()) == score
+
+
+def test_scorer_requires_a_domain_for_every_scored_case(tmp_path):
+  _write_adversarial_scorecard(tmp_path, [
+      {"reason_code": "fabricated_quote", "present": True,
+       "unit": {"artifact": "claims.json", "context_key": "result_index",
+                "context_value": 0}}])
+
+  with pytest.raises(ValueError, match="domain"):
+    literature_integrity.load_adversarial_scores(
+        tmp_path, {"integrity-case-900": []}, domains={})

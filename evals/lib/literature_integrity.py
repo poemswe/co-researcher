@@ -43,7 +43,7 @@ from review_integrity.workspace import WorkspaceError, load_workspace  # noqa: E
 
 
 SCHEMA_VERSION = "1.0.0"
-ADVERSARIAL_SCHEMA_VERSION = "2.0.0"
+ADVERSARIAL_SCHEMA_VERSION = "3.0.0"
 CAPABILITY = "literature-review-integrity"
 QUALITY_RUBRIC_ID = "literature-review-v1"
 QUALITY_DIMENSIONS = (
@@ -1130,6 +1130,11 @@ class ReasonMetric:
     denominator = self.true_positive + self.false_negative
     return None if denominator == 0 else self.true_positive / denominator
 
+  @property
+  def specificity(self) -> float | None:
+    denominator = self.true_negative + self.false_positive
+    return None if denominator == 0 else self.true_negative / denominator
+
   def to_dict(self) -> dict:
     return {
         "true_positive": self.true_positive,
@@ -1138,13 +1143,14 @@ class ReasonMetric:
         "false_negative": self.false_negative,
         "precision": self.precision,
         "recall": self.recall,
+        "specificity": self.specificity,
     }
 
   @classmethod
   def from_dict(cls, value: dict) -> "ReasonMetric":
     data = _closed_object(value, {
         "true_positive", "false_positive", "true_negative", "false_negative",
-        "precision", "recall",
+        "precision", "recall", "specificity",
     }, "reason metric")
     metric = cls(
         true_positive=data["true_positive"],
@@ -1152,7 +1158,8 @@ class ReasonMetric:
         true_negative=data["true_negative"],
         false_negative=data["false_negative"],
     )
-    if data["precision"] != metric.precision or data["recall"] != metric.recall:
+    if (data["precision"] != metric.precision or data["recall"] != metric.recall
+        or data["specificity"] != metric.specificity):
       raise ValueError("reason metric rates do not match counts")
     return metric
 
@@ -1160,11 +1167,13 @@ class ReasonMetric:
 @dataclass(frozen=True, slots=True)
 class AdversarialCaseScore:
   attack_family: str
+  domain: str
   confusion: Mapping[str, int]
   reason_metrics: Mapping[str, ReasonMetric]
 
   def __post_init__(self) -> None:
     _text(self.attack_family, "attack_family")
+    _text(self.domain, "domain")
     expected_confusion = {
         "true_positive", "false_positive", "true_negative", "false_negative"}
     if set(self.confusion) != expected_confusion:
@@ -1200,6 +1209,7 @@ class AdversarialCaseScore:
     return {
         "schema_version": ADVERSARIAL_SCHEMA_VERSION,
         "attack_family": self.attack_family,
+        "domain": self.domain,
         "confusion": dict(self.confusion),
         "reason_metrics": {
             code: metric.to_dict()
@@ -1210,7 +1220,8 @@ class AdversarialCaseScore:
   @classmethod
   def from_dict(cls, value: dict) -> "AdversarialCaseScore":
     data = _closed_object(value, {
-        "schema_version", "attack_family", "confusion", "reason_metrics",
+        "schema_version", "attack_family", "domain", "confusion",
+        "reason_metrics",
     }, "adversarial case score")
     if data["schema_version"] != ADVERSARIAL_SCHEMA_VERSION:
       raise ValueError("unsupported adversarial case score schema_version")
@@ -1220,6 +1231,7 @@ class AdversarialCaseScore:
       raise ValueError("reason metrics must be a dictionary")
     return cls(
         attack_family=data["attack_family"],
+        domain=data["domain"],
         confusion=data["confusion"],
         reason_metrics=data["reason_metrics"],
     )
@@ -1295,10 +1307,14 @@ def _attack_expectations(value: object) -> tuple[dict, ...]:
 def load_adversarial_scores(
     scorecard_directory: Path | str,
     observed_by_case: Mapping[str, object],
+    *,
+    domains: Mapping[str, str],
 ) -> Mapping[str, AdversarialCaseScore]:
   """Read scorer-only expectations after runs and return count-only scores."""
   if not isinstance(observed_by_case, Mapping):
     raise ValueError("observed_by_case must be a mapping")
+  if not isinstance(domains, Mapping):
+    raise ValueError("domains must be a mapping")
   store = _ScorecardStore(scorecard_directory)
   scores = {}
   for case_id, observed_value in observed_by_case.items():
@@ -1308,6 +1324,8 @@ def load_adversarial_scores(
     if "attack_family" not in data:
       continue
     family = _text(data["attack_family"], "attack_family")
+    if case_id not in domains:
+      raise ValueError(f"domain is missing for scored case {case_id}")
     expectations = _attack_expectations(data["reason_expectations"])
     findings = _observed_findings(observed_value)
     confusion = dict.fromkeys((
@@ -1346,6 +1364,7 @@ def load_adversarial_scores(
       counts["false_positive"] += 1
     scores[case_id] = AdversarialCaseScore(
         attack_family=family,
+        domain=domains[case_id],
         confusion=confusion,
         reason_metrics={
             code: ReasonMetric(**counts)

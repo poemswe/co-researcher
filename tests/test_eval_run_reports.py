@@ -885,6 +885,7 @@ def test_empty_optional_breakdowns_are_omitted(tmp_path):
 def test_attack_family_breakdown_is_written_only_when_present(tmp_path):
   score = AdversarialCaseScore(
       attack_family="citation-substitution",
+      domain="synthetic",
       confusion={
           "true_positive": 1, "false_positive": 0,
           "true_negative": 0, "false_negative": 0},
@@ -913,6 +914,39 @@ def test_attack_family_breakdown_is_written_only_when_present(tmp_path):
       "attack_family"] == "citation-substitution"
 
 
+def test_summary_reports_rates_by_attack_family_and_domain(tmp_path):
+  def score(family, domain, counts):
+    return AdversarialCaseScore(
+        attack_family=family, domain=domain,
+        confusion=dict(zip(("true_positive", "false_positive",
+                            "true_negative", "false_negative"), counts)),
+        reason_metrics={"fabricated_quote": ReasonMetric(*counts)})
+  run = CombinedRunResult(
+      run_id="run-rates", timestamp="2026-08-04T12:00:00Z",
+      model="codex:test",
+      cases=(
+          CombinedCaseResult(
+              case_id="case-one", evaluation=_evaluation(81.0),
+              adversarial_score=score("unicode", "clinical", (1, 0, 1, 0))),
+          CombinedCaseResult(
+              case_id="case-two", evaluation=_evaluation(82.0),
+              adversarial_score=score("unicode", "policy", (0, 1, 1, 1))),
+      ),
+  )
+
+  write_run_report(run, tmp_path)
+  summary = load_dashboard_data(tmp_path, "run-rates")["summary"]
+
+  assert summary["attack_family_confusion"]["unicode"] == {
+      "true_positive": 1, "false_positive": 1, "true_negative": 2,
+      "false_negative": 1, "precision": 0.5, "recall": 0.5,
+      "specificity": 2 / 3}
+  assert summary["domain_confusion"] == {
+      "clinical": ReasonMetric(1, 0, 1, 0).to_dict(),
+      "policy": ReasonMetric(0, 1, 1, 1).to_dict(),
+  }
+
+
 def test_combined_case_rejects_caller_supplied_attack_family():
   with pytest.raises(TypeError):
     CombinedCaseResult(
@@ -930,7 +964,7 @@ def test_combined_case_rejects_caller_supplied_attack_family():
 def test_integrity_cli_mode_uses_the_isolated_report_writer(
     monkeypatch, tmp_path,
 ):
-  cases = (SimpleNamespace(case_id="case-one"),)
+  cases = (SimpleNamespace(case_id="case-one", domain="synthetic"),)
 
   class FakeRunner:
     def __init__(self, *args, **kwargs):
@@ -950,7 +984,8 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
   monkeypatch.setattr(
       literature_integrity, "ProductionQualityJudge", lambda *args: object())
   monkeypatch.setattr(
-      literature_integrity, "load_adversarial_scores", lambda *args: {})
+      literature_integrity, "load_adversarial_scores",
+      lambda *args, domains: {})
 
   results = run_eval.run_literature_integrity("codex:test")
 
@@ -1067,13 +1102,14 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     const withBreakdown = JSON.parse(JSON.stringify(report));
     withBreakdown.cases[0].attack_family = 'citation-substitution';
     withBreakdown.cases[0].adversarial_score = {
-      schema_version: '2.0.0', attack_family: 'citation-substitution',
+      schema_version: '3.0.0', attack_family: 'citation-substitution',
+      domain: 'synthetic',
       confusion: {true_positive: 1, false_positive: 0,
         true_negative: 0, false_negative: 0},
       reason_metrics: {citation_identity_mismatch: {
         true_positive: 1, false_positive: 0,
         true_negative: 0, false_negative: 0,
-        precision: 1, recall: 1,
+        precision: 1, recall: 1, specificity: null,
       }},
     };
     withBreakdown.cases[0].repair_rounds = [{
@@ -1084,11 +1120,17 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     withBreakdown.summary.attack_family_confusion = {'citation-substitution': {
       true_positive: 1, false_positive: 0,
       true_negative: 0, false_negative: 0,
+      precision: 1, recall: 1, specificity: null,
+    }};
+    withBreakdown.summary.domain_confusion = {synthetic: {
+      true_positive: 1, false_positive: 0,
+      true_negative: 0, false_negative: 0,
+      precision: 1, recall: 1, specificity: null,
     }};
     withBreakdown.summary.reason_code_metrics = {citation_identity_mismatch: {
       true_positive: 1, false_positive: 0,
       true_negative: 0, false_negative: 0,
-      precision: 1, recall: 1,
+      precision: 1, recall: 1, specificity: null,
     }};
     context.parseIntegrityRunData(withBreakdown, entry);
     withBreakdown.cases[0].repair_rounds[0].overall_score = 100;
@@ -1223,6 +1265,7 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
 def test_dashboard_parser_accepts_real_attack_and_operational_unions(tmp_path):
   score = AdversarialCaseScore(
       attack_family="citation-substitution",
+      domain="synthetic",
       confusion={
           "true_positive": 1, "false_positive": 0,
           "true_negative": 1, "false_negative": 0},
@@ -1281,7 +1324,7 @@ def test_dashboard_parser_accepts_real_attack_and_operational_unions(tmp_path):
     const fixtures = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
     const attack = context.parseIntegrityRunData(
       fixtures[0].report, fixtures[0].entry);
-    if (attack.cases[0].adversarial_score.schema_version !== '2.0.0') {
+    if (attack.cases[0].adversarial_score.schema_version !== '3.0.0') {
       process.exit(2);
     }
     const operational = context.parseIntegrityRunData(

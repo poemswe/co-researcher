@@ -166,6 +166,7 @@ def run_literature_integrity(model: str):
     adversarial_scores = load_adversarial_scores(
         TEST_CASES_DIR / INTEGRITY_CAPABILITY,
         {case.case_id: result for case, result in zip(cases, results)},
+        domains={case.case_id: case.domain for case in cases},
     )
     combined = CombinedRunResult.from_results(
         run_id=run_id,

@@ -454,6 +454,7 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
   counts = {status: 0 for status in _STATUS_NAMES}
   attack_families: dict[str, int] = {}
   family_confusion: dict[str, dict[str, int]] = {}
+  domain_confusion: dict[str, dict[str, int]] = {}
   reason_counts: dict[str, dict[str, int]] = {}
   for case in cases:
     status = (
@@ -465,12 +466,15 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
       attack_families[case.attack_family] = (
           attack_families.get(case.attack_family, 0) + 1)
     if case.adversarial_score is not None:
-      family = case.adversarial_score.attack_family
-      confusion = family_confusion.setdefault(family, {
-          "true_positive": 0, "false_positive": 0,
-          "true_negative": 0, "false_negative": 0})
-      for name, value in case.adversarial_score.confusion.items():
-        confusion[name] += value
+      for totals, key in (
+          (family_confusion, case.adversarial_score.attack_family),
+          (domain_confusion, case.adversarial_score.domain),
+      ):
+        confusion = totals.setdefault(key, {
+            "true_positive": 0, "false_positive": 0,
+            "true_negative": 0, "false_negative": 0})
+        for name, value in case.adversarial_score.confusion.items():
+          confusion[name] += value
       for code, metric in case.adversarial_score.reason_metrics.items():
         combined = reason_counts.setdefault(code, {
             "true_positive": 0, "false_positive": 0,
@@ -483,7 +487,14 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
   if attack_families:
     summary["attack_family_breakdown"] = dict(sorted(attack_families.items()))
   if family_confusion:
-    summary["attack_family_confusion"] = dict(sorted(family_confusion.items()))
+    summary["attack_family_confusion"] = {
+        family: ReasonMetric(**values).to_dict()
+        for family, values in sorted(family_confusion.items())
+    }
+    summary["domain_confusion"] = {
+        domain: ReasonMetric(**values).to_dict()
+        for domain, values in sorted(domain_confusion.items())
+    }
     summary["reason_code_metrics"] = {
         code: ReasonMetric(**values).to_dict()
         for code, values in sorted(reason_counts.items())
@@ -1313,7 +1324,7 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
           data["summary"], {"case_count", "integrity_status_counts"},
           "run summary", optional={
               "attack_family_breakdown", "attack_family_confusion",
-              "reason_code_metrics"})
+              "domain_confusion", "reason_code_metrics"})
       status_counts = _closed_object(
           summary["integrity_status_counts"], set(_STATUS_NAMES),
           "integrity status counts")
