@@ -1689,6 +1689,7 @@ class ProductionModelExecutor:
   def _run(
       self, prompt: str, workspace: Path, *, prompt_version: str,
       prompt_sha256: str, allow_research: bool,
+      readable_directory: Path | None = None,
   ) -> ModelUsage:
     parts = self._model.split(":")
     if self._inside(workspace.resolve(), self._repository_root):
@@ -1713,6 +1714,10 @@ class ProductionModelExecutor:
         ["--tools", (_CLAUDE_CAPTURE_TOOLS if allow_research
                      else _CLAUDE_REPAIR_TOOLS)]
         if provider == "claude" else config["tools"])
+    if provider == "claude":
+      command += ["--permission-mode", "acceptEdits"]
+      if readable_directory is not None:
+        command += ["--add-dir", str(readable_directory)]
     stdin = prompt if config.get("stdin") else None
     command += ["-"] if stdin is not None else ["-p", prompt]
     started = time.monotonic()
@@ -1780,6 +1785,7 @@ class ProductionModelExecutor:
           prompt_version=CAPTURE_PROMPT_VERSION,
           prompt_sha256=CAPTURE_PROMPT_SHA256,
           allow_research=True,
+          readable_directory=staging,
       )
 
   def repair(self, feedback: dict, workspace: Path) -> ModelUsage:

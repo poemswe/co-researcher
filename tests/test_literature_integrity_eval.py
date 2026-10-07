@@ -671,6 +671,7 @@ def test_claude_executor_can_create_and_repair_workspace(
   for index, (command, _kwargs) in enumerate(calls):
     tools = command[command.index("--tools") + 1].split(",")
     assert {"Read", "Write", "Edit", "Bash"} <= set(tools)
+    assert command[command.index("--permission-mode") + 1] == "acceptEdits"
     if index == 0:
       assert {"WebSearch", "WebFetch"} <= set(tools)
     else:
@@ -1078,3 +1079,19 @@ def test_unloadable_workspace_has_no_snapshot(tmp_path):
   runner.run_case(case)
 
   assert runner.snapshots[case.case_id] == ()
+
+
+def test_claude_first_pass_can_read_the_staged_skill(monkeypatch, tmp_path):
+  calls = _capture_executor_calls(monkeypatch)
+  workspace = tmp_path / "model-workspace"
+  workspace.mkdir()
+
+  ProductionModelExecutor("claude", ROOT).first_pass(_case(tmp_path), workspace)
+
+  command = calls[0][0]
+  prompt = command[command.index("-p") + 1]
+  skill_path = pathlib.Path(next(
+      line for line in prompt.splitlines()
+      if line.startswith("Skill path:")).split(": ", 1)[1])
+  added = command[command.index("--add-dir") + 1]
+  assert skill_path.is_relative_to(added)
