@@ -68,9 +68,12 @@ those phases. Do not ask for or infer evaluator-only expectations.
 """
 CAPTURE_PROMPT_SHA256 = hashlib.sha256(
     CAPTURE_INSTRUCTION.encode("utf-8")).hexdigest()
-REPAIR_PROMPT_VERSION = "literature-integrity-repair-v1"
+REPAIR_PROMPT_VERSION = "literature-integrity-repair-v2"
 REPAIR_INSTRUCTION = """Repair evaluation workspace artifacts in the current
-directory using only the supplied public validator feedback. Do not validate,
+directory using only the supplied public validator feedback. Read the
+repository literature-review skill at the supplied path and keep every
+artifact in its artifact contract: the same files, field names, and allowed
+values (for example a claim role is evidence or background). Do not validate,
 score, or deliver the review. Stop immediately after updating the artifacts.
 """
 REPAIR_PROMPT_SHA256 = hashlib.sha256(
@@ -1931,19 +1934,23 @@ class ProductionModelExecutor:
         prompt_sha256=prompt_sha256,
     )
 
+  def _stage_skill(self, staging: Path) -> Path:
+    """Copy the public skill outside the repository; return its SKILL.md."""
+    source_skill = self._repository_root / "skills/literature-review"
+    for path in source_skill.rglob("*"):
+      if path.is_symlink():
+        raise ValueError("literature-review skill bundle contains a symlink")
+    shutil.copytree(source_skill, staging / "skill")
+    return staging / "skill/SKILL.md"
+
   def first_pass(
       self, case: CaseDefinition, workspace: Path,
   ) -> ModelUsage:
-    source_skill = self._repository_root / "skills/literature-review"
     with tempfile.TemporaryDirectory(
         dir=_SAFE_TEMP_ROOT,
     ) as temporary:
       staging = Path(temporary).resolve()
-      for path in source_skill.rglob("*"):
-        if path.is_symlink():
-          raise ValueError("literature-review skill bundle contains a symlink")
-      shutil.copytree(source_skill, staging / "skill")
-      skill_path = staging / "skill/SKILL.md"
+      skill_path = self._stage_skill(staging)
       fixture_paths = []
       for index, fixture in enumerate(case.fixture_files, 1):
         suffix = fixture.relative_path.suffix or ".bin"
@@ -1967,16 +1974,23 @@ class ProductionModelExecutor:
       )
 
   def repair(self, feedback: dict, workspace: Path) -> ModelUsage:
-    prompt = (
-        f"{REPAIR_INSTRUCTION}\n"
-        "Validator feedback:\n"
-        f"{json.dumps(feedback, sort_keys=True, separators=(',', ':'))}\n")
-    return self._run(
-        prompt, workspace,
-        prompt_version=REPAIR_PROMPT_VERSION,
-        prompt_sha256=REPAIR_PROMPT_SHA256,
-        allow_research=False,
-    )
+    with tempfile.TemporaryDirectory(
+        dir=_SAFE_TEMP_ROOT,
+    ) as temporary:
+      staging = Path(temporary).resolve()
+      skill_path = self._stage_skill(staging)
+      prompt = (
+          f"{REPAIR_INSTRUCTION}\n"
+          f"Skill path: {skill_path}\n"
+          "Validator feedback:\n"
+          f"{json.dumps(feedback, sort_keys=True, separators=(',', ':'))}\n")
+      return self._run(
+          prompt, workspace,
+          prompt_version=REPAIR_PROMPT_VERSION,
+          prompt_sha256=REPAIR_PROMPT_SHA256,
+          allow_research=False,
+          readable_directory=staging,
+      )
 
 
 __all__ = [

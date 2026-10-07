@@ -1187,3 +1187,25 @@ def test_completed_cases_can_be_reloaded_with_their_snapshots(tmp_path):
   assert adversarial_score is None
   assert [snapshot.manifest_sha256 for snapshot in snapshots] == [
       snapshot.manifest_sha256 for snapshot in runner.snapshots[case.case_id]]
+
+
+def test_repair_prompt_points_at_a_staged_readable_skill(monkeypatch, tmp_path):
+  calls = _capture_executor_calls(monkeypatch)
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+
+  ProductionModelExecutor("claude", ROOT).repair({
+      "reason_codes": [], "affected_artifacts": [], "findings": [],
+  }, workspace)
+
+  command = calls[0][0]
+  prompt = command[command.index("-p") + 1]
+  skill_path = pathlib.Path(next(
+      line for line in prompt.splitlines()
+      if line.startswith("Skill path:")).split(": ", 1)[1])
+  assert skill_path.is_relative_to(command[command.index("--add-dir") + 1])
+  assert not skill_path.exists()
+  assert str(ROOT) not in prompt
+  assert "artifact contract" in prompt
+  assert literature_integrity.REPAIR_PROMPT_VERSION == (
+      "literature-integrity-repair-v2")
