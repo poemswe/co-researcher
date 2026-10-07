@@ -843,3 +843,54 @@ def test_reproduced_attack_stays_assessable(tmp_path):
 
   assert score.assessable is True
   assert score.unassessable_reason is None
+
+
+def _passing_scorecard(root):
+  case_dir = root / "integrity-case-900"
+  case_dir.mkdir(parents=True)
+  (case_dir / "expected.json").write_text(json.dumps({
+      "schema_version": "1.0.0", "final_status": "passing",
+      "minimum_repair_rounds": 0, "maximum_repair_rounds": 3,
+  }))
+  return literature_integrity._ScorecardStore(root)
+
+
+@pytest.mark.parametrize(("observed", "met"), [
+    ("valid", True), ("valid_with_warnings", True), ("invalid", False),
+])
+def test_passing_expectation_accepts_either_passing_status(
+    tmp_path, observed, met,
+):
+  robustness = literature_integrity._score_robustness(
+      _passing_scorecard(tmp_path), "integrity-case-900", observed, 1)
+
+  assert robustness.expected_final_status == "passing"
+  assert robustness.expectation_met is met
+
+
+def test_eval_result_accepts_a_met_passing_expectation():
+  evaluation = _valid_evaluation()
+  passing = RobustnessResult(
+      expected_final_status="passing", observed_final_status="valid",
+      minimum_repair_rounds=0, maximum_repair_rounds=3,
+      expectation_met=True, error=None)
+
+  rebuilt = IntegrityEvalResult(
+      model_first_pass=evaluation.model_first_pass,
+      repair_rounds=evaluation.repair_rounds,
+      system_final=evaluation.system_final,
+      repair_cost=evaluation.repair_cost, robustness=passing)
+
+  assert IntegrityEvalResult.from_dict(rebuilt.to_dict()) == rebuilt
+
+
+def test_repairable_public_cases_expect_a_passing_final_status():
+  root = EVALS / "test-cases/literature-review-integrity"
+  expectations = {
+      path.parent.name: json.loads(path.read_text())["final_status"]
+      for path in root.rglob("expected.json")}
+
+  assert {case for case, status in expectations.items()
+          if status == "invalid"} == {
+      "integrity-case-010", "integrity-case-012", "integrity-case-013"}
+  assert set(expectations.values()) == {"passing", "invalid"}

@@ -524,6 +524,17 @@ class RepairCost:
     return cls(**{key: data[key] for key in data if key != "schema_version"})
 
 
+_FINAL_STATUSES = frozenset({"valid", "valid_with_warnings", "invalid"})
+EXPECTED_FINAL_STATUSES = _FINAL_STATUSES | {"passing"}
+
+
+def _status_meets(expected: str, observed: str) -> bool:
+  """``passing`` accepts either non-invalid status; others match exactly."""
+  if expected == "passing":
+    return observed in {"valid", "valid_with_warnings"}
+  return observed == expected
+
+
 @dataclass(frozen=True, slots=True)
 class RobustnessResult:
   expected_final_status: str | None
@@ -545,7 +556,7 @@ class RobustnessResult:
         raise ValueError("expectation_met must be null without an expectation")
       _text(self.error, "robustness error")
     else:
-      if self.expected_final_status not in statuses:
+      if self.expected_final_status not in EXPECTED_FINAL_STATUSES:
         raise ValueError("expected_final_status is invalid")
       minimum = self.minimum_repair_rounds
       maximum = self.maximum_repair_rounds
@@ -653,8 +664,8 @@ class IntegrityEvalResult:
       raise ValueError("robustness must describe system_final")
     if self.robustness.expected_final_status is not None:
       expected_robustness = (
-          self.robustness.observed_final_status
-          == self.robustness.expected_final_status
+          _status_meets(self.robustness.expected_final_status,
+                        self.robustness.observed_final_status)
           and self.robustness.minimum_repair_rounds
           <= len(self.repair_rounds)
           <= self.robustness.maximum_repair_rounds)
@@ -1123,7 +1134,7 @@ def _score_robustness(
       _text(data["attack_family"], "attack_family")
       _attack_expectations(data["reason_expectations"])
     expected = data["final_status"]
-    if expected not in {"valid", "valid_with_warnings", "invalid"}:
+    if expected not in EXPECTED_FINAL_STATUSES:
       raise ValueError("scorecard final_status is invalid")
     minimum = data["minimum_repair_rounds"]
     maximum = data["maximum_repair_rounds"]
@@ -1137,7 +1148,8 @@ def _score_robustness(
         minimum_repair_rounds=minimum,
         maximum_repair_rounds=maximum,
         expectation_met=(
-            status == expected and minimum <= repair_count <= maximum),
+            _status_meets(expected, status)
+            and minimum <= repair_count <= maximum),
         error=None,
     )
   except Exception as exc:

@@ -9,6 +9,13 @@ Each case directory contains public `case.json` input and a scorer-only
 validation, repair, and quality judging have finished. Neither file is copied
 into the temporary workspace.
 
+An expected `final_status` of `passing` accepts `valid` or
+`valid_with_warnings`. A repaired case lands on one or the other for reasons
+unrelated to the attack, such as whether the model wrote a bibliography (an
+unavailable resolver adds a warning) or used an abstract-only source, so a
+single status would count correct repairs as misses. Unloadable tamper cases
+still expect exactly `invalid`.
+
 A model writes a fresh workspace, so it never reproduces a broken artifact on
 its own. Operational attack cases therefore declare an optional public
 `workspace_tamper` (`missing`, `malformed`, `symlink`, or `traversal`) in
