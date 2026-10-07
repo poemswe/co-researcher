@@ -264,6 +264,22 @@ def test_feedback_contains_reason_codes_but_not_gold_fields():
   assert "private" not in serialized
 
 
+def test_feedback_names_the_flagged_synthesis_sentence():
+  sentence = "Scores rose 73 percent (Synthetic, 2024)."
+  report = _report(
+      passed=0, reason=ReasonCode.COVERAGE_NUMBER_MISSING,
+      context={"synthesis_sentence": sentence, "synthesis_sentence_index": 4,
+               "gold_label": "added-number"})
+
+  feedback = safe_repair_feedback(report)
+
+  assert feedback["findings"][0]["sentence"] == sentence
+  assert set(feedback["findings"][0]) == {
+      "reason_code", "severity", "artifact", "message", "sentence"}
+  assert "gold" not in json.dumps(feedback)
+  assert "added-number" not in json.dumps(feedback)
+
+
 @pytest.mark.parametrize("kwargs", [
     {"max_rounds": 0},
     {"max_rounds": True},

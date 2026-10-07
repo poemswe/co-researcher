@@ -154,12 +154,18 @@ def safe_repair_feedback(report: PassReport) -> dict:
   """Return the public finding allowlist used in a repair prompt."""
   if not isinstance(report, PassReport):
     raise ValueError("report must be a PassReport")
-  findings = [{
-      "reason_code": finding.reason_code.value,
-      "severity": finding.severity.value,
-      "artifact": finding.artifact,
-      "message": finding.message,
-  } for finding in report.findings]
+  findings = []
+  for finding in report.findings:
+    item = {
+        "reason_code": finding.reason_code.value,
+        "severity": finding.severity.value,
+        "artifact": finding.artifact,
+        "message": finding.message,
+    }
+    sentence = finding.context.get("synthesis_sentence")
+    if isinstance(sentence, str) and sentence.strip():
+      item["sentence"] = sentence
+    findings.append(item)
   return {
       "reason_codes": list(dict.fromkeys(
           finding["reason_code"] for finding in findings)),

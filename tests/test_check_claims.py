@@ -985,6 +985,31 @@ def test_coverage_still_checks_annotated_bibliography_prose():
       (None, "coverage_number_missing")]
 
 
+@pytest.mark.parametrize("sentence", [
+    "A PDF could be dropped at papers/synthetic-tutoring-2024/paper.pdf "
+    "for a re-run.",
+    "The record is at https://doi.org/10.1000/xyz123 for reference.",
+    "The DOI 10.1371/journal.pone.0123456 identifies the trial record.",
+    "Raw output is kept in `run-2024-results.json` for audit.",
+])
+def test_coverage_ignores_numbers_in_paths_links_and_code(sentence):
+  synthesis = ("Readmissions fell 18% in the treatment arm of the trial "
+               f"(Patel, 2022). {sentence}")
+  claims = [_entry()]
+
+  assert cc.coverage_gaps(synthesis, claims, _trusted_results(claims)) == []
+
+
+def test_coverage_still_counts_a_bare_fraction():
+  synthesis = ("Readmissions fell 18% in the treatment arm of the trial "
+               "(Patel, 2022). Roughly 2/3 of sites improved.")
+  claims = [_entry()]
+
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [(gap["citation_key"], gap["reason_code"]) for gap in gaps] == [
+      (None, "coverage_number_missing")]
+
+
 def test_coverage_matches_lightly_edited_claim():
   synthesis = "Thirty-day readmissions fell by 18% in the arm (Patel, 2022)."
   claims = [_entry(claim="Readmissions fell by 18% in the arm.")]

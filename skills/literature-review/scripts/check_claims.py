@@ -292,6 +292,15 @@ def extract_numbers(text: str) -> list[str]:
   return [plain for _, _, plain in extract_number_spans(text)]
 
 
+_NON_PROSE_TOKEN_RE = re.compile(
+    r"`[^`]*`|\S*[a-z]\S*/\S*|\S*/\S*[a-z]\S*")
+
+
+def _prose_numbers(text: str) -> list[str]:
+  """Numbers in prose, ignoring code spans and path, URL, or DOI tokens."""
+  return extract_numbers(_NON_PROSE_TOKEN_RE.sub(" ", text))
+
+
 def extract_words(text: str) -> list[str]:
   words = []
   for word in re.findall(r"[a-z]+", normalize_text(text)):
@@ -847,14 +856,14 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
         "text": claim_norm,
         "keys": citation_keys(claim.get("citation") or ""),
         "role": claim.get("role", "evidence"),
-        "numbers": collections.Counter(extract_numbers(claim_norm)),
+        "numbers": collections.Counter(_prose_numbers(claim_norm)),
     })
   gaps = []
   for sentence_index, sentence in enumerate(_split_sentences(synthesis)):
     records = _citation_records(sentence)
     sentence_keys = {r["key"] for r in records}
     sent_norm = normalize_text(_strip_citations(sentence, records))
-    sentence_numbers = collections.Counter(extract_numbers(sent_norm))
+    sentence_numbers = collections.Counter(_prose_numbers(sent_norm))
     if not sentence_keys:
       if sentence_numbers:
         gaps.append({
