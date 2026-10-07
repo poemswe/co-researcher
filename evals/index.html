@@ -2049,7 +2049,15 @@
         function parseRunProvenance(value) {
             const provenance = requireExactFields(value, [
                 'target_commit', 'target_dirty', 'engine_version', 'validator_versions'
-            ], [], 'run provenance');
+            ], ['resolved_models'], 'run provenance');
+            if (Object.prototype.hasOwnProperty.call(provenance, 'resolved_models')) {
+                const models = provenance.resolved_models;
+                if (!Array.isArray(models) ||
+                    models.some(name => typeof name !== 'string' || !name) ||
+                    models.join('\0') !== [...new Set(models)].sort().join('\0')) {
+                    throw new Error('run provenance is invalid');
+                }
+            }
             const commit = provenance.target_commit;
             const dirty = provenance.target_dirty;
             const versions = provenance.validator_versions;

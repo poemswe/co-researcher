@@ -92,7 +92,7 @@ def _closed_object(
 def _provenance(value: object) -> dict:
   data = _closed_object(value, {
       "target_commit", "target_dirty", "engine_version", "validator_versions",
-  }, "run provenance")
+  }, "run provenance", optional={"resolved_models"})
   commit, dirty = data["target_commit"], data["target_dirty"]
   if (commit is None) != (dirty is None):
     raise ValueError("run provenance commit and dirty state must share availability")
@@ -109,11 +109,20 @@ def _provenance(value: object) -> dict:
              or not isinstance(version, str) or not version
              for name, version in versions.items())):
     raise ValueError("run provenance validator_versions are invalid")
-  return {
+  provenance = {
       "target_commit": commit, "target_dirty": dirty,
       "engine_version": data["engine_version"],
       "validator_versions": dict(sorted(versions.items())),
   }
+  if "resolved_models" in data:
+    models = data["resolved_models"]
+    if (not isinstance(models, list)
+        or any(not isinstance(name, str) or not name for name in models)
+        or models != sorted(set(models))):
+      raise ValueError(
+          "run provenance resolved_models must be sorted unique model names")
+    provenance["resolved_models"] = list(models)
+  return provenance
 
 
 def _execution_errors(value: object, case_ids: set[str]) -> tuple[dict, ...]:
@@ -587,9 +596,14 @@ def _provenance_markdown(provenance: Mapping | None) -> str:
   versions = ", ".join(
       f"{name}={version}"
       for name, version in provenance["validator_versions"].items())
+  resolved = ""
+  if "resolved_models" in provenance:
+    resolved = (f"**Resolved model**: "
+                f"{', '.join(provenance['resolved_models']) or 'unknown'}  \n")
   return (
       f"**Target commit**: {commit or 'unknown'} ({state})  \n"
-      f"**Engine**: {provenance['engine_version']} ({versions})  \n")
+      f"**Engine**: {provenance['engine_version']} ({versions})  \n"
+      + resolved)
 
 
 def _unassessable_cases(cases: Sequence[CombinedCaseResult]) -> dict:

@@ -1783,6 +1783,25 @@ class ProductionQualityJudge:
       return QualityResult.failed(exc)
 
 
+_CODEX_MODEL_RE = re.compile(r"^model:\s*(\S+)\s*$", re.MULTILINE)
+
+
+def _resolved_model(provider: str, stdout: str, stderr: str) -> str | None:
+  """The concrete model a CLI reports it ran, or None if it does not say."""
+  if provider == "claude":
+    try:
+      events = json.loads(stdout)
+    except json.JSONDecodeError:
+      return None
+    for event in events if isinstance(events, list) else [events]:
+      if (isinstance(event, dict) and event.get("type") == "system"
+          and isinstance(event.get("model"), str) and event["model"]):
+        return event["model"]
+    return None
+  match = _CODEX_MODEL_RE.search(f"{stderr}\n{stdout}")
+  return match.group(1) if match else None
+
+
 class ProductionModelExecutor:
   def __init__(
       self, model: str, repository_root: Path | str = REPOSITORY_ROOT,
@@ -1791,6 +1810,7 @@ class ProductionModelExecutor:
     self._model = _text(model, "model")
     self._repository_root = Path(repository_root).resolve()
     self._timeout = timeout
+    self.resolved_models: set[str] = set()
 
   @staticmethod
   def _inside(path: Path, root: Path) -> bool:
@@ -1856,7 +1876,7 @@ class ProductionModelExecutor:
                      else _CLAUDE_REPAIR_TOOLS)]
         if provider == "claude" else config["tools"])
     if provider == "claude":
-      command += ["--permission-mode", "acceptEdits"]
+      command += ["--permission-mode", "acceptEdits", "--output-format", "json"]
       if readable_directory is not None:
         command += ["--add-dir", str(readable_directory)]
     stdin = prompt if config.get("stdin") else None
@@ -1880,10 +1900,15 @@ class ProductionModelExecutor:
       raise ModelExecutionError(f"model executor could not start: {exc}") from exc
     duration = time.monotonic() - started
     if completed.returncode != 0:
-      lines = (completed.stderr or completed.stdout).strip().splitlines()
+      lines = [line.strip() for line in
+               (completed.stderr or completed.stdout).strip().splitlines()]
+      errors = [line for line in lines if "ERROR" in line]
+      detail = errors[-1] if errors else lines[-1] if lines else "no output"
       raise ModelExecutionError(
-          f"model executor exited {completed.returncode}: "
-          f"{lines[-1].strip() if lines else 'no output'}")
+          f"model executor exited {completed.returncode}: {detail}")
+    resolved = _resolved_model(provider, completed.stdout, completed.stderr)
+    if resolved is not None:
+      self.resolved_models.add(resolved)
     return ModelUsage(
         duration_seconds=duration,
         input_tokens=None,

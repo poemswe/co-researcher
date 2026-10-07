@@ -1095,3 +1095,78 @@ def test_claude_first_pass_can_read_the_staged_skill(monkeypatch, tmp_path):
       if line.startswith("Skill path:")).split(": ", 1)[1])
   added = command[command.index("--add-dir") + 1]
   assert skill_path.is_relative_to(added)
+
+
+def _fake_cli(monkeypatch, *, stdout="", stderr=""):
+  calls = []
+  monkeypatch.setattr(
+      literature_integrity, "find_cli",
+      lambda provider: pathlib.Path(f"/fake/{provider}"))
+
+  def fake_run(command, **kwargs):
+    calls.append(command)
+    return SimpleNamespace(returncode=0, stdout=stdout, stderr=stderr)
+
+  monkeypatch.setattr(literature_integrity.subprocess, "run", fake_run)
+  return calls
+
+
+def test_claude_executor_records_the_resolved_model(monkeypatch, tmp_path):
+  events = [
+      {"type": "system", "subtype": "init", "model": "claude-opus-5-5"},
+      {"type": "result", "subtype": "success", "result": "done"},
+  ]
+  calls = _fake_cli(monkeypatch, stdout=json.dumps(events))
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+  executor = ProductionModelExecutor("claude", ROOT)
+
+  executor.first_pass(_case(tmp_path), workspace)
+
+  assert calls[0][calls[0].index("--output-format") + 1] == "json"
+  assert executor.resolved_models == {"claude-opus-5-5"}
+
+
+def test_codex_executor_records_the_resolved_model(monkeypatch, tmp_path):
+  _fake_cli(monkeypatch, stderr=(
+      "OpenAI Codex v0.154.0\n--------\nmodel: gpt-6-astra\n"
+      "provider: openai\n--------\n"))
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+  executor = ProductionModelExecutor("codex", ROOT)
+
+  executor.first_pass(_case(tmp_path), workspace)
+
+  assert executor.resolved_models == {"gpt-6-astra"}
+
+
+def test_unrecognized_cli_output_records_no_model(monkeypatch, tmp_path):
+  _fake_cli(monkeypatch, stdout="plain text output")
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+  executor = ProductionModelExecutor("claude", ROOT)
+
+  executor.first_pass(_case(tmp_path), workspace)
+
+  assert executor.resolved_models == set()
+
+
+def test_executor_error_prefers_the_error_line_over_trailing_counts(
+    monkeypatch, tmp_path,
+):
+  monkeypatch.setattr(
+      literature_integrity, "find_cli",
+      lambda provider: pathlib.Path(f"/fake/{provider}"))
+  monkeypatch.setattr(
+      literature_integrity.subprocess, "run",
+      lambda command, **kwargs: SimpleNamespace(
+          returncode=1, stdout="",
+          stderr="ERROR: You've hit your usage limit.\ntokens used\n6,745\n"))
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+
+  with pytest.raises(literature_integrity.ModelExecutionError) as error:
+    ProductionModelExecutor("codex", ROOT).first_pass(_case(tmp_path), workspace)
+
+  assert str(error.value) == (
+      "model executor exited 1: ERROR: You've hit your usage limit.")

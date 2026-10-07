@@ -167,8 +167,9 @@ def run_literature_integrity(model: str):
     cases = load_cases(TEST_CASES_DIR / INTEGRITY_CAPABILITY)
     run_id = generate_run_id()
     timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    executor = ProductionModelExecutor(model, EVALS_DIR.parent)
     runner = LiteratureIntegrityRunner(
-        ProductionModelExecutor(model, EVALS_DIR.parent),
+        executor,
         ProductionQualityJudge(model),
         scorecard_directory=TEST_CASES_DIR / INTEGRITY_CAPABILITY,
     )
@@ -193,6 +194,7 @@ def run_literature_integrity(model: str):
         domains={case.case_id: case.domain for case in cases},
         fixture_preserved=runner.fixture_preserved,
     )
+    provenance["resolved_models"] = sorted(executor.resolved_models)
     combined = CombinedRunResult.from_results(
         run_id=run_id,
         timestamp=timestamp,

@@ -390,6 +390,22 @@ def test_run_report_records_provenance(tmp_path):
       "provenance"] == _PROVENANCE
 
 
+def test_run_report_records_resolved_models(tmp_path):
+  run = CombinedRunResult(
+      run_id="run-resolved", timestamp="2026-10-07T12:00:00Z",
+      model="claude",
+      provenance={**_PROVENANCE, "resolved_models": ["claude-opus-5-5"]},
+      cases=(CombinedCaseResult(
+          case_id="case-1", evaluation=_evaluation(81.0)),))
+
+  run_path = write_run_report(run, tmp_path)
+
+  assert load_dashboard_data(tmp_path, "run-resolved")["provenance"][
+      "resolved_models"] == ["claude-opus-5-5"]
+  assert "**Resolved model**: claude-opus-5-5" in (
+      run_path / "summary.md").read_text()
+
+
 def test_write_run_report_requires_provenance(tmp_path):
   run = CombinedRunResult(
       run_id="run-no-provenance", timestamp="2026-08-04T12:00:00Z",
@@ -408,6 +424,9 @@ def test_write_run_report_requires_provenance(tmp_path):
     {"engine_version": ""},
     {"validator_versions": {}},
     {"extra": 1},
+    {"resolved_models": "claude-opus-5-5"},
+    {"resolved_models": [""]},
+    {"resolved_models": ["b-model", "a-model"]},
 ])
 def test_provenance_rejects_malformed_values(change):
   with pytest.raises(ValueError, match="provenance"):
@@ -1082,7 +1101,8 @@ def _two_case_cli(monkeypatch, tmp_path, failing):
   monkeypatch.setattr(
       literature_integrity, "LiteratureIntegrityRunner", FlakyRunner)
   monkeypatch.setattr(
-      literature_integrity, "ProductionModelExecutor", lambda *args: object())
+      literature_integrity, "ProductionModelExecutor",
+      lambda *args: SimpleNamespace(resolved_models={"gpt-6-astra"}))
   monkeypatch.setattr(
       literature_integrity, "ProductionQualityJudge", lambda *args: object())
   monkeypatch.setattr(
@@ -1187,7 +1207,8 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
   monkeypatch.setattr(
       literature_integrity, "LiteratureIntegrityRunner", FakeRunner)
   monkeypatch.setattr(
-      literature_integrity, "ProductionModelExecutor", lambda *args: object())
+      literature_integrity, "ProductionModelExecutor",
+      lambda *args: SimpleNamespace(resolved_models={"gpt-6-astra"}))
   monkeypatch.setattr(
       literature_integrity, "ProductionQualityJudge", lambda *args: object())
   monkeypatch.setattr(
@@ -1205,6 +1226,7 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
   assert selected["provenance"]["target_commit"] == head
   assert isinstance(selected["provenance"]["target_dirty"], bool)
   assert selected["provenance"]["engine_version"] == "1.0.0"
+  assert selected["provenance"]["resolved_models"] == ["gpt-6-astra"]
   assert not (tmp_path / "literature-review-integrity").exists()
 
 
@@ -1308,6 +1330,15 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     const v12Entry = {...committedEntry, report_schema_version: '1.2.0'};
     const v12 = {...v11, schema_version: '1.2.0', provenance};
     context.parseIntegrityRunData(v12, v12Entry);
+    context.parseIntegrityRunData({...v12, provenance: {...provenance,
+      resolved_models: ['claude-opus-5-5']}}, v12Entry);
+    try {
+      context.parseIntegrityRunData({...v12, provenance: {...provenance,
+        resolved_models: ['b-model', 'a-model']}}, v12Entry);
+      process.exit(44);
+    } catch (error) {
+      if (!String(error).includes('provenance')) process.exit(45);
+    }
     const withSnapshots = JSON.parse(JSON.stringify(report));
     withSnapshots.cases[0].snapshots = [{label: 'first-pass',
       path: 'snapshots/case-1-first-pass.json', sha256: 'd'.repeat(64)}];
