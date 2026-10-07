@@ -191,6 +191,7 @@ def run_literature_integrity(model: str):
         TEST_CASES_DIR / INTEGRITY_CAPABILITY,
         {case.case_id: result for case, result in zip(cases, results)},
         domains={case.case_id: case.domain for case in cases},
+        fixture_preserved=runner.fixture_preserved,
     )
     combined = CombinedRunResult.from_results(
         run_id=run_id,

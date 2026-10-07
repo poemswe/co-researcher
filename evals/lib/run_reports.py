@@ -557,10 +557,7 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
         combined["true_negative"] += metric.true_negative
         combined["false_negative"] += metric.false_negative
   summary = {"case_count": len(cases), "integrity_status_counts": counts}
-  unassessable = sorted(
-      case.case_id for case in cases
-      if case.adversarial_score is not None
-      and not case.adversarial_score.assessable)
+  unassessable = _unassessable_cases(cases)
   if unassessable:
     summary["unassessable_attack_cases"] = unassessable
   if attack_families:
@@ -595,15 +592,21 @@ def _provenance_markdown(provenance: Mapping | None) -> str:
       f"**Engine**: {provenance['engine_version']} ({versions})  \n")
 
 
-def _unassessable_markdown(cases: Sequence[CombinedCaseResult]) -> str:
-  names = sorted(
-      case.case_id for case in cases
+def _unassessable_cases(cases: Sequence[CombinedCaseResult]) -> dict:
+  return {
+      case.case_id: case.adversarial_score.unassessable_reason
+      for case in sorted(cases, key=lambda item: item.case_id)
       if case.adversarial_score is not None
-      and not case.adversarial_score.assessable)
-  if not names:
+      and not case.adversarial_score.assessable}
+
+
+def _unassessable_markdown(cases: Sequence[CombinedCaseResult]) -> str:
+  unassessable = _unassessable_cases(cases)
+  if not unassessable:
     return ""
-  return (f"**Not assessable**: {', '.join(names)} (first pass never loaded, "
-          "so detection could not be measured)  \n")
+  listed = "; ".join(
+      f"{case_id} ({reason})" for case_id, reason in unassessable.items())
+  return f"**Not assessable**: {listed}  \n"
 
 
 def _execution_errors_markdown(errors: Sequence[Mapping]) -> str:

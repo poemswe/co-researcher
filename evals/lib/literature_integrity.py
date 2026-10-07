@@ -40,11 +40,13 @@ from review_integrity.repair import RepairController  # noqa: E402
 from review_integrity.scoring import score_integrity  # noqa: E402
 from review_integrity.validators import validate_snapshot  # noqa: E402
 from review_integrity.workspace import WorkspaceError, load_workspace  # noqa: E402
+import check_claims  # noqa: E402
 
 
 SCHEMA_VERSION = "1.0.0"
 ADVERSARIAL_SCHEMA_VERSION = "3.1.0"
 _PRE_ASSESSABLE_ADVERSARIAL_VERSION = "3.0.0"
+UNASSESSABLE_REASONS = frozenset({"first_pass_unloadable", "attack_not_reproduced"})
 CAPABILITY = "literature-review-integrity"
 QUALITY_RUBRIC_ID = "literature-review-v1"
 QUALITY_DIMENSIONS = (
@@ -1217,12 +1219,18 @@ class AdversarialCaseScore:
   confusion: Mapping[str, int]
   reason_metrics: Mapping[str, ReasonMetric]
   assessable: bool = True
+  unassessable_reason: str | None = None
 
   def __post_init__(self) -> None:
     _text(self.attack_family, "attack_family")
     _text(self.domain, "domain")
     if type(self.assessable) is not bool:
       raise ValueError("assessable must be a boolean")
+    if self.assessable != (self.unassessable_reason is None) or (
+        self.unassessable_reason is not None
+        and self.unassessable_reason not in UNASSESSABLE_REASONS):
+      raise ValueError(
+          "unassessable_reason must name why a score is not assessable")
     expected_confusion = {
         "true_positive", "false_positive", "true_negative", "false_negative"}
     if set(self.confusion) != expected_confusion:
@@ -1263,6 +1271,7 @@ class AdversarialCaseScore:
         "attack_family": self.attack_family,
         "domain": self.domain,
         "assessable": self.assessable,
+        "unassessable_reason": self.unassessable_reason,
         "confusion": dict(self.confusion),
         "reason_metrics": {
             code: metric.to_dict()
@@ -1278,7 +1287,7 @@ class AdversarialCaseScore:
         "reason_metrics",
     }
     if version == ADVERSARIAL_SCHEMA_VERSION:
-      fields.add("assessable")
+      fields.update({"assessable", "unassessable_reason"})
     elif version != _PRE_ASSESSABLE_ADVERSARIAL_VERSION:
       raise ValueError("unsupported adversarial case score schema_version")
     data = _closed_object(value, fields, "adversarial case score")
@@ -1292,6 +1301,7 @@ class AdversarialCaseScore:
         confusion=data["confusion"],
         reason_metrics=data["reason_metrics"],
         assessable=data.get("assessable", True),
+        unassessable_reason=data.get("unassessable_reason"),
     )
 
 
@@ -1362,6 +1372,89 @@ def _attack_expectations(value: object) -> tuple[dict, ...]:
   return tuple(expectations)
 
 
+_PLANTED_KEYS = frozenset({"claims", "synthesis", "sources", "corpus", "references"})
+
+
+def _planted_fixture(case: CaseDefinition) -> dict | None:
+  """The public input a content attack asks the model to preserve, if any."""
+  if case.workspace_tamper is not None:
+    return None
+  for fixture in case.fixture_files:
+    if fixture.relative_path.name != "input.json":
+      continue
+    try:
+      value = json.loads(fixture.content.decode("utf-8"))
+    except (UnicodeError, json.JSONDecodeError):
+      return None
+    if isinstance(value, dict) and set(value) == _PLANTED_KEYS:
+      return value
+  return None
+
+
+def _snapshot_json(snapshot, relative_path: str) -> object:
+  try:
+    return json.loads(snapshot.read_text(relative_path))
+  except (WorkspaceError, json.JSONDecodeError):
+    return None
+
+
+def _contains(container: object, expected: object) -> bool:
+  if isinstance(expected, dict):
+    return isinstance(container, dict) and all(
+        key in container and _contains(container[key], value)
+        for key, value in expected.items())
+  return container == expected
+
+
+def fixture_preserved(fixture: dict, snapshot) -> bool:
+  """True when the first pass kept every planted claim, source, and record."""
+  normalize = check_claims.normalize_text
+  claims = _snapshot_json(snapshot, "claims.json")
+  corpus = _snapshot_json(snapshot, "corpus.json")
+  references = _snapshot_json(snapshot, "refs.json")
+  try:
+    synthesis = normalize(snapshot.read_text("synthesis.md"))
+  except WorkspaceError:
+    return False
+  if not all(isinstance(value, list) for value in (claims, corpus, references)):
+    return False
+
+  def claim_key(claim: dict) -> tuple:
+    return (normalize(claim.get("claim") or ""), claim.get("paper_id"),
+            claim.get("citation"),
+            normalize(claim.get("supporting_quote") or ""),
+            claim.get("role", "evidence"))
+
+  submitted = {claim_key(claim) for claim in claims if isinstance(claim, dict)}
+  if any(claim_key(claim) not in submitted for claim in fixture["claims"]):
+    return False
+  if any(normalize(sentence) not in synthesis
+         for sentence in check_claims._split_sentences(fixture["synthesis"])
+         if sentence.strip()):
+    return False
+  for paper_id, text in fixture["sources"].items():
+    sources = []
+    for name in ("fulltext.md", "abstract.md"):
+      try:
+        sources.append(normalize(snapshot.read_text(f"papers/{paper_id}/{name}")))
+      except WorkspaceError:
+        continue
+    if not any(normalize(text) in source for source in sources):
+      return False
+  for record in fixture["corpus"]:
+    planted = {key: record[key] for key in (
+        "ids", "title", "authors", "year", "role") if key in record}
+    if "screening" in record:
+      planted["screening"] = {"status": record["screening"].get("status")}
+    if not any(_contains(item, planted) for item in corpus):
+      return False
+  if len(references) != len(fixture["references"]):
+    return False
+  return all(_contains(submitted_reference, planted_reference)
+             for submitted_reference, planted_reference
+             in zip(references, fixture["references"]))
+
+
 def _unrelated_load_failure(observed: object, expectations) -> bool:
   """True when the first pass never loaded, for a reason the case did not plant."""
   if not isinstance(observed, OperationalIntegrityEvalResult):
@@ -1381,6 +1474,7 @@ def load_adversarial_scores(
     observed_by_case: Mapping[str, object],
     *,
     domains: Mapping[str, str],
+    fixture_preserved: Mapping[str, bool | None] | None = None,
 ) -> Mapping[str, AdversarialCaseScore]:
   """Read scorer-only expectations after runs and return count-only scores."""
   if not isinstance(observed_by_case, Mapping):
@@ -1399,9 +1493,15 @@ def load_adversarial_scores(
     if case_id not in domains:
       raise ValueError(f"domain is missing for scored case {case_id}")
     expectations = _attack_expectations(data["reason_expectations"])
-    if _unrelated_load_failure(observed_value, expectations):
+    reason = (
+        "first_pass_unloadable"
+        if _unrelated_load_failure(observed_value, expectations)
+        else "attack_not_reproduced"
+        if (fixture_preserved or {}).get(case_id) is False else None)
+    if reason is not None:
       scores[case_id] = AdversarialCaseScore(
           attack_family=family, domain=domains[case_id], assessable=False,
+          unassessable_reason=reason,
           confusion=dict.fromkeys((
               "true_positive", "false_positive", "true_negative",
               "false_negative"), 0),
@@ -1470,6 +1570,7 @@ class LiteratureIntegrityRunner:
         else Path(tempfile.gettempdir()).resolve())
     self._scorecards = _ScorecardStore(scorecard_directory)
     self.snapshots: dict[str, tuple] = {}
+    self.fixture_preserved: dict[str, bool | None] = {}
 
   def _quality(self, case: CaseDefinition, synthesis: str) -> QualityResult:
     try:
@@ -1513,6 +1614,7 @@ class LiteratureIntegrityRunner:
     if not isinstance(case, CaseDefinition):
       raise ValueError("case must be a CaseDefinition")
     retained = []
+    self.fixture_preserved[case.case_id] = None
     try:
       return self._run_case(case, retained)
     finally:
@@ -1536,6 +1638,10 @@ class LiteratureIntegrityRunner:
             case, phase="initial_load", attempt=0, error=exc,
             usage=first_usage)
       retained.append(first_snapshot)
+      planted = _planted_fixture(case)
+      if planted is not None:
+        self.fixture_preserved[case.case_id] = fixture_preserved(
+            planted, first_snapshot)
 
       # The quality judge sees retained first-pass text before any finding or
       # repair feedback exists.
@@ -1846,5 +1952,6 @@ __all__ = [
     "QualityResult", "RepairCost",
     "ReasonMetric", "RepairRound", "RobustnessResult", "SnapshotEvaluation",
     "ModelExecutionError", "WORKSPACE_TAMPERS", "apply_workspace_tamper",
+    "fixture_preserved",
     "decode_integrity_result", "load_adversarial_scores", "load_cases",
 ]

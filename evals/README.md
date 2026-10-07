@@ -159,9 +159,14 @@ case completes writes no report.
 
 An attack case whose first pass never loaded, for a reason the case did not
 plant (for example a model writing `corpus.json` as an object), is marked
-`assessable: false`. Its confusion counts are zero, so it does not count as a
-missed detection, and the run summary lists it under
-`unassessable_attack_cases`. A tamper case whose load failure is the planted
+`assessable: false` with reason `first_pass_unloadable`. A content attack is
+also unassessable, with reason `attack_not_reproduced`, when the first pass did
+not keep the planted input from its public `input.json`: every supplied claim,
+source text, synthesis sentence, corpus record, and reference must be present.
+Otherwise a miss could mean the model never planted the attack rather than the
+detector missing it. Unassessable cases have zero confusion counts, so they do
+not count as missed detections, and the run summary maps each one to its
+reason under `unassessable_attack_cases`. A tamper case whose load failure is the planted
 attack stays assessable and counts as detected. Adversarial scores use schema
 `3.1.0`; `3.0.0` scores load as assessable.
 

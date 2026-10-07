@@ -1958,12 +1958,15 @@
             const version = isPlainObject(value) ? value.schema_version : null;
             const score = requireExactFields(value, [
                 'schema_version', 'attack_family', 'domain', 'confusion', 'reason_metrics',
-                ...(version === '3.1.0' ? ['assessable'] : [])
+                ...(version === '3.1.0' ? ['assessable', 'unassessable_reason'] : [])
             ], [], label);
             if (!['3.0.0', '3.1.0'].includes(score.schema_version) ||
                 typeof score.attack_family !== 'string' || !score.attack_family.trim() ||
                 typeof score.domain !== 'string' || !score.domain.trim() ||
-                (version === '3.1.0' && typeof score.assessable !== 'boolean')) {
+                (version === '3.1.0' && (typeof score.assessable !== 'boolean' ||
+                    (score.assessable ? score.unassessable_reason !== null :
+                        !['first_pass_unloadable', 'attack_not_reproduced']
+                            .includes(score.unassessable_reason))))) {
                 throw new Error(`${label} is invalid`);
             }
             const assessable = version !== '3.1.0' || score.assessable;
@@ -2153,7 +2156,7 @@
             const recomputedAttacks = {};
             const recomputedConfusion = {};
             const recomputedDomains = {};
-            const recomputedUnassessable = [];
+            const recomputedUnassessable = {};
             const recomputedReasons = {};
             report.cases.forEach(caseResult => {
                 requireExactFields(caseResult,
@@ -2200,7 +2203,7 @@
                         throw new Error('integrity case attack union is invalid');
                     }
                     if (score.assessable === false) {
-                        recomputedUnassessable.push(caseResult.case_id);
+                        recomputedUnassessable[caseResult.case_id] = score.unassessable_reason;
                     }
                     recomputedAttacks[caseResult.attack_family] =
                         (recomputedAttacks[caseResult.attack_family] || 0) + 1;
@@ -2279,11 +2282,14 @@
                 throw new Error('run summary does not match selected run cases');
             }
             const claimedUnassessable = report.summary.unassessable_attack_cases;
-            recomputedUnassessable.sort();
-            if ((recomputedUnassessable.length === 0) !== (claimedUnassessable === undefined) ||
+            const unassessableIds = Object.keys(recomputedUnassessable).sort();
+            if ((unassessableIds.length === 0) !== (claimedUnassessable === undefined) ||
                 (claimedUnassessable !== undefined && (
-                    !Array.isArray(claimedUnassessable) ||
-                    claimedUnassessable.join('\0') !== recomputedUnassessable.join('\0')))) {
+                    !isPlainObject(claimedUnassessable) ||
+                    Object.keys(claimedUnassessable).sort().join('\0') !==
+                        unassessableIds.join('\0') ||
+                    unassessableIds.some(caseId =>
+                        claimedUnassessable[caseId] !== recomputedUnassessable[caseId])))) {
                 throw new Error('run summary unassessable cases do not match selected run cases');
             }
             const claimedAttacks = report.summary.attack_family_breakdown;

@@ -717,6 +717,7 @@ def test_unrelated_load_failure_makes_an_attack_unassessable(tmp_path):
 
   assert result.operational_failure.phase == "initial_load"
   assert score.assessable is False
+  assert score.unassessable_reason == "first_pass_unloadable"
   assert set(score.confusion.values()) == {0}
   assert dict(score.reason_metrics) == {}
   assert AdversarialCaseScore.from_dict(score.to_dict()) == score
@@ -754,7 +755,7 @@ def test_unassessable_score_cannot_carry_counts():
   with pytest.raises(ValueError, match="assessable"):
     AdversarialCaseScore(
         attack_family="unicode-substitution", domain="synthetic",
-        assessable=False,
+        assessable=False, unassessable_reason="attack_not_reproduced",
         confusion={"true_positive": 1, "false_positive": 0,
                    "true_negative": 0, "false_negative": 0},
         reason_metrics={"fabricated_quote": ReasonMetric(1, 0, 0, 0)})
@@ -771,8 +772,74 @@ def test_run_summary_lists_unassessable_attack_cases(tmp_path):
   summary = load_dashboard_data(tmp_path / "results", "run-unassessable")[
       "summary"]
 
-  assert summary["unassessable_attack_cases"] == ["integrity-case-001"]
+  assert summary["unassessable_attack_cases"] == {
+      "integrity-case-001": "first_pass_unloadable"}
   assert summary["attack_family_confusion"]["unicode-substitution"][
       "recall"] is None
   assert "**Not assessable**: integrity-case-001" in (
       run_path / "summary.md").read_text()
+
+
+class _ParaphrasingExecutor(_ScenarioExecutor):
+  def first_pass(self, case, workspace):
+    super().first_pass(case, workspace)
+    claims = json.loads((workspace / "claims.json").read_text())
+    claims[0]["claim"] = "A reworded claim the fixture never supplied."
+    (workspace / "claims.json").write_text(json.dumps(claims))
+    return self._usage()
+
+
+def _run_attack(tmp_path, case_id, executor):
+  case = next(item for item in load_cases(ATTACKS) if item.case_id == case_id)
+  runner = literature_integrity.LiteratureIntegrityRunner(
+      executor, _ScenarioJudge(), workspace_parent=tmp_path / "workspaces",
+      scorecard_directory=ATTACKS)
+  result = runner.run_case(case)
+  return runner, result
+
+
+def test_runner_records_a_preserved_fixture(tmp_path):
+  runner, _result = _run_attack(
+      tmp_path, "integrity-case-001", _ScenarioExecutor())
+
+  assert runner.fixture_preserved["integrity-case-001"] is True
+
+
+def test_runner_flags_a_fixture_the_model_changed(tmp_path):
+  runner, _result = _run_attack(
+      tmp_path, "integrity-case-001", _ParaphrasingExecutor())
+
+  assert runner.fixture_preserved["integrity-case-001"] is False
+
+
+@pytest.mark.parametrize("case_id", ["integrity-case-010", "integrity-case-013"])
+def test_fixture_preservation_does_not_apply_to_tamper_cases(tmp_path, case_id):
+  runner, _result = _run_attack(tmp_path, case_id, _ScenarioExecutor())
+
+  assert runner.fixture_preserved[case_id] is None
+
+
+def test_unreproduced_attack_is_unassessable(tmp_path):
+  runner, result = _run_attack(
+      tmp_path, "integrity-case-001", _ParaphrasingExecutor())
+
+  score = literature_integrity.load_adversarial_scores(
+      ATTACKS, {"integrity-case-001": result},
+      domains={"integrity-case-001": "synthetic"},
+      fixture_preserved=runner.fixture_preserved)["integrity-case-001"]
+
+  assert score.assessable is False
+  assert score.unassessable_reason == "attack_not_reproduced"
+
+
+def test_reproduced_attack_stays_assessable(tmp_path):
+  runner, result = _run_attack(
+      tmp_path, "integrity-case-001", _ScenarioExecutor())
+
+  score = literature_integrity.load_adversarial_scores(
+      ATTACKS, {"integrity-case-001": result},
+      domains={"integrity-case-001": "synthetic"},
+      fixture_preserved=runner.fixture_preserved)["integrity-case-001"]
+
+  assert score.assessable is True
+  assert score.unassessable_reason is None

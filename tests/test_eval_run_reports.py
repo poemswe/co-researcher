@@ -1065,6 +1065,7 @@ def _two_case_cli(monkeypatch, tmp_path, failing):
 
   class FlakyRunner:
     snapshots = {}
+    fixture_preserved = {"case-one": False, "case-two": True}
 
     def __init__(self, *args, **kwargs):
       pass
@@ -1086,7 +1087,24 @@ def _two_case_cli(monkeypatch, tmp_path, failing):
       literature_integrity, "ProductionQualityJudge", lambda *args: object())
   monkeypatch.setattr(
       literature_integrity, "load_adversarial_scores",
-      lambda *args, domains: {})
+      lambda *args, domains, fixture_preserved: {})
+
+
+def test_integrity_cli_passes_fixture_preservation_to_the_scorer(
+    monkeypatch, tmp_path,
+):
+  _two_case_cli(monkeypatch, tmp_path, failing=set())
+  seen = {}
+
+  def capture(*args, domains, fixture_preserved):
+    seen.update(fixture_preserved)
+    return {}
+
+  monkeypatch.setattr(literature_integrity, "load_adversarial_scores", capture)
+
+  run_eval.run_literature_integrity("codex:test")
+
+  assert seen == {"case-one": False, "case-two": True}
 
 
 def test_integrity_cli_records_model_errors_and_keeps_running(
@@ -1154,6 +1172,7 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
 
   class FakeRunner:
     snapshots = {}
+    fixture_preserved = {"case-one": False, "case-two": True}
 
     def __init__(self, *args, **kwargs):
       pass
@@ -1173,7 +1192,7 @@ def test_integrity_cli_mode_uses_the_isolated_report_writer(
       literature_integrity, "ProductionQualityJudge", lambda *args: object())
   monkeypatch.setattr(
       literature_integrity, "load_adversarial_scores",
-      lambda *args, domains: {})
+      lambda *args, domains, fixture_preserved: {})
 
   results = run_eval.run_literature_integrity("codex:test")
 
@@ -1387,7 +1406,7 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
     const unassessable = JSON.parse(JSON.stringify(withBreakdown));
     unassessable.cases[0].adversarial_score = {
       schema_version: '3.1.0', attack_family: 'citation-substitution',
-      domain: 'synthetic', assessable: false,
+      domain: 'synthetic', assessable: false, unassessable_reason: 'first_pass_unloadable',
       confusion: {true_positive: 0, false_positive: 0,
         true_negative: 0, false_negative: 0},
       reason_metrics: {},
@@ -1398,9 +1417,9 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       'citation-substitution': zeroMetric};
     unassessable.summary.domain_confusion = {synthetic: zeroMetric};
     unassessable.summary.reason_code_metrics = {};
-    unassessable.summary.unassessable_attack_cases = ['case-1'];
+    unassessable.summary.unassessable_attack_cases = {'case-1': 'first_pass_unloadable'};
     context.parseIntegrityRunData(unassessable, entry);
-    unassessable.summary.unassessable_attack_cases = [];
+    unassessable.summary.unassessable_attack_cases = {'case-1': 'attack_not_reproduced'};
     try {
       context.parseIntegrityRunData(unassessable, entry);
       process.exit(42);
