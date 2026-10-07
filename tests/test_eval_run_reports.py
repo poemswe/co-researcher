@@ -1082,6 +1082,8 @@ def _two_case_cli(monkeypatch, tmp_path, failing):
   cases = (SimpleNamespace(case_id="case-one", domain="synthetic"),
            SimpleNamespace(case_id="case-two", domain="synthetic"))
 
+  calls = []
+
   class FlakyRunner:
     snapshots = {}
     fixture_preserved = {"case-one": False, "case-two": True}
@@ -1090,6 +1092,7 @@ def _two_case_cli(monkeypatch, tmp_path, failing):
       pass
 
     def run_case(self, case):
+      calls.append(case.case_id)
       if case.case_id in failing:
         raise literature_integrity.ModelExecutionError(
             "model executor exited 1: ERROR: usage limit")
@@ -1108,6 +1111,53 @@ def _two_case_cli(monkeypatch, tmp_path, failing):
   monkeypatch.setattr(
       literature_integrity, "load_adversarial_scores",
       lambda *args, domains, fixture_preserved: {})
+  return calls
+
+
+def _pin_git(monkeypatch, commit="a" * 40, dirty=False):
+  import validate_review
+  monkeypatch.setattr(
+      validate_review, "git_provenance", lambda root: (commit, dirty))
+
+
+def test_resume_reruns_only_cases_that_were_not_evaluated(
+    monkeypatch, tmp_path,
+):
+  _pin_git(monkeypatch)
+  _two_case_cli(monkeypatch, tmp_path, failing={"case-one"})
+  run_eval.run_literature_integrity("codex:test")
+  calls = _two_case_cli(monkeypatch, tmp_path, failing=set())
+  monkeypatch.setattr(run_eval, "generate_run_id", lambda: "run-resumed")
+
+  results = run_eval.run_literature_integrity("codex:test", resume="run-flaky")
+
+  assert calls == ["case-one"]
+  assert len(results) == 2
+  selected = load_dashboard_data(tmp_path, "run-resumed")
+  assert [case["case_id"] for case in selected["cases"]] == [
+      "case-one", "case-two"]
+  assert "execution_errors" not in selected
+  assert selected["provenance"]["resumed_from"] == "run-flaky"
+  assert "**Resumed from**: run-flaky" in (
+      tmp_path / "runs/run-resumed/summary.md").read_text()
+
+
+@pytest.mark.parametrize(("model", "commit", "dirty"), [
+    ("claude", "a" * 40, False),
+    ("codex:test", "b" * 40, False),
+    ("codex:test", "a" * 40, True),
+])
+def test_resume_refuses_a_different_model_commit_or_dirty_tree(
+    monkeypatch, tmp_path, model, commit, dirty,
+):
+  _pin_git(monkeypatch)
+  _two_case_cli(monkeypatch, tmp_path, failing={"case-one"})
+  run_eval.run_literature_integrity("codex:test")
+  _pin_git(monkeypatch, commit=commit, dirty=dirty)
+  monkeypatch.setattr(run_eval, "generate_run_id", lambda: "run-resumed")
+
+  with pytest.raises(RuntimeError, match="cannot resume"):
+    run_eval.run_literature_integrity(model, resume="run-flaky")
 
 
 def test_integrity_cli_passes_fixture_preservation_to_the_scorer(
@@ -1704,3 +1754,22 @@ def test_dashboard_parser_accepts_real_attack_and_operational_unions(tmp_path):
       ["node", "-e", driver, str(script_path), str(fixture_path)],
       check=False, capture_output=True, text=True)
   assert completed.returncode == 0, completed.stderr
+
+
+@pytest.mark.parametrize("argv", [
+    ["all", "--resume", "run-flaky"],
+    ["literature-review-integrity", "--resume", "run-flaky",
+     "--dry-run-manifest-audit", "--official-cases-dir", "/tmp"],
+])
+def test_resume_is_only_valid_for_an_integrity_run(monkeypatch, argv):
+  def refuse(*args, **kwargs):
+    raise AssertionError("an eval started instead of rejecting --resume")
+
+  for name in ("run_all_tests", "run_agent_tests", "run_test",
+               "run_literature_integrity", "audit_committed_manifests"):
+    monkeypatch.setattr(run_eval, name, refuse, raising=False)
+
+  with pytest.raises(SystemExit) as exit_info:
+    run_eval.main(argv)
+
+  assert exit_info.value.code == 2

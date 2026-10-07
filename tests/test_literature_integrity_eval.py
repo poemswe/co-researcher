@@ -1170,3 +1170,20 @@ def test_executor_error_prefers_the_error_line_over_trailing_counts(
 
   assert str(error.value) == (
       "model executor exited 1: ERROR: You've hit your usage limit.")
+
+
+def test_completed_cases_can_be_reloaded_with_their_snapshots(tmp_path):
+  from lib.run_reports import load_completed_cases
+  case, runner, result, run = _snapshot_run(tmp_path)
+  root = tmp_path / "results"
+  write_run_report(run, root, snapshots=runner.snapshots)
+
+  report, completed = load_completed_cases(root, "run-snapshots")
+
+  assert report["run_id"] == "run-snapshots"
+  [(case_id, evaluation, adversarial_score, snapshots)] = completed
+  assert case_id == case.case_id
+  assert evaluation == result
+  assert adversarial_score is None
+  assert [snapshot.manifest_sha256 for snapshot in snapshots] == [
+      snapshot.manifest_sha256 for snapshot in runner.snapshots[case.case_id]]

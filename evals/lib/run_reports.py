@@ -10,6 +10,7 @@ import os
 import re
 import secrets
 import stat
+import tempfile
 from contextlib import contextmanager
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ from review_integrity.workspace import (  # noqa: E402
     CANONICALIZATION,
     WorkspaceSnapshot,
     canonical_manifest_bytes,
+    load_workspace,
 )
 
 
@@ -92,7 +94,7 @@ def _closed_object(
 def _provenance(value: object) -> dict:
   data = _closed_object(value, {
       "target_commit", "target_dirty", "engine_version", "validator_versions",
-  }, "run provenance", optional={"resolved_models"})
+  }, "run provenance", optional={"resolved_models", "resumed_from"})
   commit, dirty = data["target_commit"], data["target_dirty"]
   if (commit is None) != (dirty is None):
     raise ValueError("run provenance commit and dirty state must share availability")
@@ -122,6 +124,8 @@ def _provenance(value: object) -> dict:
       raise ValueError(
           "run provenance resolved_models must be sorted unique model names")
     provenance["resolved_models"] = list(models)
+  if "resumed_from" in data:
+    provenance["resumed_from"] = _run_id(data["resumed_from"])
   return provenance
 
 
@@ -600,10 +604,12 @@ def _provenance_markdown(provenance: Mapping | None) -> str:
   if "resolved_models" in provenance:
     resolved = (f"**Resolved model**: "
                 f"{', '.join(provenance['resolved_models']) or 'unknown'}  \n")
+  resumed = (f"**Resumed from**: {provenance['resumed_from']}  \n"
+             if "resumed_from" in provenance else "")
   return (
       f"**Target commit**: {commit or 'unknown'} ({state})  \n"
       f"**Engine**: {provenance['engine_version']} ({versions})  \n"
-      + resolved)
+      + resolved + resumed)
 
 
 def _unassessable_cases(cases: Sequence[CombinedCaseResult]) -> dict:
@@ -1680,6 +1686,48 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
       return data
     finally:
       os.close(run_descriptor)
+
+
+def _verified_json(run_directory: Path, reference: dict) -> object:
+  payload = (run_directory / reference["path"]).read_bytes()
+  if _digest(payload) != reference["sha256"]:
+    raise ValueError("run artifact changed after it was verified")
+  return json.loads(payload)
+
+
+def _rebuild_snapshot(data: dict) -> WorkspaceSnapshot:
+  with tempfile.TemporaryDirectory() as temporary:
+    workspace = Path(temporary).resolve() / "workspace"
+    for item in data["files"]:
+      relative = _safe_relative_path(item["path"], "snapshot file path")
+      payload = (item["content"].encode("utf-8")
+                 if item["encoding"] == "utf-8"
+                 else base64.b64decode(item["content"], validate=True))
+      destination = workspace / relative
+      destination.parent.mkdir(parents=True, exist_ok=True)
+      destination.write_bytes(payload)
+    return load_workspace(workspace)
+
+
+def load_completed_cases(root: Path, run_id: str) -> tuple[dict, list[tuple]]:
+  """Reload a verified run's cases to carry them into a resumed run.
+
+  Returns the verified report and, per case, ``(case_id, evaluation,
+  adversarial_score, snapshots)``. Snapshots are rebuilt from their stored
+  bytes, so their manifests can be checked again when the new run is written.
+  """
+  report = load_dashboard_data(root, run_id)
+  run_directory = Path(root) / "runs" / report["run_id"]
+  completed = []
+  for case in report["cases"]:
+    evaluation = decode_integrity_result(
+        _verified_json(run_directory, case["artifact"]))
+    snapshots = tuple(
+        _rebuild_snapshot(_verified_json(run_directory, reference))
+        for reference in case.get("snapshots", []))
+    completed.append((
+        case["case_id"], evaluation, case.get("adversarial_score"), snapshots))
+  return report, completed
 
 
 def adapt_quality_history(value: object) -> dict:

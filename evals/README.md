@@ -26,8 +26,15 @@ python run_eval.py all --model "codex:gpt-5.2 high" # Use GPT-5.2 with high reas
 python run_eval.py critical-analyzer fallacy-detection  # Run specific test
 python run_eval.py literature-reviewer -v            # Verbose output
 python run_eval.py literature-review-integrity --model "codex:gpt-5.2-codex high"
+python run_eval.py literature-review-integrity --model codex --resume RUN_ID  # finish a run cut short
 python run_eval.py literature-review-integrity --official-cases-dir PATH --dry-run-manifest-audit
 ```
+
+`--resume RUN_ID` re-runs only the cases that run did not evaluate (for
+example after a usage limit), carries its finished cases over from their
+verified artifacts and snapshots, and writes one new complete run whose
+provenance records `resumed_from`. It is refused unless both runs use the same
+model and the same clean commit, so one report never mixes code versions.
 
 ## Model Options
 

@@ -143,7 +143,8 @@ def list_tests():
             print()
 
 
-def run_literature_integrity(model: str):
+def run_literature_integrity(model: str, resume: str | None = None):
+    """Run the integrity eval; ``resume`` carries a prior run's finished cases."""
     from lib.literature_integrity import (
         LiteratureIntegrityRunner,
         ModelExecutionError,
@@ -153,7 +154,8 @@ def run_literature_integrity(model: str):
         load_adversarial_scores,
         load_cases,
     )
-    from lib.run_reports import CombinedRunResult, write_run_report
+    from lib.run_reports import (
+        CombinedRunResult, load_completed_cases, write_run_report)
     from review_integrity.reporting import ENGINE_VERSION, VALIDATOR_VERSIONS
     from validate_review import git_provenance
 
@@ -164,7 +166,22 @@ def run_literature_integrity(model: str):
         "engine_version": ENGINE_VERSION,
         "validator_versions": dict(VALIDATOR_VERSIONS),
     }
-    cases = load_cases(TEST_CASES_DIR / INTEGRITY_CAPABILITY)
+    carried = []
+    resolved_models = set()
+    if resume is not None:
+        prior, carried = load_completed_cases(RESULTS_DIR, resume)
+        prior_provenance = prior.get("provenance") or {}
+        if (prior["model"] != model or target_commit is None or target_dirty
+                or prior_provenance.get("target_commit") != target_commit
+                or prior_provenance.get("target_dirty") is not False):
+            raise RuntimeError(
+                f"cannot resume {resume}: a resumed run must use the same "
+                "model and the same clean commit as the run it continues")
+        resolved_models.update(prior_provenance.get("resolved_models", []))
+        provenance["resumed_from"] = prior["run_id"]
+    carried_ids = {case_id for case_id, *_rest in carried}
+    all_cases = load_cases(TEST_CASES_DIR / INTEGRITY_CAPABILITY)
+    cases = tuple(case for case in all_cases if case.case_id not in carried_ids)
     run_id = generate_run_id()
     timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     executor = ProductionModelExecutor(model, EVALS_DIR.parent)
@@ -182,34 +199,48 @@ def run_literature_integrity(model: str):
             execution_errors.append(
                 {"case_id": case.case_id, "message": str(exc)})
             print(f"{case.case_id}: not evaluated: {exc}")
-    if not completed:
+    if not completed and not carried:
         raise RuntimeError(
             "no case completed; every model call failed, so no report was "
             "written")
-    cases = tuple(case for case, _result in completed)
-    results = tuple(result for _case, result in completed)
-    adversarial_scores = load_adversarial_scores(
-        TEST_CASES_DIR / INTEGRITY_CAPABILITY,
-        {case.case_id: result for case, result in zip(cases, results)},
-        domains={case.case_id: case.domain for case in cases},
-        fixture_preserved=runner.fixture_preserved,
-    )
-    provenance["resolved_models"] = sorted(executor.resolved_models)
+    adversarial_scores = {
+        case_id: score for case_id, _result, score, _snapshots in carried
+        if score is not None}
+    if completed:
+        adversarial_scores.update(load_adversarial_scores(
+            TEST_CASES_DIR / INTEGRITY_CAPABILITY,
+            {case.case_id: result for case, result in completed},
+            domains={case.case_id: case.domain for case, _result in completed},
+            fixture_preserved=runner.fixture_preserved,
+        ))
+    results_by_case = {
+        case_id: result for case_id, result, _score, _snapshots in carried}
+    results_by_case.update(
+        (case.case_id, result) for case, result in completed)
+    snapshots = {
+        case_id: case_snapshots
+        for case_id, _result, _score, case_snapshots in carried
+        if case_snapshots}
+    snapshots.update(
+        (case.case_id, runner.snapshots[case.case_id])
+        for case, _result in completed if case.case_id in runner.snapshots)
+    ordered = tuple(
+        (case, results_by_case[case.case_id]) for case in all_cases
+        if case.case_id in results_by_case)
+    provenance["resolved_models"] = sorted(
+        resolved_models | executor.resolved_models)
     combined = CombinedRunResult.from_results(
         run_id=run_id,
         timestamp=timestamp,
         model=model,
-        results=tuple(
-            (case.case_id, result) for case, result in zip(cases, results)),
+        results=tuple((case.case_id, result) for case, result in ordered),
         adversarial_scores=adversarial_scores,
         provenance=provenance,
         execution_errors=execution_errors,
     )
-    run_directory = write_run_report(
-        combined, RESULTS_DIR,
-        snapshots={case.case_id: runner.snapshots[case.case_id]
-                   for case in cases if case.case_id in runner.snapshots})
-    for case, result in zip(cases, results):
+    run_directory = write_run_report(combined, RESULTS_DIR, snapshots=snapshots)
+    results = tuple(result for _case, result in ordered)
+    for case, result in ordered:
         if isinstance(result, OperationalIntegrityEvalResult):
             failure = result.operational_failure
             print(
@@ -412,6 +443,11 @@ def main(argv=None):
               "manifest audit only)"),
     )
     parser.add_argument(
+        "--resume", metavar="RUN_ID",
+        help="Literature integrity: re-run only the cases RUN_ID did not "
+             "evaluate and write one complete run (same model and clean "
+             "commit required)")
+    parser.add_argument(
         "--dry-run-manifest-audit", action="store_true",
         help="Verify committed manifests without executing or scoring cases",
     )
@@ -420,6 +456,10 @@ def main(argv=None):
 
     audit_requested = (
         args.official_cases_dir is not None or args.dry_run_manifest_audit)
+    if args.resume is not None and (
+            audit_requested or args.check_prompts
+            or args.args != [INTEGRITY_CAPABILITY]):
+        parser.error("--resume is only valid for a literature-review-integrity run")
     if audit_requested:
         if (
             args.check_prompts
@@ -478,7 +518,7 @@ def main(argv=None):
     if command == "list":
         list_tests()
     elif command == INTEGRITY_CAPABILITY:
-        run_literature_integrity(args.model)
+        run_literature_integrity(args.model, resume=args.resume)
     elif command == "all":
         run_id = generate_run_id()
         reports = run_all_tests(args.model, args.verbose, args.jobs)
