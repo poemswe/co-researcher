@@ -677,3 +677,16 @@ def test_capture_prompt_never_reveals_the_workspace_tamper(
   prompt = calls[0][calls[0].index("-p") + 1]
   assert "workspace_tamper" not in prompt
   assert tamper not in prompt
+
+
+@pytest.mark.parametrize("tamper", sorted(literature_integrity.WORKSPACE_TAMPERS))
+def test_workspace_tamper_survives_a_workspace_missing_its_artifacts(
+    tmp_path, tamper,
+):
+  workspace = tmp_path / "workspace"
+  workspace.mkdir()
+
+  literature_integrity.apply_workspace_tamper(tamper, workspace)
+
+  if tamper == "symlink":
+    assert (workspace / "claims.json").is_symlink()

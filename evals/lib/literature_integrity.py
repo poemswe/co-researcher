@@ -189,7 +189,8 @@ def apply_workspace_tamper(tamper: str, workspace: Path) -> None:
   elif tamper == "symlink":
     claims = workspace / "claims.json"
     target = workspace / "claims.target.json"
-    claims.replace(target)
+    if claims.exists():
+      claims.replace(target)
     claims.symlink_to(target.name)
   elif tamper == "traversal":
     (workspace / "project.json").unlink(missing_ok=True)
