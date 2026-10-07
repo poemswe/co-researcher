@@ -43,7 +43,8 @@ from review_integrity.workspace import WorkspaceError, load_workspace  # noqa: E
 
 
 SCHEMA_VERSION = "1.0.0"
-ADVERSARIAL_SCHEMA_VERSION = "3.0.0"
+ADVERSARIAL_SCHEMA_VERSION = "3.1.0"
+_PRE_ASSESSABLE_ADVERSARIAL_VERSION = "3.0.0"
 CAPABILITY = "literature-review-integrity"
 QUALITY_RUBRIC_ID = "literature-review-v1"
 QUALITY_DIMENSIONS = (
@@ -1215,10 +1216,13 @@ class AdversarialCaseScore:
   domain: str
   confusion: Mapping[str, int]
   reason_metrics: Mapping[str, ReasonMetric]
+  assessable: bool = True
 
   def __post_init__(self) -> None:
     _text(self.attack_family, "attack_family")
     _text(self.domain, "domain")
+    if type(self.assessable) is not bool:
+      raise ValueError("assessable must be a boolean")
     expected_confusion = {
         "true_positive", "false_positive", "true_negative", "false_negative"}
     if set(self.confusion) != expected_confusion:
@@ -1237,7 +1241,10 @@ class AdversarialCaseScore:
       metrics[reason] = (
           metric if isinstance(metric, ReasonMetric)
           else ReasonMetric.from_dict(metric))
-    if not metrics:
+    if not self.assessable and (
+        metrics or any(frozen_confusion.values())):
+      raise ValueError("an unassessable score cannot carry counts")
+    if self.assessable and not metrics:
       raise ValueError("reason metrics must not be empty")
     for field in (
         "true_positive", "false_positive", "true_negative", "false_negative",
@@ -1255,6 +1262,7 @@ class AdversarialCaseScore:
         "schema_version": ADVERSARIAL_SCHEMA_VERSION,
         "attack_family": self.attack_family,
         "domain": self.domain,
+        "assessable": self.assessable,
         "confusion": dict(self.confusion),
         "reason_metrics": {
             code: metric.to_dict()
@@ -1264,12 +1272,16 @@ class AdversarialCaseScore:
 
   @classmethod
   def from_dict(cls, value: dict) -> "AdversarialCaseScore":
-    data = _closed_object(value, {
+    version = value.get("schema_version") if isinstance(value, dict) else None
+    fields = {
         "schema_version", "attack_family", "domain", "confusion",
         "reason_metrics",
-    }, "adversarial case score")
-    if data["schema_version"] != ADVERSARIAL_SCHEMA_VERSION:
+    }
+    if version == ADVERSARIAL_SCHEMA_VERSION:
+      fields.add("assessable")
+    elif version != _PRE_ASSESSABLE_ADVERSARIAL_VERSION:
       raise ValueError("unsupported adversarial case score schema_version")
+    data = _closed_object(value, fields, "adversarial case score")
     if not isinstance(data["confusion"], dict):
       raise ValueError("adversarial confusion must be a dictionary")
     if not isinstance(data["reason_metrics"], dict):
@@ -1279,6 +1291,7 @@ class AdversarialCaseScore:
         domain=data["domain"],
         confusion=data["confusion"],
         reason_metrics=data["reason_metrics"],
+        assessable=data.get("assessable", True),
     )
 
 
@@ -1349,6 +1362,20 @@ def _attack_expectations(value: object) -> tuple[dict, ...]:
   return tuple(expectations)
 
 
+def _unrelated_load_failure(observed: object, expectations) -> bool:
+  """True when the first pass never loaded, for a reason the case did not plant."""
+  if not isinstance(observed, OperationalIntegrityEvalResult):
+    return False
+  failure = observed.operational_failure
+  if failure.phase != "initial_load":
+    return False
+  return not any(
+      expectation["present"]
+      and expectation["reason_code"] is failure.reason_code
+      and expectation["artifact"] == failure.artifact
+      for expectation in expectations)
+
+
 def load_adversarial_scores(
     scorecard_directory: Path | str,
     observed_by_case: Mapping[str, object],
@@ -1372,6 +1399,14 @@ def load_adversarial_scores(
     if case_id not in domains:
       raise ValueError(f"domain is missing for scored case {case_id}")
     expectations = _attack_expectations(data["reason_expectations"])
+    if _unrelated_load_failure(observed_value, expectations):
+      scores[case_id] = AdversarialCaseScore(
+          attack_family=family, domain=domains[case_id], assessable=False,
+          confusion=dict.fromkeys((
+              "true_positive", "false_positive", "true_negative",
+              "false_negative"), 0),
+          reason_metrics={})
+      continue
     findings = _observed_findings(observed_value)
     confusion = dict.fromkeys((
         "true_positive", "false_positive", "true_negative", "false_negative"

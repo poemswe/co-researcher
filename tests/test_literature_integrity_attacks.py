@@ -690,3 +690,89 @@ def test_workspace_tamper_survives_a_workspace_missing_its_artifacts(
 
   if tamper == "symlink":
     assert (workspace / "claims.json").is_symlink()
+
+
+class _MalformedCorpusExecutor(_ScenarioExecutor):
+  def first_pass(self, case, workspace):
+    super().first_pass(case, workspace)
+    (workspace / "corpus.json").write_text("{}", encoding="utf-8")
+    return self._usage()
+
+
+def _unloadable_content_attack(tmp_path):
+  case = next(item for item in load_cases(ATTACKS)
+              if item.case_id == "integrity-case-001")
+  result = literature_integrity.LiteratureIntegrityRunner(
+      _MalformedCorpusExecutor(), _ScenarioJudge(),
+      workspace_parent=tmp_path / "workspaces",
+      scorecard_directory=ATTACKS).run_case(case)
+  score = literature_integrity.load_adversarial_scores(
+      ATTACKS, {case.case_id: result},
+      domains={case.case_id: "synthetic"})[case.case_id]
+  return case, result, score
+
+
+def test_unrelated_load_failure_makes_an_attack_unassessable(tmp_path):
+  _case, result, score = _unloadable_content_attack(tmp_path)
+
+  assert result.operational_failure.phase == "initial_load"
+  assert score.assessable is False
+  assert set(score.confusion.values()) == {0}
+  assert dict(score.reason_metrics) == {}
+  assert AdversarialCaseScore.from_dict(score.to_dict()) == score
+
+
+def test_expected_load_failure_keeps_a_tamper_case_assessable(tmp_path):
+  case = next(item for item in load_cases(ATTACKS)
+              if item.case_id == "integrity-case-010")
+  result = literature_integrity.LiteratureIntegrityRunner(
+      _ScenarioExecutor(), _ScenarioJudge(),
+      workspace_parent=tmp_path / "workspaces",
+      scorecard_directory=ATTACKS).run_case(case)
+
+  score = literature_integrity.load_adversarial_scores(
+      ATTACKS, {case.case_id: result},
+      domains={case.case_id: "synthetic"})[case.case_id]
+
+  assert score.assessable is True
+  assert score.confusion["true_positive"] == 1
+
+
+def test_version_3_0_adversarial_scores_load_as_assessable():
+  legacy = {
+      "schema_version": "3.0.0", "attack_family": "unicode-substitution",
+      "domain": "synthetic",
+      "confusion": {"true_positive": 1, "false_positive": 0,
+                    "true_negative": 0, "false_negative": 0},
+      "reason_metrics": {"fabricated_quote": ReasonMetric(1, 0, 0, 0).to_dict()},
+  }
+
+  assert AdversarialCaseScore.from_dict(legacy).assessable is True
+
+
+def test_unassessable_score_cannot_carry_counts():
+  with pytest.raises(ValueError, match="assessable"):
+    AdversarialCaseScore(
+        attack_family="unicode-substitution", domain="synthetic",
+        assessable=False,
+        confusion={"true_positive": 1, "false_positive": 0,
+                   "true_negative": 0, "false_negative": 0},
+        reason_metrics={"fabricated_quote": ReasonMetric(1, 0, 0, 0)})
+
+
+def test_run_summary_lists_unassessable_attack_cases(tmp_path):
+  case, result, score = _unloadable_content_attack(tmp_path)
+  run = CombinedRunResult(
+      run_id="run-unassessable", timestamp="2026-10-07T12:00:00Z",
+      model="test", provenance=_PROVENANCE, cases=(CombinedCaseResult(
+          case_id=case.case_id, evaluation=result, adversarial_score=score),))
+
+  run_path = write_run_report(run, tmp_path / "results")
+  summary = load_dashboard_data(tmp_path / "results", "run-unassessable")[
+      "summary"]
+
+  assert summary["unassessable_attack_cases"] == ["integrity-case-001"]
+  assert summary["attack_family_confusion"]["unicode-substitution"][
+      "recall"] is None
+  assert "**Not assessable**: integrity-case-001" in (
+      run_path / "summary.md").read_text()

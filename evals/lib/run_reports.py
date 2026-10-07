@@ -557,6 +557,12 @@ def _status_summary(cases: Sequence[CombinedCaseResult]) -> dict:
         combined["true_negative"] += metric.true_negative
         combined["false_negative"] += metric.false_negative
   summary = {"case_count": len(cases), "integrity_status_counts": counts}
+  unassessable = sorted(
+      case.case_id for case in cases
+      if case.adversarial_score is not None
+      and not case.adversarial_score.assessable)
+  if unassessable:
+    summary["unassessable_attack_cases"] = unassessable
   if attack_families:
     summary["attack_family_breakdown"] = dict(sorted(attack_families.items()))
   if family_confusion:
@@ -587,6 +593,17 @@ def _provenance_markdown(provenance: Mapping | None) -> str:
   return (
       f"**Target commit**: {commit or 'unknown'} ({state})  \n"
       f"**Engine**: {provenance['engine_version']} ({versions})  \n")
+
+
+def _unassessable_markdown(cases: Sequence[CombinedCaseResult]) -> str:
+  names = sorted(
+      case.case_id for case in cases
+      if case.adversarial_score is not None
+      and not case.adversarial_score.assessable)
+  if not names:
+    return ""
+  return (f"**Not assessable**: {', '.join(names)} (first pass never loaded, "
+          "so detection could not be measured)  \n")
 
 
 def _execution_errors_markdown(errors: Sequence[Mapping]) -> str:
@@ -631,7 +648,8 @@ def _summary_markdown(result: CombinedRunResult, cases: list[dict]) -> str:
       f"**Timestamp**: {result.timestamp}  \n"
       + _provenance_markdown(result.provenance) +
       f"**Cases**: {len(cases)}  \n"
-      + _execution_errors_markdown(result.execution_errors) +
+      + _execution_errors_markdown(result.execution_errors)
+      + _unassessable_markdown(result.cases) +
       f"**Final integrity statuses**: valid={counts['valid']}, "
       f"valid_with_warnings={counts['valid_with_warnings']}, "
       f"invalid={counts['invalid']}\n\n"
@@ -1611,7 +1629,8 @@ def load_dashboard_data(root: Path, run_id: str) -> dict:
           data["summary"], {"case_count", "integrity_status_counts"},
           "run summary", optional={
               "attack_family_breakdown", "attack_family_confusion",
-              "domain_confusion", "reason_code_metrics"})
+              "domain_confusion", "reason_code_metrics",
+              "unassessable_attack_cases"})
       status_counts = _closed_object(
           summary["integrity_status_counts"], set(_STATUS_NAMES),
           "integrity status counts")

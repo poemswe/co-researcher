@@ -157,6 +157,14 @@ limit), that case is left out of scoring and listed under the optional
 going. Errors in the harness itself still stop the run, and a run where no
 case completes writes no report.
 
+An attack case whose first pass never loaded, for a reason the case did not
+plant (for example a model writing `corpus.json` as an object), is marked
+`assessable: false`. Its confusion counts are zero, so it does not count as a
+missed detection, and the run summary lists it under
+`unassessable_attack_cases`. A tamper case whose load failure is the planted
+attack stays assessable and counts as detected. Adversarial scores use schema
+`3.1.0`; `3.0.0` scores load as assessable.
+
 Each run also keeps the workspace the model actually wrote, under
 `snapshots/<case_id>-first-pass.json` and `snapshots/<case_id>-round-NN.json`
 (one per repair round). A snapshot stores every artifact's bytes with its

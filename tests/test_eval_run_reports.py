@@ -1384,6 +1384,29 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       precision: 1, recall: 1, specificity: null,
     }};
     context.parseIntegrityRunData(withBreakdown, entry);
+    const unassessable = JSON.parse(JSON.stringify(withBreakdown));
+    unassessable.cases[0].adversarial_score = {
+      schema_version: '3.1.0', attack_family: 'citation-substitution',
+      domain: 'synthetic', assessable: false,
+      confusion: {true_positive: 0, false_positive: 0,
+        true_negative: 0, false_negative: 0},
+      reason_metrics: {},
+    };
+    const zeroMetric = {true_positive: 0, false_positive: 0, true_negative: 0,
+      false_negative: 0, precision: null, recall: null, specificity: null};
+    unassessable.summary.attack_family_confusion = {
+      'citation-substitution': zeroMetric};
+    unassessable.summary.domain_confusion = {synthetic: zeroMetric};
+    unassessable.summary.reason_code_metrics = {};
+    unassessable.summary.unassessable_attack_cases = ['case-1'];
+    context.parseIntegrityRunData(unassessable, entry);
+    unassessable.summary.unassessable_attack_cases = [];
+    try {
+      context.parseIntegrityRunData(unassessable, entry);
+      process.exit(42);
+    } catch (error) {
+      if (!String(error).includes('unassessable')) process.exit(43);
+    }
     withBreakdown.cases[0].repair_rounds[0].overall_score = 100;
     try {
       context.parseIntegrityRunData(withBreakdown, entry);
@@ -1577,7 +1600,7 @@ def test_dashboard_parser_accepts_real_attack_and_operational_unions(tmp_path):
     const fixtures = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
     const attack = context.parseIntegrityRunData(
       fixtures[0].report, fixtures[0].entry);
-    if (attack.cases[0].adversarial_score.schema_version !== '3.0.0') {
+    if (attack.cases[0].adversarial_score.schema_version !== '3.1.0') {
       process.exit(2);
     }
     const operational = context.parseIntegrityRunData(

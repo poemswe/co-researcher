@@ -1955,15 +1955,27 @@
         }
 
         function parseAdversarialScore(value, label) {
+            const version = isPlainObject(value) ? value.schema_version : null;
             const score = requireExactFields(value, [
-                'schema_version', 'attack_family', 'domain', 'confusion', 'reason_metrics'
+                'schema_version', 'attack_family', 'domain', 'confusion', 'reason_metrics',
+                ...(version === '3.1.0' ? ['assessable'] : [])
             ], [], label);
-            if (score.schema_version !== '3.0.0' ||
+            if (!['3.0.0', '3.1.0'].includes(score.schema_version) ||
                 typeof score.attack_family !== 'string' || !score.attack_family.trim() ||
-                typeof score.domain !== 'string' || !score.domain.trim()) {
+                typeof score.domain !== 'string' || !score.domain.trim() ||
+                (version === '3.1.0' && typeof score.assessable !== 'boolean')) {
                 throw new Error(`${label} is invalid`);
             }
+            const assessable = version !== '3.1.0' || score.assessable;
             parseCountMetric(score.confusion, `${label} confusion`);
+            if (!assessable) {
+                if (!isPlainObject(score.reason_metrics) ||
+                    Object.keys(score.reason_metrics).length !== 0 ||
+                    Object.values(score.confusion).some(count => count !== 0)) {
+                    throw new Error(`${label} unassessable score carries counts`);
+                }
+                return score;
+            }
             if (!isPlainObject(score.reason_metrics) ||
                 Object.keys(score.reason_metrics).length === 0) {
                 throw new Error(`${label} reason metrics are invalid`);
@@ -2111,7 +2123,8 @@
             requireExactFields(report.summary,
                 ['case_count', 'integrity_status_counts'],
                 ['attack_family_breakdown', 'attack_family_confusion',
-                 'domain_confusion', 'reason_code_metrics'], 'run summary');
+                 'domain_confusion', 'reason_code_metrics',
+                 'unassessable_attack_cases'], 'run summary');
             requireExactFields(report.summary.integrity_status_counts,
                 ['valid', 'valid_with_warnings', 'invalid'], [], 'status counts');
             const statusTotal = Object.values(report.summary.integrity_status_counts)
@@ -2140,6 +2153,7 @@
             const recomputedAttacks = {};
             const recomputedConfusion = {};
             const recomputedDomains = {};
+            const recomputedUnassessable = [];
             const recomputedReasons = {};
             report.cases.forEach(caseResult => {
                 requireExactFields(caseResult,
@@ -2184,6 +2198,9 @@
                         caseResult.adversarial_score, 'adversarial score');
                     if (caseResult.attack_family !== score.attack_family) {
                         throw new Error('integrity case attack union is invalid');
+                    }
+                    if (score.assessable === false) {
+                        recomputedUnassessable.push(caseResult.case_id);
                     }
                     recomputedAttacks[caseResult.attack_family] =
                         (recomputedAttacks[caseResult.attack_family] || 0) + 1;
@@ -2260,6 +2277,14 @@
             if (Object.keys(recomputedCounts).some(name =>
                 report.summary.integrity_status_counts[name] !== recomputedCounts[name])) {
                 throw new Error('run summary does not match selected run cases');
+            }
+            const claimedUnassessable = report.summary.unassessable_attack_cases;
+            recomputedUnassessable.sort();
+            if ((recomputedUnassessable.length === 0) !== (claimedUnassessable === undefined) ||
+                (claimedUnassessable !== undefined && (
+                    !Array.isArray(claimedUnassessable) ||
+                    claimedUnassessable.join('\0') !== recomputedUnassessable.join('\0')))) {
+                throw new Error('run summary unassessable cases do not match selected run cases');
             }
             const claimedAttacks = report.summary.attack_family_breakdown;
             const attackNames = Object.keys(recomputedAttacks).sort();
