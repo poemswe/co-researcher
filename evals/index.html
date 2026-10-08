@@ -1461,6 +1461,30 @@
             transition: all var(--transition-base);
         }
 
+        .release-filter {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+
+        .release-filter label {
+            font-weight: 700;
+        }
+
+        .release-filter select {
+            padding: 6px 10px;
+            font: inherit;
+        }
+
+        .release-filter-note {
+            color: var(--text-secondary, #5b5b5b);
+            font-style: italic;
+        }
+
         .leaderboard-note {
             font-size: 0.7rem;
             color: var(--text-secondary, #5b5b5b);
@@ -1771,6 +1795,11 @@
 
         <!-- Hero Command Center -->
         <section class="hero-section" aria-label="Key Performance Metrics">
+            <div class="release-filter">
+                <label for="releaseFilter">Release</label>
+                <select id="releaseFilter" onchange="handleReleaseChange()"></select>
+                <span class="release-filter-note">Runs are compared within one release, on the same case set.</span>
+            </div>
             <div id="heroLeaderboard" class="hero-leaderboard-container"></div>
 
             <div class="hero-metrics-container" id="heroMetricsGrid"></div>
@@ -1868,6 +1897,9 @@
         const INTEGRITY_RUN_ID = /^run[-_][a-z0-9](?:[a-z0-9._-]{0,125}[a-z0-9])?$/;
         const QUALITY_ONLY_LABEL = 'Quality-only historical run — not integrity evaluated';
         let globalOverview = null;
+        let fullOverview = null;
+        let selectedRelease = null;
+        let trendChartInstance = null;
         let detailedRuns = {};
         let radarChartInstance = null;
         let integrityRunIndex = [];
@@ -2773,9 +2805,45 @@
             return note ? `<div class="leaderboard-note">${escapeHtml(note)}</div>` : '';
         }
 
+        function compareReleases(a, b) {
+            const parts = value => value.split('.').map(Number);
+            const [x, y] = [parts(a), parts(b)];
+            for (let i = 0; i < Math.max(x.length, y.length); i++) {
+                if ((x[i] || 0) !== (y[i] || 0)) return (y[i] || 0) - (x[i] || 0);
+            }
+            return 0;
+        }
+
+        function releaseList(runs) {
+            const named = [...new Set(runs.map(run => run.release).filter(Boolean))].sort(compareReleases);
+            return runs.some(run => !run.release) ? [...named, 'unreleased'] : named;
+        }
+
+        function scopeToRelease(overview, release) {
+            const runs = overview.runs.filter(run => (run.release || 'unreleased') === release);
+            const models = (overview.summary_stats?.models || []).filter(
+                model => runs.some(run => run.model === model));
+            return { ...overview, runs, summary_stats: { ...overview.summary_stats, models } };
+        }
+
+        function handleReleaseChange() {
+            selectedRelease = document.getElementById('releaseFilter').value;
+            document.getElementById('modelFilter').value = '';
+            renderDashboard(fullOverview);
+        }
+
         function renderDashboard(overview) {
             if (!overview || !overview.runs || overview.runs.length === 0) return;
+            fullOverview = overview;
+            const releases = releaseList(overview.runs);
+            if (!releases.includes(selectedRelease)) selectedRelease = releases[0];
+            document.getElementById('releaseFilter').innerHTML = releases.map(release =>
+                `<option value="${escapeHtml(release)}" ${release === selectedRelease ? 'selected' : ''}>${escapeHtml(release)}</option>`).join('');
+            globalOverview = scopeToRelease(overview, selectedRelease);
+            renderScopedDashboard(globalOverview, overview.runs);
+        }
 
+        function renderScopedDashboard(overview, historyRuns) {
             const runs = overview.runs;
             const latest = runs[runs.length - 1];
 
@@ -2803,7 +2871,7 @@
                 const deltaClass = delta > 0 ? 'positive' : '';
                 return `
                             <div class="leaderboard-item rank-${rank + 1}" 
-                                 onmouseover="updateHeroMetrics(window.globalOverview, '${model}')"
+                                 onmouseover="updateHeroMetrics(globalOverview, '${model}')"
                                  style="cursor: pointer;">
                                 <div class="leaderboard-medal">${medals[rank] || '📊'}</div>
                                 <div class="leaderboard-details">
@@ -2908,7 +2976,7 @@
                 handleModelFilterChange(); // This will trigger run filter update and accordion render
             }
 
-            renderCharts(runs, latest);
+            renderCharts(historyRuns, latest);
 
             renderTestAccordion(latest);
         }
@@ -3174,7 +3242,8 @@
                 data.pointBorderColor = color.border;
             });
 
-            new Chart(trendCanvas, {
+            if (trendChartInstance) trendChartInstance.destroy();
+            trendChartInstance = new Chart(trendCanvas, {
                 type: 'line',
                 data: { labels, datasets: Object.values(models) },
                 options: {

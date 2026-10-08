@@ -265,6 +265,10 @@ it with the same model:
 python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high" --resume RUN_ID
 ```
 
+Each run records the plugin release it ran under, and the dashboard compares
+runs within one release, on the same case set. Runs from before 2.7.0 were
+backfilled with the plugin version in effect at their timestamp.
+
 Historical broad-quality scores are
 **Quality-only historical run — not integrity evaluated**: a quality score is
 not an integrity result.

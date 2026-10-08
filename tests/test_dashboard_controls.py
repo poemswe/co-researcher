@@ -116,3 +116,33 @@ def test_leaderboard_keeps_a_run_note_and_escapes_it(tmp_path):
   assert entries["claude:opus"]["note"] is None
   assert "&lt;unverified&gt;" in note_html and "<unverified>" not in note_html
   assert json.loads(empty) == ""
+
+
+def test_releases_sort_newest_first_and_scope_runs_and_models(tmp_path):
+  overview = {
+      "runs": [
+          {"run_id": "a", "model": "claude:opus", "release": "1.0.0"},
+          {"run_id": "b", "model": "codex:x", "release": "1.0.0"},
+          {"run_id": "c", "model": "gemini:y", "release": "2.0.0"},
+          {"run_id": "d", "model": "claude:opus-5-5", "release": "2.7.0"},
+          {"run_id": "e", "model": "codex:z low", "release": "2.7.0"},
+          {"run_id": "f", "model": "old:model"},
+      ],
+      "summary_stats": {"models": ["claude:opus", "claude:opus-5-5", "codex:x",
+                                   "codex:z low", "gemini:y", "old:model"]},
+  }
+  output = _node(tmp_path, f"""
+    const overview = {json.dumps(overview)};
+    console.log(JSON.stringify(context.releaseList(overview.runs)));
+    const scoped = context.scopeToRelease(overview, '2.7.0');
+    console.log(JSON.stringify([scoped.runs.map(r => r.run_id), scoped.summary_stats.models]));
+    console.log(JSON.stringify(overview.runs.length));
+    console.log(JSON.stringify(context.scopeToRelease(overview, 'unreleased').runs.map(r => r.run_id)));
+  """)
+
+  releases, scoped, untouched, unreleased = (
+      json.loads(line) for line in output.strip().splitlines())
+  assert releases == ["2.7.0", "2.0.0", "1.0.0", "unreleased"]
+  assert scoped == [["d", "e"], ["claude:opus-5-5", "codex:z low"]]
+  assert untouched == 6
+  assert unreleased == ["f"]

@@ -55,7 +55,8 @@
         ]
       },
       "pass_rate": 100.0,
-      "detail_file": "test_results_detail/run_20251230_221024.json"
+      "detail_file": "test_results_detail/run_20251230_221024.json",
+      "release": "1.0.0"
     },
     {
       "run_id": "run_20251230_221026",
@@ -106,7 +107,8 @@
         ]
       },
       "pass_rate": 90.9,
-      "detail_file": "test_results_detail/run_20251230_221026.json"
+      "detail_file": "test_results_detail/run_20251230_221026.json",
+      "release": "1.0.0"
     },
     {
       "run_id": "run_20260102_175215",
@@ -164,7 +166,8 @@
         ]
       },
       "pass_rate": 100.0,
-      "detail_file": "test_results_detail/run_20260102_175215.json"
+      "detail_file": "test_results_detail/run_20260102_175215.json",
+      "release": "1.1.0"
     },
     {
       "run_id": "run_20260126_010734",
@@ -223,7 +226,8 @@
         ]
       },
       "pass_rate": 92.3,
-      "detail_file": "test_results_detail/run_20260126_010734.json"
+      "detail_file": "test_results_detail/run_20260126_010734.json",
+      "release": "1.1.1"
     },
     {
       "run_id": "run_20260126_044632",
@@ -281,7 +285,8 @@
           93.8
         ]
       },
-      "detail_file": "test_results_detail/run_20260126_044632.json"
+      "detail_file": "test_results_detail/run_20260126_044632.json",
+      "release": "2.0.0"
     },
     {
       "run_id": "run_20261008_192224_025232",
@@ -346,7 +351,8 @@
         ]
       },
       "pass_rate": 100.0,
-      "detail_file": "test_results_detail/run_20261008_192224_025232.json"
+      "detail_file": "test_results_detail/run_20261008_192224_025232.json",
+      "release": "2.7.0"
     }
   ],
   "summary_stats": {
