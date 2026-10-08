@@ -52,3 +52,27 @@ def test_saved_benchmark_detail_contains_no_local_paths(tmp_path, monkeypatch):
   saved = json.loads(detail)["test_results"][0]
   assert saved["agent_output"] == "See [protocol.md](<repo>/review/gap/protocol.md) in ~."
   assert saved["execution_metadata"] == {"cwd": "<repo>"}
+
+
+def test_model_version_is_never_invented_for_an_unversioned_model():
+  assert run_eval.extract_model_version("claude") == "cli-default"
+  assert run_eval.extract_model_version("codex") == "cli-default"
+  assert run_eval.extract_model_version("claude:claude-opus-5-5") == "claude-opus-5-5"
+  assert run_eval.extract_model_version("codex:gpt-5.2 xhigh") == "gpt-5.2 xhigh"
+
+
+def test_codex_reasoning_effort_uses_the_codex_config_key(monkeypatch):
+  from lib import core
+  seen = {}
+
+  def fake_run(cmd, **kwargs):
+    seen["cmd"] = cmd
+    return types.SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+  monkeypatch.setattr(core, "find_cli", lambda provider: pathlib.Path("/bin/" + provider))
+  monkeypatch.setattr(core.subprocess, "run", fake_run)
+  core.run_cli("codex:gpt-6-astra xhigh", "prompt")
+
+  cmd = seen["cmd"]
+  assert cmd[cmd.index("--model") + 1] == "gpt-6-astra"
+  assert cmd[cmd.index("-c") + 1] == 'model_reasoning_effort="xhigh"'

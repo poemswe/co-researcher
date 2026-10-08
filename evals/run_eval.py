@@ -270,16 +270,10 @@ def generate_run_id() -> str:
 
 
 def extract_model_version(model: str) -> str:
-    """Extract detailed model version"""
-    version_map = {
-        "claude": "claude-3.5-sonnet",
-        "codex": "gpt-5.2-xhigh",
-        "gemini": "gemini-3-flash-preview"
-    }
-    # Handle versioned models like "codex:gpt-5.2 xhigh"
+    """Return the requested version, or cli-default when none was given."""
     if ":" in model:
         return model.split(":", 1)[1].strip()
-    return version_map.get(model, model)
+    return "cli-default"
 
 
 def extract_difficulty(test_path: Path) -> str:
@@ -442,7 +436,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
     print(f"\n✅ Benchmark saved (v2.0)")
     print(f"   Detail: {detail_file.name}")
     print(f"   Overview: {overview_file.name} ({len(overview['runs'])} runs)")
-    print(f"   Arena Dashboard: file://{EVALS_DIR.absolute()}/index.html")
+    print(f"   Evals dashboard: file://{EVALS_DIR.absolute()}/index.html")
     
     # Trend
     if len(overview["runs"]) > 1:
