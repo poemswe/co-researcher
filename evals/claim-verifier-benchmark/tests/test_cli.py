@@ -157,3 +157,14 @@ def test_argument_parse_errors_return_two_with_no_success_json(arguments, capsys
   captured = capsys.readouterr()
   assert captured.out == ""
   assert captured.err
+
+
+def test_enumerate_coverage_lists_uncited_number_units(tmp_path, capsys):
+  synthesis = tmp_path / "synthesis.md"
+  synthesis.write_text(
+      "Admissions fell (García, 2022). Costs fell 12%.", encoding="utf-8")
+  assert main(["enumerate-coverage", str(synthesis)]) == 0
+  output = json.loads(capsys.readouterr().out)
+  assert output["unit_count"] == 1
+  assert output["uncited_number_unit_count"] == 1
+  assert output["uncited_number_units"][0]["numbers"] == ["12"]

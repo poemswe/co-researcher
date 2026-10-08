@@ -40,6 +40,13 @@ NARRATIVE_RESERVED_PREFIXES = frozenset(
 )
 
 
+_NUMBER_RE = re.compile(r"(?<![\w.])[-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)")
+_NON_PROSE_TOKEN_RE = re.compile(r"`[^`]*`|\S*[a-z]\S*/\S*|\S*/\S*[a-z]\S*")
+_HEADING_RE = re.compile(r"\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*\Z")
+_REFERENCE_HEADINGS = frozenset(
+    {"references", "reference list", "bibliography", "works cited"})
+
+
 class CoverageEnumerationError(ValueError):
   pass
 
@@ -53,6 +60,16 @@ class CoverageUnit:
   sentence: str
   citation_identity: str
   occurrence_ordinal: int
+
+
+@dataclasses.dataclass(frozen=True, slots=True)
+class UncitedNumberUnit:
+  unit_id: str
+  sentence_ordinal: int
+  start: int
+  end: int
+  sentence: str
+  numbers: tuple[str, ...]
 
 
 def _name_tokens(text: str) -> list[str]:
@@ -235,9 +252,59 @@ def _sentence_spans(text: str) -> list[tuple[int, int]]:
   return spans
 
 
-def enumerate_coverage_units(synthesis: str) -> tuple[CoverageUnit, ...]:
+def _prose_lines(text: str) -> list[tuple[int, int]]:
+  lines: list[tuple[int, int]] = []
+  skip_level = None
+  offset = 0
+  for line in text.split("\n"):
+    start, offset = offset, offset + len(line) + 1
+    heading = _HEADING_RE.fullmatch(line)
+    if heading:
+      level = len(heading.group(1))
+      if skip_level is not None and level <= skip_level:
+        skip_level = None
+      if heading.group(2).strip(" *_:").lower() in _REFERENCE_HEADINGS:
+        skip_level = level
+    elif skip_level is None:
+      lines.append((start, start + len(line)))
+  return lines
+
+
+def enumerate_uncited_number_units(
+    synthesis: str,
+) -> tuple[UncitedNumberUnit, ...]:
+  _require_lf(synthesis)
+  prose = _prose_lines(synthesis)
+  units: list[UncitedNumberUnit] = []
+  for sentence_ordinal, (start, end) in enumerate(_sentence_spans(synthesis)):
+    sentence = synthesis[start:end]
+    if _citation_keys(sentence):
+      continue
+    text = " ".join(
+        synthesis[max(start, lo):min(end, hi)]
+        for lo, hi in prose if lo < end and hi > start)
+    numbers = tuple(
+        match.group().replace(",", "")
+        for match in _NUMBER_RE.finditer(_NON_PROSE_TOKEN_RE.sub(" ", text)))
+    if numbers:
+      units.append(UncitedNumberUnit(
+          unit_id=f"uncited-number:{sentence_ordinal}",
+          sentence_ordinal=sentence_ordinal,
+          start=start,
+          end=end,
+          sentence=sentence,
+          numbers=numbers,
+      ))
+  return tuple(units)
+
+
+def _require_lf(synthesis: str) -> None:
   if "\r" in synthesis:
     raise CoverageEnumerationError("synthesis must be LF-normalized")
+
+
+def enumerate_coverage_units(synthesis: str) -> tuple[CoverageUnit, ...]:
+  _require_lf(synthesis)
   counters: Counter[tuple[str, str]] = Counter()
   units: list[CoverageUnit] = []
   for sentence_ordinal, (start, end) in enumerate(_sentence_spans(synthesis)):

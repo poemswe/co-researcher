@@ -8,7 +8,10 @@ import sys
 
 from .canonical import build_manifest, manifest_digest
 from .commitment import mapping_commitment
-from .coverage_units import enumerate_coverage_units
+from .coverage_units import (
+    enumerate_coverage_units,
+    enumerate_uncited_number_units,
+)
 from .split import Paper, derive_split_key, paper_order_key
 
 
@@ -85,9 +88,12 @@ def _check_split_vector(path: pathlib.Path) -> dict:
 def _enumerate_coverage(path: pathlib.Path) -> dict:
   synthesis = path.read_text(encoding="utf-8")
   units = enumerate_coverage_units(synthesis)
+  uncited = enumerate_uncited_number_units(synthesis)
   return {
       "unit_count": len(units),
       "units": [dataclasses.asdict(unit) for unit in units],
+      "uncited_number_unit_count": len(uncited),
+      "uncited_number_units": [dataclasses.asdict(unit) for unit in uncited],
   }
 
 

@@ -7,6 +7,7 @@ import pytest
 from claim_verifier_benchmark.coverage_units import (
     CoverageEnumerationError,
     enumerate_coverage_units,
+    enumerate_uncited_number_units,
 )
 
 
@@ -284,3 +285,49 @@ def test_inventory_fixtures_are_exact(name):
       for unit in enumerate_coverage_units(fixture["synthesis"])
   ]
   assert observed == fixture["units"]
+
+
+def test_uncited_number_sentence_forms_its_own_unit():
+  synthesis = "Admissions fell (García, 2022). Costs fell 12% across 3 sites."
+  units = enumerate_uncited_number_units(synthesis)
+  assert [(unit.unit_id, unit.sentence, unit.numbers) for unit in units] == [
+      ("uncited-number:1", "Costs fell 12% across 3 sites.", ("12", "3"))]
+  assert synthesis[units[0].start:units[0].end] == units[0].sentence
+
+
+def test_cited_and_number_free_sentences_form_no_uncited_unit():
+  assert enumerate_uncited_number_units(
+      "Costs fell 12% (García, 2022). Results were stable.") == ()
+
+
+def test_years_and_fractions_count_as_numbers():
+  units = enumerate_uncited_number_units(
+      "The search ran in 2024. Roughly 2/3 of sites improved.")
+  assert [unit.numbers for unit in units] == [("2024",), ("2", "3")]
+
+
+@pytest.mark.parametrize("sentence", [
+    "Raw output is kept in `run-2024.json` for audit.",
+    "The record is at https://doi.org/10.1000/xyz123 for reference.",
+    "A PDF could be dropped at papers/tutoring-2024/paper.pdf later.",
+])
+def test_numbers_in_code_links_and_paths_are_ignored(sentence):
+  assert enumerate_uncited_number_units(sentence) == ()
+
+
+def test_heading_numbers_and_reference_sections_are_skipped():
+  synthesis = (
+      "## 2024 results\n\nResults were stable.\n\n"
+      "## References\n\n- Lee, K. (2021). Study 4.\n\n"
+      "## Discussion\n\nCosts fell 9% overall.")
+  units = enumerate_uncited_number_units(synthesis)
+  assert [unit.numbers for unit in units] == [("9",)]
+  assert units[0].unit_id == f"uncited-number:{units[0].sentence_ordinal}"
+
+
+def test_uncited_units_share_sentence_ordinals_with_cited_units():
+  synthesis = "Costs fell 4%. Admissions fell (García, 2022). Beds fell 7%."
+  cited = enumerate_coverage_units(synthesis)
+  uncited = enumerate_uncited_number_units(synthesis)
+  assert [unit.sentence_ordinal for unit in cited] == [1]
+  assert [unit.sentence_ordinal for unit in uncited] == [0, 2]
