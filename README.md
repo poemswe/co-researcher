@@ -247,9 +247,9 @@ smoke is slower and environment-dependent; it does not replace scored evals.
 
 ## Evaluation Framework
 
-### Broad quality evaluation (26 cases)
+### Broad quality evaluation (32 cases)
 
-Run the 26-case broad quality benchmark from the repository root:
+Run the 32-case broad quality benchmark from the repository root:
 
 ```bash
 python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high"
@@ -338,7 +338,7 @@ Features: Model leaderboards, capability matrices, score trends, and detailed te
 - `skills/`: Specialized research skills (Markdown). Single source of truth for every platform.
 - `commands/`: Unified platform commands (.md for Claude, .toml for Gemini).
 - `.codex/`: Codex launcher (`co-researcher-codex`) and `bootstrap.md`; it reads `skills/` directly.
-- `evals/`: 26 broad quality cases, a separate literature-integrity mode, and
+- `evals/`: 32 broad quality cases, a separate literature-integrity mode, and
   the Python runner.
 - manifests: `.claude-plugin/plugin.json`, `gemini-extension.json`, `GEMINI.md`.
 
