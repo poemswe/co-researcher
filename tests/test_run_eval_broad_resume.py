@@ -115,3 +115,14 @@ def test_a_judge_error_is_an_execution_error_not_a_zero_score(monkeypatch):
   failed.scores = {}
   monkeypatch.setattr(run_eval, "evaluate_output", lambda *a: failed)
   assert run_eval._execute_single_test(case, "codex:x low", False) is None
+
+
+def test_saved_runs_record_the_plugin_release(broad):
+  release = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())["version"]
+  run_id = "run_20261008_000000_000004"
+
+  run_eval.save_benchmark_v2([_report(broad.cases[0])], "codex:x low", run_id)
+
+  entry = next(r for r in _overview(broad.root)["runs"] if r["run_id"] == run_id)
+  detail = json.loads((broad.root / f"test_results_detail/{run_id}.json").read_text())
+  assert entry["release"] == detail["release"] == release

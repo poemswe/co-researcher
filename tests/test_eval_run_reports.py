@@ -1796,3 +1796,10 @@ def test_quality_history_keeps_an_optional_run_note():
 def test_quality_history_rejects_a_non_text_note():
   with pytest.raises(ValueError, match="note"):
     adapt_quality_history(_history_with(note=7))
+
+
+def test_quality_history_keeps_an_optional_release():
+  adapted = adapt_quality_history(_history_with(release="2.7.0"))
+
+  assert adapted["runs"][0]["release"] == "2.7.0"
+  assert adapt_quality_history(_history_with())["runs"][0]["release"] is None

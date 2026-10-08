@@ -336,6 +336,11 @@ def redact_local_paths(value, prefixes=None):
     return value
 
 
+def plugin_release() -> str:
+    plugin = json.loads((REPO_ROOT / ".claude-plugin/plugin.json").read_text())
+    return plugin["version"]
+
+
 def save_benchmark_v2(reports, model: str, run_id: str, previous_results=()):
     """Save to both overview and detail files (v2.0 schema)"""
     detail_dir = EVALS_DIR / "test_results_detail"
@@ -350,6 +355,7 @@ def save_benchmark_v2(reports, model: str, run_id: str, previous_results=()):
         "timestamp": timestamp,
         "model": model,
         "model_version": extract_model_version(model),
+        "release": plugin_release(),
         "test_results": []
     }
     
@@ -409,6 +415,7 @@ def save_benchmark_v2(reports, model: str, run_id: str, previous_results=()):
         "timestamp": timestamp,
         "model": model,
         "model_version": detail_data["model_version"],
+        "release": detail_data["release"],
         "tests_run": total_count,
         "tests_passed": passed_count,
         "average_score": round(avg_score, 1),
