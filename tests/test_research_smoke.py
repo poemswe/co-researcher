@@ -257,6 +257,16 @@ def test_literature_review_skill_names_paper_directories_by_record_key():
   assert "must equal that record's `key` or one of its `ids` values" in protocol
 
 
+def test_literature_review_skill_ends_synthesis_with_a_references_heading():
+  skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
+  output_format = skill[
+      skill.index("<output_format>"):skill.index("</output_format>")]
+
+  assert "## References" in output_format
+  assert "Annotated bibliography" not in output_format
+  assert "under a `## References` heading" in skill
+
+
 def test_literature_review_skill_requires_claims_to_restate_synthesis():
   skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
   verify = skill[skill.index("9. **Verify claims**"):skill.index("10. **Validate")]

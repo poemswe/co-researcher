@@ -125,7 +125,7 @@ uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
 
    **Navigating `fulltext.md` depends on the route**, given by the `source` field of the script's JSON line. `source: "epmc"` (JATS) yields real markdown headings — find sections with `grep -n "^#"`. Every PDF route (`arxiv_pdf`, `oa_pdf`, `user_pdf`, `cached`) yields **no `#` headings at all**; section titles appear as bold lines, so use `grep -n "^\*\*"` instead. A `grep "^#"` returning nothing on a PDF-route paper means you used the wrong pattern, not that the document is unstructured. If neither pattern finds a section you need, cite by content rather than a section anchor.
 6. **Snowball** — For core evidence papers, run `get_references`/`get_citations` (Europe PMC) or follow OpenAlex `referenced_works`. Fold the new candidates into the same `corpus.json` with `build_corpus.py --epmc citing.json --found-via snowball:citations --output "$WS/corpus.json"` (it adds only what's new, tags their provenance, and preserves decisions already made), then screen them at step 4. One round by default; stop when a round adds nothing. If included papers reveal vocabulary the original queries missed, run one adapted search round and log it.
-7. **Synthesize** — Write `synthesis.md` from `notes.md` files only. Tag any citation whose `fulltext` is `abstract-only` with `[abstract-only]` inline. End with a retrieval summary listing papers not retrieved and the `papers/{id}/paper.pdf` path where the user can drop a legally obtained PDF for a re-run.
+7. **Synthesize** — Write `synthesis.md` from `notes.md` files only. Tag any citation whose `fulltext` is `abstract-only` with `[abstract-only]` inline. Put the full citation list under a `## References` heading, entries only. Coverage skips that section, so state each study's contribution and quality in the thematic synthesis, where it is checked. End with a retrieval summary listing papers not retrieved and the `papers/{id}/paper.pdf` path where the user can drop a legally obtained PDF for a re-run.
 8. **Verify bibliography** — Write the final ordered citation list to `$WS/refs.json` and retain the verifier output for the delivery validator:
 ```bash
 uv run scripts/verify_citations.py --input "$WS/refs.json" \
@@ -173,15 +173,15 @@ and must not be treated as verified research.
 - Europe PMC: `<exact query>` → N hits
 
 **Thematic synthesis**:
-- **[Theme 1]**: [Summary with verified citations]
+- **[Theme 1]**: [Summary with verified citations, including each study's key contribution and quality]
 - **[Theme 2]**: [Summary with verified citations]
 
 **Research gaps**:
 1. [Gap with evidence of absence]
 2. [Gap with evidence of absence]
 
-**Annotated bibliography**:
-- [Full citation with DOI/arXiv ID/PMID] — [Key contribution + quality note]
+## References
+- [Full citation with DOI/arXiv ID/PMID]
 
 **Retrieval summary**: [N full-text / N abstract-only; drop-in paths for missing PDFs]
 </output_format>
