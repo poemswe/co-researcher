@@ -2,7 +2,7 @@
 
 > A PhD-level research agent suite for Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. Governed by Systemic Honesty — no fabricated citations, no hallucinated data.
 
-This site publishes benchmark results evaluating research agent performance across 26 test cases and 10 capabilities, plus a 15-case evidence-integrity set.
+This site publishes benchmark results evaluating research agent performance across 32 test cases and 10 capabilities, plus a 16-case evidence-integrity set.
 
 ## What Co-Researcher Does
 
@@ -28,7 +28,7 @@ Co-Researcher provides specialized research skills that run inside AI coding ass
 ## Evals (this site)
 
 Models evaluated: Claude (Anthropic), Codex (OpenAI), Gemini (Google)
-Test cases: 26 across 10 capabilities, plus 15 evidence-integrity cases (13 attack families, 2 controls)
+Test cases: 32 across 10 capabilities, plus 16 evidence-integrity cases (14 attack families, 2 controls)
 Rubrics: research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
 Scores: Excellent / Good / Fair / Poor
 

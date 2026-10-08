@@ -133,7 +133,7 @@ Multi-agent coordination for complex research questions.
 ## Benchmark Results
 
 Live evaluation at: https://coresearcher.poemswe.com/evals/
-- 26 test cases across 10 capabilities, plus a 15-case evidence-integrity set (13 attack families, 2 controls)
+- 32 test cases across 10 capabilities, plus a 16-case evidence-integrity set (14 attack families, 2 controls)
 - Models evaluated: Claude (Anthropic), Codex (OpenAI), Gemini (Google)
 - Rubrics: research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
 - Scoring: Excellent / Good / Fair / Poor with rubric-by-rubric breakdowns
