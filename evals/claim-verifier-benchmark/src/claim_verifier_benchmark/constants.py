@@ -5,7 +5,7 @@ DOMAINS = (
     "machine-learning",
 )
 
-TARGET_COMMIT = "e3ae752"
+TARGET_COMMIT = "905a482"
 PROTOCOL_CORE_VERSION = "1.0.0"
 
 RESULT_STATUSES = (
