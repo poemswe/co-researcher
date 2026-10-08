@@ -9,6 +9,7 @@ import math
 import os
 import re
 import secrets
+import shutil
 import stat
 import tempfile
 from contextlib import contextmanager
@@ -1466,6 +1467,49 @@ def _selected_registry_entry(runs_root: Path, selected: str) -> dict:
   if len(matches) != 1:
     raise ValueError(f"unknown run_id: {selected}")
   return matches[0]
+
+
+def publish_runs(
+    source_root: Path, published_root: Path, run_ids: Sequence[str],
+    forbidden_text: Sequence[str] = (str(Path.home()),),
+) -> None:
+  """Copy validated runs into a published registry that holds only them."""
+  source_runs = Path(source_root) / "runs"
+  published_runs = Path(published_root) / "runs"
+  entries = {entry["run_id"]: entry
+             for entry in _read_registry(source_runs, missing_ok=False)}
+  for run_id in run_ids:
+    selected = _run_id(run_id)
+    load_dashboard_data(source_root, selected)
+    source = source_runs / selected
+    for path in sorted(source.rglob("*")):
+      if path.is_file():
+        text = path.read_bytes().decode("utf-8", errors="replace")
+        if any(fragment and fragment in text for fragment in forbidden_text):
+          raise ValueError(
+              f"{selected} contains a local path in "
+              f"{path.relative_to(source).as_posix()}")
+    published_runs.mkdir(parents=True, exist_ok=True)
+    destination = published_runs / selected
+    shutil.copytree(source, destination, symlinks=True)
+    registered = False
+    try:
+      _update_registry(published_runs, entries[selected])
+      registered = True
+      load_dashboard_data(published_root, selected)
+    except Exception:
+      if registered:
+        _remove_registry_entry(published_runs, selected)
+      shutil.rmtree(destination)
+      raise
+
+
+def _remove_registry_entry(runs_root: Path, run_id: str) -> None:
+  with _registry_lock(runs_root) as root_descriptor:
+    entries, _ = _read_registry_locked(root_descriptor, missing_ok=True)
+    remaining = [entry for entry in entries if entry["run_id"] != run_id]
+    payload = _json_bytes({"schema_version": SCHEMA_VERSION, "runs": remaining})
+    _replace_registry_payload(root_descriptor, payload, run_id)
 
 
 def load_dashboard_data(root: Path, run_id: str) -> dict:

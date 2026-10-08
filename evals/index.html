@@ -1856,7 +1856,8 @@
     <script>
         // Configuration - uses relative path for GitHub Pages compatibility
         const GITHUB_RAW_URL = 'benchmark_overview.json';
-        const INTEGRITY_RUN_INDEX_URL = 'results/runs/index.json';
+        const INTEGRITY_RUNS_BASE = 'published/runs';
+        const INTEGRITY_RUN_INDEX_URL = `${INTEGRITY_RUNS_BASE}/index.json`;
         const INTEGRITY_RUN_ID = /^run[-_][a-z0-9](?:[a-z0-9._-]{0,125}[a-z0-9])?$/;
         const QUALITY_ONLY_LABEL = 'Quality-only historical run — not integrity evaluated';
         let globalOverview = null;
@@ -2521,10 +2522,10 @@
                 runId = requireRunId(selector.value);
                 const entry = integrityRunIndex.find(value => value.run_id === runId);
                 if (!entry) throw new Error(`unknown run ID: ${runId}`);
-                const responsePromise = fetch(`results/runs/${entry.result_file}`);
+                const responsePromise = fetch(`${INTEGRITY_RUNS_BASE}/${entry.result_file}`);
                 const summaryPromise = Object.prototype.hasOwnProperty.call(
                     entry, 'summary_sha256') ?
-                    fetch(`results/runs/${entry.run_id}/summary.md`) :
+                    fetch(`${INTEGRITY_RUNS_BASE}/${entry.run_id}/summary.md`) :
                     Promise.resolve(null);
                 const [response, summaryResponse] = await Promise.all([
                     responsePromise, summaryPromise]);

@@ -275,7 +275,16 @@ This command requires an authenticated model provider and network access. Its
 checked-in cases are public synthetic fixtures. Any private official-case
 directory is supplied separately by its owner and must not be added to the
 repository or CI. Each integrity run writes its auditable result bundle to
-`evals/results/runs/<run_id>/`.
+`evals/results/runs/<run_id>/`, which Git ignores. To show runs on the
+dashboard, publish them by ID:
+
+```bash
+python3 evals/publish_integrity_runs.py RUN_ID [RUN_ID ...]
+```
+
+The command validates each run, refuses one that contains your home directory
+path, copies it to `evals/published/runs/`, and adds it to the published index
+that the dashboard reads.
 
 Before a prospective pilot, its owner can verify the runtime-supplied manifest
 commitments without executing or scoring any case:

@@ -1590,7 +1590,7 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       };
       const entries = [await makeEntry(one), await makeEntry(two)];
       context.fetch = async url => {
-        if (url === 'results/runs/index.json') {
+        if (url === 'published/runs/index.json') {
           return {ok: true, async json() {
             return {schema_version: '1.0.0', runs: entries};
           }};
