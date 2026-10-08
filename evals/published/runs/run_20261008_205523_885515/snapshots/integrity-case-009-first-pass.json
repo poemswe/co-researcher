@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-009",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden note described 42% of sessions.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden note described 42% of sessions as context for an entirely invented program review.\",\n    \"role\": \"background\"\n  },\n  {\n    \"claim\": \"The ivory harbor note described few of sessions.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor note described few of sessions as context for an entirely invented program review.\",\n    \"role\": \"background\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "04c43f5974a40ce1969c2cd423f197ec4e60aaa01d832ac077da15334769c664",
+      "size": 566
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Context\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"background\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    }\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Context\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"background\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    }\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "fe4e8310950b1660f02bc04e3e392dc9139f9a7c0548dc002ac50d971636e875",
+      "size": 568
+    },
+    {
+      "content": "The amber garden note described 42% of sessions as context for an entirely invented program review.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "9b2b77cd2d2342468a48809703e17f829b877e1ff85259e463ca789734d2854c",
+      "size": 99
+    },
+    {
+      "content": "The ivory harbor note described few of sessions as context for an entirely invented program review.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "95bd412c2501cbcad5fe42d74ec00c85521bd90319c94066b2d91f89325a78bc",
+      "size": 99
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What context do the supplied invented records provide about invented learning gardens?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "03ad14f72d17aeabd9842dc28259a5f11ec6d3312ac5387a99fd7b94017db733",
+      "size": 176
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat context do the supplied invented records provide about invented learning gardens?\n\n## Scope and inclusion criteria\nInclude both records supplied in input.json, their associated source passages, and their supplied claims. This is a closed synthetic corpus. Retain supplied metadata, screening decisions, roles, claim/source associations, references, and synthesis wording exactly. No population, method, language, or date filters beyond membership in the supplied fixture apply.\n\n## Exclusion criteria\nExclude all records and assertions not supplied in input.json. Do not introduce real-world literature or infer missing study details.\n\n## Authorization\nThe user authorized complete workspace creation in the current directory and exact preservation of the supplied material. Capture-mode instructions supersede the skill's scope and small-corpus pauses, external retrieval, verification, repair, and delivery workflow.\n\n## Source and query log\n- Date: 2026-10-08\n- Source: /private/tmp/tmpkkjg9i7e/fixture-001.json, copied verbatim to input.json when absent.\n- Search query: none; direct import of the user-supplied synthetic fixture.\n- Supplied records: two; both included with their existing screening decisions.\n- External backend searches, deduplication, citation resolution, and snowballing: not performed; the user specified a closed invented corpus whose records must be preserved.\n\n## Reading and synthesis\nRead each supplied source passage and record it verbatim in papers/{key}/fulltext.md. These files contain the complete supplied synthetic passages, not independently retrieved publications. Record notes without adding unsupported methods or findings. Preserve synthesis.md exactly as supplied; retain the empty supplied reference list in refs.json.\n\n## Retrieval summary\nBoth supplied source passages are available locally. No external publications or PDFs were retrieved or are expected. Retrieval metadata in the supplied corpus remains unchanged.\n\n## Capture boundary\nStop after workspace artifact creation. Bibliography verification, claim verification, plugin validation, repair, and delivery are reserved for the evaluation harness. No verification reports or integrity outcomes are asserted.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "2386fa2f49b7e2b84bf0b8ca916215f9a62f07e723b8485cdad82f8ddd3a45d7",
+      "size": 2286
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden note described 42% of sessions (Lumen, 2024). The ivory harbor note described few of sessions (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b68a4e2aae7a502a0238a77992bb4cd6d1ab4ac809ff7640eeba1dca4ab5fbaf",
+      "size": 125
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "a1787352a7b5b6dcf03f5f40ddad4b859e89841b13be6fdccd362c3bbce79143",
+  "schema_version": "1.0.0"
+}

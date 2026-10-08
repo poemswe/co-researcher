@@ -1,0 +1,58 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "synthetic-invalid-number",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"Students who received structured peer tutoring showed test scores that improved by 73 percent relative to the comparison group.\",\n    \"paper_id\": \"synthetic-tutoring-2025\",\n    \"citation\": \"Synthetic, 2025\",\n    \"role\": \"evidence\",\n    \"supporting_quote\": \"Students who received structured peer tutoring showed test scores that improved by 7.3 percent relative to the comparison group at the end of the semester.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "36b0daeac146c7a4d4f38666f68185fde016e7ece042b291852739cd4d0edbf9",
+      "size": 440
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"synthetic-tutoring-2025\",\n    \"ids\": {\"synthetic\": \"synthetic-tutoring-2025\"},\n    \"title\": \"A Synthetic Trial of Structured Peer Tutoring and Student Test Scores\",\n    \"authors\": [\"Avery Synthetic\"],\n    \"year\": 2025,\n    \"cited_by\": 0,\n    \"found_via\": \"synthetic-fixture\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": \"Synthetic tutoring trial reporting a numeric score outcome\"},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "2df7aea7c597b423a06eb056253d0ec159516d83eccaed78835ba7e6799a9a99",
+      "size": 491
+    },
+    {
+      "content": "# A Synthetic Trial of Structured Peer Tutoring and Student Test Scores\n\nAvery Synthetic (2025). Synthetic fixture document for evaluation, not a real publication.\n\n## Abstract\nThis synthetic study evaluates a structured peer-tutoring program delivered over one semester in a synthetic school district.\n\n## Methods\nStudents in the synthetic dataset (N = 400) were assigned to structured peer tutoring or to business-as-usual instruction. Tutoring sessions ran twice weekly for twelve weeks.\n\n## Results\nStudents who received structured peer tutoring showed test scores that improved by 7.3 percent relative to the comparison group at the end of the semester.\n\n## Limitations\nAll data are synthetic and were generated for testing evidence-integrity tooling.\n",
+      "encoding": "utf-8",
+      "path": "papers/synthetic-tutoring-2025/fulltext.md",
+      "sha256": "28543781ce225536f98dea82c221a78a6d480c28668435bec09a02c99e9153ad",
+      "size": 757
+    },
+    {
+      "content": "{\"review\": \"synthetic-tutoring-intervention\", \"question\": \"In a synthetic education setting, what effect does a structured peer-tutoring intervention have on student test scores?\", \"research_project\": null}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "e388d753506befdbc0a70a4db53ab1d5b563593951947e909950ac6aa569467c",
+      "size": 207
+    },
+    {
+      "content": "# Protocol: Synthetic Tutoring Intervention\n\n**Status:** Synthetic evaluation fixture. No live database searches were run. The single source is a synthetic document created for integrity-loop testing and must not be cited as real research.\n\n## Research question\nIn a synthetic education setting, what effect does a structured peer-tutoring intervention have on student test scores?\n\n## Inclusion criteria\n- Population: students in the synthetic school dataset\n- Intervention: structured peer tutoring\n- Outcome: standardized test scores\n- Design: controlled comparison reported with a numeric effect\n- Source: synthetic fixture documents only\n\n## Exclusion criteria\n- Non-tutoring interventions\n- Studies without a quantitative score outcome\n\n## Query log\n| Date | Backend | Query | Hits |\n|---|---|---|---|\n| 2026-10-08 | none (synthetic fixture) | n/a | 1 synthetic record |\n\n## Revisions\n- 2026-10-08: Initial scope written in evaluation capture mode.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "106a16797e1cc1048edd3a974843c0fa4b7c95b0bdbdbbad3fbfd65577179cc2",
+      "size": 955
+    },
+    {
+      "content": "[\n  {\"title\": \"A Synthetic Trial of Structured Peer Tutoring and Student Test Scores\", \"doi\": null}\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "684427e1c331497e778d62389ae97bd0a44c5008ad3fd9e01e48809ab6a1cc77",
+      "size": 102
+    },
+    {
+      "content": "# Literature Review: Synthetic Tutoring Intervention\n\n**Research question**: In a synthetic education setting, what effect does a structured peer-tutoring intervention have on student test scores?\n\n## Thematic synthesis\n\n### Tutoring and achievement\nStudents who received structured peer tutoring showed test scores that improved by 73 percent relative to the comparison group (Synthetic, 2025).\nThis evidence comes from a single synthetic controlled comparison, so its quality is limited and the result should not be generalized.\n\n## Research gaps\nNo replication or real-world sample is available in this synthetic corpus.\n\n## References\n- Synthetic, A. (2025). A Synthetic Trial of Structured Peer Tutoring and Student Test Scores. Synthetic fixture.\n\n**Retrieval summary**: One synthetic full text retrieved and none missing. A replacement PDF could be placed at `papers/synthetic-tutoring-2025/paper.pdf`.\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "c159a0823f1965d2408d2ef53bea8c8ec337667561fb6d2ac66679e1328aca6c",
+      "size": 910
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "e91118dbe9ec5601ee9f4fd9b4a3f413b29a43de77d95c152aaf7a8526a1a668",
+  "schema_version": "1.0.0"
+}

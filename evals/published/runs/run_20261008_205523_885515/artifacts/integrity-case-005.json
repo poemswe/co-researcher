@@ -1,0 +1,617 @@
+{
+  "model_first_pass": {
+    "integrity": {
+      "dimensions": {
+        "bibliography_verification": {
+          "applicable": true,
+          "effective_weight": 12.5,
+          "evaluated_units": 2,
+          "findings": [
+            {
+              "artifact": "refs.json",
+              "context": {
+                "response_status": "unavailable"
+              },
+              "message": "external citation resolution was not supplied",
+              "reason_code": "citation_resolution_unavailable",
+              "schema_version": "1.0.0",
+              "severity": "warning"
+            }
+          ],
+          "name": "bibliography_verification",
+          "nominal_weight": 10.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": 0.0
+        },
+        "citation_binding": {
+          "applicable": true,
+          "effective_weight": 25.0,
+          "evaluated_units": 2,
+          "findings": [
+            {
+              "artifact": "claims.json",
+              "context": {
+                "citation": "[1]",
+                "claim_text": "The amber garden trial found stable recall.",
+                "numbers_missing": null,
+                "paper_id": "amber",
+                "result_index": 0,
+                "source_scope": null,
+                "status": "invalid_binding",
+                "validator_reason": "reference_ambiguous"
+              },
+              "message": "claim citation does not bind uniquely to its trusted source",
+              "reason_code": "citation_ambiguous",
+              "schema_version": "1.0.0",
+              "severity": "critical"
+            }
+          ],
+          "name": "citation_binding",
+          "nominal_weight": 20.0,
+          "passed_units": 1,
+          "schema_version": "1.0.0",
+          "score": 50.0
+        },
+        "prisma_artifact_completeness": {
+          "applicable": true,
+          "effective_weight": 12.5,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "prisma_artifact_completeness",
+          "nominal_weight": 10.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quantitative_grounding": {
+          "applicable": false,
+          "effective_weight": 0.0,
+          "evaluated_units": 0,
+          "findings": [],
+          "name": "quantitative_grounding",
+          "nominal_weight": 20.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": null
+        },
+        "quote_authenticity": {
+          "applicable": true,
+          "effective_weight": 31.2,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "quote_authenticity",
+          "nominal_weight": 25.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "synthesis_coverage": {
+          "applicable": true,
+          "effective_weight": 18.8,
+          "evaluated_units": 2,
+          "findings": [
+            {
+              "artifact": "claims.json",
+              "context": {
+                "citation": "number:1",
+                "citation_identity": "number:1",
+                "paper_id": null,
+                "source_scope": null,
+                "status": "uncovered_claim",
+                "synthesis_sentence": "The amber garden trial found stable recall [1].",
+                "synthesis_sentence_index": 0,
+                "validator_reason": "coverage_identity_missing"
+              },
+              "message": "synthesis statement lacks a complete verified claim trace",
+              "reason_code": "coverage_claim_missing",
+              "schema_version": "1.0.0",
+              "severity": "critical"
+            }
+          ],
+          "name": "synthesis_coverage",
+          "nominal_weight": 15.0,
+          "passed_units": 1,
+          "schema_version": "1.0.0",
+          "score": 50.0
+        }
+      },
+      "findings": [
+        {
+          "artifact": "claims.json",
+          "context": {
+            "citation": "[1]",
+            "claim_text": "The amber garden trial found stable recall.",
+            "numbers_missing": null,
+            "paper_id": "amber",
+            "result_index": 0,
+            "source_scope": null,
+            "status": "invalid_binding",
+            "validator_reason": "reference_ambiguous"
+          },
+          "message": "claim citation does not bind uniquely to its trusted source",
+          "reason_code": "citation_ambiguous",
+          "schema_version": "1.0.0",
+          "severity": "critical"
+        },
+        {
+          "artifact": "claims.json",
+          "context": {
+            "citation": "number:1",
+            "citation_identity": "number:1",
+            "paper_id": null,
+            "source_scope": null,
+            "status": "uncovered_claim",
+            "synthesis_sentence": "The amber garden trial found stable recall [1].",
+            "synthesis_sentence_index": 0,
+            "validator_reason": "coverage_identity_missing"
+          },
+          "message": "synthesis statement lacks a complete verified claim trace",
+          "reason_code": "coverage_claim_missing",
+          "schema_version": "1.0.0",
+          "severity": "critical"
+        },
+        {
+          "artifact": "refs.json",
+          "context": {
+            "response_status": "unavailable"
+          },
+          "message": "external citation resolution was not supplied",
+          "reason_code": "citation_resolution_unavailable",
+          "schema_version": "1.0.0",
+          "severity": "warning"
+        }
+      ],
+      "integrity_score": 65.6,
+      "manifest_sha256": "1267d31ceaa757866dcd40e057589041b28b960951936ea4f79795f33f8bd18c",
+      "schema_version": "1.0.0",
+      "status": "invalid"
+    },
+    "model_usage": {
+      "duration_seconds": 42.95434879139066,
+      "estimated_cost_usd": null,
+      "executor_version": "1.0.0",
+      "input_tokens": null,
+      "output_tokens": null,
+      "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+      "prompt_version": "literature-integrity-capture-v2",
+      "schema_version": "1.0.0"
+    },
+    "quality": {
+      "error": null,
+      "quality_score": 31.0,
+      "schema_version": "1.0.0",
+      "scores": {
+        "analytical-quality": 50.0,
+        "output-structure": 35.0,
+        "research-quality": 25.0
+      }
+    },
+    "schema_version": "1.0.0",
+    "workspace_manifest_sha256": "1267d31ceaa757866dcd40e057589041b28b960951936ea4f79795f33f8bd18c"
+  },
+  "repair_cost": {
+    "duration_seconds": 22.875079750083387,
+    "estimated_cost_usd": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "rounds": 1,
+    "schema_version": "1.0.0"
+  },
+  "repair_rounds": [
+    {
+      "action": "pass",
+      "attempt": 1,
+      "integrity": {
+        "dimensions": {
+          "bibliography_verification": {
+            "applicable": true,
+            "effective_weight": 12.5,
+            "evaluated_units": 2,
+            "findings": [
+              {
+                "artifact": "refs.json",
+                "context": {
+                  "response_status": "unavailable"
+                },
+                "message": "external citation resolution was not supplied",
+                "reason_code": "citation_resolution_unavailable",
+                "schema_version": "1.0.0",
+                "severity": "warning"
+              }
+            ],
+            "name": "bibliography_verification",
+            "nominal_weight": 10.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": 0.0
+          },
+          "citation_binding": {
+            "applicable": true,
+            "effective_weight": 25.0,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "citation_binding",
+            "nominal_weight": 20.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "prisma_artifact_completeness": {
+            "applicable": true,
+            "effective_weight": 12.5,
+            "evaluated_units": 10,
+            "findings": [],
+            "name": "prisma_artifact_completeness",
+            "nominal_weight": 10.0,
+            "passed_units": 10,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "quantitative_grounding": {
+            "applicable": false,
+            "effective_weight": 0.0,
+            "evaluated_units": 0,
+            "findings": [],
+            "name": "quantitative_grounding",
+            "nominal_weight": 20.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": null
+          },
+          "quote_authenticity": {
+            "applicable": true,
+            "effective_weight": 31.2,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "quote_authenticity",
+            "nominal_weight": 25.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "synthesis_coverage": {
+            "applicable": true,
+            "effective_weight": 18.8,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "synthesis_coverage",
+            "nominal_weight": 15.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          }
+        },
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "integrity_score": 87.5,
+        "manifest_sha256": "412b5ffbcc4b5a33081ef215f88fd6e5fa947fa52620671a870e7e5f52f0a624",
+        "schema_version": "1.0.0",
+        "status": "valid_with_warnings"
+      },
+      "model_usage": {
+        "duration_seconds": 22.875079750083387,
+        "estimated_cost_usd": null,
+        "executor_version": "1.0.0",
+        "input_tokens": null,
+        "output_tokens": null,
+        "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+        "prompt_version": "literature-integrity-repair-v2",
+        "schema_version": "1.0.0"
+      },
+      "previous_integrity": {
+        "dimensions": {
+          "bibliography_verification": {
+            "applicable": true,
+            "effective_weight": 12.5,
+            "evaluated_units": 2,
+            "findings": [
+              {
+                "artifact": "refs.json",
+                "context": {
+                  "response_status": "unavailable"
+                },
+                "message": "external citation resolution was not supplied",
+                "reason_code": "citation_resolution_unavailable",
+                "schema_version": "1.0.0",
+                "severity": "warning"
+              }
+            ],
+            "name": "bibliography_verification",
+            "nominal_weight": 10.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": 0.0
+          },
+          "citation_binding": {
+            "applicable": true,
+            "effective_weight": 25.0,
+            "evaluated_units": 2,
+            "findings": [
+              {
+                "artifact": "claims.json",
+                "context": {
+                  "citation": "[1]",
+                  "claim_text": "The amber garden trial found stable recall.",
+                  "numbers_missing": null,
+                  "paper_id": "amber",
+                  "result_index": 0,
+                  "source_scope": null,
+                  "status": "invalid_binding",
+                  "validator_reason": "reference_ambiguous"
+                },
+                "message": "claim citation does not bind uniquely to its trusted source",
+                "reason_code": "citation_ambiguous",
+                "schema_version": "1.0.0",
+                "severity": "critical"
+              }
+            ],
+            "name": "citation_binding",
+            "nominal_weight": 20.0,
+            "passed_units": 1,
+            "schema_version": "1.0.0",
+            "score": 50.0
+          },
+          "prisma_artifact_completeness": {
+            "applicable": true,
+            "effective_weight": 12.5,
+            "evaluated_units": 10,
+            "findings": [],
+            "name": "prisma_artifact_completeness",
+            "nominal_weight": 10.0,
+            "passed_units": 10,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "quantitative_grounding": {
+            "applicable": false,
+            "effective_weight": 0.0,
+            "evaluated_units": 0,
+            "findings": [],
+            "name": "quantitative_grounding",
+            "nominal_weight": 20.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": null
+          },
+          "quote_authenticity": {
+            "applicable": true,
+            "effective_weight": 31.2,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "quote_authenticity",
+            "nominal_weight": 25.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "synthesis_coverage": {
+            "applicable": true,
+            "effective_weight": 18.8,
+            "evaluated_units": 2,
+            "findings": [
+              {
+                "artifact": "claims.json",
+                "context": {
+                  "citation": "number:1",
+                  "citation_identity": "number:1",
+                  "paper_id": null,
+                  "source_scope": null,
+                  "status": "uncovered_claim",
+                  "synthesis_sentence": "The amber garden trial found stable recall [1].",
+                  "synthesis_sentence_index": 0,
+                  "validator_reason": "coverage_identity_missing"
+                },
+                "message": "synthesis statement lacks a complete verified claim trace",
+                "reason_code": "coverage_claim_missing",
+                "schema_version": "1.0.0",
+                "severity": "critical"
+              }
+            ],
+            "name": "synthesis_coverage",
+            "nominal_weight": 15.0,
+            "passed_units": 1,
+            "schema_version": "1.0.0",
+            "score": 50.0
+          }
+        },
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "[1]",
+              "claim_text": "The amber garden trial found stable recall.",
+              "numbers_missing": null,
+              "paper_id": "amber",
+              "result_index": 0,
+              "source_scope": null,
+              "status": "invalid_binding",
+              "validator_reason": "reference_ambiguous"
+            },
+            "message": "claim citation does not bind uniquely to its trusted source",
+            "reason_code": "citation_ambiguous",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "number:1",
+              "citation_identity": "number:1",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "The amber garden trial found stable recall [1].",
+              "synthesis_sentence_index": 0,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "integrity_score": 65.6,
+        "manifest_sha256": "1267d31ceaa757866dcd40e057589041b28b960951936ea4f79795f33f8bd18c",
+        "schema_version": "1.0.0",
+        "status": "invalid"
+      },
+      "reason_codes": [
+        "citation_resolution_unavailable"
+      ],
+      "schema_version": "1.0.0",
+      "workspace_manifest_sha256": "412b5ffbcc4b5a33081ef215f88fd6e5fa947fa52620671a870e7e5f52f0a624"
+    }
+  ],
+  "robustness": {
+    "error": null,
+    "expectation_met": true,
+    "expected_final_status": "passing",
+    "maximum_repair_rounds": 3,
+    "minimum_repair_rounds": 1,
+    "observed_final_status": "valid_with_warnings",
+    "schema_version": "1.0.0"
+  },
+  "schema_version": "1.0.0",
+  "system_final": {
+    "integrity": {
+      "dimensions": {
+        "bibliography_verification": {
+          "applicable": true,
+          "effective_weight": 12.5,
+          "evaluated_units": 2,
+          "findings": [
+            {
+              "artifact": "refs.json",
+              "context": {
+                "response_status": "unavailable"
+              },
+              "message": "external citation resolution was not supplied",
+              "reason_code": "citation_resolution_unavailable",
+              "schema_version": "1.0.0",
+              "severity": "warning"
+            }
+          ],
+          "name": "bibliography_verification",
+          "nominal_weight": 10.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": 0.0
+        },
+        "citation_binding": {
+          "applicable": true,
+          "effective_weight": 25.0,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "citation_binding",
+          "nominal_weight": 20.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "prisma_artifact_completeness": {
+          "applicable": true,
+          "effective_weight": 12.5,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "prisma_artifact_completeness",
+          "nominal_weight": 10.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quantitative_grounding": {
+          "applicable": false,
+          "effective_weight": 0.0,
+          "evaluated_units": 0,
+          "findings": [],
+          "name": "quantitative_grounding",
+          "nominal_weight": 20.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": null
+        },
+        "quote_authenticity": {
+          "applicable": true,
+          "effective_weight": 31.2,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "quote_authenticity",
+          "nominal_weight": 25.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "synthesis_coverage": {
+          "applicable": true,
+          "effective_weight": 18.8,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "synthesis_coverage",
+          "nominal_weight": 15.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        }
+      },
+      "findings": [
+        {
+          "artifact": "refs.json",
+          "context": {
+            "response_status": "unavailable"
+          },
+          "message": "external citation resolution was not supplied",
+          "reason_code": "citation_resolution_unavailable",
+          "schema_version": "1.0.0",
+          "severity": "warning"
+        }
+      ],
+      "integrity_score": 87.5,
+      "manifest_sha256": "412b5ffbcc4b5a33081ef215f88fd6e5fa947fa52620671a870e7e5f52f0a624",
+      "schema_version": "1.0.0",
+      "status": "valid_with_warnings"
+    },
+    "model_usage": {
+      "duration_seconds": 22.875079750083387,
+      "estimated_cost_usd": null,
+      "executor_version": "1.0.0",
+      "input_tokens": null,
+      "output_tokens": null,
+      "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+      "prompt_version": "literature-integrity-repair-v2",
+      "schema_version": "1.0.0"
+    },
+    "quality": {
+      "error": null,
+      "quality_score": 45.5,
+      "schema_version": "1.0.0",
+      "scores": {
+        "analytical-quality": 70.0,
+        "output-structure": 35.0,
+        "research-quality": 40.0
+      }
+    },
+    "schema_version": "1.0.0",
+    "workspace_manifest_sha256": "412b5ffbcc4b5a33081ef215f88fd6e5fa947fa52620671a870e7e5f52f0a624"
+  }
+}

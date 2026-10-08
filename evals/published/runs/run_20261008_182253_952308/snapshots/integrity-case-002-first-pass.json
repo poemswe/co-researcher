@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-002",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found change in recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial found change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found a change in recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial found a change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "4ce54f90ceb1bc9d231f672d9c46738bff2d71fdec532fa55dfa54cc4a647d63",
+      "size": 568
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Niko Vale\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "f1b058ff8dd241f9da05e2749e40275f7ef292a1e041299f01c8097117d338a9",
+      "size": 676
+    },
+    {
+      "content": "The amber garden trial found no change in recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "ae9c93e7519e9b8269828ba5b3f3dbf5f98ab45e15afd03fac667cb1719bad3c",
+      "size": 130
+    },
+    {
+      "content": "The ivory harbor trial found a change in recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "90af204ba630248bb4f844b6bc42e3eba33a88fb4bd18e730e23c5a28a4d3cab",
+      "size": 129
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-0vrk3ls6\",\n  \"question\": \"What do invented learning-garden trials report about change in learner recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "e2c50b499e03676c687321d7f476598580c65b012b3d0f5871c3f19bdfddd669",
+      "size": 166
+    },
+    {
+      "content": "# Protocol\n\n**Research question**: What do invented learning-garden trials report about change in learner recall?\n\n**Domain**: invented learning gardens (entirely synthetic records)\n\n## Inclusion criteria\n- Invented guided-session trials reporting learner recall\n- Records supplied in `input.json` (public synthetic fixture)\n\n## Exclusion criteria\n- Any record not present in the supplied synthetic fixture\n\n## Query log\n- 2026-10-08: invented-index (supplied fixture, no live backend queried), 2 hits\n\n## Notes\n- Evaluation capture mode. Claims, sources, and synthesis wording preserved exactly as supplied.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "9de5f65d8e6f3e7a5acb7e1938e7843f14f695850d0233ac13f052103729ba15",
+      "size": 609
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found change in recall (Lumen, 2024). The ivory harbor trial found a change in recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "0f5d1d5572bb51f7358ca599b1e0ccffd702ef59aefd362b5168d39c8c04c093",
+      "size": 123
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "aafdc8866b5ae33403271f7708459465ede45708eefddb040e9e636a553bb64d",
+  "schema_version": "1.0.0"
+}

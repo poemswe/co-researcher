@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-006",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"de la Cruz, 2024\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"de la Cruz, 2025\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "b82f679cf6cf0854d181533e80c4a997e9e4eda30e4b5c5518978bb8258ec922",
+      "size": 563
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Ana de la Cruz\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a user-supplied synthetic record within the closed review scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Ana de la Cruz\"\n    ],\n    \"year\": 2025,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a user-supplied synthetic record within the closed review scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "e2dae062342c5c3ca99e5d39738a9368cfdda50abebb1091123ef1b75019a950",
+      "size": 873
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records report about recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "bdc0bf54a10bedecf2a79f7b1aae59019d73c8fb7f9d08d5855e60784a78e0fa",
+      "size": 164
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat do the supplied invented learning-garden records report about recall?\n\n## Scope and inclusion criteria\nInclude both records supplied in input.json and their corresponding source passages, claims, and synthesis wording. The review is a closed synthetic corpus for deterministic integrity evaluation. All populations, institutions, studies, and outcomes are invented. No date, language, or design restrictions are applied beyond membership in the supplied fixture.\n\n## Exclusion criteria\nExclude external literature, additional records, inferred study details, and revisions to the supplied claims, citation identities, supporting quotations, or synthesis wording.\n\n## Authorization\nThe user requested complete artifact creation in the current directory and exact preservation of the fixture. This instruction supplies the scope and supersedes interactive scope and small-corpus checkpoints.\n\n## Source and query log\n- Date: 2026-10-08.\n- Source: /private/tmp/tmpmm9va22_/fixture-001.json, copied verbatim to input.json.\n- Method: direct import of the supplied synthetic fixture; two records supplied and two included.\n- External queries: none. Query strings and search hit counts are not applicable.\n- Corpus assembly: retain the supplied records; no external backend results or merge are involved.\n- Snowballing: not applicable to the closed synthetic corpus.\n\n## Reading and synthesis\nThe supplied source passages are the complete available synthetic texts. They are saved verbatim at papers/{key}/fulltext.md. Per-record notes distinguish explicit information from unspecified details. Synthesis wording and both claim/source pairs are preserved exactly, including supplied citation identities. refs.json retains the supplied empty reference list.\n\n## Retrieval summary\nBoth supplied source passages are available locally. No supplied passage is missing; no PDF was supplied or required. Fulltext status denotes the complete supplied synthetic passage, not retrieval of a real publication.\n\n## Capture boundary\nBibliography verification, claim verification, plugin validation, repair, and delivery are deferred to the evaluation harness. No verification result is asserted or fabricated.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "d273bc4bac7359c11c018ce966742632a18674db003a24b3814941c06a22296a",
+      "size": 2262
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (de la Cruz, 2024). The ivory harbor trial found stable recall (de la Cruz, 2025).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "9f054166cdc73440bb66ab000271aa007c71303594c523c36ef6c78ae635a9eb",
+      "size": 126
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "39d15e650bd78e7be53e04078fd37549d39894a7aaedeb91f30ec966472547a8",
+  "schema_version": "1.0.0"
+}

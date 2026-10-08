@@ -1,0 +1,1335 @@
+{
+  "capability": "literature-review-integrity",
+  "cases": [
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "unicode-substitution",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 1,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "coverage_claim_missing": {
+            "false_negative": 0,
+            "false_positive": 1,
+            "precision": 0.0,
+            "recall": null,
+            "specificity": 0.0,
+            "true_negative": 0,
+            "true_positive": 0
+          },
+          "fabricated_quote": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-001.json",
+        "sha256": "ba9e94ba9a96832e71c765f206d0f6d770c08ab676302579659ca140403e8330"
+      },
+      "attack_family": "unicode-substitution",
+      "case_id": "integrity-case-001",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 48.5,
+        "status": "valid",
+        "workspace_manifest_sha256": "757ad9710a8d57471d6aeb95d5ac0249c1efb0f95a98e6cd1b4ddd63636258f3"
+      },
+      "first_pass": {
+        "integrity_score": 71.4,
+        "quality_score": 40.5,
+        "status": "invalid",
+        "workspace_manifest_sha256": "b0984b3747f449858c137d81a388c5be75565c531b0e707fe66faf5f18593157"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-001-round-01.json",
+          "sha256": "6ec7b7cb63c0564e85e4973577ffefe8db67021d421d75457670ae5c500e1bbe",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-001-first-pass.json",
+          "sha256": "fb146cff28b3040bd7599221074f49720f2e222f5bf789496e36d478d70ce96b"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-001-round-01.json",
+          "sha256": "8343e3a2fbae3dfa4a77506a93e188ac1b95cc1f94074a71c3037bf563d23e34"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "negation-deletion",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 1,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "coverage_claim_missing": {
+            "false_negative": 0,
+            "false_positive": 1,
+            "precision": 0.0,
+            "recall": null,
+            "specificity": 0.0,
+            "true_negative": 0,
+            "true_positive": 0
+          },
+          "fabricated_quote": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-002.json",
+        "sha256": "fceb58e52ad0e7e586387892ad5f14b4ceae8c98b9cd95ad5232b9307900f066"
+      },
+      "attack_family": "negation-deletion",
+      "case_id": "integrity-case-002",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 41.5,
+        "status": "valid",
+        "workspace_manifest_sha256": "bb858a4dc1a7a2777fb03a1cab73b420e57d85bd5c9f8df334f9a7330b529302"
+      },
+      "first_pass": {
+        "integrity_score": 71.4,
+        "quality_score": 30.5,
+        "status": "invalid",
+        "workspace_manifest_sha256": "aafdc8866b5ae33403271f7708459465ede45708eefddb040e9e636a553bb64d"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-002-round-01.json",
+          "sha256": "0ef82959b3930d9d64f441bf63bd979440cfd76d8717acb6ef636d8f37efaf1b",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-002-first-pass.json",
+          "sha256": "31f91ce1035d47db013a7e49d89a2220e14ff5a550f7c6d1d9e1762f584ddb05"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-002-round-01.json",
+          "sha256": "a860a7f4499fd4b7776e0239718f9bf636d0293f63e233c39f4097d232674220"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "stitched-quote",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 1,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "coverage_claim_missing": {
+            "false_negative": 0,
+            "false_positive": 1,
+            "precision": 0.0,
+            "recall": null,
+            "specificity": 0.0,
+            "true_negative": 0,
+            "true_positive": 0
+          },
+          "fabricated_quote": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-003.json",
+        "sha256": "605340a7e4708c06271a1d50b4fdae3240cd283e4d4a0b74fa8f406e08efabb1"
+      },
+      "attack_family": "stitched-quote",
+      "case_id": "integrity-case-003",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 47.8,
+        "status": "valid",
+        "workspace_manifest_sha256": "62800327b0e8e026af6cc6303f38730434606d0475ff15da23fa0f4c885f9e62"
+      },
+      "first_pass": {
+        "integrity_score": 71.4,
+        "quality_score": 61.9,
+        "status": "invalid",
+        "workspace_manifest_sha256": "d755d661d3d8570bd0ebf09ac9b4a282bd2d1b81b0c1967976a94a91e802e2da"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-003-round-01.json",
+          "sha256": "3e4043096cbf66a35ee9758b98f12c8a9a83e198ea333c5fbf5d5592cc43ad48",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-003-first-pass.json",
+          "sha256": "579a8ebfa0fbb5f28e6d9a0dc0f7e8ff9e714a07639a55dd926ed483dc7de4ff"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-003-round-01.json",
+          "sha256": "93ef680daa652a60f359bde77e7bffb019f2f18e3b1ce055df78194a035fae83"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "wrong-source",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "citation_identity_mismatch": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-004.json",
+        "sha256": "79307fb58010dc8ed6b533ad27771e4b6a9bdbfce7c7435eec36d1a45771ea77"
+      },
+      "attack_family": "wrong-source",
+      "case_id": "integrity-case-004",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 39.5,
+        "status": "valid",
+        "workspace_manifest_sha256": "2307b4e0e9ea28bbb3c30046c17dd39902e6bcb7cd6dac5caa2f27941a6b6b0b"
+      },
+      "first_pass": {
+        "integrity_score": 85.7,
+        "quality_score": 33.6,
+        "status": "invalid",
+        "workspace_manifest_sha256": "b17f8f4372692346e71243905e852da653b461067c5460e5dc8139880a38413e"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-004-round-01.json",
+          "sha256": "e4d5f6e1b3761243ddb0397198032e34a1d0efd8d81295c6c8bc69adcb0018e7",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-004-first-pass.json",
+          "sha256": "849a1c0ed800cbe7b85975a823b02c70cf5836b2d33a9cc8cf30e7393ca352f6"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-004-round-01.json",
+          "sha256": "313662b7b8801821c3236300ab5c8fa41a48d1a0592a24cdcec8b31ecd466d22"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "ambiguous-title",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 2,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "citation_ambiguous": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          },
+          "citation_resolution_unavailable": {
+            "false_negative": 0,
+            "false_positive": 1,
+            "precision": 0.0,
+            "recall": null,
+            "specificity": 0.0,
+            "true_negative": 0,
+            "true_positive": 0
+          },
+          "coverage_claim_missing": {
+            "false_negative": 0,
+            "false_positive": 1,
+            "precision": 0.0,
+            "recall": null,
+            "specificity": 0.0,
+            "true_negative": 0,
+            "true_positive": 0
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-005.json",
+        "sha256": "09d6f17fe7b95c51b01467859201044c798754309f89333ca13b9345f9ee4f06"
+      },
+      "attack_family": "ambiguous-title",
+      "case_id": "integrity-case-005",
+      "final": {
+        "integrity_score": 87.5,
+        "quality_score": 58.4,
+        "status": "valid_with_warnings",
+        "workspace_manifest_sha256": "d12db4bfb4e398dff9377d9c81df46b3cf0f3ec5237fe7a987060d856f2301b4"
+      },
+      "first_pass": {
+        "integrity_score": 65.6,
+        "quality_score": 42.5,
+        "status": "invalid",
+        "workspace_manifest_sha256": "f739e4a087fce4f3dc07291405690d2eeaae96249c81d7edc9e14a8e8b5713b3"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 87.5,
+          "path": "repair-rounds/integrity-case-005-round-01.json",
+          "sha256": "2755bb7b9a5a8d36fb69ddaa802f24b8450376692f2323762997760eff32f4c1",
+          "status": "valid_with_warnings"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-005-first-pass.json",
+          "sha256": "b3865cb7ad053e030dcf761684bcdcabb2b1d372cae016a1471ca94446f97ef2"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-005-round-01.json",
+          "sha256": "eb523314445b145ee9ca4e1f80828b571e1715b357a3a08bc2f1d450464eeb52"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "compound-name",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 1,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "citation_identity_mismatch": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          },
+          "coverage_claim_missing": {
+            "false_negative": 0,
+            "false_positive": 1,
+            "precision": 0.0,
+            "recall": null,
+            "specificity": 0.0,
+            "true_negative": 0,
+            "true_positive": 0
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-006.json",
+        "sha256": "b6dd4da79786819b3da8757ae3f91a7ed4c84f7cfcb796e0ed66948fd0a3c936"
+      },
+      "attack_family": "compound-name",
+      "case_id": "integrity-case-006",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 46.4,
+        "status": "valid",
+        "workspace_manifest_sha256": "b52d40d07688e00e52825b8a43f07a9ef215f6c7a826d9b4a76aea2d6ef357c3"
+      },
+      "first_pass": {
+        "integrity_score": 75.0,
+        "quality_score": 30.5,
+        "status": "invalid",
+        "workspace_manifest_sha256": "8fb0419803782d0fe7e03536961b13a3d690ff06444c727c53f31bca8e774d50"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-006-round-01.json",
+          "sha256": "6050bd40b7a888ba16fbc5d8f8130f98f802af78fd5fa8a230f127eb292953bd",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-006-first-pass.json",
+          "sha256": "bf14bef6824c35b836318a4166364e3c37b2206ef3fd32e7b1b54b1f55faefd2"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-006-round-01.json",
+          "sha256": "9a8ece1f6fe1e392fa3c617e4d9f1bc13c42947c4d1b3871b5e6d5fc99ce9b46"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "added-number",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "coverage_number_missing": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-007.json",
+        "sha256": "c39d09501f2cd7effbd46be97176341314f91b41b374eea9cc6a2cefdb06a36c"
+      },
+      "attack_family": "added-number",
+      "case_id": "integrity-case-007",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 19.6,
+        "status": "valid",
+        "workspace_manifest_sha256": "d70ff3012dabec7ef040fef9c81673ce4f2771b68bb38c340f3f6408edc5265b"
+      },
+      "first_pass": {
+        "integrity_score": 91.7,
+        "quality_score": 21.0,
+        "status": "invalid",
+        "workspace_manifest_sha256": "032bf620e960e5bebcb8fa6dc0dbc553433acbece85ca1625829f6d5d6242dc4"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-007-round-01.json",
+          "sha256": "5ee07331efa2570b7ba9c71c5cb0f9e05d796da0e727828d634fb99f4e4f618a",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-007-first-pass.json",
+          "sha256": "a7f411eb38fcc26d7135acb9cf070cfd34f4f5357a3219e3312527463170ee85"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-007-round-01.json",
+          "sha256": "a3e22dd465c6051c3b3d08f3a8816f4ae9efe80ccc2af595196df1a5a41ad8e4"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "altered-number",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "coverage_number_missing": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-008.json",
+        "sha256": "a0377b6b2ba88081653f17cf7961fa4cfbae33dc4faf8b6b1b0e591b070bae98"
+      },
+      "attack_family": "altered-number",
+      "case_id": "integrity-case-008",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 31.0,
+        "status": "valid",
+        "workspace_manifest_sha256": "af8667dd679646a293f065fb45c99ff548ae78826880893a8690721eb6aca954"
+      },
+      "first_pass": {
+        "integrity_score": 91.7,
+        "quality_score": 36.4,
+        "status": "invalid",
+        "workspace_manifest_sha256": "cbaf38b4420a7cf5ac5598e53dadada5bf938dec5bbfbab7fd776ac6394b169f"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-008-round-01.json",
+          "sha256": "2ec2020f04246bb2996461ca3ad572400f0b24b43dd5ddef78a876a2629d9675",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-008-first-pass.json",
+          "sha256": "37ed3baec90721074745130c754c4bf284864e9382d1c62d8f7f94d667c73690"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-008-round-01.json",
+          "sha256": "1b9d6364287cd244e18f6aee8b07a817dfc66a09ef7fc93e601d11464cda3c49"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "background-role",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "coverage_role_invalid": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-009.json",
+        "sha256": "a4a514f1bf9ff530f2e549523ca2378f6ca9238d700baa5ea0e606749dfab620"
+      },
+      "attack_family": "background-role",
+      "case_id": "integrity-case-009",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 25.5,
+        "status": "valid",
+        "workspace_manifest_sha256": "dc4a1e27e4cf0ec3e4ec652d2eb33489ea62f090b1c73939daf8c3fec8baf41a"
+      },
+      "first_pass": {
+        "integrity_score": 91.7,
+        "quality_score": 27.0,
+        "status": "invalid",
+        "workspace_manifest_sha256": "779bb28e1a72c663d82bd4a5a972ce586bdabab5c182ed5eb50203b26110c636"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-009-round-01.json",
+          "sha256": "b9ca11fd045e939e61122f67946f23dd99021ea7070e2edafc91a1e6a5ce1acf",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-009-first-pass.json",
+          "sha256": "15443827115b355d1329e696d36c7a3620159d32f9bcfa439ccafc5d09151850"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-009-round-01.json",
+          "sha256": "67956b7a37aa050e458f255ceefcb2c100d16762e6dc7bc7ba8d718c768f029a"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "missing-artifact",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "artifact_missing": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-010.json",
+        "sha256": "78d86be2b16d877ac4978ae3f6e8178ebdf739b0dae31e69bd55b6ecd727e424"
+      },
+      "attack_family": "missing-artifact",
+      "case_id": "integrity-case-010",
+      "final": {
+        "integrity_score": null,
+        "quality_score": null,
+        "status": "invalid",
+        "workspace_manifest_sha256": null
+      },
+      "first_pass": null,
+      "operational_failure": {
+        "artifact": "refs.json",
+        "attempt": 0,
+        "message": "required artifact is missing: refs.json",
+        "model_usage": {
+          "duration_seconds": 53.70390033442527,
+          "estimated_cost_usd": null,
+          "executor_version": "1.0.0",
+          "input_tokens": null,
+          "output_tokens": null,
+          "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+          "prompt_version": "literature-integrity-capture-v2",
+          "schema_version": "1.0.0"
+        },
+        "phase": "initial_load",
+        "quality": null,
+        "reason_code": "artifact_missing",
+        "schema_version": "1.0.0",
+        "status": "invalid",
+        "workspace_manifest_sha256": null
+      }
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "malformed-artifact",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 1,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "artifact_malformed": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          },
+          "validator_incomplete": {
+            "false_negative": 0,
+            "false_positive": 1,
+            "precision": 0.0,
+            "recall": null,
+            "specificity": 0.0,
+            "true_negative": 0,
+            "true_positive": 0
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-011.json",
+        "sha256": "afaf99edcc44a8a50f76b7669f7ff93d1d767b23e499d8dffb6ddf8e049e9e40"
+      },
+      "attack_family": "malformed-artifact",
+      "case_id": "integrity-case-011",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 41.8,
+        "status": "valid",
+        "workspace_manifest_sha256": "bbacf29dd8a52f4521ebd404cc15be284e38072e6f4f6f739a2df07d13509387"
+      },
+      "first_pass": {
+        "integrity_score": 10.0,
+        "quality_score": 46.5,
+        "status": "invalid",
+        "workspace_manifest_sha256": "20b1e7c5081df94fccea5d45ad2f451c1560e9e953073475763be61fd10c3188"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 100.0,
+          "path": "repair-rounds/integrity-case-011-round-01.json",
+          "sha256": "c140bd0f27324cd3a205349a225395602ebcb5d7f5d035b07f7d5f1e7723bdb4",
+          "status": "valid"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-011-first-pass.json",
+          "sha256": "b72c5f0ea30c89fa0ff516ef56046a3917f5e9bf50c3b9686ae3ad78df292cf1"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/integrity-case-011-round-01.json",
+          "sha256": "a7f37b6b484fd347ca573d40c87da0dec1fe94793e876d261d159632bd0cb101"
+        }
+      ]
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "symlink",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "artifact_symlink": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-012.json",
+        "sha256": "b7270e30dd9f7c53aae171314df08964fc3b6560f818aff2388d32ca025d2b06"
+      },
+      "attack_family": "symlink",
+      "case_id": "integrity-case-012",
+      "final": {
+        "integrity_score": null,
+        "quality_score": null,
+        "status": "invalid",
+        "workspace_manifest_sha256": null
+      },
+      "first_pass": null,
+      "operational_failure": {
+        "artifact": "claims.json",
+        "attempt": 0,
+        "message": "artifact is a symlink: claims.json",
+        "model_usage": {
+          "duration_seconds": 52.62676837481558,
+          "estimated_cost_usd": null,
+          "executor_version": "1.0.0",
+          "input_tokens": null,
+          "output_tokens": null,
+          "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+          "prompt_version": "literature-integrity-capture-v2",
+          "schema_version": "1.0.0"
+        },
+        "phase": "initial_load",
+        "quality": null,
+        "reason_code": "artifact_symlink",
+        "schema_version": "1.0.0",
+        "status": "invalid",
+        "workspace_manifest_sha256": null
+      }
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "traversal",
+        "confusion": {
+          "false_negative": 0,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 1
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "artifact_traversal": {
+            "false_negative": 0,
+            "false_positive": 0,
+            "precision": 1.0,
+            "recall": 1.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 1
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-013.json",
+        "sha256": "42bb1246aae2c9449b168ea7fd83bf17f88a8221cd15bd84621e27ccea42376d"
+      },
+      "attack_family": "traversal",
+      "case_id": "integrity-case-013",
+      "final": {
+        "integrity_score": null,
+        "quality_score": null,
+        "status": "invalid",
+        "workspace_manifest_sha256": null
+      },
+      "first_pass": null,
+      "operational_failure": {
+        "artifact": "../outside.json",
+        "attempt": 0,
+        "message": "artifact path is not canonical and relative: '../outside.json'",
+        "model_usage": {
+          "duration_seconds": 57.793505041860044,
+          "estimated_cost_usd": null,
+          "executor_version": "1.0.0",
+          "input_tokens": null,
+          "output_tokens": null,
+          "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+          "prompt_version": "literature-integrity-capture-v2",
+          "schema_version": "1.0.0"
+        },
+        "phase": "initial_load",
+        "quality": null,
+        "reason_code": "artifact_traversal",
+        "schema_version": "1.0.0",
+        "status": "invalid",
+        "workspace_manifest_sha256": null
+      }
+    },
+    {
+      "adversarial_score": {
+        "assessable": true,
+        "attack_family": "overstated-finding",
+        "confusion": {
+          "false_negative": 1,
+          "false_positive": 0,
+          "true_negative": 1,
+          "true_positive": 0
+        },
+        "domain": "invented learning gardens",
+        "reason_metrics": {
+          "coverage_claim_missing": {
+            "false_negative": 1,
+            "false_positive": 0,
+            "precision": null,
+            "recall": 0.0,
+            "specificity": 1.0,
+            "true_negative": 1,
+            "true_positive": 0
+          }
+        },
+        "schema_version": "3.1.0",
+        "unassessable_reason": null
+      },
+      "artifact": {
+        "path": "artifacts/integrity-case-014.json",
+        "sha256": "6acbf6c2de4ac695f4ad05d676cc6d2e3d7577d69eebce3189772cbbd79b47b2"
+      },
+      "attack_family": "overstated-finding",
+      "case_id": "integrity-case-014",
+      "final": {
+        "integrity_score": 100.0,
+        "quality_score": 30.5,
+        "status": "valid",
+        "workspace_manifest_sha256": "974d14a012df3f6212d164ad0b2b9ef046a98369f6c193cb98777aa4cf36162c"
+      },
+      "first_pass": {
+        "integrity_score": 100.0,
+        "quality_score": 30.5,
+        "status": "valid",
+        "workspace_manifest_sha256": "974d14a012df3f6212d164ad0b2b9ef046a98369f6c193cb98777aa4cf36162c"
+      },
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/integrity-case-014-first-pass.json",
+          "sha256": "b55513577f049e07a2e0e1bbcba4b817f43fbd3745f32c2438ae3440f79f49e5"
+        }
+      ]
+    },
+    {
+      "artifact": {
+        "path": "artifacts/synthetic-invalid-number.json",
+        "sha256": "03a5f5a56ca2bbb34afa74659d9d196945676788c5d3ffb8b3eaa055ea7351d5"
+      },
+      "case_id": "synthetic-invalid-number",
+      "final": {
+        "integrity_score": 90.0,
+        "quality_score": 70.7,
+        "status": "valid_with_warnings",
+        "workspace_manifest_sha256": "92ec8600064af7f1d1a1338b94e9bf110853281b3a28c0a9076b1f32cfe03c09"
+      },
+      "first_pass": {
+        "integrity_score": 30.0,
+        "quality_score": 29.7,
+        "status": "invalid",
+        "workspace_manifest_sha256": "e91118dbe9ec5601ee9f4fd9b4a3f413b29a43de77d95c152aaf7a8526a1a668"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 90.0,
+          "path": "repair-rounds/synthetic-invalid-number-round-01.json",
+          "sha256": "903ca06464b8bb1465f6b8288b14691e9603cc866aca053812f5b50a1edc6d89",
+          "status": "valid_with_warnings"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/synthetic-invalid-number-first-pass.json",
+          "sha256": "20099805e21e7d8b6e726c33a7f3208527bcb98f1ad825f2b3c19959eed82713"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/synthetic-invalid-number-round-01.json",
+          "sha256": "0fb374bfa4c750151fbf2eab47ab78a0d0eeb0a530f7c9bd31d73dd4836419f7"
+        }
+      ]
+    },
+    {
+      "artifact": {
+        "path": "artifacts/synthetic-valid.json",
+        "sha256": "e7a2952196d3c0e335d5b4d2d2a26d14e8cfe804f41e3a5916a532f46b884a97"
+      },
+      "case_id": "synthetic-valid",
+      "final": {
+        "integrity_score": 90.0,
+        "quality_score": 78.3,
+        "status": "valid_with_warnings",
+        "workspace_manifest_sha256": "6bf46e1cc1ae2d6d78755ed8bab6788980e632d343e451fdf777dc711f6bf885"
+      },
+      "first_pass": {
+        "integrity_score": 51.9,
+        "quality_score": 81.4,
+        "status": "invalid",
+        "workspace_manifest_sha256": "245b21cdc8bd7e8a26b0d3c4c8d5ad806b0a4760df3eab57c18dea1353961c66"
+      },
+      "repair_rounds": [
+        {
+          "action": "pass",
+          "attempt": 1,
+          "integrity_score": 90.0,
+          "path": "repair-rounds/synthetic-valid-round-01.json",
+          "sha256": "372e135d8083a9264b12174c633cff1b1fd35f473811a75b619df2851d9f4f25",
+          "status": "valid_with_warnings"
+        }
+      ],
+      "snapshots": [
+        {
+          "label": "first-pass",
+          "path": "snapshots/synthetic-valid-first-pass.json",
+          "sha256": "e274c403f56893144c7114d0a897a41c968f71640bec15b7f50fbb82093c6b30"
+        },
+        {
+          "label": "round-01",
+          "path": "snapshots/synthetic-valid-round-01.json",
+          "sha256": "b9fbaabd7a07f258fb527b3d27e1292c799bc936af065bdd6f7ea86da0b6008e"
+        }
+      ]
+    }
+  ],
+  "evaluation_kind": "quality_and_integrity",
+  "evaluation_label": "Paired quality and integrity evaluation",
+  "model": "claude",
+  "provenance": {
+    "engine_version": "1.0.0",
+    "resolved_models": [
+      "claude-opus-5-5[1m]"
+    ],
+    "target_commit": "58028238e8594de9c5219cbf3fd8a6b19c2e2fd6",
+    "target_dirty": false,
+    "validator_versions": {
+      "artifact_scoring": "1.0.0",
+      "citation": "1.0.0",
+      "claims": "1.0.0",
+      "prisma": "1.0.0"
+    }
+  },
+  "run_id": "run_20261008_182253_952308",
+  "schema_version": "1.2.0",
+  "summary": {
+    "attack_family_breakdown": {
+      "added-number": 1,
+      "altered-number": 1,
+      "ambiguous-title": 1,
+      "background-role": 1,
+      "compound-name": 1,
+      "malformed-artifact": 1,
+      "missing-artifact": 1,
+      "negation-deletion": 1,
+      "overstated-finding": 1,
+      "stitched-quote": 1,
+      "symlink": 1,
+      "traversal": 1,
+      "unicode-substitution": 1,
+      "wrong-source": 1
+    },
+    "attack_family_confusion": {
+      "added-number": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "altered-number": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "ambiguous-title": {
+        "false_negative": 0,
+        "false_positive": 2,
+        "precision": 0.3333333333333333,
+        "recall": 1.0,
+        "specificity": 0.3333333333333333,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "background-role": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "compound-name": {
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.5,
+        "recall": 1.0,
+        "specificity": 0.5,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "malformed-artifact": {
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.5,
+        "recall": 1.0,
+        "specificity": 0.5,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "missing-artifact": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "negation-deletion": {
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.5,
+        "recall": 1.0,
+        "specificity": 0.5,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "overstated-finding": {
+        "false_negative": 1,
+        "false_positive": 0,
+        "precision": null,
+        "recall": 0.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 0
+      },
+      "stitched-quote": {
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.5,
+        "recall": 1.0,
+        "specificity": 0.5,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "symlink": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "traversal": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "unicode-substitution": {
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.5,
+        "recall": 1.0,
+        "specificity": 0.5,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "wrong-source": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      }
+    },
+    "case_count": 16,
+    "domain_confusion": {
+      "invented learning gardens": {
+        "false_negative": 1,
+        "false_positive": 7,
+        "precision": 0.65,
+        "recall": 0.9285714285714286,
+        "specificity": 0.6666666666666666,
+        "true_negative": 14,
+        "true_positive": 13
+      }
+    },
+    "integrity_status_counts": {
+      "invalid": 3,
+      "valid": 10,
+      "valid_with_warnings": 3
+    },
+    "reason_code_metrics": {
+      "artifact_malformed": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "artifact_missing": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "artifact_symlink": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "artifact_traversal": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "citation_ambiguous": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "citation_identity_mismatch": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 2,
+        "true_positive": 2
+      },
+      "citation_resolution_unavailable": {
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.0,
+        "recall": null,
+        "specificity": 0.0,
+        "true_negative": 0,
+        "true_positive": 0
+      },
+      "coverage_claim_missing": {
+        "false_negative": 1,
+        "false_positive": 5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "specificity": 0.16666666666666666,
+        "true_negative": 1,
+        "true_positive": 0
+      },
+      "coverage_number_missing": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 2,
+        "true_positive": 2
+      },
+      "coverage_role_invalid": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 1,
+        "true_positive": 1
+      },
+      "fabricated_quote": {
+        "false_negative": 0,
+        "false_positive": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "specificity": 1.0,
+        "true_negative": 3,
+        "true_positive": 3
+      },
+      "validator_incomplete": {
+        "false_negative": 0,
+        "false_positive": 1,
+        "precision": 0.0,
+        "recall": null,
+        "specificity": 0.0,
+        "true_negative": 0,
+        "true_positive": 0
+      }
+    }
+  },
+  "summary_sha256": "2ffec68760a232528ae696060622d1065e8c8f0df7973e5821552c53c360d9c5",
+  "timestamp": "2026-10-08T18:22:53.952697Z"
+}

@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-014",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial suggested stronger recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial suggested stronger recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial suggested stronger recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial suggested stronger recall after four guided sessions among learners from three distinct invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "db9cdcdb22d76f97e79fb685f4d91d5318172d4e35eb31f1219c6262f3d11b42",
+      "size": 576
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "f5e290e350b6f0383f6f44c15866b43a0ae15e4e7a6418b3ab597c88919f9e6e",
+      "size": 618
+    },
+    {
+      "content": "The amber garden trial suggested stronger recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "a62295397af3ced325ccd042ce582fbbf7313d935432e5f57f6cbd4312044353",
+      "size": 129
+    },
+    {
+      "content": "The ivory harbor trial suggested stronger recall after four guided sessions among learners from three distinct invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "a11bf77082fc75d02d28f160e6cb82b6d9b8ea82c6612ed6db9f0dc1e166bf22",
+      "size": 129
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records state about recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "824dbceaab1a50e7bb1fd8b293449e42fd85048931e5e3042a797817b24e3f27",
+      "size": 163
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat do the supplied invented learning-garden records state about recall?\n\n## Scope and inclusion criteria\nInclude both records supplied in input.json, their paired source passages, and their supplied claims. This is a closed synthetic corpus. All authors, settings, and records are entirely invented. No date, language, population, or method restrictions are applied beyond membership in the supplied fixture.\n\n## Exclusion criteria\nExclude material outside the supplied fixture. Do not add real-world sources or infer missing study details.\n\n## Authorized capture procedure\nThe user requested a complete workspace in the current directory and exact preservation of both claim/source pairs and the synthesis wording. This explicit scope governs capture without additional approval checkpoints. Preserve supplied wording even where claims and synthesis differ. Do not perform validation, repair, or delivery; those phases belong to the evaluation harness.\n\n## Source and query log\n- Date: 2026-10-08.\n- Local source: /private/tmp/tmplfgpmq7n/fixture-001.json, copied verbatim to input.json.\n- Retrieval: local fixture import; two supplied records, two distinct keys, both included.\n- Search query: none. No external backend searches executed for the entirely invented records.\n- Deduplication: no backend results to merge; supplied corpus retained.\n- Acquisition: supplied source strings saved verbatim to papers/{key}/fulltext.md. The fulltext label denotes the complete supplied synthetic passage, not an independently acquired publication.\n- Snowballing: not performed; scope is the closed supplied corpus.\n\n## Artifact provenance and limits\nClaims and synthesis are copied exactly from input.json. refs.json preserves the supplied empty references list. No bibliographic metadata beyond the fixture has been invented. No citation or claim verification report is generated; no verification is asserted.\n\n## Retrieval summary\nBoth supplied source passages are present. No supplied source is missing. Study methods, sample size, measurement details, and effect magnitudes are not supplied.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "2d60a9281b557996948f33abe3b73a19f36ce5657796580bc1b1fbaaa7113fb6",
+      "size": 2158
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial proved stronger recall (Lumen, 2024). The ivory harbor trial suggested stronger recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "39d461887a41861e38ad3bab659400e4b0ce468a4ada613e6c81913bf2e1b2e0",
+      "size": 124
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "f34e714769e32ff960e259c417f9cdbf1df516f5b9fde467a738d7a013d1bb86",
+  "schema_version": "1.0.0"
+}

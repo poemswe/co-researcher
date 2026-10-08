@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-001",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found no change in recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial fоund no change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found no change in recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial found no change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "63bcbbd6ae5ca05958b5dfee447113dffcbdd6c6f266538e649cf26d4aaa7f08",
+      "size": 577
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"title_abstract\",\n      \"reason\": null\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"title_abstract\",\n      \"reason\": null\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "b8d104e62c7ad86c3b2028a84f342b7aadb5ac261a663071c96d722efe02181b",
+      "size": 728
+    },
+    {
+      "content": "The amber garden trial found no change in recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "ae9c93e7519e9b8269828ba5b3f3dbf5f98ab45e15afd03fac667cb1719bad3c",
+      "size": 130
+    },
+    {
+      "content": "The ivory harbor trial found no change in recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "e3f92d7a772d223b9599fad613ab8bd889e477c4105d677cef019ef8e369637f",
+      "size": 130
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"Do guided sessions in invented learning gardens change learner recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "579deb8e49e2bac401f8fec2e20fbd4401cfd7f99c36fdbf54cb72d4b29906e0",
+      "size": 160
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nDo guided sessions in invented learning gardens change learner recall?\n\n## Inclusion criteria\n- Records supplied in the invented-index fixture (fixture-001.json)\n- Reports a recall outcome for learners after guided garden sessions\n- Year 2024; English\n\n## Exclusion criteria\n- Records outside the supplied invented corpus\n- No recall outcome reported\n\n## Criteria approval\nEvaluation capture mode: criteria fixed by the supplied fixture; no interactive approval.\n\n## Query log\n| Date | Backend | Query | Hits |\n|---|---|---|---|\n| 2026-10-08 | invented-index (supplied fixture) | all supplied records | 2 |\n\nNo live backend searches were run: every record is invented and would not resolve in OpenAlex, arXiv, or Europe PMC.\n\n## Screening\n- amber (Lumen, 2024): included\n- ivory (Vale, 2024): included\n\n## Integrity note\nThe supplied supporting_quote for claim `amber` contains U+043E (Cyrillic small o) at index 24, whereas papers/amber/fulltext.md uses Latin \"found\". Preserved exactly as supplied per task instructions; not corrected.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "3b5b3b1799e48085ac1d873c05df863144b2feaf70814ab6fc9ce7ceb8678bfd",
+      "size": 1098
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found no change in recall (Lumen, 2024). The ivory harbor trial found no change in recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "db7ab7ba21f646b388aa8084a378e0d1a715ac35ecf934eac3e752b41d718333",
+      "size": 127
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "b0984b3747f449858c137d81a388c5be75565c531b0e707fe66faf5f18593157",
+  "schema_version": "1.0.0"
+}

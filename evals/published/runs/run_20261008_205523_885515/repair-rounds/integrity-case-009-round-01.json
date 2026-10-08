@@ -1,0 +1,203 @@
+{
+  "action": "pass",
+  "attempt": 1,
+  "integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": false,
+        "effective_weight": 0.0,
+        "evaluated_units": 0,
+        "findings": [],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": null
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 28.6,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 14.3,
+        "evaluated_units": 10,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 10,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": false,
+        "effective_weight": 0.0,
+        "evaluated_units": 0,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": null
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 35.7,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 21.4,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      }
+    },
+    "findings": [],
+    "integrity_score": 100.0,
+    "manifest_sha256": "79bb68e98c76fa7d0f17c50e575c365031d435d22523411b155eb01cf4d13d0c",
+    "schema_version": "1.0.0",
+    "status": "valid"
+  },
+  "model_usage": {
+    "duration_seconds": 32.63643458392471,
+    "estimated_cost_usd": null,
+    "executor_version": "1.0.0",
+    "input_tokens": null,
+    "output_tokens": null,
+    "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+    "prompt_version": "literature-integrity-repair-v2",
+    "schema_version": "1.0.0"
+  },
+  "previous_integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": false,
+        "effective_weight": 0.0,
+        "evaluated_units": 0,
+        "findings": [],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": null
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 22.2,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 11.1,
+        "evaluated_units": 10,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 10,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 22.2,
+        "evaluated_units": 1,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 1,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 27.8,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 16.7,
+        "evaluated_units": 2,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:lumen:2024",
+              "citation_identity": "author:lumen:2024",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "The amber garden note described 42% of sessions (Lumen, 2024).",
+              "synthesis_sentence_index": 0,
+              "validator_reason": "coverage_role_invalid"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_role_invalid",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 1,
+        "schema_version": "1.0.0",
+        "score": 50.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:lumen:2024",
+          "citation_identity": "author:lumen:2024",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "The amber garden note described 42% of sessions (Lumen, 2024).",
+          "synthesis_sentence_index": 0,
+          "validator_reason": "coverage_role_invalid"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_role_invalid",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      }
+    ],
+    "integrity_score": 91.7,
+    "manifest_sha256": "a1787352a7b5b6dcf03f5f40ddad4b859e89841b13be6fdccd362c3bbce79143",
+    "schema_version": "1.0.0",
+    "status": "invalid"
+  },
+  "reason_codes": [],
+  "schema_version": "1.0.0",
+  "workspace_manifest_sha256": "79bb68e98c76fa7d0f17c50e575c365031d435d22523411b155eb01cf4d13d0c"
+}
