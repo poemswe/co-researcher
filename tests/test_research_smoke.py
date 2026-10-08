@@ -250,6 +250,13 @@ def test_literature_review_skill_creates_the_project_link_at_scope():
   assert "research/{slug}/project.json" in scope
 
 
+def test_literature_review_skill_names_paper_directories_by_record_key():
+  skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
+  protocol = skill[skill.index("<protocol>"):skill.index("1. **Scope**")]
+
+  assert "must equal that record's `key` or one of its `ids` values" in protocol
+
+
 def test_literature_review_skill_requires_claims_to_restate_synthesis():
   skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
   verify = skill[skill.index("9. **Verify claims**"):skill.index("10. **Validate")]
