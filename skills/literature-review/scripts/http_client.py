@@ -30,11 +30,11 @@ from __future__ import annotations
 import contextlib
 import datetime
 import email.utils
-import fcntl
 import gzip
 import json
 import os
 import random
+import tempfile
 import time
 from typing import Any
 import urllib.error
@@ -47,7 +47,7 @@ DEFAULT_MAX_RETRIES = 7
 DEFAULT_BACKOFF_BASE_SECS = 3.0
 DEFAULT_BACKOFF_MAX_SECS = 180.0
 DEFAULT_JITTER_SECS = 0.5
-_LOCK_PREFIX = "/tmp/co-researcher-httpclient"
+_LOCK_PREFIX = os.path.join(tempfile.gettempdir(), "co-researcher-httpclient")
 _REFERER_TEMPLATE = (
     "https://github.com/poemswe/co-researcher/tree/main/skills/{skill}"
 )
@@ -105,24 +105,38 @@ class _RateLimiter:
 
   def __init__(self, hostname, qps):
     self._min_gap = 1.0 / qps
-    self._lock_path = f"{_LOCK_PREFIX}-{hostname}.lock"
+    self._lock_dir = f"{_LOCK_PREFIX}-{hostname}.lockdir"
+    self._state_path = f"{_LOCK_PREFIX}-{hostname}.state"
+
+  def _acquire(self):
+    while True:
+      try:
+        os.mkdir(self._lock_dir)
+        return
+      except FileExistsError:
+        time.sleep(0.01)
+
+  def _release(self):
+    with contextlib.suppress(OSError):
+      os.rmdir(self._lock_dir)
 
   def wait(self):
-    with open(self._lock_path, "a+") as handle:
-      fcntl.flock(handle, fcntl.LOCK_EX)
-      try:
-        handle.seek(0)
-        raw = handle.read().strip()
-        previous = float(raw) if raw else 0.0
-        gap = self._min_gap - (time.monotonic() - previous)
-        if gap > 0:
-          time.sleep(gap)
-        handle.seek(0)
-        handle.truncate()
-        handle.write(str(time.monotonic()))
-        handle.flush()
-      finally:
-        fcntl.flock(handle, fcntl.LOCK_UN)
+    self._acquire()
+    try:
+      previous = 0.0
+      if os.path.exists(self._state_path):
+        with open(self._state_path) as handle:
+          raw = handle.read().strip()
+          previous = float(raw) if raw else 0.0
+      reserved = max(time.monotonic(), previous + self._min_gap)
+      with open(self._state_path, "w") as handle:
+        handle.write(str(reserved))
+    finally:
+      self._release()
+
+    gap = reserved - time.monotonic()
+    if gap > 0:
+      time.sleep(gap)
 
 
 def _retry_after_secs(headers):
