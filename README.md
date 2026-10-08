@@ -141,7 +141,7 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **grant-writing**: Funding strategy and proposal development
 - **hypothesis-testing**: Variable mapping and experimental design
 - **academic-writing**: Eliminating AI-isms from research prose
-- **literature-review**: Systematic search and citation analysis
+- **literature-review**: Systematic search and citation analysis, with an evidence-integrity check before delivery
 - **multi-source-investigation**: Cross-validation across diverse sources
 - **peer-review**: Manuscript critique and methodological review
 - **qualitative-research**: Thematic analysis and coding
@@ -151,6 +151,49 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **research-synthesis**: Narrative synthesis with uncertainty quantification
 - **systematic-review**: PRISMA-standard systematic review guidance
 - **using-co-researcher**: Orientation to the suite — how skills are invoked and the rules that govern them. Activation is automatic: a session-start hook injects the Systemic Honesty principles, and each skill self-triggers from its description.
+
+## Literature Reviews With Evidence Checks
+
+Ask your agent for a literature review ("review the evidence on remote work and
+productivity"), or invoke the `literature-review` skill. The agent searches
+OpenAlex, arXiv and Europe PMC, screens what it finds, reads the full texts it
+can retrieve through legal open-access routes, and writes everything into a
+workspace under your current directory.
+
+| File in `review/{slug}/` | Holds |
+|---|---|
+| `protocol.md` | the question, inclusion criteria and query log |
+| `corpus.json` | every candidate paper and its screening decision |
+| `papers/{key}/fulltext.md` | the retrieved text of each included paper |
+| `synthesis.md` | the review itself |
+| `claims.json` | one entry per cited sentence, with the verbatim quote behind it |
+| `refs.json` | the bibliography, checked against OpenAlex, Europe PMC and Crossref |
+
+Before delivering, the agent runs `validate_review.py`, which checks the
+workspace without a model. Every quote must occur in its paper, and every
+citation must point to exactly one screened paper. Every number in a claim must
+appear in its quote, and every cited sentence in the synthesis must agree with a
+verified claim in its numbers, negation and direction. A number in an uncited
+sentence is flagged. When a check fails, the agent receives the findings and up
+to three rounds to repair them.
+
+| The review arrives as | Meaning |
+|---|---|
+| valid | every check passed |
+| valid with warnings | the checks passed, with caveats listed beside the review, such as support from an abstract only or a bibliography that could not be resolved online |
+| INVALID EVIDENCE | problems remained after repair; the draft opens with this warning and names what failed, so treat it as unverified and ask the agent to fix those items or check them yourself |
+
+The checks confirm that the review says what its sources say. They do not
+confirm that the sources are right, and they cannot judge meaning, so a sentence
+that calls a finding "proven" where the paper says "suggested" passes. Read the
+review as critically as you would any draft.
+
+To re-check a workspace yourself:
+
+```bash
+python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.py \
+  --workspace review/{slug}
+```
 
 ## Research Toolchain
 
