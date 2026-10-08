@@ -16,7 +16,7 @@ Searches run against real scholarly databases (OpenAlex, arXiv, Europe PMC), and
 
 **Option 2: Claude CLI**
 ```bash
-claude plugin install poemswe/co-researcher
+claude plugin marketplace add poemswe/co-researcher
 claude plugin install co-researcher
 ```
 

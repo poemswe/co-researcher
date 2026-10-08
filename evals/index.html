@@ -1822,7 +1822,7 @@
 
             <div class="search-container" style="display: flex; gap: 1rem;">
                 <input type="text" id="testSearch" class="search-input"
-                    placeholder="Search agents (e.g. 'lateral') or specific tests..." onkeyup="filterTests()"
+                    placeholder="Search agents (e.g. 'lateral') or specific tests..." oninput="filterTests()"
                     style="flex: 1;">
                 <select id="modelFilter" class="search-input" style="width: auto; cursor: pointer;"
                     onchange="handleModelFilterChange()">
@@ -1843,7 +1843,7 @@
         <div class="footer-content">
             <div class="footer-links">
                 <a href="https://github.com/poemswe/co-researcher" target="_blank">GitHub</a>
-                <a href="http://linkedin.com/in/poepoemyintswe/" target="_blank">LinkedIn</a>
+                <a href="https://linkedin.com/in/poepoemyintswe/" target="_blank">LinkedIn</a>
                 <a href="https://www.threads.com/@poemswe" target="_blank">Threads</a>
             </div>
             <div class="footer-copyright">
@@ -3088,23 +3088,36 @@
             }).join('');
         }
 
+        function trendSeries(history) {
+            const runs = [...history].sort((a, b) =>
+                String(a.timestamp).localeCompare(String(b.timestamp)));
+            const byModel = {};
+            runs.forEach((run, index) => {
+                byModel[run.model] = byModel[run.model] || runs.map(() => null);
+                byModel[run.model][index] = run.average_score;
+            });
+            return {
+                labels: runs.map(run => String(run.timestamp).slice(0, 10)),
+                series: Object.entries(byModel).map(([model, data]) => ({ model, data }))
+            };
+        }
+
         function renderCharts(history, latest) {
             // Trend Chart with Gradients
-            const labels = history.map((_, i) => `Run ${i + 1}`);
+            const trend = trendSeries(history);
+            const labels = trend.labels;
             const models = {};
 
-            history.forEach(h => {
-                if (!models[h.model]) {
-                    models[h.model] = {
-                        label: h.model.charAt(0).toUpperCase() + h.model.slice(1),
-                        data: [],
-                        borderColor: '',
-                        backgroundColor: '',
-                        pointBackgroundColor: '#fff',
-                        pointBorderWidth: 2
-                    };
-                }
-                models[h.model].data.push(h.average_score);
+            trend.series.forEach(({ model, data }) => {
+                models[model] = {
+                    label: model.charAt(0).toUpperCase() + model.slice(1),
+                    data,
+                    spanGaps: true,
+                    borderColor: '',
+                    backgroundColor: '',
+                    pointBackgroundColor: '#fff',
+                    pointBorderWidth: 2
+                };
             });
 
             const trendCanvas = document.getElementById('trendChart');
@@ -3295,7 +3308,10 @@
             const items = document.querySelectorAll('.accordion-item');
 
             items.forEach(item => {
-                const text = item.innerText.toLowerCase();
+                const names = [item.querySelector('.accordion-header'),
+                    ...item.querySelectorAll('.test-case-header')];
+                const text = names.filter(Boolean)
+                    .map(el => el.textContent).join(' ').toLowerCase();
                 if (text.includes(query)) {
                     item.style.display = 'block';
                 } else {

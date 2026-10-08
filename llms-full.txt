@@ -140,9 +140,10 @@ Live evaluation at: https://coresearcher.poemswe.com/evals/
 
 ## Installation
 
-Claude Code: `claude plugins install poemswe/co-researcher`
+Claude Code: `claude plugin marketplace add poemswe/co-researcher`, then `claude plugin install co-researcher`
 Gemini CLI: `gemini extension install https://github.com/poemswe/co-researcher`
 OpenAI Codex: tell Codex to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md
+OpenCode: tell OpenCode to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.opencode/INSTALL.md
 Source: https://github.com/poemswe/co-researcher
 
 ## Links
