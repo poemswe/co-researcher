@@ -7,6 +7,7 @@ sys.dont_write_bytecode = True
 
 import argparse
 import json
+import tempfile
 import concurrent.futures
 import threading
 from datetime import datetime, timezone
@@ -22,6 +23,7 @@ from lib.core import (
 )
 
 EVALS_DIR = Path(__file__).parent
+REPO_ROOT = Path(__file__).resolve().parents[1]
 TEST_CASES_DIR = EVALS_DIR / "test-cases"
 RESULTS_DIR = EVALS_DIR / "results"
 PRINT_LOCK = threading.Lock()
@@ -306,6 +308,30 @@ def extract_justification(judge_output: str) -> str:
     return ""
 
 
+def _local_path_prefixes():
+    temp = Path(tempfile.gettempdir())
+    prefixes = [
+        (str(REPO_ROOT), "<repo>"),
+        (str(temp.resolve()), "<tmp>"),
+        (str(temp), "<tmp>"),
+        (str(Path.home()), "~"),
+    ]
+    return sorted(set(prefixes), key=lambda item: len(item[0]), reverse=True)
+
+
+def redact_local_paths(value, prefixes=None):
+    prefixes = prefixes or _local_path_prefixes()
+    if isinstance(value, str):
+        for prefix, placeholder in prefixes:
+            value = value.replace(prefix, placeholder)
+        return value
+    if isinstance(value, dict):
+        return {key: redact_local_paths(item, prefixes) for key, item in value.items()}
+    if isinstance(value, list):
+        return [redact_local_paths(item, prefixes) for item in value]
+    return value
+
+
 def save_benchmark_v2(reports, model: str, run_id: str):
     """Save to both overview and detail files (v2.0 schema)"""
     detail_dir = EVALS_DIR / "test_results_detail"
@@ -358,7 +384,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
         }
         detail_data["test_results"].append(test_result)
     
-    detail_file.write_text(json.dumps(detail_data, indent=2))
+    detail_file.write_text(json.dumps(redact_local_paths(detail_data), indent=2))
     
     # 2. Update overview file
     overview_file = EVALS_DIR / "benchmark_overview.json"
