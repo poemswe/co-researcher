@@ -149,7 +149,7 @@ Source: https://github.com/poemswe/co-researcher
 ## Links
 
 - Landing page: https://coresearcher.poemswe.com/
-- Benchmark arena: https://coresearcher.poemswe.com/evals/
+- Evals: https://coresearcher.poemswe.com/evals/
 - GitHub: https://github.com/poemswe/co-researcher
 - Creator: https://poemswe.com
 - Summary (llms.txt): https://coresearcher.poemswe.com/llms.txt
