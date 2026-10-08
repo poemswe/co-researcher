@@ -285,11 +285,23 @@
     }
   ],
   "summary_stats": {
-    "total_runs": 4,
+    "total_runs": 5,
     "models": [
       "claude:opus",
       "codex:gpt-5.2 xhigh",
       "gemini:gemini-3-flash-preview"
+    ],
+    "agents": [
+      "critical-analysis",
+      "ethics-review",
+      "grant-proposal",
+      "hypothesis-testing",
+      "lateral-thinking",
+      "literature-review",
+      "peer-review",
+      "qualitative-research",
+      "quantitative-analysis",
+      "research-methodology"
     ],
     "overall_pass_rate": 96.8
   }

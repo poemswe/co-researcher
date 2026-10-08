@@ -38,13 +38,16 @@ and withdrawn references.
 # ///
 
 import argparse
+from datetime import datetime, timezone
 import difflib
+import hashlib
 import json
 import os
 import pathlib
 import re
 import sys
 import urllib.parse
+from typing import Protocol
 
 import http_client
 
@@ -68,6 +71,17 @@ _CROSSREF = http_client.HttpClient(
 
 _DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"'<>]+")
 _TITLE_MATCH_THRESHOLD = 0.85
+
+
+class ResolverUnavailable(RuntimeError):
+  """The resolver could not answer; this is not authoritative not-found."""
+
+
+class CitationResolver(Protocol):
+  identity: str
+
+  def resolve(self, entry: dict) -> dict:
+    """Return one legacy-shaped citation result or raise unavailable."""
 
 
 def _extract_doi(text: str) -> str | None:
@@ -102,25 +116,75 @@ def _parse_bibtex(raw: str) -> list[dict]:
 
 def parse_input(path: str) -> list[dict]:
   raw = pathlib.Path(path).read_text(encoding="utf-8")
-  entries = []
   if path.endswith(".json"):
-    for item in json.loads(raw):
-      if isinstance(item, str):
-        doi = _extract_doi(item)
-        entries.append({"doi": doi, "title": None if doi else item,
-                        "raw": item})
-      else:
-        entries.append({"doi": item.get("doi"), "title": item.get("title"),
-                        "raw": json.dumps(item)})
-    return entries
+    return normalize_citation_entries(json.loads(raw))
   if path.endswith(".bib"):
     return _parse_bibtex(raw)
+  entries = []
   for line in raw.splitlines():
     line = line.strip().lstrip("-*").strip()
     if not line:
       continue
     entries.append({"doi": _extract_doi(line), "title": line, "raw": line})
   return entries
+
+
+def normalize_citation_entries(items: list) -> list[dict]:
+  """Normalize an ordered JSON bibliography into resolver inputs."""
+  if not isinstance(items, list):
+    raise ValueError("bibliography must be an ordered array")
+  entries = []
+  for index, item in enumerate(items):
+    if isinstance(item, str):
+      doi = _extract_doi(item)
+      entries.append({"doi": doi, "title": None if doi else item,
+                      "raw": item})
+      continue
+    if not isinstance(item, dict):
+      raise ValueError(f"bibliography entry {index} must be a string or object")
+    doi, title = item.get("doi"), item.get("title")
+    if doi is not None and not isinstance(doi, str):
+      raise ValueError(f"bibliography entry {index} doi must be a string")
+    if title is not None and not isinstance(title, str):
+      raise ValueError(f"bibliography entry {index} title must be a string")
+    entries.append({"doi": doi, "title": title,
+                    "raw": json.dumps(
+                        item, ensure_ascii=False, sort_keys=True,
+                        separators=(",", ":"))})
+  return entries
+
+
+def _canonical_entry(entry: dict) -> dict:
+  if not isinstance(entry, dict):
+    raise ValueError("citation entry must be an object")
+  if set(entry) != {"doi", "title", "raw"}:
+    raise ValueError(
+        "citation entry schema requires exactly doi, title, and raw fields")
+  doi, title, raw = entry.get("doi"), entry.get("title"), entry.get("raw")
+  if doi is not None and not isinstance(doi, str):
+    raise ValueError("citation doi must be a string or null")
+  if title is not None and not isinstance(title, str):
+    raise ValueError("citation title must be a string or null")
+  if not isinstance(raw, str):
+    raise ValueError("citation raw input must be a string")
+  return {"doi": doi, "title": title, "raw": raw}
+
+
+def citation_input_identity(entry: dict) -> str:
+  payload = json.dumps(
+      _canonical_entry(entry), sort_keys=True, separators=(",", ":"),
+      ensure_ascii=False).encode("utf-8")
+  return hashlib.sha256(payload).hexdigest()
+
+
+def bibliography_sha256(entries: list[dict]) -> str:
+  if not isinstance(entries, list):
+    raise ValueError("citation entries must be a list")
+  payload = json.dumps(
+      [_canonical_entry(entry) for entry in entries],
+      sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+  ).encode("utf-8")
+  return hashlib.sha256(payload).hexdigest()
 
 
 def _normalize_title(title: str) -> str:
@@ -146,28 +210,37 @@ def _pmid_from_openalex(work: dict) -> str | None:
   return pmid_url.rstrip("/").rpartition("/")[2] or None
 
 
-def resolve_doi(doi: str) -> dict | None:
+def resolve_doi(doi: str, *, fail_on_unavailable: bool = False) -> dict | None:
+  openalex_unavailable = False
   try:
     work = _OPENALEX.fetch_json(
         f"https://api.openalex.org/works/https://doi.org/{doi}")
     return {"title": work.get("title"), "doi": _doi_from_openalex(work) or doi,
             "source": "openalex", "retracted": bool(work.get("is_retracted")),
-            "pmid": _pmid_from_openalex(work)}
+            "pmid": _pmid_from_openalex(work), "resolution_status": "complete"}
   except http_client.HttpError as err:
     if err.status_code != 404:
       print(f"OpenAlex error for DOI {doi}: {err}", file=sys.stderr)
+      openalex_unavailable = True
   query = urllib.parse.urlencode(
       {"query": f'DOI:"{doi}"', "format": "json", "pageSize": 1})
   try:
     data = _EPMC.fetch_json(f"search?{query}")
   except http_client.HttpError as err:
     print(f"Europe PMC error for DOI {doi}: {err}", file=sys.stderr)
+    if fail_on_unavailable:
+      raise ResolverUnavailable(
+          f"citation resolver unavailable for DOI {doi}") from err
     return None
   hits = data.get("resultList", {}).get("result", [])
   if not hits:
+    if openalex_unavailable and fail_on_unavailable:
+      raise ResolverUnavailable(
+          f"citation resolver unavailable for DOI {doi}")
     return None
   return {"title": hits[0].get("title"), "doi": hits[0].get("doi") or doi,
-          "source": "epmc", "retracted": False, "pmid": hits[0].get("pmid")}
+          "source": "epmc", "retracted": False, "pmid": hits[0].get("pmid"),
+          "resolution_status": "partial" if openalex_unavailable else "complete"}
 
 
 def retracted_via_crossref(doi: str) -> bool | None:
@@ -225,7 +298,7 @@ def retracted_via_epmc(pmid: str) -> bool | None:
              for c in corrections)
 
 
-def resolve_title(title: str) -> dict | None:
+def resolve_title(title: str, *, fail_on_unavailable: bool = False) -> dict | None:
   safe_title = title.replace('"', "'")
   query = urllib.parse.urlencode(
       {"filter": f'title.search:"{safe_title}"', "per-page": 1})
@@ -233,16 +306,19 @@ def resolve_title(title: str) -> dict | None:
     data = _OPENALEX.fetch_json(f"https://api.openalex.org/works?{query}")
   except http_client.HttpError as err:
     print(f"OpenAlex error for title {title!r}: {err}", file=sys.stderr)
+    if fail_on_unavailable:
+      raise ResolverUnavailable(
+          f"citation resolver unavailable for title {title!r}") from err
     return None
   hits = data.get("results", [])
   if not hits or not titles_match(title, hits[0].get("title") or ""):
     return None
   return {"title": hits[0].get("title"), "doi": _doi_from_openalex(hits[0]),
           "source": "openalex", "retracted": bool(hits[0].get("is_retracted")),
-          "pmid": _pmid_from_openalex(hits[0])}
+          "pmid": _pmid_from_openalex(hits[0]), "resolution_status": "complete"}
 
 
-def _retraction_state(hit: dict) -> tuple[bool, bool, str | None]:
+def _retraction_audit(hit: dict) -> tuple[bool, str, str | None]:
   """(retracted, checked, source) — checked is False only when unknowable.
 
   No single source is complete, so a clean answer from one does not end the
@@ -259,38 +335,60 @@ def _retraction_state(hit: dict) -> tuple[bool, bool, str | None]:
   opinion — though no sampled paper was caught by it alone.
   """
   if hit["retracted"]:
-    return True, True, "openalex"
+    return True, "complete", "openalex"
 
   consulted = []
+  unavailable = 0
+  applicable = 0
   if hit["doi"]:
+    applicable += 1
     verdict = retracted_via_crossref(hit["doi"])
     if verdict is not None:
       if verdict:
-        return True, True, "crossref"
+        return True, "complete", "crossref"
       consulted.append("crossref")
+    else:
+      unavailable += 1
   if hit.get("pmid"):
+    applicable += 1
     verdict = retracted_via_epmc(hit["pmid"])
     if verdict is not None:
       if verdict:
-        return True, True, "europepmc"
+        return True, "complete", "europepmc"
       consulted.append("europepmc")
+    else:
+      unavailable += 1
 
-  if not consulted:
-    return False, False, None
-  return False, True, "+".join(consulted)
+  source = "+".join(consulted) or None
+  if applicable == 0 or unavailable == applicable:
+    return False, "unavailable", source
+  if unavailable:
+    return False, "partial", source
+  return False, "complete", source
 
 
-def verify_one(entry: dict) -> dict:
+def _retraction_state(hit: dict) -> tuple[bool, bool, str | None]:
+  """Legacy wrapper retaining the public checked boolean contract."""
+  retracted, status, source = _retraction_audit(hit)
+  return retracted, status == "complete", source
+
+
+def verify_one(entry: dict, *, fail_on_unavailable: bool = False) -> dict:
   result = {"input": entry["raw"], "status": "not_found",
             "doi": entry.get("doi"), "matched_title": None, "source": None,
-            "retraction_checked": False, "retraction_source": None}
+            "retraction_checked": False, "retraction_source": None,
+            "retraction_status": "not_applicable",
+            "resolution_status": "complete"}
   if entry.get("doi"):
-    hit = resolve_doi(entry["doi"])
+    hit = resolve_doi(entry["doi"], fail_on_unavailable=fail_on_unavailable)
     if hit:
-      retracted, checked, via = _retraction_state(hit)
+      retracted, audit_status, via = _retraction_audit(hit)
       result.update(status="verified", doi=hit["doi"],
                     matched_title=hit["title"], source=hit["source"],
-                    retraction_checked=checked, retraction_source=via)
+                    retraction_checked=audit_status == "complete",
+                    retraction_source=via,
+                    retraction_status=audit_status,
+                    resolution_status=hit.get("resolution_status", "complete"))
       if retracted:
         result["status"] = "retracted"
       else:
@@ -300,15 +398,140 @@ def verify_one(entry: dict) -> dict:
           result["status"] = "mismatched"
     return result
   if entry.get("title"):
-    hit = resolve_title(entry["title"])
+    hit = resolve_title(entry["title"],
+                        fail_on_unavailable=fail_on_unavailable)
     if hit:
-      retracted, checked, via = _retraction_state(hit)
+      retracted, audit_status, via = _retraction_audit(hit)
       result.update(status="verified", doi=hit["doi"],
                     matched_title=hit["title"], source=hit["source"],
-                    retraction_checked=checked, retraction_source=via)
+                    retraction_checked=audit_status == "complete",
+                    retraction_source=via,
+                    retraction_status=audit_status,
+                    resolution_status=hit.get("resolution_status", "complete"))
       if retracted:
         result["status"] = "retracted"
   return result
+
+
+class NetworkCitationResolver:
+  """Production resolver backed by the module's configured network clients."""
+
+  identity = "openalex+crossref+europepmc"
+
+  def resolve(self, entry: dict) -> dict:
+    return verify_one(entry, fail_on_unavailable=True)
+
+
+def _unavailable_result(entry: dict, message: str) -> dict:
+  return {"input": entry.get("raw"), "status": "unavailable",
+          "doi": entry.get("doi"), "matched_title": None, "source": None,
+          "retraction_checked": False, "retraction_source": None,
+          "retraction_status": "unavailable",
+          "resolution_status": "unavailable",
+          "error": message}
+
+
+def _checked_at_iso(checked_at: datetime) -> str:
+  if not isinstance(checked_at, datetime) or checked_at.tzinfo is None:
+    raise ValueError("checked_at must be an aware datetime")
+  offset = checked_at.utcoffset()
+  if offset is None:
+    raise ValueError("checked_at must be an aware datetime")
+  if offset != timezone.utc.utcoffset(checked_at):
+    raise ValueError("checked_at must be in UTC")
+  return checked_at.astimezone(timezone.utc).isoformat().replace(
+      "+00:00", "Z")
+
+
+def _valid_resolver_result(result: object, entry: dict) -> bool:
+  required = {
+      "input", "status", "doi", "matched_title", "source",
+      "retraction_checked", "retraction_source", "retraction_status",
+      "resolution_status",
+  }
+  if not isinstance(result, dict) or not required <= set(result):
+    return False
+  status = result["status"]
+  if status not in {
+      "verified", "mismatched", "not_found", "retracted", "unavailable",
+  }:
+    return False
+  if result["input"] != entry["raw"] or not isinstance(result["input"], str):
+    return False
+  if not all(result[field] is None or isinstance(result[field], str)
+             for field in ("doi", "matched_title", "source",
+                           "retraction_source")):
+    return False
+  if not isinstance(result["retraction_checked"], bool):
+    return False
+  audit = result["retraction_status"]
+  if audit not in {"complete", "partial", "unavailable", "not_applicable"}:
+    return False
+  resolution = result["resolution_status"]
+  if resolution not in {"complete", "partial", "unavailable"}:
+    return False
+  if status == "not_found":
+    return (audit == "not_applicable" and not result["retraction_checked"]
+            and resolution == "complete")
+  if status == "unavailable":
+    return (audit == "unavailable" and not result["retraction_checked"]
+            and resolution == "unavailable")
+  if status == "retracted":
+    return audit == "complete" and result["retraction_checked"]
+  if audit == "not_applicable":
+    return False
+  return result["retraction_checked"] == (audit == "complete")
+
+
+def verify_citation_entries(
+    entries: list[dict], resolver: CitationResolver, checked_at: datetime,
+) -> dict:
+  """Deterministically verify explicit entries with an injected resolver."""
+  if not isinstance(entries, list) or not all(
+      isinstance(entry, dict) for entry in entries):
+    raise ValueError("citation entries must be a list of objects")
+  resolver_identity = getattr(resolver, "identity", None)
+  if not isinstance(resolver_identity, str) or not resolver_identity:
+    raise ValueError("resolver identity must be a non-empty string")
+  checked_at_value = _checked_at_iso(checked_at)
+  results = []
+  commitment = bibliography_sha256(entries)
+  for index, entry in enumerate(entries):
+    input_identity = citation_input_identity(entry)
+    try:
+      result = resolver.resolve(entry)
+    except ResolverUnavailable as exc:
+      result = _unavailable_result(entry, str(exc) or "resolver unavailable")
+    if not _valid_resolver_result(result, entry):
+      raise ValueError("resolver result is malformed or internally inconsistent")
+    status = result["status"]
+    normalized = dict(result)
+    normalized["entry_index"] = index
+    normalized["input_identity"] = input_identity
+    results.append(normalized)
+
+  counts = {status: sum(1 for result in results
+                        if result["status"] == status)
+            for status in ("verified", "mismatched", "not_found", "retracted")}
+  unavailable = sum(1 for result in results
+                    if result["status"] == "unavailable")
+  incomplete_retraction = any(
+      result["status"] in {"verified", "mismatched"}
+      and result.get("retraction_status") in {"partial", "unavailable"}
+      for result in results)
+  incomplete_resolution = any(
+      result["resolution_status"] in {"partial", "unavailable"}
+      for result in results)
+  if unavailable == len(results) and results:
+    response_status = "unavailable"
+  elif unavailable or incomplete_retraction or incomplete_resolution:
+    response_status = "partial"
+  else:
+    response_status = "complete"
+  return {"total": len(results), **counts, "unavailable": unavailable,
+          "resolver": resolver_identity, "checked_at": checked_at_value,
+          "response_status": response_status,
+          "bibliography_sha256": commitment, "results": results}
 
 
 def main(argv=None) -> int:
@@ -320,11 +543,12 @@ def main(argv=None) -> int:
   args = parser.parse_args(argv)
 
   entries = parse_input(args.input)
-  results = [verify_one(e) for e in entries]
-  counts = {s: sum(1 for r in results if r["status"] == s)
-            for s in ("verified", "mismatched", "not_found", "retracted")}
-  print(json.dumps({"total": len(results), **counts, "results": results},
-                   indent=2))
+  report = verify_citation_entries(
+      entries, NetworkCitationResolver(), datetime.now(timezone.utc))
+  results = report["results"]
+  counts = {status: report[status] for status in
+            ("verified", "mismatched", "not_found", "retracted")}
+  print(json.dumps(report, indent=2))
   line = (f"Citations: {counts['verified']} verified, "
           f"{counts['mismatched']} mismatched, "
           f"{counts['not_found']} not found, "

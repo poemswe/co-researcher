@@ -12,11 +12,14 @@ from functools import cache
 from pathlib import Path
 
 EVALS_DIR = Path(__file__).parent.parent
+BENCHMARK_CAPABILITY_ALIASES = {
+    "grant-writing": "grant-proposal",
+}
 CLI_CONFIG = {
     "claude": {"base": ["--print", "--verbose"], "tools": ["--tools", "WebSearch,WebFetch,Read,Grep,Glob"]},
     "gemini": {"base": [], "tools": ["--yolo"], "stdin": True},
-    "codex": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
-    "gpt": {"base": ["--search", "--enable", "web_search_request", "exec", "--full-auto"], "tools": [], "stdin": True},
+    "codex": {"base": ["--search", "--enable", "web_search_request", "exec", "--sandbox", "workspace-write", "--skip-git-repo-check"], "tools": [], "stdin": True},
+    "gpt": {"base": ["--search", "--enable", "web_search_request", "exec", "--sandbox", "workspace-write", "--skip-git-repo-check"], "tools": [], "stdin": True},
 }
 
 
@@ -24,6 +27,7 @@ CLI_CONFIG = {
 class TestCase:
     name: str
     agent: str
+    implementation_skill: str
     task_prompt: str
     rubric_profile: dict
     must_include: list[str] = field(default_factory=list)
@@ -80,8 +84,42 @@ def rx_list(pattern: str, text: str) -> list[str]:
     return [x.strip() for x in m.group(1).split(",") if x.strip() and x.lower() != "none"]
 
 
+def canonical_benchmark_capability(agent: str) -> str:
+    """Return the stable dashboard ID for an eval capability."""
+    return BENCHMARK_CAPABILITY_ALIASES.get(agent, agent)
+
+
+def is_repository_test_case(path: Path) -> bool:
+    """Return whether path is a tracked test case governed by this schema."""
+    try:
+        path.resolve().relative_to((EVALS_DIR / "test-cases").resolve())
+    except ValueError:
+        return False
+    return True
+
+
 def parse_test_case(path: Path) -> TestCase:
     content = path.read_text()
+    capability = canonical_benchmark_capability(path.parent.name)
+    declared_capability = rx(r"\*\*Capability\*\*:\s*([\w-]+)", content)
+    declared_implementation_skill = rx(
+        r"\*\*Implementation Skill\*\*:\s*([\w-]+)", content)
+    repository_case = is_repository_test_case(path)
+    if repository_case and not declared_capability:
+        raise ValueError(f"{path.name}: Missing required **Capability** metadata")
+    if repository_case and not declared_implementation_skill:
+        raise ValueError(
+            f"{path.name}: Missing required **Implementation Skill** metadata")
+    if declared_capability and declared_capability != capability:
+        raise ValueError(
+            f"Capability {declared_capability!r} does not match "
+            f"test directory capability {capability!r}"
+        )
+    implementation_skill = (
+        declared_implementation_skill
+        or rx(r"\*\*Agent\*\*:\s*([\w-]+)", content)
+        or path.parent.name
+    )
     
     rubric_profile = {}
     if section := rx(r"## Rubric Profile\s*\n(.*?)(?=\n##|\Z)", content):
@@ -108,7 +146,8 @@ def parse_test_case(path: Path) -> TestCase:
 
     return TestCase(
         name=name,
-        agent=rx(r"\*\*Agent\*\*:\s*([\w-]+)", content),
+        agent=capability,
+        implementation_skill=implementation_skill,
         task_prompt=task_prompt,
         rubric_profile=rubric_profile,
         must_include=must_include,
@@ -350,7 +389,8 @@ def generate_report(rpt: EvaluationReport, out_dir: Path, model: str = "claude")
     
     content = f"""# Evaluation Report: {tc.name}
 
-**Agent**: {tc.agent}  
+**Capability**: {tc.agent}<br>
+**Implementation Skill**: {tc.implementation_skill}<br>
 **Model**: {model}  
 **Status**: {"PASS" if rpt.passed else "FAIL"}  
 **Duration**: {ar.duration:.1f}s
@@ -391,7 +431,10 @@ def generate_summary(out_dir: Path) -> Path:
             
         content = file.read_text()
         reports_data.append({
-            "agent": rx(r"\*\*Agent\*\*:\s*([^\n]+)", content),
+            "agent": (
+                rx(r"\*\*Capability\*\*:\s*([^\n<]+)", content)
+                or rx(r"\*\*Agent\*\*:\s*([^\n]+)", content)
+            ),
             "name": rx(r"# Evaluation Report:\s*([^\n]+)", content),
             "status": rx(r"\*\*Status\*\*:\s*(PASS|FAIL)", content),
             "score": rx(r"Overall.*?(\d+(?:\.\d+)?)/100", content) or "0",

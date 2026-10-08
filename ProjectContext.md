@@ -4,9 +4,13 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**v2.6.0 released (2026-07-10).** 14 skills. The literature funnel is tooled end to end: search backends -> `build_corpus.py` -> screening -> `read_paper.py` -> `prisma_counts.py` -> `verify_citations.py`. 125 tests across 9 files. Nothing in flight; no open PRs.
+**v2.6.2 released (2026-10-06)**, containing only the OpenAlex comma-title fix (#30).
 
-The differentiator, established by competitive analysis this session, is **retraction detection inside the agent that writes**. The closest open-source peer (HalluCiteChecker, arXiv Apr 2026) detects fabricated citations but not withdrawn ones. Screening workbenches (Covidence, Rayyan) and AI search tools (Elicit) don't gate the agent's own output.
+**PR #28 (`fix/claim-verifier-hardening`)** is at Task 12 of the integrity-integration plan. Live evals run end to end. On `21c3777` Opus (`claude-opus-5-5`) met 15/15 expected outcomes; on `154c26f` Codex (`gpt-6-astra`, `run_20261008_155105_866156`, two resumes) met 15/15. Every run caught 13/13 attack families. That Codex run exposed a false positive: its clean control put references under "Annotated bibliography", which coverage checks as prose, because the skill's own template asked for that section. `a868689` moves citations under `## References` (not yet re-run). `65fce77` adds uncited-number units to `enumerate-coverage`. Confusion counts cover attack cases only, so control false positives do not show in them. Remaining: the private pilot handoff (Task 12 step 5), taking the PR out of draft, and the merge. Right after merging, move the benchmark pin (`TARGET_COMMIT` and its test) to #28's commit on main; a squash merge orphans branch SHAs, and the protocol is not registered yet. Hold the merge until the feature is complete (see the PR #19 merge gate).
+
+Write-ups (private, not shared): the pilot protocol is a Claude Doc (`b84e270a-cf38-4882-a568-659a5bb799f1`). Decided there: uncited-number units labelled exempt/restated/unsupported; the code's domain names; 3 content attacks plus the authentic review per paper, with the test split laid out as the affine plane of order 3 and 005/006 handled by a labelled decoy and paper selection. Still open: agreement bar, beacon, models and runs, uncertainty reporting, registry. The results are a workshop-style paper for the user's PhD application, "Every Claim Traced" (https://claude.ai/artifact/FQUH5LQGXszNXnHhPhHDg1), framed as a pilot whose limitations set the benchmark's research questions. The quality judge reads only `synthesis.md`, and on the 96–135 character attacked syntheses it scored byte-identical text with a pooled SD of 9.5 points (clean full review: SD 1.0).
+
+PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock directory left by a killed process hangs every later call. It is planned for the next minor or major release, together with #28.
 
 Next open item is the Semantic Scholar backend (see Open Threads).
 
@@ -19,6 +23,7 @@ Next open item is the Semantic Scholar backend (see Open Threads).
 
 ## Recent Decisions
 
+- **2026-10-06**: Coverage strictness: every synthesis number, years included, must be grounded, and an uncited number is critical. Warnings that edits can fix (`claim_needs_review`, `bibliography_incomplete`, `prisma_exclusion_reason_missing`) trigger repair. `abstract_only_support` and `citation_resolution_unavailable` do not.
 - **2026-07-10**: Retraction detection reworked twice, both times driven by measurement rather than assumption. v2.5.0 added a Crossref/Retraction Watch cross-check after finding OpenAlex's `is_retracted` missed 3 of 40 sampled retracted DOIs. v2.6.0 then found the ladder stopped too early: sampling Europe PMC's retracted publications, **Crossref missed 19 of 50**, so a clean answer from one source no longer ends the check — every available source is consulted and any retraction wins. Results now carry `retraction_checked` + `retraction_source` (renamed from `crossref_checked`) so an unrunnable check never reads as clean.
 - **2026-07-10**: Rejected resolving DOIs from titles via Crossref bibliographic search. Crossref returns a top hit for *any* string (a fabricated title matched a Thomas Aquinas essay; AlphaFold's title matched a "Faculty Opinions recommendation of…" record that our substring `titles_match` would have accepted). It would have manufactured retraction verdicts.
 - **2026-07-10**: v2.4.0 shipped `build_corpus.py` after the first live end-to-end funnel run exposed that step 3 had no tool.

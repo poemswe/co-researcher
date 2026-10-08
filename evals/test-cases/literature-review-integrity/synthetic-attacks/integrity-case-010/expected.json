@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "final_status": "invalid",
+  "minimum_repair_rounds": 0,
+  "maximum_repair_rounds": 0,
+  "attack_family": "missing-artifact",
+  "reason_expectations": [
+    {
+      "reason_code": "artifact_missing",
+      "present": true,
+      "unit": {
+        "artifact": "refs.json",
+        "context_key": null,
+        "context_value": null
+      }
+    },
+    {
+      "reason_code": "artifact_missing",
+      "present": false,
+      "unit": {
+        "artifact": "claims.json",
+        "context_key": null,
+        "context_value": null
+      }
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 # Test Case: Research Bias Identification
 
 ## Metadata
-- **Agent**: critical-analysis
+- **Capability**: critical-analysis
+- **Implementation Skill**: critical-analysis
 - **Difficulty**: Hard
 - **Focus**: Detecting research and cognitive biases
 

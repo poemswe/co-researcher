@@ -1,7 +1,8 @@
 # Test Case: Logical Fallacy Detection
 
 ## Metadata
-- **Agent**: critical-analysis
+- **Capability**: critical-analysis
+- **Implementation Skill**: critical-analysis
 - **Difficulty**: Medium
 - **Focus**: Identifying logical fallacies
 

@@ -1,7 +1,8 @@
 # Test Case: Simpson's Paradox Analysis
 
 ## Metadata
-- **Agent**: quantitative-analysis
+- **Capability**: quantitative-analysis
+- **Implementation Skill**: quantitative-analysis
 - **Difficulty**: Hard
 - **Focus**: Statistical paradox recognition and correct interpretation
 

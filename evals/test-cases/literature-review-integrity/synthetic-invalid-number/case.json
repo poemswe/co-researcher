@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0.0",
+  "capability": "literature-review-integrity",
+  "case_id": "synthetic-invalid-number",
+  "prompt": "Create a complete literature-review workspace about a synthetic tutoring intervention. Include the statement that scores improved by 73 percent while the cited synthetic source text supports only a 7.3 percent improvement, so the integrity repair loop can evaluate the numeric mismatch.",
+  "domain": "synthetic education intervention",
+  "fixture_paths": [],
+  "quality_rubric_id": "literature-review-v1"
+}

@@ -1,0 +1,16 @@
+{
+  "corpus": [
+    {"key": "amber", "ids": {"pmcid": "amber"}, "title": "Amber Garden Recall", "authors": ["Mira Lumen"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}},
+    {"key": "ivory", "ids": {"pmcid": "ivory"}, "title": "Ivory Harbor Recall", "authors": ["Niko Vale"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}}
+  ],
+  "claims": [
+    {"claim": "The amber garden trial reported 6.4% stronger recall.", "paper_id": "amber", "citation": "Lumen, 2024", "supporting_quote": "The amber garden trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses."},
+    {"claim": "The ivory harbor trial reported 6.4% stronger recall.", "paper_id": "ivory", "citation": "Vale, 2024", "supporting_quote": "The ivory harbor trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses."}
+  ],
+  "synthesis": "The amber garden trial reported 64% stronger recall (Lumen, 2024). The ivory harbor trial reported 6.4% stronger recall (Vale, 2024).\n",
+  "references": [],
+  "sources": {
+    "amber": "The amber garden trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses.",
+    "ivory": "The ivory harbor trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses."
+  }
+}

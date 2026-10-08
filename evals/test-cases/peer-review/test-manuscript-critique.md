@@ -1,7 +1,8 @@
 # Test Case: Manuscript Critique (Peer Reviewer)
 
 ## Metadata
-- **Agent**: peer-review
+- **Capability**: peer-review
+- **Implementation Skill**: peer-review
 - **Difficulty**: Medium
 - **Area**: Methodological Rigor
 

@@ -2,6 +2,21 @@
 
 Quick lookup guide for all 26 test cases, their specifications, and evaluation rubrics.
 
+## Metadata Schema
+
+Each test case declares two separate identifiers:
+
+```markdown
+- **Capability**: lateral-thinking
+- **Implementation Skill**: research-methodology
+```
+
+`Capability` is the stable benchmark category used for scores and cross-model
+comparisons. It must match the canonical form of the test-case directory name.
+`Implementation Skill` names the skill that executes the case and may change
+without rewriting benchmark history. The parser accepts the former `Agent`
+field only for compatibility with external legacy cases.
+
 ---
 
 ## Critical-Analyzer (4 tests)
@@ -503,4 +518,3 @@ See benchmark_history.json for latest scores per test case.
 - Know expected score ranges by difficulty
 - Understand rubric weighting for fair comparison
 - Reference agent specialization by test focus
-

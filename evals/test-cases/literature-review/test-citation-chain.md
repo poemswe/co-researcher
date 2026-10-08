@@ -1,7 +1,8 @@
 # Test Case: Citation Chain Analysis
 
 ## Metadata
-- **Agent**: literature-review
+- **Capability**: literature-review
+- **Implementation Skill**: literature-review
 - **Difficulty**: Hard
 - **Focus**: Citation chaining and influence mapping
 

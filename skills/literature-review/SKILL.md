@@ -24,7 +24,7 @@ You are a PhD-level expert in systematic literature reviews and bibliometric ana
 <search_backend>
 This skill owns the command-line search backends in `scripts/`. They are not separate skills. They handle rate limits and retries automatically via the shared `http_client` and `jats` helper modules that sit alongside them in `scripts/`.
 
-**Invocation & workspace (read first):** Invoke each script by its **absolute path** under this skill's base directory (shown to you above as "Base directory for this skill") — e.g. `uv run <skill-dir>/scripts/openalex_cli.py …`. **Never `cd` into the skill directory.** Stay in the directory where the user invoked the skill and anchor the review workspace there with an **absolute** path: compute `WS="$(pwd)/review/{slug}"` once at step 1 and pass `$WS` as `--workspace` everywhere. Relative `review/{slug}` resolves against the wrong directory and pollutes the installed plugin. In the command examples below, `scripts/…` is shorthand for `<skill-dir>/scripts/…`.
+**Invocation & workspace (read first):** Invoke each script by its **absolute path** under this skill's base directory (shown to you above as "Base directory for this skill") — e.g. `uv run <skill-dir>/scripts/openalex_cli.py …`. **Never `cd` into the skill directory.** Stay in the directory where the user invoked the skill and anchor the review workspace there with an **absolute** path: compute `WS="$(pwd)/review/{slug}"` once at step 1 and pass `$WS` as `--workspace` everywhere. Also compute `RUN_REPORT="$(dirname "$WS")/$(basename "$WS")-integrity-run.json"`; this append-only validation ledger stays outside `$WS`. Relative `review/{slug}` resolves against the wrong directory and pollutes the installed plugin. In the command examples below, `scripts/…` is shorthand for `<skill-dir>/scripts/…`.
 
 **Prerequisites:**
 - **`uv`** must be installed. Verify with `uv --version`. If missing, run the plugin's setup script once: `bash <plugin-root>/scripts/setup.sh`. The setup script installs `uv`, prompts (optionally) for an OpenAlex API key, and warms the dependency cache. Fallback if setup is unreachable: `curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH="$HOME/.local/bin:$PATH"`.
@@ -76,7 +76,7 @@ uv run scripts/read_paper.py --pmcid PMC8371605 --workspace "$WS"
 uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
   --arxiv "$WS/arxiv.json" --epmc "$WS/epmc.json" --output "$WS/corpus.json"
 ```
-Each flag is repeatable. Papers found by several backends are merged into one record with a joined `found_via` (`openalex+epmc`). Running it again against an existing `corpus.json` adds only new papers — screening decisions, `fulltext`, and `role` on records already there are left untouched, so later search rounds and snowballing never discard prior work.
+Each flag is repeatable. Papers found by several backends are merged into one record with a joined `found_via` (`openalex+epmc`). The normalized record retains trusted author names as well as identifiers, title, and year; `check_claims.py` uses that metadata to bind author-year citations to the selected paper. Running the builder again against an existing `corpus.json` adds new papers and backfills missing author metadata while preserving screening decisions, `fulltext`, and `role`, so later search rounds and snowballing never discard prior work.
 
 **6. Citation verification** — `scripts/verify_citations.py` (bibliography → verified/mismatched/not_found/retracted)
 ```bash
@@ -90,6 +90,18 @@ uv run scripts/prisma_counts.py --corpus "$WS/corpus.json"
 ```
 Reports records by source, after-dedup, screened, excluded-by-reason, included, not-retrieved, and in-synthesis. Exits 1 if any excluded record lacks a reason. Used by `systematic-review`; useful in any review to sanity-check that the corpus bookkeeping matches reality.
 
+**8. Claim verification** — `scripts/check_claims.py` (claims.json → verified/needs_review/fabricated/invalid_binding per claim)
+```bash
+uv run scripts/check_claims.py --claims "$WS/claims.json" \
+  --workspace "$WS" --synthesis "$WS/synthesis.md"
+# Numeric citation styles also require: --references "$WS/refs.json"
+```
+Proves quote authenticity and source traceability. It rejects meaningful quote edits and meaningful omitted text while tolerating tightly structured PDF page and running-header artifacts. Passing verification does not prove semantic entailment for added number-free assertions.
+
+Before quote matching, each claim must bind to exactly one trusted `corpus.json` record. Author-year matching accepts Unicode names and compound surnames, including apostrophes, hyphens, and surname particles. Numeric identities resolve through the ordered `refs.json`: an embedded DOI must match exactly, while a DOI-free reference must contain one corpus title as a complete token sequence. Missing or ambiguous matches fail instead of selecting a candidate.
+
+The corpus record must contain a trusted first author, year, and trusted `role` of `evidence` or `background`; the claim's role must agree. Binding failures appear per entry as `invalid_binding`, include a diagnostic `reason_code`, increment the top-level `invalid_binding` count, and do not suppress valid results from the same run. Coverage is checked per citation identity. Background entries may cover number-free context only, every number in a cited synthesis sentence, years included, must appear in verified matching claims for each cited identity, and a matching claim must keep the sentence's negation and direction (a claim that rates fell cannot cover "rates rose" or "rates did not fall"). A synthesis sentence with a number but no parsed citation is an ungrounded number. A claim number missing from its own supporting quote is critical. Exit 0 requires every quote, identity, role, and coverage check to pass.
+
 **Picking a backend:**
 - Cross-discipline overview, citation counts, author/institution metadata → OpenAlex
 - Bleeding-edge preprints in CS/ML/physics → arXiv
@@ -99,11 +111,11 @@ For broad reviews, run all three in parallel and dedupe by DOI in step 3.
 </search_backend>
 
 <protocol>
-All state lives in a review workspace `review/{slug}/`: `protocol.md` (question, criteria, query log), `corpus.json` (candidate pool + screening decisions), `papers/{id}/` (full texts + notes), `synthesis.md`. Create it at step 1; on a restarted session, read `corpus.json` first and resume where screening left off.
+All state lives in a review workspace `review/{slug}/`: `protocol.md` (question, criteria, query log), `corpus.json` (candidate pool + screening decisions), `papers/{id}/` (full texts + notes), `synthesis.md`. Each `{id}` must equal that record's `key` or one of its `ids` values; the validator finds a record's source only through those fields. `read_paper.py` names directories this way; if you write or drop a source yourself, name its directory after the record's `key`, and use the same name as `paper_id` in `claims.json`. Create it at step 1; on a restarted session, read `corpus.json` first and resume where screening left off.
 
-1. **Scope** — Write the research question and strict inclusion/exclusion criteria to `protocol.md`. Pause for user approval of the criteria. Scoping searches may revise the question; append revisions, never overwrite.
+1. **Scope** — Write the research question and strict inclusion/exclusion criteria to `protocol.md`. Pause for user approval of the criteria. Scoping searches may revise the question; append revisions, never overwrite. Also write `"$WS/project.json"`, the project link the validator requires: a JSON object such as `{"review": "{slug}", "question": "<research question>", "research_project": "<absolute path to research/{slug}/project.json, or null>"}`. Point `research_project` at the research-manager's `research/{slug}/project.json` when this review belongs to one; otherwise set it to `null`. Without this file, validation stops at `artifact_missing`.
 2. **Search** — Execute the backends. Log every query verbatim in `protocol.md` with date and hit count. Save raw JSON in the workspace; do not load it into context wholesale.
-3. **Dedupe & pool** — Run `build_corpus.py` on the raw backend files; never hand-merge them. It emits one record per paper — `key` (normalized DOI, else normalized title, else a source identifier), `ids`, `title`, `year`, `cited_by` (highest any backend reported), `found_via`, `screening: {status, stage, reason}`, `fulltext`, `role` — deduplicated across backends, and re-running it after a later search round preserves every screening decision already made.
+3. **Dedupe & pool** — Run `build_corpus.py` on the raw backend files; never hand-merge them. It emits one record per paper — `key` (normalized DOI, else normalized title, else a source identifier), `ids`, `title`, `authors`, `year`, `cited_by` (highest any backend reported), `found_via`, `screening: {status, stage, reason}`, `fulltext`, `role` — deduplicated across backends, and re-running it after a later search round preserves every screening decision already made while backfilling missing author metadata. If an older workspace has records without `authors`, rerun the builder on its saved raw search files before claim verification.
 ```bash
 uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
   --arxiv "$WS/arxiv.json" --epmc "$WS/epmc.json" --output "$WS/corpus.json"
@@ -113,8 +125,41 @@ uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
 
    **Navigating `fulltext.md` depends on the route**, given by the `source` field of the script's JSON line. `source: "epmc"` (JATS) yields real markdown headings — find sections with `grep -n "^#"`. Every PDF route (`arxiv_pdf`, `oa_pdf`, `user_pdf`, `cached`) yields **no `#` headings at all**; section titles appear as bold lines, so use `grep -n "^\*\*"` instead. A `grep "^#"` returning nothing on a PDF-route paper means you used the wrong pattern, not that the document is unstructured. If neither pattern finds a section you need, cite by content rather than a section anchor.
 6. **Snowball** — For core evidence papers, run `get_references`/`get_citations` (Europe PMC) or follow OpenAlex `referenced_works`. Fold the new candidates into the same `corpus.json` with `build_corpus.py --epmc citing.json --found-via snowball:citations --output "$WS/corpus.json"` (it adds only what's new, tags their provenance, and preserves decisions already made), then screen them at step 4. One round by default; stop when a round adds nothing. If included papers reveal vocabulary the original queries missed, run one adapted search round and log it.
-7. **Synthesize** — Write `synthesis.md` from `notes.md` files only. Tag any citation whose `fulltext` is `abstract-only` with `[abstract-only]` inline. End with a retrieval summary listing papers not retrieved and the `papers/{id}/paper.pdf` path where the user can drop a legally obtained PDF for a re-run.
-8. **Verify bibliography** — Write the final citation list to `$WS/refs.json` and run `verify_citations.py --input "$WS/refs.json"`. Exit 0 is required before presenting; correct or remove any `mismatched`/`not_found` entry. (Papers screened through `corpus.json` will pass — this gate catches citations that entered the synthesis from memory rather than from the corpus.)
+7. **Synthesize** — Write `synthesis.md` from `notes.md` files only. Tag any citation whose `fulltext` is `abstract-only` with `[abstract-only]` inline. Put the full citation list under a `## References` heading, entries only. Coverage skips that section, so state each study's contribution and quality in the thematic synthesis, where it is checked. End with a retrieval summary listing papers not retrieved and the `papers/{id}/paper.pdf` path where the user can drop a legally obtained PDF for a re-run.
+8. **Verify bibliography** — Write the final ordered citation list to `$WS/refs.json` and retain the verifier output for the delivery validator:
+```bash
+uv run scripts/verify_citations.py --input "$WS/refs.json" \
+  > "$WS/citation-report.json"
+```
+Exit 0 is required before claim verification; correct or remove any `mismatched`/`not_found` entry and rerun the command. Keep numeric references in exactly the order rendered in `synthesis.md`, because `check_claims.py` binds `[n]` to this list. During claim verification, an embedded DOI must identify exactly one corpus record. Without a DOI, one corpus title must appear as a complete token sequence in the formatted reference. Zero or several matches fail closed. (Papers screened through `corpus.json` will pass — this gate catches citations that entered the synthesis from memory rather than from the corpus.)
+9. **Verify claims** — Write `$WS/claims.json`: one entry per cited source and supported statement in `synthesis.md` — `{"claim", "paper_id" (the `papers/` directory name), "citation" (exactly one `"Author, year"` or `"[n]"` identity), "supporting_quote" (verbatim passage from that paper, ≥40 chars)}`. For `claim`, copy that synthesis sentence without its citation; coverage only counts a sentence when a verified claim matches it closely (about 80% similar), so a summary or shortened version does not cover it. Keep interpretation out of cited sentences: a remark such as "which suggests more lateral reading" needs its own supporting claim or belongs in an uncited, number-free sentence. A sentence citing two papers needs one entry for each paper. Citations in `synthesis.md` must use `(Author, year)`, `Author (year)`, or numeric forms such as `[1]`, `[1, 2]`, or `[1-3]`; page locators are accepted. Put `[abstract-only]` beside the citation, never in its place.
+
+   Each corpus record must supply a trusted first author, year, and `role`. Set `role: "background"` only for context citations, and keep every claim role equal to the trusted corpus role. Unicode author names, caseless scripts, and compound surnames bind after normalization. For numeric styles, `refs.json` must resolve the rendered number uniquely to the claim's corpus record.
+
+   Run `uv run scripts/check_claims.py --claims "$WS/claims.json" --workspace "$WS" --synthesis "$WS/synthesis.md"`; for numeric citations, add `--references "$WS/refs.json"`. Exit 0 is required. An `invalid_binding` means the claim did not resolve to one trusted corpus record; use its `reason_code` to fix the corpus metadata, role, citation, or reference instead of retrying quote matching. Valid entries still appear when another entry has an invalid binding. A `fabricated_quote` means find a real passage or drop the claim. Resolve every `needs_review`, including missing claim numbers, title-only support, nearby negation at a quote boundary, and every abstract-scope verification.
+
+   Coverage uses only claims whose identity and quote passed. An `uncovered_claim` includes a `reason_code` for a missing citation identity, an ungrounded number, or an invalid background role. Background entries may cover number-free context only. Every number in a cited sentence, years included, must occur in verified matching claims for each cited identity; several claims for one identity may jointly supply those numbers. A sentence that contains a number must carry a parsed `(Author, year)`, narrative, or numeric citation, and its negation and direction must agree with the matching claim. Never attribute specific or quantitative findings to a `background` citation. Coverage reads prose only: markdown headings are not sentences, and a section headed References, Reference list, Bibliography, or Works cited is skipped. An annotated bibliography is prose and is checked. Numbers inside inline code, file paths, URLs, and DOIs are not counted; bare numbers, including fractions such as 2/3, are.
+
+10. **Validate and deliver** — Before every delivery and after every repair, run the shared validator with the external run report:
+```bash
+uv run scripts/validate_review.py --workspace "$WS" \
+  --citation-report "$WS/citation-report.json" \
+  --run-report "$RUN_REPORT"
+```
+The validator prints one JSON object. Obey its `action` field:
+
+   - `pass`: deliver the review. A `valid_with_warnings` pass lists its remaining warnings; it may still carry `abstract_only_support` or `citation_resolution_unavailable`, or repairable warnings left after the repair limit.
+   - `repair`: issued for any critical finding and for the repairable warnings `claim_needs_review`, `bibliography_incomplete`, and `prisma_exclusion_reason_missing`. Send only the emitted `repair_feedback` object to the repair prompt. Do not send the full validation output, run report, finding contexts, evaluator fields, or any gold data. Apply the repair, rerun bibliography verification if `refs.json` changed, and invoke this validation command again with the same `$RUN_REPORT`.
+   - `stop_invalid`: stop repairing and deliver the draft with this exact warning, followed by the unresolved `reason_codes` and `affected_artifacts` from `repair_feedback`:
+
+```
+INVALID EVIDENCE — This draft contains unresolved evidence-integrity failures
+and must not be treated as verified research.
+```
+
+   Treat validator exit 2, or missing, empty, unparseable, or schema-invalid JSON output, as an operational validation failure. Repair the validator inputs and rerun when possible. If a valid report still cannot be produced, deliver the draft with the same prominent `INVALID EVIDENCE` warning, give `validator_incomplete` as the unresolved reason and name the affected validator input or output artifact. In this state, never mark any claim as verified, even if an earlier or partial validator output appeared to pass.
+
+   Keep `$RUN_REPORT` outside `$WS`, reuse it after every submitted repair, and never edit or replace its retained passes. A `stop_invalid` draft is not verified or publication-ready; do not describe it with either label.
 </protocol>
 
 <output_format>
@@ -128,15 +173,15 @@ uv run scripts/build_corpus.py --openalex "$WS/openalex.json" \
 - Europe PMC: `<exact query>` → N hits
 
 **Thematic synthesis**:
-- **[Theme 1]**: [Summary with verified citations]
+- **[Theme 1]**: [Summary with verified citations, including each study's key contribution and quality]
 - **[Theme 2]**: [Summary with verified citations]
 
 **Research gaps**:
 1. [Gap with evidence of absence]
 2. [Gap with evidence of absence]
 
-**Annotated bibliography**:
-- [Full citation with DOI/arXiv ID/PMID] — [Key contribution + quality note]
+## References
+- [Full citation with DOI/arXiv ID/PMID]
 
 **Retrieval summary**: [N full-text / N abstract-only; drop-in paths for missing PDFs]
 </output_format>

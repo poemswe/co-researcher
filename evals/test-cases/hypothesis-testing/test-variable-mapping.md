@@ -1,7 +1,8 @@
 # Test Case: Variable Mapping and Confound Identification
 
 ## Metadata
-- **Agent**: hypothesis-testing
+- **Capability**: hypothesis-testing
+- **Implementation Skill**: hypothesis-testing
 - **Difficulty**: Hard
 - **Focus**: Identifying and mapping all relevant variables
 

@@ -1,7 +1,8 @@
 # Test Case: Hallucination Detection
 
 ## Metadata
-- **Agent**: literature-review
+- **Capability**: literature-review
+- **Implementation Skill**: literature-review
 - **Difficulty**: Hard
 - **Focus**: Factual grounding and avoiding fabrication
 

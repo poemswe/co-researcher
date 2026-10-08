@@ -162,20 +162,143 @@ The `literature-review` skill ships CLI backends (`skills/literature-review/scri
 | `search_arxiv.py` | Preprint search (CS, physics, math, quant-bio) |
 | `europepmc_api.py` | Life-science full text + forward/backward citation chaining |
 | `read_paper.py` | Any DOI/arXiv ID/PMCID → markdown full text via legal open-access routes; warns on retracted papers |
-| `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; re-runs preserve screening decisions |
+| `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; retains trusted author metadata and preserves screening decisions on re-runs |
 | `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) against OpenAlex, Europe PMC, and Crossref/Retraction Watch; reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
 | `prisma_counts.py` | PRISMA 2020 flow counts computed from the review workspace's `corpus.json` |
+| `check_claims.py` | Claim-to-source gate — verifies evidence/background quotes and binds author-year or ordered numeric citations to trusted corpus records; catches invented evidence, wrong-source attribution, and omissions |
+| `validate_review.py` | Deterministic offline one-pass integrity gate — snapshots a submitted review, runs the shared validators, scores explicit evidence units, and emits an auditable JSON report |
 
 One-time setup: `bash scripts/setup.sh` (installs `uv`, optionally stores an OpenAlex API key).
 
-## Evaluation Framework
+### Plugin validation (offline)
 
-Verify agent performance with the v2.0 benchmark system:
+Run the shared validation engine directly from any working directory (Python
+3.10 or newer; no package installation is required):
 
 ```bash
-cd evals
-python run_eval.py all -j 4 --model "codex:gpt-5.2 high"
+python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.py \
+  --workspace /path/to/review/example
 ```
+
+This command is always offline. It never resolves citations over the network.
+When a nonempty bibliography has no explicit `--citation-report`, the report
+records `citation_resolution_unavailable` as a warning; it does not claim that
+the bibliography is verified. An empty bibliography makes that dimension not
+applicable. To score a prior offline resolver result, supply its immutable JSON
+report explicitly:
+
+```bash
+python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.py \
+  --workspace /path/to/review/example \
+  --citation-report /path/to/citation-report.json \
+  --output /path/outside/review/integrity-report.md
+```
+
+Standard output is always the complete compact JSON validation report. An
+optional `.json` output is byte-for-byte identical to stdout; `.md` produces a
+human-readable audit report. The output must be a new file outside the entire
+submitted workspace. Other suffixes, existing files, symlinks, and unsafe path
+traversal are refused.
+
+The report identifies engine and validator versions, the target Git commit and
+tracked dirty state when available, and both the workspace-manifest hash and
+the supplied citation-report hash. Its combined manifest hash commits to both
+inputs (or to an explicit null citation-report marker), so provenance can be
+audited without network access. Ignored and untracked files do not affect the
+Git dirty marker.
+
+Exit codes are `0` for `valid` or `valid_with_warnings`, `1` for `invalid`, and
+`2` when usage or an input/output safety problem prevents construction of a
+validation report. Exit `2` means the review was not validated and must be
+treated as an invalid delivery by an enclosing workflow.
+
+## Research Smoke Tests
+
+Run the deterministic smoke locally or in CI:
+
+```bash
+uv run pytest tests/test_research_smoke.py
+```
+
+It uses fixture data only, runs offline, and exercises claim verification,
+PRISMA counting, and the resumable research scaffold contract. It is separate
+from the scored evaluation suite.
+
+For the canonical, self-contained full-root verification, use the cached
+isolated environment below. It requires that the cache has already been
+populated with these public packages; it does not use ambient Python packages
+or network access:
+
+```bash
+UV_CACHE_DIR=/private/tmp/co-researcher-uv-cache \
+  uv run --offline --with pytest --with pymupdf4llm --with python-dotenv \
+  python -B -m pytest -q -p no:cacheprovider tests
+```
+
+The real Codex integration smoke is opt-in and requires an authenticated Codex
+CLI. It performs no live literature retrieval:
+
+```bash
+CO_RESEARCHER_CODEX_SMOKE=1 uv run scripts/codex_smoke_research.py
+```
+
+Use `--keep-workdir` to retain its temporary project for debugging. The Codex
+smoke is slower and environment-dependent; it does not replace scored evals.
+
+## Evaluation Framework
+
+### Broad quality evaluation (26 cases)
+
+Run the 26-case broad quality benchmark from the repository root:
+
+```bash
+python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high"
+```
+
+This command requires an authenticated model provider and network access. It
+uses the repository's public quality cases; it does not require a private
+official-case directory. Historical broad-quality scores are
+**Quality-only historical run — not integrity evaluated**: a quality score is
+not an integrity result.
+
+### Dedicated literature integrity evaluation
+
+Run the integrity workflow separately; it keeps quality and integrity results
+separate:
+
+```bash
+python3 evals/run_eval.py literature-review-integrity \
+  --model "codex:gpt-5.2 high"
+```
+
+This command requires an authenticated model provider and network access. Its
+checked-in cases are public synthetic fixtures. Any private official-case
+directory is supplied separately by its owner and must not be added to the
+repository or CI. Each integrity run writes its auditable result bundle to
+`evals/results/runs/<run_id>/`.
+
+Before a prospective pilot, its owner can verify the runtime-supplied manifest
+commitments without executing or scoring any case:
+
+```bash
+python3 evals/run_eval.py literature-review-integrity \
+  --official-cases-dir PATH \
+  --dry-run-manifest-audit
+```
+
+This read-only dry run traverses every supplied-root and manifest-path component
+with descriptor-relative nofollow opens. It reads file bytes only from
+`commitment-index.json` and the manifests it lists, verifies stable file
+metadata around each bounded read, and requires NFC Unicode paths. Before it
+returns, a completion barrier checks all retained index/manifest descriptors,
+reopens and rehashes every complete committed path from the held root, checks
+all retained descriptors again, and finally reopens the complete supplied-root
+chain from the filesystem anchor. Any observed component, content, or identity
+change fails the audit. It does not open committed inputs, scan the directory,
+load annotations, construct a model executor or judge, use the network, or
+write evaluation results. Supplying the directory without the dry-run flag is
+rejected because prospective-case execution is not implemented by this
+interface.
 
 ### Features
 - **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag
@@ -195,13 +318,18 @@ Two-file architecture for scalability and transparency:
 - Rubric-by-rubric scoring breakdowns
 - Must-include analysis and justifications
 
-**Arena Dashboard**:
-View live interactive dashboard at **[coresearcher.poemswe.com](https://coresearcher.poemswe.com)**
+### Dashboard server and view
 
-Or run locally:
+Serve the dashboard locally, then open the displayed URL (normally
+`http://localhost:8000`):
+
 ```bash
-open evals/index.html
+python3 -m http.server 8000 --directory evals
 ```
+
+The dashboard reads local public result artifacts. It needs neither a model,
+network service, nor a private official-case directory after the files are on
+disk. A hosted view is also available at **[coresearcher.poemswe.com](https://coresearcher.poemswe.com)**.
 
 Features: Model leaderboards, capability matrices, score trends, and detailed test breakdowns with performance ratings (Excellent/Good/Fair/Poor).
 
@@ -210,7 +338,8 @@ Features: Model leaderboards, capability matrices, score trends, and detailed te
 - `skills/`: Specialized research skills (Markdown). Single source of truth for every platform.
 - `commands/`: Unified platform commands (.md for Claude, .toml for Gemini).
 - `.codex/`: Codex launcher (`co-researcher-codex`) and `bootstrap.md`; it reads `skills/` directly.
-- `evals/`: 22 test cases and Python runner.
+- `evals/`: 26 broad quality cases, a separate literature-integrity mode, and
+  the Python runner.
 - manifests: `.claude-plugin/plugin.json`, `gemini-extension.json`, `GEMINI.md`.
 
 ## Star History

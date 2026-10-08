@@ -1,7 +1,8 @@
 # Test Case: Grant Proposal Structure (Grant Writer)
 
 ## Metadata
-- **Agent**: grant-writing
+- **Capability**: grant-proposal
+- **Implementation Skill**: grant-writing
 - **Difficulty**: Medium
 - **Area**: Grant Development
 

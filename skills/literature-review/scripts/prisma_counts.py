@@ -59,13 +59,30 @@ def compute(records: list[dict]) -> dict:
   }
 
 
+def prisma_report(records: list[dict]) -> dict:
+  """Compute the PRISMA report from explicit records only."""
+  if not isinstance(records, list) or not all(
+      isinstance(record, dict) for record in records):
+    raise ValueError("corpus records must be a JSON array of objects")
+  for index, record in enumerate(records):
+    screening = record.get("screening") or {}
+    if not isinstance(screening, dict):
+      raise ValueError(f"corpus record {index} screening must be an object")
+    if screening.get("status") not in (None, "included", "excluded"):
+      raise ValueError(f"corpus record {index} has unknown screening status")
+  return compute(records)
+
+
 def main(argv=None) -> int:
   parser = argparse.ArgumentParser(
       description="PRISMA 2020 flow counts from corpus.json.")
   parser.add_argument("--corpus", required=True)
   args = parser.parse_args(argv)
 
-  counts = compute(load_records(args.corpus))
+  try:
+    counts = prisma_report(load_records(args.corpus))
+  except ValueError as exc:
+    sys.exit(str(exc))
   print(json.dumps(counts, indent=2))
   print(f"PRISMA: {counts['after_dedup']} records, "
         f"{counts['screened']} screened, {counts['included']} included, "

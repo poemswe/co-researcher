@@ -1,7 +1,8 @@
 # Test Case: Methodology Selection & Design Fit
 
 ## Metadata
-- **Agent**: research-methodology
+- **Capability**: research-methodology
+- **Implementation Skill**: research-methodology
 - **Difficulty**: Medium
 - **Focus**: Matching research questions to optimal methodology and providing design guidance
 

@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0.0",
+  "final_status": "passing",
+  "minimum_repair_rounds": 0,
+  "maximum_repair_rounds": 3
+}

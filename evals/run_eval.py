@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-import argparse
 import sys
+
+# Evaluation entrypoints are read-only until a selected command explicitly
+# publishes output; imports must not create cache artifacts during an audit.
+sys.dont_write_bytecode = True
+
+import argparse
 import json
 import concurrent.futures
 import threading
@@ -20,6 +25,7 @@ EVALS_DIR = Path(__file__).parent
 TEST_CASES_DIR = EVALS_DIR / "test-cases"
 RESULTS_DIR = EVALS_DIR / "results"
 PRINT_LOCK = threading.Lock()
+INTEGRITY_CAPABILITY = "literature-review-integrity"
 
 
 def run_test(agent: str, test: str, model: str, verbose: bool = False):
@@ -41,7 +47,8 @@ def _execute_single_test(tc, model: str, verbose: bool):
         with PRINT_LOCK:
             print(f"[{tc.agent}] {tc.name} started...")
 
-        result = execute_agent(tc.agent, tc.task_prompt, tc.timeout, model)
+        result = execute_agent(
+            tc.implementation_skill, tc.task_prompt, tc.timeout, model)
         
         if not result.success:
             with PRINT_LOCK:
@@ -118,7 +125,17 @@ def list_tests():
     for agent_dir in sorted(TEST_CASES_DIR.iterdir()):
         if not agent_dir.is_dir() or agent_dir.name.startswith("."):
             continue
-        tests = [f.stem.replace("test-", "") for f in sorted(agent_dir.glob("test-*.md"))]
+        if agent_dir.name == INTEGRITY_CAPABILITY:
+            tests = [
+                path.parent.name
+                for path in sorted(
+                    agent_dir.rglob("case.json"),
+                    key=lambda value: value.relative_to(
+                        agent_dir).as_posix().encode("utf-8"))
+                if path.is_file()
+            ]
+        else:
+            tests = [f.stem.replace("test-", "") for f in sorted(agent_dir.glob("test-*.md"))]
         if tests:
             print(f"  {agent_dir.name}")
             for test in tests:
@@ -126,9 +143,128 @@ def list_tests():
             print()
 
 
+def run_literature_integrity(model: str, resume: str | None = None):
+    """Run the integrity eval; ``resume`` carries a prior run's finished cases."""
+    from lib.literature_integrity import (
+        LiteratureIntegrityRunner,
+        ModelExecutionError,
+        OperationalIntegrityEvalResult,
+        ProductionModelExecutor,
+        ProductionQualityJudge,
+        load_adversarial_scores,
+        load_cases,
+    )
+    from lib.run_reports import (
+        CombinedRunResult, load_completed_cases, write_run_report)
+    from review_integrity.reporting import ENGINE_VERSION, VALIDATOR_VERSIONS
+    from validate_review import git_provenance
+
+    target_commit, target_dirty = git_provenance(EVALS_DIR.parent)
+    provenance = {
+        "target_commit": target_commit,
+        "target_dirty": target_dirty,
+        "engine_version": ENGINE_VERSION,
+        "validator_versions": dict(VALIDATOR_VERSIONS),
+    }
+    carried = []
+    resolved_models = set()
+    if resume is not None:
+        prior, carried = load_completed_cases(RESULTS_DIR, resume)
+        prior_provenance = prior.get("provenance") or {}
+        if (prior["model"] != model or target_commit is None or target_dirty
+                or prior_provenance.get("target_commit") != target_commit
+                or prior_provenance.get("target_dirty") is not False):
+            raise RuntimeError(
+                f"cannot resume {resume}: a resumed run must use the same "
+                "model and the same clean commit as the run it continues")
+        resolved_models.update(prior_provenance.get("resolved_models", []))
+        provenance["resumed_from"] = prior["run_id"]
+    carried_ids = {case_id for case_id, *_rest in carried}
+    all_cases = load_cases(TEST_CASES_DIR / INTEGRITY_CAPABILITY)
+    cases = tuple(case for case in all_cases if case.case_id not in carried_ids)
+    run_id = generate_run_id()
+    timestamp = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    executor = ProductionModelExecutor(model, EVALS_DIR.parent)
+    runner = LiteratureIntegrityRunner(
+        executor,
+        ProductionQualityJudge(model),
+        scorecard_directory=TEST_CASES_DIR / INTEGRITY_CAPABILITY,
+    )
+    completed = []
+    execution_errors = []
+    for case in cases:
+        try:
+            completed.append((case, runner.run_case(case)))
+        except ModelExecutionError as exc:
+            execution_errors.append(
+                {"case_id": case.case_id, "message": str(exc)})
+            print(f"{case.case_id}: not evaluated: {exc}")
+    if not completed and not carried:
+        raise RuntimeError(
+            "no case completed; every model call failed, so no report was "
+            "written")
+    adversarial_scores = {
+        case_id: score for case_id, _result, score, _snapshots in carried
+        if score is not None}
+    if completed:
+        adversarial_scores.update(load_adversarial_scores(
+            TEST_CASES_DIR / INTEGRITY_CAPABILITY,
+            {case.case_id: result for case, result in completed},
+            domains={case.case_id: case.domain for case, _result in completed},
+            fixture_preserved=runner.fixture_preserved,
+        ))
+    results_by_case = {
+        case_id: result for case_id, result, _score, _snapshots in carried}
+    results_by_case.update(
+        (case.case_id, result) for case, result in completed)
+    snapshots = {
+        case_id: case_snapshots
+        for case_id, _result, _score, case_snapshots in carried
+        if case_snapshots}
+    snapshots.update(
+        (case.case_id, runner.snapshots[case.case_id])
+        for case, _result in completed if case.case_id in runner.snapshots)
+    ordered = tuple(
+        (case, results_by_case[case.case_id]) for case in all_cases
+        if case.case_id in results_by_case)
+    provenance["resolved_models"] = sorted(
+        resolved_models | executor.resolved_models)
+    combined = CombinedRunResult.from_results(
+        run_id=run_id,
+        timestamp=timestamp,
+        model=model,
+        results=tuple((case.case_id, result) for case, result in ordered),
+        adversarial_scores=adversarial_scores,
+        provenance=provenance,
+        execution_errors=execution_errors,
+    )
+    run_directory = write_run_report(combined, RESULTS_DIR, snapshots=snapshots)
+    results = tuple(result for _case, result in ordered)
+    for case, result in ordered:
+        if isinstance(result, OperationalIntegrityEvalResult):
+            failure = result.operational_failure
+            print(
+                f"{case.case_id}: integrity=N/A status=invalid quality=N/A "
+                f"repairs={len(result.repair_rounds)} "
+                f"operational_failure={failure.reason_code.value} "
+                f"artifact={failure.artifact}"
+            )
+            continue
+        final = result.system_final
+        quality = final.quality.quality_score
+        quality_text = "ERROR" if quality is None else f"{quality:.1f}"
+        print(
+            f"{case.case_id}: integrity={final.integrity.integrity_score:.1f} "
+            f"status={final.integrity.status.value} quality={quality_text} "
+            f"repairs={len(result.repair_rounds)}"
+        )
+    print(f"Run artifacts: {run_directory}")
+    return results
+
+
 def generate_run_id() -> str:
-    """Generate unique run ID: run_YYYYMMDD_HHMMSS"""
-    return datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S")
+    """Generate unique run ID: run_YYYYMMDD_HHMMSS_microseconds."""
+    return datetime.now(timezone.utc).strftime("run_%Y%m%d_%H%M%S_%f")
 
 
 def extract_model_version(model: str) -> str:
@@ -196,6 +332,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
         test_result = {
             "id": test_id,
             "agent": rpt.test_case.agent,
+            "implementation_skill": rpt.test_case.implementation_skill,
             "test_case": rpt.test_case.name.lower().replace(" ", "-"),
             "test_name": rpt.test_case.name,
             "difficulty": extract_difficulty(rpt.test_case.file_path),
@@ -289,16 +426,56 @@ def save_benchmark_v2(reports, model: str, run_id: str):
         print(f"   Score trend: {prev['average_score']:.1f} {trend} {run_entry['average_score']:.1f} ({delta:+.1f})")
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("args", nargs="*", help="[list|all|agent|agent test]")
+    parser.add_argument(
+        "args", nargs="*",
+        help="[list|all|literature-review-integrity|agent|agent test]",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument("-m", "--model", default="claude", help="Model (default: claude)")
     parser.add_argument("-j", "--jobs", type=int, default=1, help="Parallel jobs (default: 1)")
     parser.add_argument("--check-prompts", action="store_true", help="Validate all agent prompt files exist")
     parser.add_argument("--no-benchmark", action="store_true", help="Skip saving to benchmark_history.json")
+    parser.add_argument(
+        "--official-cases-dir", type=Path, metavar="PATH",
+        help=("Runtime-supplied committed cases (literature integrity "
+              "manifest audit only)"),
+    )
+    parser.add_argument(
+        "--resume", metavar="RUN_ID",
+        help="Literature integrity: re-run only the cases RUN_ID did not "
+             "evaluate and write one complete run (same model and clean "
+             "commit required)")
+    parser.add_argument(
+        "--dry-run-manifest-audit", action="store_true",
+        help="Verify committed manifests without executing or scoring cases",
+    )
     
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+
+    audit_requested = (
+        args.official_cases_dir is not None or args.dry_run_manifest_audit)
+    if args.resume is not None and (
+            audit_requested or args.check_prompts
+            or args.args != [INTEGRITY_CAPABILITY]):
+        parser.error("--resume is only valid for a literature-review-integrity run")
+    if audit_requested:
+        if (
+            args.check_prompts
+            or len(args.args) != 1
+            or args.args[0] != INTEGRITY_CAPABILITY
+        ):
+            parser.error(
+                "official manifest audit options are only valid for "
+                "literature-review-integrity")
+        if args.official_cases_dir is None:
+            parser.error(
+                "--dry-run-manifest-audit requires --official-cases-dir PATH")
+        if not args.dry_run_manifest_audit:
+            parser.error(
+                "--official-cases-dir requires --dry-run-manifest-audit; "
+                "runtime-supplied case execution is not implemented")
     
     if args.check_prompts:
         agents = [d.name for d in TEST_CASES_DIR.iterdir() if d.is_dir() and not d.name.startswith(".")]
@@ -322,9 +499,26 @@ def main():
         return
     
     command = args.args[0]
+
+    if audit_requested:
+        from lib.committed_manifest_audit import (
+            ManifestAuditError,
+            audit_committed_manifests,
+        )
+        try:
+            audit = audit_committed_manifests(args.official_cases_dir)
+        except ManifestAuditError as exc:
+            print(f"manifest audit failed: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(
+            audit, sort_keys=True, separators=(",", ":"),
+            ensure_ascii=False, allow_nan=False))
+        return 0
     
     if command == "list":
         list_tests()
+    elif command == INTEGRITY_CAPABILITY:
+        run_literature_integrity(args.model, resume=args.resume)
     elif command == "all":
         run_id = generate_run_id()
         reports = run_all_tests(args.model, args.verbose, args.jobs)
@@ -346,4 +540,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

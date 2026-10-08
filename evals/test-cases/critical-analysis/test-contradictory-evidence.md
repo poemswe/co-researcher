@@ -1,7 +1,8 @@
 # Test Case: Contradictory Evidence Analysis
 
 ## Metadata
-- **Agent**: critical-analysis
+- **Capability**: critical-analysis
+- **Implementation Skill**: critical-analysis
 - **Difficulty**: Hard
 - **Focus**: Reasoning under conflicting evidence
 

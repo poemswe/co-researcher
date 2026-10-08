@@ -1,0 +1,16 @@
+{
+  "corpus": [
+    {"key": "amber", "ids": {"pmcid": "amber"}, "title": "Amber Garden Recall", "authors": ["Mira Lumen"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}},
+    {"key": "ivory", "ids": {"pmcid": "ivory"}, "title": "Ivory Harbor Recall", "authors": ["Niko Merrow"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}}
+  ],
+  "claims": [
+    {"claim": "The amber garden trial found stable recall.", "paper_id": "amber", "citation": "Merrow, 2024", "supporting_quote": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses."},
+    {"claim": "The ivory harbor trial found stable recall.", "paper_id": "ivory", "citation": "Merrow, 2024", "supporting_quote": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses."}
+  ],
+  "synthesis": "The amber garden trial found stable recall (Merrow, 2024). The ivory harbor trial found stable recall (Merrow, 2024).\n",
+  "references": [],
+  "sources": {
+    "amber": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+    "ivory": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses."
+  }
+}
