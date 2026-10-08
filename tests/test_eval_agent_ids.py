@@ -123,7 +123,8 @@ def test_runner_executes_implementation_skill_not_capability(
     return SimpleNamespace(success=True, duration=0.1, output="result")
 
   report = SimpleNamespace(
-      passed=True, overall_score=100.0, scores={"analytical-quality": 100})
+      passed=True, overall_score=100.0, scores={"analytical-quality": 100},
+      judge_output="")
   monkeypatch.setattr(run_eval, "execute_agent", fake_execute)
   monkeypatch.setattr(run_eval, "evaluate_output", lambda *args: report)
   monkeypatch.setattr(run_eval, "RESULTS_DIR", tmp_path)

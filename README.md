@@ -257,7 +257,15 @@ python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high"
 
 This command requires an authenticated model provider and network access. It
 uses the repository's public quality cases; it does not require a private
-official-case directory. Historical broad-quality scores are
+official-case directory. A case that fails to execute, for example on a usage
+limit, is left out instead of scored as zero, and the run prints how to finish
+it with the same model:
+
+```bash
+python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high" --resume RUN_ID
+```
+
+Historical broad-quality scores are
 **Quality-only historical run — not integrity evaluated**: a quality score is
 not an integrity result.
 
