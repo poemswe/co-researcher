@@ -1461,6 +1461,13 @@
             transition: all var(--transition-base);
         }
 
+        .leaderboard-note {
+            font-size: 0.7rem;
+            color: var(--text-secondary, #5b5b5b);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
         .leaderboard-item:hover {
             transform: translateX(3px);
             border-left-color: var(--accent-primary);
@@ -2744,6 +2751,28 @@
 
 
 
+        function leaderboardEntries(runs) {
+            const latest = {};
+            runs.forEach(run => {
+                const current = latest[run.model];
+                if (!current || new Date(run.timestamp) > new Date(current.timestamp)) {
+                    latest[run.model] = {
+                        model: run.model,
+                        score: run.average_score,
+                        passed: run.tests_passed || 20,
+                        total: run.tests_run || 22,
+                        timestamp: run.timestamp,
+                        note: typeof run.note === 'string' ? run.note : null
+                    };
+                }
+            });
+            return Object.values(latest);
+        }
+
+        function leaderboardNoteHtml(note) {
+            return note ? `<div class="leaderboard-note">${escapeHtml(note)}</div>` : '';
+        }
+
         function renderDashboard(overview) {
             if (!overview || !overview.runs || overview.runs.length === 0) return;
 
@@ -2757,17 +2786,7 @@
 
             // 2. Model Comparison (Quick Win 4: Leaderboard)
             const models = {};
-            runs.forEach(run => {
-                // Always use the latest run for the "Current State" leaderboard
-                if (!models[run.model] || new Date(run.timestamp) > new Date(models[run.model].timestamp)) {
-                    models[run.model] = {
-                        score: run.average_score,
-                        passed: run.tests_passed || 20,
-                        total: run.tests_run || 22,
-                        timestamp: run.timestamp
-                    };
-                }
-            });
+            leaderboardEntries(runs).forEach(entry => { models[entry.model] = entry; });
             const sortedModels = Object.entries(models)
                 .sort((a, b) => b[1].score - a[1].score)
                 .filter(([name]) => name !== 'test-model'); // Exclude test-model
@@ -2793,6 +2812,7 @@
                                         <span class="leaderboard-stat-item">${data.passed}/${data.total} passed</span>
                                         <span class="leaderboard-stat-item">${(data.passed / data.total * 100).toFixed(0)}% rate</span>
                                     </div>
+                                    ${leaderboardNoteHtml(data.note)}
                                 </div>
                                 <div class="leaderboard-score">
                                     <div class="leaderboard-score-value">${data.score.toFixed(1)}</div>

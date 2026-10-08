@@ -106,7 +106,8 @@
         ]
       },
       "pass_rate": 90.9,
-      "detail_file": "test_results_detail/run_20251230_221026.json"
+      "detail_file": "test_results_detail/run_20251230_221026.json",
+      "note": "Reasoning effort unverified: this run requested xhigh, but the harness at the time passed the setting under a key Codex does not read, so Codex likely used its default effort."
     },
     {
       "run_id": "run_20260102_175215",

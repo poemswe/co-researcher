@@ -94,3 +94,25 @@ def test_search_box_reacts_to_pasted_text():
   search = re.search(r'<input[^>]*id="testSearch"[^>]*>', html, re.S).group(0)
   assert 'oninput="filterTests()"' in search
   assert "onkeyup" not in search
+
+
+def test_leaderboard_keeps_a_run_note_and_escapes_it(tmp_path):
+  runs = [
+      {"model": "codex:a", "timestamp": "2025-12-30T22:18:44Z", "average_score": 83.2,
+       "tests_passed": 20, "tests_run": 22, "note": "Effort label <unverified>."},
+      {"model": "claude:opus", "timestamp": "2025-12-30T22:16:50Z", "average_score": 85.8,
+       "tests_passed": 25, "tests_run": 25},
+  ]
+  output = _node(tmp_path, f"""
+    const entries = context.leaderboardEntries({json.dumps(runs)});
+    console.log(JSON.stringify(entries));
+    console.log(context.leaderboardNoteHtml(entries.find(e => e.model === 'codex:a').note));
+    console.log(JSON.stringify(context.leaderboardNoteHtml(undefined)));
+  """)
+
+  entries_line, note_html, empty = output.strip().splitlines()
+  entries = {e["model"]: e for e in json.loads(entries_line)}
+  assert entries["codex:a"]["note"] == "Effort label <unverified>."
+  assert entries["claude:opus"]["note"] is None
+  assert "&lt;unverified&gt;" in note_html and "<unverified>" not in note_html
+  assert json.loads(empty) == ""
