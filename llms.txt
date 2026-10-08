@@ -2,7 +2,7 @@
 
 > A PhD-level research agent suite for Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. Governed by Systemic Honesty — no fabricated citations, no hallucinated data.
 
-This site is a live benchmark arena evaluating research agent performance across 22 test cases and 8 agent types.
+This site is a live benchmark arena evaluating research agent performance across 26 test cases and 10 capabilities, plus a 15-case evidence-integrity set.
 
 ## What Co-Researcher Does
 
@@ -11,7 +11,7 @@ Co-Researcher provides specialized research skills that run inside AI coding ass
 ## Research Skills
 
 - **Critical Analysis** — fallacy detection, bias identification, contradictory evidence handling
-- **Literature Review** — systematic search, citation chaining, hallucination detection, gap analysis
+- **Literature Review** — systematic search, citation chaining, hallucination detection, gap analysis, and an integrity gate that checks every quote, number, and synthesis sentence against verified evidence before delivery
 - **Hypothesis Testing** — variable mapping, falsification criteria, experimental controls
 - **Quantitative Analysis** — statistical method selection, effect size interpretation, Simpson's paradox detection
 - **Qualitative Research** — thematic analysis, coding strategy, leading-question detection
@@ -20,21 +20,23 @@ Co-Researcher provides specialized research skills that run inside AI coding ass
 - **Research Synthesis** — multi-source narrative synthesis with uncertainty quantification
 - **Systematic Review** — PRISMA-standard protocol, Risk of Bias assessment
 - **Grant Writing** — funding strategy, Specific Aims development
-- **Lateral Thinking** — cross-domain analogies, constraint satisfaction, first-principles reasoning
+- **Research Methodology** — design selection and validation, including mixed-methods designs
+- **Multi-Source Investigation** — investigating complex claims and fact-checking contradictory sources
 - **Research Manager** — dynamic task scaffolding and polyglot session persistence
 - **Academic Writing** — eliminating AI-isms from research prose
 
 ## Benchmark Arena (this site)
 
-Models evaluated: Claude (Anthropic), Codex (OpenAI)
-Test cases: 22 across 8 agent types
-Rubrics: reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
+Models evaluated: Claude (Anthropic), Codex (OpenAI), Gemini (Google)
+Test cases: 26 across 10 capabilities, plus 15 evidence-integrity cases (13 attack families, 2 controls)
+Rubrics: research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
 Scores: Excellent / Good / Fair / Poor
 
 ## Installation
 
 Claude Code: `claude plugins install poemswe/co-researcher`
 Gemini CLI: `gemini extension install https://github.com/poemswe/co-researcher`
+OpenAI Codex: tell Codex to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md
 Source: https://github.com/poemswe/co-researcher
 
 ## Links

@@ -618,7 +618,7 @@
             </div>
             <div class="skill-card">
                 <p class="skill-name">Literature Review</p>
-                <p class="skill-desc">Searches OpenAlex, arXiv, and Europe PMC directly, retrieves full text, and verifies every citation against the databases — fabricated, mismatched, and retracted references are caught before output.</p>
+                <p class="skill-desc">Searches OpenAlex, arXiv, and Europe PMC directly, retrieves full text, and verifies every citation against the databases — fabricated, mismatched, and retracted references are caught before output. Before delivery, every quote is checked against its source, every number is traced to verified evidence, and each synthesis sentence must match a verified claim.</p>
             </div>
             <div class="skill-card">
                 <p class="skill-name">Hypothesis Testing</p>
@@ -672,7 +672,7 @@
 <section class="honesty">
     <div class="honesty-inner">
         <h2>Systemic Honesty is a protocol constraint, not a model instruction.</h2>
-        <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — searches run against real scholarly databases, and a citation verifier resolves every reference before a bibliography ships, failing loudly on fabricated, mismatched, or retracted entries. The constraint doesn't depend on a single instruction holding under pressure.</p>
+        <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — searches run against real scholarly databases, and a citation verifier resolves every reference before a bibliography ships, failing loudly on fabricated, mismatched, or retracted entries. An integrity gate then checks the finished review link by link, and a draft with unresolved evidence errors ships marked INVALID EVIDENCE. The constraint doesn't depend on a single instruction holding under pressure.</p>
         <div class="honesty-rules">
             <p class="honesty-rule">Never fabricate a citation. If a source cannot be verified, say so.</p>
             <p class="honesty-rule">Distinguish what the evidence shows from what it suggests.</p>
@@ -713,8 +713,8 @@
 
 <section class="arena">
     <div class="arena-text">
-        <h2>22 test cases. Six rubrics. Every agent output preserved.</h2>
-        <p>Claude and Codex scored across literature search, critical analysis, quantitative reasoning, and research design. Not demos — actual outputs with full rubric breakdowns.</p>
+        <h2>26 test cases. Seven rubrics. Every agent output preserved.</h2>
+        <p>Claude, Codex, and Gemini scored across literature search, critical analysis, quantitative reasoning, and research design. Not demos — actual outputs with full rubric breakdowns. A separate integrity set plants 13 kinds of evidence error into reviews and checks that the gate catches each one.</p>
     </div>
     <a href="/evals/" class="btn-primary">Open Benchmark Arena →</a>
 </section>
