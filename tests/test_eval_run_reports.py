@@ -1773,3 +1773,26 @@ def test_resume_is_only_valid_for_an_integrity_run(monkeypatch, argv):
     run_eval.main(argv)
 
   assert exit_info.value.code == 2
+
+
+def _history_with(**extra):
+  run = {
+      "run_id": "run_20260728_211624", "timestamp": "2026-07-28T21:26:24Z",
+      "model": "codex:test", "tests_run": 26, "tests_passed": 25,
+      "average_score": 88.5, "scores_by_agent": {"literature-review": [90.0]},
+      "pass_rate": 96.2, "detail_file": "test_results_detail/run_20260728_211624.json",
+      **extra,
+  }
+  return {"schema_version": "2.0", "runs": [run], "summary_stats": {}}
+
+
+def test_quality_history_keeps_an_optional_run_note():
+  adapted = adapt_quality_history(_history_with(note="Effort label unverified."))
+
+  assert adapted["runs"][0]["note"] == "Effort label unverified."
+  assert adapt_quality_history(_history_with())["runs"][0]["note"] is None
+
+
+def test_quality_history_rejects_a_non_text_note():
+  with pytest.raises(ValueError, match="note"):
+    adapt_quality_history(_history_with(note=7))

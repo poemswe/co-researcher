@@ -1792,7 +1792,8 @@ def adapt_quality_history(value: object) -> dict:
   }
   for value in data["runs"]:
     run = _closed_object(
-        value, required, "quality history run", optional={"model_version"})
+        value, required, "quality history run",
+        optional={"model_version", "note"})
     run_id = _run_id(run["run_id"])
     if run_id in seen:
       raise ValueError("quality history run_id values must be unique")
@@ -1808,6 +1809,9 @@ def adapt_quality_history(value: object) -> dict:
     model_version = run.get("model_version")
     if model_version is None:
       model_version = model.split(":", 1)[1] if ":" in model else model
+    note = run.get("note")
+    if note is not None:
+      note = _text(note, "quality history note")
     adapted.append({
         "run_id": run_id,
         "timestamp": _text(run["timestamp"], "timestamp"),
@@ -1823,6 +1827,7 @@ def adapt_quality_history(value: object) -> dict:
         "evaluation_label": QUALITY_HISTORY_LABEL,
         "integrity_score": None,
         "status": "not_evaluated",
+        "note": note,
     })
   return {
       "schema_version": SCHEMA_VERSION,
