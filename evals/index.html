@@ -418,6 +418,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            min-width: 0;
         }
 
         .matrix-table {
@@ -1782,7 +1783,7 @@
             <div class="integrity-run-controls">
                 <label for="integrityRunFilter"><strong>Run</strong></label>
                 <select id="integrityRunFilter" class="search-input"
-                    style="width: auto; cursor: pointer; max-width: 360px;"
+                    style="width: auto; cursor: pointer; max-width: min(360px, 100%);"
                     onchange="handleIntegrityRunChange()" disabled>
                     <option value="">No isolated runs available</option>
                 </select>
@@ -1827,11 +1828,11 @@
 
             <div class="radar-section-container">
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
-                    <h2 class="section-heading" style="margin-bottom: 0; white-space: nowrap;">Agent
+                    style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm); justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+                    <h2 class="section-heading" style="margin-bottom: 0;">Agent
                         Capability Signature</h2>
                     <select id="radarModelFilter" class="search-input"
-                        style="width: auto; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
+                        style="width: auto; max-width: 100%; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
                         onchange="handleRadarModelChange()">
                     </select>
                 </div>
@@ -1860,15 +1861,15 @@
                 Historical broad benchmark runs are quality-only records — not integrity evaluated.
             </p>
 
-            <div class="search-container" style="display: flex; gap: 1rem;">
+            <div class="search-container" style="display: flex; flex-wrap: wrap; gap: 1rem;">
                 <input type="text" id="testSearch" class="search-input"
                     placeholder="Search agents (e.g. 'lateral') or specific tests..." oninput="filterTests()"
-                    style="flex: 1;">
-                <select id="modelFilter" class="search-input" style="width: auto; cursor: pointer;"
+                    style="flex: 1 1 14rem; min-width: 0;">
+                <select id="modelFilter" class="search-input" style="width: auto; max-width: 100%; cursor: pointer;"
                     onchange="handleModelFilterChange()">
                     <option value="">Select Model...</option>
                 </select>
-                <select id="runFilter" class="search-input" style="width: auto; cursor: pointer; max-width: 200px;"
+                <select id="runFilter" class="search-input" style="width: auto; cursor: pointer; max-width: min(200px, 100%);"
                     onchange="handleRunFilterChange()">
                     <option value="">Latest Run</option>
                 </select>

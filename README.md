@@ -43,10 +43,10 @@ Fetch and follow instructions from https://raw.githubusercontent.com/poemswe/co-
 
 **Option 2: Manual Setup**
 ```bash
-# 1. Clone this repo to ~/.codex/skills/co-researcher
+# 1. Clone this repo to ~/.codex/co-researcher
 # 2. Add hook to ~/.codex/AGENTS.md
 # 3. Run:
-~/.codex/skills/co-researcher/.codex/co-researcher-codex bootstrap
+~/.codex/co-researcher/.codex/co-researcher-codex bootstrap
 ```
 See [.codex/INSTALL.md](.codex/INSTALL.md) for details.
 
