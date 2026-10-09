@@ -366,7 +366,7 @@ interface.
 
 ### Features
 - **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag
-- **Dynamic Rubrics**: 6 specialized rubrics matched to agent skills
+- **Dynamic Rubrics**: 7 specialized rubrics matched to agent skills
 - **Extended Targeting**: Support for specific versions and reasoning levels
 - **Persistent Indexing**: Rebuildable `latest/index.md` summary
 
