@@ -1,0 +1,58 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "synthetic-invalid-number",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"Scores improved by 73 percent after the synthetic tutoring intervention.\",\n    \"supporting_quote\": \"Mean assessment scores increased from 50.00 before tutoring to 53.65 after tutoring. Scores improved by 7.3 percent relative to the baseline mean. This was a within-group descriptive change, not an estimated causal treatment effect.\",\n    \"paper_id\": \"synthetictutoringinterventionaclassroompilot\",\n    \"citation\": \"[1]\",\n    \"role\": \"evidence\"\n  },\n  {\n    \"claim\": \"The uncontrolled design cannot separate tutoring effects from practice, maturation, or other concurrent learning.\",\n    \"supporting_quote\": \"The uncontrolled design cannot separate tutoring effects from practice, maturation, or other concurrent learning.\",\n    \"paper_id\": \"synthetictutoringinterventionaclassroompilot\",\n    \"citation\": \"[1]\",\n    \"role\": \"evidence\"\n  },\n  {\n    \"claim\": \"The report provides no evidence about persistence, subgroup differences, or transfer to other settings.\",\n    \"supporting_quote\": \"The report provides no evidence about persistence, subgroup differences, or transfer to other settings.\",\n    \"paper_id\": \"synthetictutoringinterventionaclassroompilot\",\n    \"citation\": \"[1]\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "7220d755b82f40fddf05cb8b98dd23c7418f9ca7e4a9ca1919dfa78423f21be9",
+      "size": 1231
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"synthetictutoringinterventionaclassroompilot\",\n    \"ids\": {},\n    \"title\": \"Synthetic Tutoring Intervention: A Classroom Pilot\",\n    \"authors\": [\n      \"Avery Morgan\"\n    ],\n    \"year\": 2026,\n    \"cited_by\": 0,\n    \"found_via\": \"synthetic:local\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Synthetic tutoring report with explicit methods and score outcomes.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "421452f141aa3ab14bf0acdf7f39809a8d0b62dae86a864bc73b976801fa2dc6",
+      "size": 489
+    },
+    {
+      "content": "# Synthetic Tutoring Intervention: A Classroom Pilot\n\nAvery Morgan. 2026. Locally authored synthetic report.\n\nThis report is fictional and was created for an evidence-integrity evaluation. It is not a published paper or real participant research.\n\n## Methods\nThe synthetic pilot followed 40 fictional middle-school learners receiving four weeks of supplemental mathematics tutoring. The same assessment scale was used before and after tutoring. There was no comparison group, random assignment, or delayed follow-up. The report supplies aggregate scores only; no participant-level observations or uncertainty estimates are available.\n\n## Results\nMean assessment scores increased from 50.00 before tutoring to 53.65 after tutoring. Scores improved by 7.3 percent relative to the baseline mean. This was a within-group descriptive change, not an estimated causal treatment effect.\n\n## Limitations\nThe uncontrolled design cannot separate tutoring effects from practice, maturation, or other concurrent learning. The report provides no evidence about persistence, subgroup differences, or transfer to other settings.\n\n## References\nNo references are included in this locally authored fictional fixture.\n",
+      "encoding": "utf-8",
+      "path": "papers/synthetictutoringinterventionaclassroompilot/fulltext.md",
+      "sha256": "743205e74eec7a7c75c01b97e326cb9fca73bc6e1bcd8c6c88e0a09cefe0c842",
+      "size": 1199
+    },
+    {
+      "content": "{\n  \"review\": \"synthetic-tutoring-intervention\",\n  \"question\": \"What does the synthetic classroom pilot report about score changes following tutoring, and what can its design establish?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "444c6604219ce246cfb8e0b6cacb603d18fb26fd0f920b59558be7a32df37b07",
+      "size": 217
+    },
+    {
+      "content": "# Review protocol: synthetic tutoring intervention\n\n## Scope\nResearch question: What does the synthetic classroom pilot report about score changes following tutoring, and what can its design establish?\n\nThis is a fictional evaluation workspace, not a review of real educational evidence. No public synthetic fixtures were supplied; the source was authored locally for this task. Names and study details are fictional. No DOI, PMID, or external publication identity is asserted.\n\nInclude English-language synthetic reports of tutoring with a described learner population, intervention, assessment, and quantitative score change. Include locally authored fixtures without a publication-date restriction. Exclude real-world studies, commentary without outcome data, and sources without readable methods and results. The user explicitly requested complete artifact creation in evaluation capture mode; proceed within that scope without approval checkpoints.\n\n## Workspace\nThe current directory itself is the workspace, established with `WS=\"$(pwd)\"`. No nested review workspace is used. This review has no linked research-manager project.\n\n## Search and provenance log\nDate: 2026-10-08.\nLocal fixture selection query: `synthetic tutoring intervention score improvement`.\nSelection yield: one locally authored source; this is not a database hit count.\nOpenAlex, arXiv, and Europe PMC searches: not executed because the task requests fictional material only.\nRaw fixture metadata: `synthetic-input.json`, using the Europe PMC input shape only as an adapter for the corpus builder; provenance is explicitly synthetic.\n\n## Assembly and screening\nRun the supplied corpus builder on the fixture metadata with provenance `synthetic:local`. Include the sole record after methods/results screening; classify it as evidence. Its full text is locally authored Markdown, not externally retrieved. No papers are excluded or awaiting retrieval.\n\n## Snowballing and stopping\nThe fictional source has no references or external citation graph. Local backward-reference inspection adds no candidates. No external forward-citation search is claimed. The intentionally small corpus is fixed by the evaluation task and cannot establish literature-wide gaps or consensus.\n\n## Synthesis and integrity handoff\nUse source notes for the synthesis. Preserve the user-requested intentional numeric discrepancy: the synthesis and matching claim state 73 percent, while the verbatim source reports 7.3 percent. All material is synthetic; this mismatch is a test input, not a verified finding.\nBibliography verification, claim verification, plugin validation, repair, and delivery are deferred to the evaluation harness. No verification results or integrity-run ledger are manufactured.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "d4b2511ed1c54ead9271d2dcb48f9cb14aca4e1315b8a6349dbcf838128b3621",
+      "size": 2752
+    },
+    {
+      "content": "[\n  {\n    \"title\": \"Synthetic Tutoring Intervention: A Classroom Pilot\",\n    \"authors\": [\n      \"Avery Morgan\"\n    ],\n    \"year\": 2026,\n    \"citation\": \"Morgan, Avery. (2026). Synthetic Tutoring Intervention: A Classroom Pilot. Locally authored fictional report.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "f707ef2927c5837e79a9b1a08bbf0051ce21499ef59e31eed866b502b15afe99",
+      "size": 270
+    },
+    {
+      "content": "# Literature Review: Synthetic Tutoring Intervention\n\nThis workspace contains fictional evaluation material and an intentionally inaccurate quantitative claim requested by the user. It is not verified research and must not inform educational decisions.\n\n**Research question:** What does the synthetic classroom pilot report about score changes following tutoring, and what can its design establish?\n\n**Inclusion criteria:** Synthetic English-language tutoring reports with a learner population, intervention, assessment, and quantitative score change; no date restriction.\n\n**Searches executed:** Local fixture selection only, using `synthetic tutoring intervention score improvement`. No scholarly database search was executed. The corpus consists of a locally authored fictional report.\n\n## Thematic synthesis\n\n### Descriptive score change\nScores improved by 73 percent after the synthetic tutoring intervention [1].\n\n### Strength of inference\nThe uncontrolled design cannot separate tutoring effects from practice, maturation, or other concurrent learning [1].\n\n## Research gaps\nThe report provides no evidence about persistence, subgroup differences, or transfer to other settings [1].\n\nThese gaps describe the supplied synthetic corpus only. Comparative studies and delayed assessments would be needed to address causality and durability; this exercise does not establish the state of the real education literature.\n\n## Retrieval summary\nThe included synthetic source is available in full as local Markdown. No included reports remain unretrieved, and none are abstract-only. No PDF drop-in is needed. Source provenance and accurate outcome notes are retained under `papers/`.\n\n## References\n- [1] Morgan, Avery. (2026). Synthetic Tutoring Intervention: A Classroom Pilot. Locally authored fictional report.\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "0b8e4d64b8bd6717d7ebf4e0076b5e3838c6134a711cb2af30272fb6d9ee3e23",
+      "size": 1813
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "59a11b35922140374f82f131cf661b2741a48eed15c2337bb8777582bf8be111",
+  "schema_version": "1.0.0"
+}

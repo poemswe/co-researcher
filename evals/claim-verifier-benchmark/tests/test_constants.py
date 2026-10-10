@@ -14,7 +14,7 @@ def test_frozen_protocol_constants():
         "climate-environment",
         "machine-learning",
     )
-    assert TARGET_COMMIT == "e3ae752"
+    assert TARGET_COMMIT == "905a482"
     assert PROTOCOL_CORE_VERSION == "1.0.0"
     assert len(RESULT_STATUSES) == 9
     assert len(REASON_CODES) == 11

@@ -25,7 +25,7 @@ Domain-expert skills provide PhD-level research capabilities:
 
 ### Platform Integration
 
-**Current Version: v2.6.2**
+**Current Version: v2.7.0**
 
 The system supports four CLI platforms through unified skill definitions. `skills/` is the single source of truth; each platform ships only a loader and a context file that injects the three Systemic Honesty principles:
 
@@ -68,6 +68,16 @@ Both review skills run a persistent funnel in a `review/{slug}/` workspace: `pro
 
 Shared helper modules `http_client.py` (rate limiting/retries/backoff) and `jats.py` (JATS→markdown) live in `scripts/` alongside the backends and are imported as siblings (`import http_client`) — no separate package or build. Stdlib-only; `uv run` puts the script dir on `sys.path`. Everything here is MIT; the only non-MIT footprint is the optional AGPL `pymupdf4llm` runtime dep fetched by uv for `read_paper.py`.
 
+### Evidence-Integrity Engine
+
+`skills/literature-review/scripts/review_integrity/` is one engine shared by the plugin and the evals:
+
+- **Workspace loading** — reads `review/{slug}/` without following symlinks or allowing path traversal and hashes every artifact into a canonical manifest.
+- **Validators** — workspace contract, corpus and PRISMA, bibliography resolution, citation binding, quote authentication, quantitative grounding, synthesis coverage (numbers, negation and direction must match a verified claim; uncited numbers are flagged). A check that cannot complete raises `validator_incomplete`.
+- **Scoring and status** — six weighted dimensions (quotes 25, binding 20, grounding 20, coverage 15, bibliography 10, PRISMA and artifacts 10); any critical finding makes the status `invalid` whatever the score.
+- **Repair** — up to three rounds, stopping after two without progress; critical findings and the warnings an edit can fix trigger repair, and the writer sees only public findings plus the skill's artifact contract.
+- **Delivery gate** — `validate_review.py` returns `pass`, `repair` or `stop_invalid` and keeps an external run report; a `stop_invalid` draft ships with the `INVALID EVIDENCE` warning.
+
 **Prerequisite**: `uv` package manager. One-time setup via `scripts/setup.sh` (detects existing install, falls back to astral.sh installer, warms the dep cache).
 
 ### Research Quality Principles
@@ -87,7 +97,7 @@ Shared helper modules `http_client.py` (rate limiting/retries/backoff) and `jats
 ### Architecture
 
 **Dynamic Rubric System:**
-- 6 task-specific rubrics (analytical, quantitative, qualitative, design, reasoning, output)
+- 7 task-specific rubrics (research, analytical, quantitative, qualitative, design, reasoning, output)
 - Rubrics automatically matched to agent capabilities
 - Adversarial judging with anti-gaming measures
 
@@ -102,8 +112,16 @@ Shared helper modules `http_client.py` (rate limiting/retries/backoff) and `jats
 - Persistent result indexing in `results/latest/index.md`
 - Extended model targeting: `--model "provider:version reasoning-level"`
 - Robust CLI location via `shutil.which` and `/opt/homebrew/bin` path discovery support for Apple Silicon macOS
+- Every broad run records the plugin release it ran under; `all --resume RUN_ID` finishes a run cut short by a usage limit, and a judge error counts as an execution error, not a zero score
+- Detail files redact the repository root, temp directory and home directory before they are written
 
-### Arena Dashboard
+**Literature-integrity mode** (`run_eval.py literature-review-integrity`):
+- Synthetic attack set: 14 families (13 the gate detects, plus an overstated-finding case recorded as a known gap) and 2 controls, in `evals/test-cases/literature-review-integrity/`
+- Each case runs a live writer, snapshots the first pass, validates, repairs and scores; an attack the writer never reproduced is marked not assessable rather than counted as a miss
+- Run reports carry provenance (target commit, clean tree, resolved model) and live under the ignored `evals/results/runs/`; `publish_integrity_runs.py` copies chosen runs into `evals/published/runs/` for the dashboard after refusing any that contain the home directory path
+- `evals/claim-verifier-benchmark/` holds the prospective benchmark's protocol core: deterministic split, commitments, coverage-unit enumeration and a dry-run manifest audit
+
+### Evals Dashboard
 
 High-performance HTML/JS visualization platform:
 - **Editorial Design System**: High-contrast typography, solid colors, and interactive micro-animations
@@ -113,7 +131,9 @@ High-performance HTML/JS visualization platform:
     - Detailed agent outputs with syntax highlighting and syntax-aware scrolling
     - Dynamic "Must-include" checklist verification (Met/Missed)
     - Overall judge justification and task-specific rubric profiling
-- **Historic Run Filtering**: Dropdown selection to view specific past runs (e.g., "Jan 02" vs "Jan 26") alongside model selection
+- **Release Filtering**: a release selector scopes the leaderboard, metrics, matrix and breakdown to runs on the same case set; the history chart shows every run
+- **Historic Run Filtering**: Dropdown selection to view specific past runs alongside model selection
+- **Integrity Runs**: published literature-integrity runs with first-pass and final snapshots, validated against their hashes on load
 - **Fast Loading**: Optimized for 10-50x faster performance through v2 binary schema
 
 ## Research Orchestration Engine

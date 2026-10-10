@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-003",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"Garden recall held steady across the invented term.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"Garden recall held steady across the invented term. Tutors logged the same pattern during the final week.\"\n  },\n  {\n    \"claim\": \"Harbor recall held steady across the invented term.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"Harbor recall held steady across the invented term. Tutors logged the same pattern during the final week.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "4fcedfa8fe6fbb62a8c3ffb5a7afba2b7a28eabe17a2fbf61d147d0ef50df2dc",
+      "size": 532
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined fixed synthetic fixture scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined fixed synthetic fixture scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "615883e33a42476f77b14833d7985014d39d3c22ad750d2b55e1dcb3f6bf0548",
+      "size": 830
+    },
+    {
+      "content": "Garden recall held steady across the invented term. A remote orchard survey then discussed unrelated lantern colors in detail. Tutors logged the same pattern during the final week.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "653f82a45cbd97da3176a81b60ed81cb6149301f139650c49cc4666e6dd92392",
+      "size": 180
+    },
+    {
+      "content": "Harbor recall held steady across the invented term. Page 2.                                                                     Tutors logged the same pattern during the final week.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "a49d09e2b10ef3fbe4c999da536c9f296cbc7fa60301746fc2a040d230ce3d6d",
+      "size": 181
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented records state about recall across the invented term in learning gardens?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "41a1dec489adeb75a2c70e30528ec707f883f38089789db6ee8bfe33657c1ec9",
+      "size": 192
+    },
+    {
+      "content": "# Invented learning gardens: review protocol\n\n## Research question\nWhat do the supplied invented records state about recall across the invented term in learning gardens?\n\n## Scope and criteria\nInclude every supplied synthetic record and its associated claim/source pair. Include both garden and harbor settings. No date, language, population, or method restrictions beyond membership in the supplied fixture. Exclude external records and newly invented evidence. These are entirely invented materials, not empirical research.\n\nThe user authorized complete artifact creation in evaluation capture mode, with exact preservation of supplied claims, sources, and synthesis. No scope or small-corpus approval pause was taken because that instruction governs this run.\n\n## Workspace\nThe current directory itself is the workspace, initialized with WS=\"$(pwd)\". No nested review workspace is used. There is no linked research project.\n\n## Search and provenance log\n- Date: 2026-10-08.\n- Source: /private/tmp/tmpflv82kwp/fixture-001.json, copied unchanged to input.json.\n- Local corpus ingestion: two supplied records; both included.\n- Query: not applicable. No external backend searches executed; external hit counts are not applicable.\n- The supplied corpus already defines distinct record keys and source associations. No backend merge or deduplication was performed.\n\n## Screening and acquisition\nBoth records are included as evidence under the fixed fixture scope. Source strings are saved verbatim in papers/{key}/fulltext.md. Here fulltext means the complete supplied synthetic source, not an independently retrieved publication. Notes reflect only those strings. No additional methods, sample sizes, or bibliographic metadata were inferred.\n\n## Snowballing\nNot performed: the fixed synthetic corpus provides no citation graph and the requested scope is limited to its supplied records.\n\n## Synthesis and integrity handling\nclaims.json preserves the supplied claim objects without alteration. synthesis.md preserves the supplied synthesis string exactly. refs.json preserves the supplied references array, which is empty. Bibliographic metadata available in the fixture remains in corpus.json and the individual notes.\n\nNo citation report or integrity result is asserted. Bibliography verification, claim verification, plugin validation, repair, and delivery were not run; those phases belong to the evaluation harness.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "79069fac5c4e444462a1318fa282ffbe8449b6e02cfffd44262390b4c227e5bd",
+      "size": 2418
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "Garden recall held steady across the invented term (Lumen, 2024). Harbor recall held steady across the invented term (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "3dcb0c331682158dbc7a7e3817ffbb53b8768b4be9aa8745ea32c47a54727a06",
+      "size": 131
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "3fa58fe39e0f3d54df2885d0e90b1bd7e04ff4a13b9f19e3fd35e17618bed3bd",
+  "schema_version": "1.0.0"
+}

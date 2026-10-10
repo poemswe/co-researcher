@@ -133,22 +133,23 @@ Multi-agent coordination for complex research questions.
 ## Benchmark Results
 
 Live evaluation at: https://coresearcher.poemswe.com/evals/
-- 26 test cases across 10 capabilities, plus a 15-case evidence-integrity set (13 attack families, 2 controls)
+- 32 test cases across 10 capabilities, plus a 16-case evidence-integrity set (14 attack families, 2 controls)
 - Models evaluated: Claude (Anthropic), Codex (OpenAI), Gemini (Google)
 - Rubrics: research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
 - Scoring: Excellent / Good / Fair / Poor with rubric-by-rubric breakdowns
 
 ## Installation
 
-Claude Code: `claude plugins install poemswe/co-researcher`
+Claude Code: `claude plugin marketplace add poemswe/co-researcher`, then `claude plugin install co-researcher`
 Gemini CLI: `gemini extension install https://github.com/poemswe/co-researcher`
 OpenAI Codex: tell Codex to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md
+OpenCode: tell OpenCode to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.opencode/INSTALL.md
 Source: https://github.com/poemswe/co-researcher
 
 ## Links
 
 - Landing page: https://coresearcher.poemswe.com/
-- Benchmark arena: https://coresearcher.poemswe.com/evals/
+- Evals: https://coresearcher.poemswe.com/evals/
 - GitHub: https://github.com/poemswe/co-researcher
 - Creator: https://poemswe.com
 - Summary (llms.txt): https://coresearcher.poemswe.com/llms.txt

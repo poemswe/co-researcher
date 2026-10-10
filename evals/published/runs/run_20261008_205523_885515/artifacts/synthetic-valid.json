@@ -1,0 +1,263 @@
+{
+  "model_first_pass": {
+    "integrity": {
+      "dimensions": {
+        "bibliography_verification": {
+          "applicable": true,
+          "effective_weight": 10.0,
+          "evaluated_units": 3,
+          "findings": [
+            {
+              "artifact": "refs.json",
+              "context": {
+                "response_status": "unavailable"
+              },
+              "message": "external citation resolution was not supplied",
+              "reason_code": "citation_resolution_unavailable",
+              "schema_version": "1.0.0",
+              "severity": "warning"
+            }
+          ],
+          "name": "bibliography_verification",
+          "nominal_weight": 10.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": 0.0
+        },
+        "citation_binding": {
+          "applicable": true,
+          "effective_weight": 20.0,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "citation_binding",
+          "nominal_weight": 20.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "prisma_artifact_completeness": {
+          "applicable": true,
+          "effective_weight": 10.0,
+          "evaluated_units": 13,
+          "findings": [],
+          "name": "prisma_artifact_completeness",
+          "nominal_weight": 10.0,
+          "passed_units": 13,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quantitative_grounding": {
+          "applicable": true,
+          "effective_weight": 20.0,
+          "evaluated_units": 11,
+          "findings": [],
+          "name": "quantitative_grounding",
+          "nominal_weight": 20.0,
+          "passed_units": 11,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quote_authenticity": {
+          "applicable": true,
+          "effective_weight": 25.0,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "quote_authenticity",
+          "nominal_weight": 25.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "synthesis_coverage": {
+          "applicable": true,
+          "effective_weight": 15.0,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "synthesis_coverage",
+          "nominal_weight": 15.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        }
+      },
+      "findings": [
+        {
+          "artifact": "refs.json",
+          "context": {
+            "response_status": "unavailable"
+          },
+          "message": "external citation resolution was not supplied",
+          "reason_code": "citation_resolution_unavailable",
+          "schema_version": "1.0.0",
+          "severity": "warning"
+        }
+      ],
+      "integrity_score": 90.0,
+      "manifest_sha256": "5abbda8abb5b1fa3dcbdbae70c7e16a9dc49beb12807406f5e3e28dc20599379",
+      "schema_version": "1.0.0",
+      "status": "valid_with_warnings"
+    },
+    "model_usage": {
+      "duration_seconds": 138.98242845851928,
+      "estimated_cost_usd": null,
+      "executor_version": "1.0.0",
+      "input_tokens": null,
+      "output_tokens": null,
+      "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+      "prompt_version": "literature-integrity-capture-v2",
+      "schema_version": "1.0.0"
+    },
+    "quality": {
+      "error": null,
+      "quality_score": 85.9,
+      "schema_version": "1.0.0",
+      "scores": {
+        "analytical-quality": 93.0,
+        "output-structure": 85.0,
+        "research-quality": 84.0
+      }
+    },
+    "schema_version": "1.0.0",
+    "workspace_manifest_sha256": "5abbda8abb5b1fa3dcbdbae70c7e16a9dc49beb12807406f5e3e28dc20599379"
+  },
+  "repair_cost": {
+    "duration_seconds": 0,
+    "estimated_cost_usd": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "rounds": 0,
+    "schema_version": "1.0.0"
+  },
+  "repair_rounds": [],
+  "robustness": {
+    "error": null,
+    "expectation_met": true,
+    "expected_final_status": "passing",
+    "maximum_repair_rounds": 3,
+    "minimum_repair_rounds": 0,
+    "observed_final_status": "valid_with_warnings",
+    "schema_version": "1.0.0"
+  },
+  "schema_version": "1.0.0",
+  "system_final": {
+    "integrity": {
+      "dimensions": {
+        "bibliography_verification": {
+          "applicable": true,
+          "effective_weight": 10.0,
+          "evaluated_units": 3,
+          "findings": [
+            {
+              "artifact": "refs.json",
+              "context": {
+                "response_status": "unavailable"
+              },
+              "message": "external citation resolution was not supplied",
+              "reason_code": "citation_resolution_unavailable",
+              "schema_version": "1.0.0",
+              "severity": "warning"
+            }
+          ],
+          "name": "bibliography_verification",
+          "nominal_weight": 10.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": 0.0
+        },
+        "citation_binding": {
+          "applicable": true,
+          "effective_weight": 20.0,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "citation_binding",
+          "nominal_weight": 20.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "prisma_artifact_completeness": {
+          "applicable": true,
+          "effective_weight": 10.0,
+          "evaluated_units": 13,
+          "findings": [],
+          "name": "prisma_artifact_completeness",
+          "nominal_weight": 10.0,
+          "passed_units": 13,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quantitative_grounding": {
+          "applicable": true,
+          "effective_weight": 20.0,
+          "evaluated_units": 11,
+          "findings": [],
+          "name": "quantitative_grounding",
+          "nominal_weight": 20.0,
+          "passed_units": 11,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quote_authenticity": {
+          "applicable": true,
+          "effective_weight": 25.0,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "quote_authenticity",
+          "nominal_weight": 25.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "synthesis_coverage": {
+          "applicable": true,
+          "effective_weight": 15.0,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "synthesis_coverage",
+          "nominal_weight": 15.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        }
+      },
+      "findings": [
+        {
+          "artifact": "refs.json",
+          "context": {
+            "response_status": "unavailable"
+          },
+          "message": "external citation resolution was not supplied",
+          "reason_code": "citation_resolution_unavailable",
+          "schema_version": "1.0.0",
+          "severity": "warning"
+        }
+      ],
+      "integrity_score": 90.0,
+      "manifest_sha256": "5abbda8abb5b1fa3dcbdbae70c7e16a9dc49beb12807406f5e3e28dc20599379",
+      "schema_version": "1.0.0",
+      "status": "valid_with_warnings"
+    },
+    "model_usage": {
+      "duration_seconds": 138.98242845851928,
+      "estimated_cost_usd": null,
+      "executor_version": "1.0.0",
+      "input_tokens": null,
+      "output_tokens": null,
+      "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+      "prompt_version": "literature-integrity-capture-v2",
+      "schema_version": "1.0.0"
+    },
+    "quality": {
+      "error": null,
+      "quality_score": 85.9,
+      "schema_version": "1.0.0",
+      "scores": {
+        "analytical-quality": 93.0,
+        "output-structure": 85.0,
+        "research-quality": 84.0
+      }
+    },
+    "schema_version": "1.0.0",
+    "workspace_manifest_sha256": "5abbda8abb5b1fa3dcbdbae70c7e16a9dc49beb12807406f5e3e28dc20599379"
+  }
+}

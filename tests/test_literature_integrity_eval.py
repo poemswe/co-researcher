@@ -193,7 +193,7 @@ def test_cli_list_recursively_reports_all_integrity_cases_in_sorted_order():
       entries.append(line.removeprefix("    - "))
     elif entries:
       break
-  assert len(entries) == 15
+  assert len(entries) == 16
   assert entries == sorted(entries)
   assert entries[:2] == ["integrity-case-001", "integrity-case-002"]
   assert entries[-2:] == ["synthetic-invalid-number", "synthetic-valid"]

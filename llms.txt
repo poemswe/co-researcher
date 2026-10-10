@@ -2,7 +2,7 @@
 
 > A PhD-level research agent suite for Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. Governed by Systemic Honesty — no fabricated citations, no hallucinated data.
 
-This site is a live benchmark arena evaluating research agent performance across 26 test cases and 10 capabilities, plus a 15-case evidence-integrity set.
+This site publishes benchmark results evaluating research agent performance across 32 test cases and 10 capabilities, plus a 16-case evidence-integrity set.
 
 ## What Co-Researcher Does
 
@@ -25,18 +25,19 @@ Co-Researcher provides specialized research skills that run inside AI coding ass
 - **Research Manager** — dynamic task scaffolding and polyglot session persistence
 - **Academic Writing** — eliminating AI-isms from research prose
 
-## Benchmark Arena (this site)
+## Evals (this site)
 
 Models evaluated: Claude (Anthropic), Codex (OpenAI), Gemini (Google)
-Test cases: 26 across 10 capabilities, plus 15 evidence-integrity cases (13 attack families, 2 controls)
+Test cases: 32 across 10 capabilities, plus 16 evidence-integrity cases (14 attack families, 2 controls)
 Rubrics: research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
 Scores: Excellent / Good / Fair / Poor
 
 ## Installation
 
-Claude Code: `claude plugins install poemswe/co-researcher`
+Claude Code: `claude plugin marketplace add poemswe/co-researcher`, then `claude plugin install co-researcher`
 Gemini CLI: `gemini extension install https://github.com/poemswe/co-researcher`
 OpenAI Codex: tell Codex to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md
+OpenCode: tell OpenCode to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.opencode/INSTALL.md
 Source: https://github.com/poemswe/co-researcher
 
 ## Links

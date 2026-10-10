@@ -25,6 +25,14 @@ model prompt. A missing, symlinked, or traversal-manifest workspace cannot
 load, so it fails closed: the case ends `invalid` with no repair round. A
 malformed artifact still loads, so it goes through the normal repair loop.
 
+`integrity-case-014` records a known gap rather than a strength. Its synthesis
+says a trial "proved" what the claim and source only "suggested". The sentence
+keeps the claim's numbers, negation and direction and stays above the 0.80
+similarity threshold, so the deterministic gate passes it. The scorecard states
+what a sound reviewer would expect, `coverage_claim_missing` on that sentence
+followed by repair, so every run reports this family as a false negative until
+the gate can judge meaning.
+
 All fixtures and prompts in this directory are synthetic. Runtime-only case
 collections can be loaded by passing their containing directory to
 `load_cases()`; the adapter has no built-in path to a private collection.

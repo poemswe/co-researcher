@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-005",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"[1]\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"[2]\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "cfd7f8d869f148b154e7436541fdd942220534512936457f52860dab4239ab44",
+      "size": 537
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\",\n      \"doi\": \"10.5555/attack-1\"\n    },\n    \"title\": \"Signal Gardens for Memory\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined closed synthetic corpus scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\",\n      \"doi\": \"10.5555/control-2\"\n    },\n    \"title\": \"Signal Gardens for Reasoning\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined closed synthetic corpus scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "9b20facbb3ee7242eddc20926a13256cfd9493c1a8b95b3685eabaeba95d24f2",
+      "size": 912
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What recall findings are reported by the supplied entirely invented learning-garden records?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "c128250df3f7f04d24181db101c4c6b694cfa0681a35b407f165ca19b671a295",
+      "size": 182
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat recall findings are reported by the supplied entirely invented learning-garden records?\n\n## Scope and criteria\nThis is a closed, entirely synthetic corpus supplied by the user for evaluation capture. Include both supplied records and preserve both claim/source pairs, the ordered references, and the synthesis wording exactly. Exclude any records outside the supplied input. No population, date, language, or design restrictions beyond membership in that input apply. The user has authorized this fixed scope and complete artifact creation.\n\n## Source and query log\n- Date: 2026-10-08.\n- Source: /private/tmp/tmpz52qb4nu/fixture-001.json, copied verbatim to input.json.\n- Local import: both supplied corpus records; two records retained, none excluded.\n- External queries: none. These records are entirely invented; no external source-resolution claims are made.\n- Corpus assembly: supplied normalized records retained directly; no backend pools were merged or deduplicated.\n- Snowballing: not applicable to the user-specified closed corpus.\n\n## Reading and synthesis\nRead each supplied source passage and record its contents and limitations in the corresponding notes.md. Store each source verbatim as papers/{key}/fulltext.md. The fulltext field denotes availability of the complete supplied synthetic passage, not retrieval of a real publication. Preserve synthesis.md exactly as supplied, with no added references or retrieval prose; the ordered bibliography is retained separately in refs.json.\n\n## Retrieval summary\nBoth supplied synthetic source passages are available locally. No supplied source is missing. No real publication or PDF was retrieved.\n\n## Capture boundary\nStop after workspace artifact creation. Bibliography verification, claim verification, plugin validation, repair, and delivery are left to the evaluation harness. No verification reports are fabricated.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "cff84057ae7d172ba5537c7d34b965c404d946a7fc9ba89b7f8f2b69d9fc9acd",
+      "size": 1954
+    },
+    {
+      "content": "[\n  {\n    \"title\": \"Signal Gardens for Memory and Signal Gardens for Reasoning\"\n  },\n  {\n    \"title\": \"Signal Gardens for Reasoning\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "2aaaa2aa09442f55d7fa54a60bf3881d46f769af5beea53acd4b15c15e1114f1",
+      "size": 139
+    },
+    {
+      "content": "The amber garden trial found stable recall [1]. The ivory harbor trial found stable recall [2].\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b07bb56559a149b584801abf6f005bbdecfa6ee03c27eb726d1f70349ded3c51",
+      "size": 96
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "1267d31ceaa757866dcd40e057589041b28b960951936ea4f79795f33f8bd18c",
+  "schema_version": "1.0.0"
+}

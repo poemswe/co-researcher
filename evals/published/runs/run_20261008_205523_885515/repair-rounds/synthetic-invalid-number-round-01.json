@@ -1,0 +1,307 @@
+{
+  "action": "pass",
+  "attempt": 1,
+  "integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 1,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 3,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 3,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 8,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 8,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 1,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 1,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 3,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 3,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 3,
+        "findings": [],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 3,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 90.0,
+    "manifest_sha256": "ed4aecc8a4ac6285c6a336ed017cf2bdcced70d22e3f9b17f8ecc6bd4ba99c16",
+    "schema_version": "1.0.0",
+    "status": "valid_with_warnings"
+  },
+  "model_usage": {
+    "duration_seconds": 39.778113666921854,
+    "estimated_cost_usd": null,
+    "executor_version": "1.0.0",
+    "input_tokens": null,
+    "output_tokens": null,
+    "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+    "prompt_version": "literature-integrity-repair-v2",
+    "schema_version": "1.0.0"
+  },
+  "previous_integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 1,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 3,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 3,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 8,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 8,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 1,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "[1]",
+              "claim_text": "Scores improved by 73 percent after the synthetic tutoring intervention.",
+              "numbers_missing": [
+                "73"
+              ],
+              "paper_id": "synthetictutoringinterventionaclassroompilot",
+              "result_index": 0,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 3,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "[1]",
+              "claim_text": "Scores improved by 73 percent after the synthetic tutoring intervention.",
+              "numbers_missing": [
+                "73"
+              ],
+              "paper_id": "synthetictutoringinterventionaclassroompilot",
+              "result_index": 0,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 66.7
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 3,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "number:1",
+              "citation_identity": "number:1",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "Scores improved by 73 percent after the synthetic tutoring intervention [1].",
+              "synthesis_sentence_index": 7,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 66.7
+      }
+    },
+    "findings": [
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "[1]",
+          "claim_text": "Scores improved by 73 percent after the synthetic tutoring intervention.",
+          "numbers_missing": [
+            "73"
+          ],
+          "paper_id": "synthetictutoringinterventionaclassroompilot",
+          "result_index": 0,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "number:1",
+          "citation_identity": "number:1",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "Scores improved by 73 percent after the synthetic tutoring intervention [1].",
+          "synthesis_sentence_index": 7,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 56.7,
+    "manifest_sha256": "59a11b35922140374f82f131cf661b2741a48eed15c2337bb8777582bf8be111",
+    "schema_version": "1.0.0",
+    "status": "invalid"
+  },
+  "reason_codes": [
+    "citation_resolution_unavailable"
+  ],
+  "schema_version": "1.0.0",
+  "workspace_manifest_sha256": "ed4aecc8a4ac6285c6a336ed017cf2bdcced70d22e3f9b17f8ecc6bd4ba99c16"
+}

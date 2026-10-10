@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-008",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial reported 6.4% stronger recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial reported 6.4% stronger recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "df3475f3a98c55335d4e4cc3412c5a33f1b8a2e4b664f2e9b505146ebd84613e",
+      "size": 562
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Niko Vale\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "a3918c6282fb0e4e91f0a6edbfe36e52a94ae15fcb138b54e2f0f2d5fdebc647",
+      "size": 676
+    },
+    {
+      "content": "The amber garden trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "1e0de8e16ab778bb17cc6574f8f2adfc992c785d693b99762954665425104978",
+      "size": 119
+    },
+    {
+      "content": "The ivory harbor trial reported 6.4% stronger recall after four guided sessions among learners from invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "e7561bd2108a33951c3ba8d8e405e854b203da88706f81dc8801df1393027102",
+      "size": 119
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do invented learning-garden trials report about learner recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "74d2f6e20d495945b0cc041c1a1fa3dbc4d2fe5321a50cf04afabb509e189aef",
+      "size": 158
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nWhat do invented learning-garden trials report about learner recall?\n\n## Inclusion criteria\n- Records from the supplied invented corpus (fixture-001.json)\n- Reports a learner recall outcome\n\n## Exclusion criteria\n- Records outside the supplied fixture\n- No recall outcome reported\n\n## Query log\n- 2026-10-08 | invented-index (supplied fixture; no live backend queried) | 2 hits\n\n## Notes\n- Evaluation capture mode. Synthesis, claims, and sources copied verbatim from the fixture for deterministic integrity evaluation.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "61d01500c62ce3d6023c125338da7c6c6714410449351bb3877eaad9af8a06a6",
+      "size": 579
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial reported 6.4% stronger recall (Lumen, 2024). The ivory harbor trial reported 6.4% stronger recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "ade69621218e424a18137a22340b25c6cda02e95e22548f1f5d5a2f2ec4a02f5",
+      "size": 135
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "af8667dd679646a293f065fb45c99ff548ae78826880893a8690721eb6aca954",
+  "schema_version": "1.0.0"
+}

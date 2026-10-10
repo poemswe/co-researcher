@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-009",
+  "files": [
+    {
+      "content": "[\n  {\"claim\": \"The amber garden note described 42% of sessions.\", \"paper_id\": \"amber\", \"citation\": \"Lumen, 2024\", \"supporting_quote\": \"The amber garden note described 42% of sessions as context for an entirely invented program review.\", \"role\": \"background\"},\n  {\"claim\": \"The ivory harbor note described few of sessions.\", \"paper_id\": \"ivory\", \"citation\": \"Vale, 2024\", \"supporting_quote\": \"The ivory harbor note described few of sessions as context for an entirely invented program review.\", \"role\": \"background\"}\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "6ba494ab7c3ecb43e8e0e6accdbfb5a222d3b56c12854396b05a635a6028d357",
+      "size": 518
+    },
+    {
+      "content": "[\n  {\"key\": \"amber\", \"ids\": {\"pmcid\": \"amber\"}, \"title\": \"Amber Garden Context\", \"authors\": [\"Mira Lumen\"], \"year\": 2024, \"role\": \"background\", \"found_via\": \"invented-index\", \"screening\": {\"status\": \"included\"}, \"fulltext\": \"fulltext\"},\n  {\"key\": \"ivory\", \"ids\": {\"pmcid\": \"ivory\"}, \"title\": \"Ivory Harbor Context\", \"authors\": [\"Niko Vale\"], \"year\": 2024, \"role\": \"background\", \"found_via\": \"invented-index\", \"screening\": {\"status\": \"included\"}, \"fulltext\": \"fulltext\"}\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "fe62197519b7f9e537b595267142a20ba1e4db9b5995d5a27a92ccdb6f27a7c9",
+      "size": 472
+    },
+    {
+      "content": "The amber garden note described 42% of sessions as context for an entirely invented program review.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "8bbdd734dbd7fb3fcdcf60bb1de4ad70f2c4d2a2c4dfe3828aef7c1c6d39dda2",
+      "size": 100
+    },
+    {
+      "content": "The ivory harbor note described few of sessions as context for an entirely invented program review.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "fbeba546709e9e09aafbd67dd85883994475c8230e35d0e3afa63224c19b4d6a",
+      "size": 100
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-405f9xj_\",\n  \"question\": \"What do the invented learning-garden program notes report about session coverage?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "ca203273f8503421de66c7dd9cb24efb2bc78a15e60a17a279b021032d03a9b4",
+      "size": 169
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nWhat do the invented learning-garden program notes report about session coverage?\n\n## Inclusion criteria\n- Records from the supplied invented index (fixture-001.json) describing learning-garden or harbor program notes.\n- Any year; English.\n\n## Exclusion criteria\n- Records not present in the supplied invented index.\n\n## Query log\n- 2026-10-08: invented-index (supplied fixture, no live backend search) -> 2 records\n\n## Notes\n- All records, sources, claims, and synthesis wording are entirely invented and copied verbatim from the fixture for deterministic integrity evaluation.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "942f6fbb3381035e03f42fa60a0be4ab9341f90ba68ef1652b3f96c1c384060c",
+      "size": 639
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden note described 42% of sessions (Lumen, 2024). The ivory harbor note described few of sessions (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b68a4e2aae7a502a0238a77992bb4cd6d1ab4ac809ff7640eeba1dca4ab5fbaf",
+      "size": 125
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "779bb28e1a72c663d82bd4a5a972ce586bdabab5c182ed5eb50203b26110c636",
+  "schema_version": "1.0.0"
+}

@@ -74,8 +74,14 @@ ATTACK_EXPECTATIONS = (
      ReasonCode.ARTIFACT_TRAVERSAL, "traversal"),
 )
 
+KNOWN_GAPS = (
+    ("integrity-case-014", "overstated-finding",
+     ReasonCode.COVERAGE_CLAIM_MISSING),
+)
+
 FAMILY_NAMES = {family for _case, family, _reason, _mutation
-                in ATTACK_EXPECTATIONS}
+                in ATTACK_EXPECTATIONS} | {
+                    family for _case, family, _reason in KNOWN_GAPS}
 
 
 def _scenario(case_id):
@@ -106,7 +112,8 @@ def test_public_attack_case_definitions_cover_every_family_once():
   cases = load_cases(ATTACKS)
 
   assert {case.case_id for case in cases} == {
-      case for case, _family, _reason, _mutation in ATTACK_EXPECTATIONS}
+      case for case, _family, _reason, _mutation in ATTACK_EXPECTATIONS} | {
+          case for case, _family, _reason in KNOWN_GAPS}
   for case in cases:
     public = json.loads((ATTACKS / case.case_id / "case.json").read_text())
     assert set(public) - {"workspace_tamper"} == {
@@ -198,6 +205,31 @@ def test_critical_attack_is_detected_at_its_expected_unit(
           == expectation["unit"]["context_value"])
   ]
   assert len(matches) == 1
+
+
+@pytest.mark.parametrize(("case_id", "family", "reason_code"), KNOWN_GAPS)
+def test_overstated_finding_is_a_recorded_detection_gap(
+    tmp_path, case_id, family, reason_code,
+):
+  case = next(item for item in load_cases(ATTACKS) if item.case_id == case_id)
+  runner = literature_integrity.LiteratureIntegrityRunner(
+      _ScenarioExecutor(), _ScenarioJudge(),
+      workspace_parent=tmp_path / "workspaces", scorecard_directory=ATTACKS)
+
+  result = runner.run_case(case)
+  scorecard = json.loads((ATTACKS / case_id / "expected.json").read_text())
+  score = literature_integrity.load_adversarial_scores(
+      ATTACKS, {case_id: result}, domains={case_id: "synthetic"})[case_id]
+
+  assert scorecard["attack_family"] == family
+  assert scorecard["reason_expectations"][0]["reason_code"] == reason_code.value
+  assert scorecard["reason_expectations"][0]["present"] is True
+  assert result.model_first_pass.integrity.status.value in {
+      "valid", "valid_with_warnings"}
+  assert reason_code not in {
+      finding.reason_code for finding in result.model_first_pass.integrity.findings}
+  assert score.confusion["false_negative"] == 1
+  assert score.confusion["true_positive"] == 0
 
 
 def test_repair_operational_failure_keeps_latest_trusted_findings(tmp_path):

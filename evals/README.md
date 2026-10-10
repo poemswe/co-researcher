@@ -195,7 +195,7 @@ retained `publication.json` commit marker allows an exact, fully validated run
 left by process death to be registered on retry; incomplete or mismatched
 directories are never deleted or adopted.
 
-The 26-case broad benchmark predates integrity evaluation. Its dashboard rows
+The broad benchmark (32 cases) predates integrity evaluation. Its dashboard rows
 are labeled **Quality-only historical run — not integrity evaluated**. A broad
 quality pass does not imply an integrity pass.
 

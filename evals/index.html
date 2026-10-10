@@ -4,31 +4,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Co-Researcher Benchmark Arena — Claude vs. Codex vs. Gemini</title>
-    <meta name="description" content="Co-Researcher Benchmark Arena — live evaluation of Claude vs Codex vs Gemini across 22 research scenarios. Reasoning quality, analytical depth, quantitative rigor.">
+    <title>Co-Researcher Evals — Benchmark Results</title>
+    <meta name="description" content="Co-Researcher benchmark results — evaluation of Claude, Codex and Gemini across research scenarios, plus evidence-integrity runs. Reasoning quality, analytical depth, quantitative rigor.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://coresearcher.poemswe.com/evals/">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://coresearcher.poemswe.com/evals/">
-    <meta property="og:title" content="Co-Researcher Benchmark Arena — Claude vs Codex vs Gemini">
-    <meta property="og:description" content="Live benchmark across 22 research scenarios. Reasoning quality, analytical depth, quantitative rigor, research design.">
+    <meta property="og:title" content="Co-Researcher Evals — Benchmark Results">
+    <meta property="og:description" content="Benchmark results across research scenarios, plus evidence-integrity runs. Reasoning quality, analytical depth, quantitative rigor, research design.">
     <meta property="og:image" content="https://poemswe.com/images/og-default.png">
     <meta property="og:site_name" content="Co-Researcher">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Co-Researcher Benchmark Arena">
-    <meta name="twitter:description" content="Live benchmark: Claude vs Codex vs Gemini across 22 research scenarios.">
+    <meta name="twitter:title" content="Co-Researcher Evals">
+    <meta name="twitter:description" content="Benchmark results for Claude, Codex and Gemini across research scenarios, plus evidence-integrity runs.">
 
     <!-- JSON-LD -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "WebPage",
-        "name": "Co-Researcher Benchmark Arena",
-        "description": "Live evaluation of Claude, Codex, and Gemini across 22 research scenarios",
+        "name": "Co-Researcher Evals",
+        "description": "Benchmark results for Claude, Codex and Gemini across research scenarios, plus evidence-integrity runs",
         "url": "https://coresearcher.poemswe.com/evals/",
         "isPartOf": {
             "@type": "WebSite",
@@ -418,6 +418,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
+            min-width: 0;
         }
 
         .matrix-table {
@@ -1461,6 +1462,37 @@
             transition: all var(--transition-base);
         }
 
+        .release-filter {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+
+        .release-filter label {
+            font-weight: 700;
+        }
+
+        .release-filter select {
+            padding: 6px 10px;
+            font: inherit;
+        }
+
+        .release-filter-note {
+            color: var(--text-secondary, #5b5b5b);
+            font-style: italic;
+        }
+
+        .leaderboard-note {
+            font-size: 0.7rem;
+            color: var(--text-secondary, #5b5b5b);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
         .leaderboard-item:hover {
             transform: translateX(3px);
             border-left-color: var(--accent-primary);
@@ -1687,7 +1719,7 @@
             .noscript-fallback .meta { color: #71717a; font-size: 0.9rem; margin-bottom: 2rem; }
         </style>
         <div class="noscript-fallback">
-            <h1>Co-Researcher Benchmark Arena</h1>
+            <h1>Co-Researcher Evals</h1>
             <p class="meta">A live evaluation dashboard for Co-Researcher — a PhD-level research agent suite. JavaScript is required to view the interactive dashboard.</p>
 
             <h2>What is Co-Researcher?</h2>
@@ -1696,7 +1728,7 @@
             <h2>Research Skills</h2>
             <ul>
                 <li><strong>Critical Analysis</strong> — logic checking, fallacy detection, bias identification</li>
-                <li><strong>Literature Review</strong> — systematic search, citation chaining, gap analysis</li>
+                <li><strong>Literature Review</strong> — systematic search, citation chaining, gap analysis, and an evidence-integrity check before delivery</li>
                 <li><strong>Hypothesis Testing</strong> — variable mapping, falsification criteria, experimental design</li>
                 <li><strong>Quantitative Analysis</strong> — statistical power, effect size interpretation, method selection</li>
                 <li><strong>Qualitative Research</strong> — thematic analysis, coding strategy, saturation assessment</li>
@@ -1705,16 +1737,20 @@
                 <li><strong>Research Synthesis</strong> — narrative synthesis with uncertainty quantification</li>
                 <li><strong>Systematic Review</strong> — PRISMA-standard protocol and Risk of Bias assessment</li>
                 <li><strong>Grant Writing</strong> — funding strategy and proposal development</li>
-                <li><strong>Lateral Thinking</strong> — cross-domain analogies and first-principles reasoning</li>
+                <li><strong>Research Methodology</strong> — design selection and validation, including mixed-methods designs</li>
+                <li><strong>Multi-Source Investigation</strong> — investigating complex claims and fact-checking contradictory sources</li>
+                <li><strong>Research Manager</strong> — task scaffolding and session persistence</li>
+                <li><strong>Academic Writing</strong> — research prose without the patterns of machine-generated text</li>
             </ul>
 
-            <h2>What This Arena Benchmarks</h2>
-            <p>22 test cases across 8 agent types. Models evaluated include Claude (Anthropic) and Codex (OpenAI). Rubrics cover reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, and research design. Results are scored Excellent / Good / Fair / Poor.</p>
+            <h2>What These Evals Measure</h2>
+            <p>32 test cases across 10 capabilities, plus a 16-case evidence-integrity set. Models evaluated include Claude (Anthropic), Codex (OpenAI) and Gemini (Google), compared within each release. Rubrics cover research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, and research design. Results are scored Excellent / Good / Fair / Poor.</p>
 
             <h2>Install</h2>
             <ul>
-                <li>Claude Code: <code>claude plugins install poemswe/co-researcher</code></li>
+                <li>Claude Code: <code>/plugin marketplace add poemswe/co-researcher</code>, then <code>/plugin install co-researcher</code></li>
                 <li>Gemini CLI: <code>gemini extension install https://github.com/poemswe/co-researcher</code></li>
+                <li>OpenAI Codex and OpenCode: see the install instructions on the <a href="/#install">home page</a></li>
                 <li>Source: <a href="https://github.com/poemswe/co-researcher">github.com/poemswe/co-researcher</a></li>
             </ul>
 
@@ -1747,7 +1783,7 @@
             <div class="integrity-run-controls">
                 <label for="integrityRunFilter"><strong>Run</strong></label>
                 <select id="integrityRunFilter" class="search-input"
-                    style="width: auto; cursor: pointer; max-width: 360px;"
+                    style="width: auto; cursor: pointer; max-width: min(360px, 100%);"
                     onchange="handleIntegrityRunChange()" disabled>
                     <option value="">No isolated runs available</option>
                 </select>
@@ -1764,6 +1800,11 @@
 
         <!-- Hero Command Center -->
         <section class="hero-section" aria-label="Key Performance Metrics">
+            <div class="release-filter">
+                <label for="releaseFilter">Release</label>
+                <select id="releaseFilter" onchange="handleReleaseChange()"></select>
+                <span class="release-filter-note">Runs are compared within one release, on the same case set.</span>
+            </div>
             <div id="heroLeaderboard" class="hero-leaderboard-container"></div>
 
             <div class="hero-metrics-container" id="heroMetricsGrid"></div>
@@ -1787,11 +1828,11 @@
 
             <div class="radar-section-container">
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
-                    <h2 class="section-heading" style="margin-bottom: 0; white-space: nowrap;">Agent
+                    style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm); justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md);">
+                    <h2 class="section-heading" style="margin-bottom: 0;">Agent
                         Capability Signature</h2>
                     <select id="radarModelFilter" class="search-input"
-                        style="width: auto; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
+                        style="width: auto; max-width: 100%; cursor: pointer; padding: 0.4rem 0.8rem; font-size: 0.75rem;"
                         onchange="handleRadarModelChange()">
                     </select>
                 </div>
@@ -1820,15 +1861,15 @@
                 Historical broad benchmark runs are quality-only records — not integrity evaluated.
             </p>
 
-            <div class="search-container" style="display: flex; gap: 1rem;">
+            <div class="search-container" style="display: flex; flex-wrap: wrap; gap: 1rem;">
                 <input type="text" id="testSearch" class="search-input"
-                    placeholder="Search agents (e.g. 'lateral') or specific tests..." onkeyup="filterTests()"
-                    style="flex: 1;">
-                <select id="modelFilter" class="search-input" style="width: auto; cursor: pointer;"
+                    placeholder="Search agents (e.g. 'lateral') or specific tests..." oninput="filterTests()"
+                    style="flex: 1 1 14rem; min-width: 0;">
+                <select id="modelFilter" class="search-input" style="width: auto; max-width: 100%; cursor: pointer;"
                     onchange="handleModelFilterChange()">
                     <option value="">Select Model...</option>
                 </select>
-                <select id="runFilter" class="search-input" style="width: auto; cursor: pointer; max-width: 200px;"
+                <select id="runFilter" class="search-input" style="width: auto; cursor: pointer; max-width: min(200px, 100%);"
                     onchange="handleRunFilterChange()">
                     <option value="">Latest Run</option>
                 </select>
@@ -1843,7 +1884,7 @@
         <div class="footer-content">
             <div class="footer-links">
                 <a href="https://github.com/poemswe/co-researcher" target="_blank">GitHub</a>
-                <a href="http://linkedin.com/in/poepoemyintswe/" target="_blank">LinkedIn</a>
+                <a href="https://linkedin.com/in/poepoemyintswe/" target="_blank">LinkedIn</a>
                 <a href="https://www.threads.com/@poemswe" target="_blank">Threads</a>
             </div>
             <div class="footer-copyright">
@@ -1856,10 +1897,14 @@
     <script>
         // Configuration - uses relative path for GitHub Pages compatibility
         const GITHUB_RAW_URL = 'benchmark_overview.json';
-        const INTEGRITY_RUN_INDEX_URL = 'results/runs/index.json';
+        const INTEGRITY_RUNS_BASE = 'published/runs';
+        const INTEGRITY_RUN_INDEX_URL = `${INTEGRITY_RUNS_BASE}/index.json`;
         const INTEGRITY_RUN_ID = /^run[-_][a-z0-9](?:[a-z0-9._-]{0,125}[a-z0-9])?$/;
         const QUALITY_ONLY_LABEL = 'Quality-only historical run — not integrity evaluated';
         let globalOverview = null;
+        let fullOverview = null;
+        let selectedRelease = null;
+        let trendChartInstance = null;
         let detailedRuns = {};
         let radarChartInstance = null;
         let integrityRunIndex = [];
@@ -2521,10 +2566,10 @@
                 runId = requireRunId(selector.value);
                 const entry = integrityRunIndex.find(value => value.run_id === runId);
                 if (!entry) throw new Error(`unknown run ID: ${runId}`);
-                const responsePromise = fetch(`results/runs/${entry.result_file}`);
+                const responsePromise = fetch(`${INTEGRITY_RUNS_BASE}/${entry.result_file}`);
                 const summaryPromise = Object.prototype.hasOwnProperty.call(
                     entry, 'summary_sha256') ?
-                    fetch(`results/runs/${entry.run_id}/summary.md`) :
+                    fetch(`${INTEGRITY_RUNS_BASE}/${entry.run_id}/summary.md`) :
                     Promise.resolve(null);
                 const [response, summaryResponse] = await Promise.all([
                     responsePromise, summaryPromise]);
@@ -2743,9 +2788,67 @@
 
 
 
+        function leaderboardEntries(runs) {
+            const latest = {};
+            runs.forEach(run => {
+                const current = latest[run.model];
+                if (!current || new Date(run.timestamp) > new Date(current.timestamp)) {
+                    latest[run.model] = {
+                        model: run.model,
+                        score: run.average_score,
+                        passed: run.tests_passed || 20,
+                        total: run.tests_run || 22,
+                        timestamp: run.timestamp,
+                        note: typeof run.note === 'string' ? run.note : null
+                    };
+                }
+            });
+            return Object.values(latest);
+        }
+
+        function leaderboardNoteHtml(note) {
+            return note ? `<div class="leaderboard-note">${escapeHtml(note)}</div>` : '';
+        }
+
+        function compareReleases(a, b) {
+            const parts = value => value.split('.').map(Number);
+            const [x, y] = [parts(a), parts(b)];
+            for (let i = 0; i < Math.max(x.length, y.length); i++) {
+                if ((x[i] || 0) !== (y[i] || 0)) return (y[i] || 0) - (x[i] || 0);
+            }
+            return 0;
+        }
+
+        function releaseList(runs) {
+            const named = [...new Set(runs.map(run => run.release).filter(Boolean))].sort(compareReleases);
+            return runs.some(run => !run.release) ? [...named, 'unreleased'] : named;
+        }
+
+        function scopeToRelease(overview, release) {
+            const runs = overview.runs.filter(run => (run.release || 'unreleased') === release);
+            const models = (overview.summary_stats?.models || []).filter(
+                model => runs.some(run => run.model === model));
+            return { ...overview, runs, summary_stats: { ...overview.summary_stats, models } };
+        }
+
+        function handleReleaseChange() {
+            selectedRelease = document.getElementById('releaseFilter').value;
+            document.getElementById('modelFilter').value = '';
+            renderDashboard(fullOverview);
+        }
+
         function renderDashboard(overview) {
             if (!overview || !overview.runs || overview.runs.length === 0) return;
+            fullOverview = overview;
+            const releases = releaseList(overview.runs);
+            if (!releases.includes(selectedRelease)) selectedRelease = releases[0];
+            document.getElementById('releaseFilter').innerHTML = releases.map(release =>
+                `<option value="${escapeHtml(release)}" ${release === selectedRelease ? 'selected' : ''}>${escapeHtml(release)}</option>`).join('');
+            globalOverview = scopeToRelease(overview, selectedRelease);
+            renderScopedDashboard(globalOverview, overview.runs);
+        }
 
+        function renderScopedDashboard(overview, historyRuns) {
             const runs = overview.runs;
             const latest = runs[runs.length - 1];
 
@@ -2756,17 +2859,7 @@
 
             // 2. Model Comparison (Quick Win 4: Leaderboard)
             const models = {};
-            runs.forEach(run => {
-                // Always use the latest run for the "Current State" leaderboard
-                if (!models[run.model] || new Date(run.timestamp) > new Date(models[run.model].timestamp)) {
-                    models[run.model] = {
-                        score: run.average_score,
-                        passed: run.tests_passed || 20,
-                        total: run.tests_run || 22,
-                        timestamp: run.timestamp
-                    };
-                }
-            });
+            leaderboardEntries(runs).forEach(entry => { models[entry.model] = entry; });
             const sortedModels = Object.entries(models)
                 .sort((a, b) => b[1].score - a[1].score)
                 .filter(([name]) => name !== 'test-model'); // Exclude test-model
@@ -2783,7 +2876,7 @@
                 const deltaClass = delta > 0 ? 'positive' : '';
                 return `
                             <div class="leaderboard-item rank-${rank + 1}" 
-                                 onmouseover="updateHeroMetrics(window.globalOverview, '${model}')"
+                                 onmouseover="updateHeroMetrics(globalOverview, '${model}')"
                                  style="cursor: pointer;">
                                 <div class="leaderboard-medal">${medals[rank] || '📊'}</div>
                                 <div class="leaderboard-details">
@@ -2792,6 +2885,7 @@
                                         <span class="leaderboard-stat-item">${data.passed}/${data.total} passed</span>
                                         <span class="leaderboard-stat-item">${(data.passed / data.total * 100).toFixed(0)}% rate</span>
                                     </div>
+                                    ${leaderboardNoteHtml(data.note)}
                                 </div>
                                 <div class="leaderboard-score">
                                     <div class="leaderboard-score-value">${data.score.toFixed(1)}</div>
@@ -2887,7 +2981,7 @@
                 handleModelFilterChange(); // This will trigger run filter update and accordion render
             }
 
-            renderCharts(runs, latest);
+            renderCharts(historyRuns, latest);
 
             renderTestAccordion(latest);
         }
@@ -3087,23 +3181,36 @@
             }).join('');
         }
 
+        function trendSeries(history) {
+            const runs = [...history].sort((a, b) =>
+                String(a.timestamp).localeCompare(String(b.timestamp)));
+            const byModel = {};
+            runs.forEach((run, index) => {
+                byModel[run.model] = byModel[run.model] || runs.map(() => null);
+                byModel[run.model][index] = run.average_score;
+            });
+            return {
+                labels: runs.map(run => String(run.timestamp).slice(0, 10)),
+                series: Object.entries(byModel).map(([model, data]) => ({ model, data }))
+            };
+        }
+
         function renderCharts(history, latest) {
             // Trend Chart with Gradients
-            const labels = history.map((_, i) => `Run ${i + 1}`);
+            const trend = trendSeries(history);
+            const labels = trend.labels;
             const models = {};
 
-            history.forEach(h => {
-                if (!models[h.model]) {
-                    models[h.model] = {
-                        label: h.model.charAt(0).toUpperCase() + h.model.slice(1),
-                        data: [],
-                        borderColor: '',
-                        backgroundColor: '',
-                        pointBackgroundColor: '#fff',
-                        pointBorderWidth: 2
-                    };
-                }
-                models[h.model].data.push(h.average_score);
+            trend.series.forEach(({ model, data }) => {
+                models[model] = {
+                    label: model.charAt(0).toUpperCase() + model.slice(1),
+                    data,
+                    spanGaps: true,
+                    borderColor: '',
+                    backgroundColor: '',
+                    pointBackgroundColor: '#fff',
+                    pointBorderWidth: 2
+                };
             });
 
             const trendCanvas = document.getElementById('trendChart');
@@ -3140,7 +3247,8 @@
                 data.pointBorderColor = color.border;
             });
 
-            new Chart(trendCanvas, {
+            if (trendChartInstance) trendChartInstance.destroy();
+            trendChartInstance = new Chart(trendCanvas, {
                 type: 'line',
                 data: { labels, datasets: Object.values(models) },
                 options: {
@@ -3294,7 +3402,10 @@
             const items = document.querySelectorAll('.accordion-item');
 
             items.forEach(item => {
-                const text = item.innerText.toLowerCase();
+                const names = [item.querySelector('.accordion-header'),
+                    ...item.querySelectorAll('.test-case-header')];
+                const text = names.filter(Boolean)
+                    .map(el => el.textContent).join(' ').toLowerCase();
                 if (text.includes(query)) {
                     item.style.display = 'block';
                 } else {

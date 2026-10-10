@@ -1,4 +1,4 @@
-# Co-Researcher (v2.6.2)
+# Co-Researcher (v2.7.0)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, **OpenAI Codex**, and **OpenCode**.
 
@@ -16,7 +16,7 @@ Searches run against real scholarly databases (OpenAlex, arXiv, Europe PMC), and
 
 **Option 2: Claude CLI**
 ```bash
-claude plugin install poemswe/co-researcher
+claude plugin marketplace add poemswe/co-researcher
 claude plugin install co-researcher
 ```
 
@@ -43,10 +43,10 @@ Fetch and follow instructions from https://raw.githubusercontent.com/poemswe/co-
 
 **Option 2: Manual Setup**
 ```bash
-# 1. Clone this repo to ~/.codex/skills/co-researcher
+# 1. Clone this repo to ~/.codex/co-researcher
 # 2. Add hook to ~/.codex/AGENTS.md
 # 3. Run:
-~/.codex/skills/co-researcher/.codex/co-researcher-codex bootstrap
+~/.codex/co-researcher/.codex/co-researcher-codex bootstrap
 ```
 See [.codex/INSTALL.md](.codex/INSTALL.md) for details.
 
@@ -141,7 +141,7 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **grant-writing**: Funding strategy and proposal development
 - **hypothesis-testing**: Variable mapping and experimental design
 - **academic-writing**: Eliminating AI-isms from research prose
-- **literature-review**: Systematic search and citation analysis
+- **literature-review**: Systematic search and citation analysis, with an evidence-integrity check before delivery
 - **multi-source-investigation**: Cross-validation across diverse sources
 - **peer-review**: Manuscript critique and methodological review
 - **qualitative-research**: Thematic analysis and coding
@@ -151,6 +151,49 @@ The suite includes PhD-level research skills, each governed by **Systemic Honest
 - **research-synthesis**: Narrative synthesis with uncertainty quantification
 - **systematic-review**: PRISMA-standard systematic review guidance
 - **using-co-researcher**: Orientation to the suite — how skills are invoked and the rules that govern them. Activation is automatic: a session-start hook injects the Systemic Honesty principles, and each skill self-triggers from its description.
+
+## Literature Reviews With Evidence Checks
+
+Ask your agent for a literature review ("review the evidence on remote work and
+productivity"), or invoke the `literature-review` skill. The agent searches
+OpenAlex, arXiv and Europe PMC, screens what it finds, reads the full texts it
+can retrieve through legal open-access routes, and writes everything into a
+workspace under your current directory.
+
+| File in `review/{slug}/` | Holds |
+|---|---|
+| `protocol.md` | the question, inclusion criteria and query log |
+| `corpus.json` | every candidate paper and its screening decision |
+| `papers/{key}/fulltext.md` | the retrieved text of each included paper |
+| `synthesis.md` | the review itself |
+| `claims.json` | one entry per cited sentence, with the verbatim quote behind it |
+| `refs.json` | the bibliography, checked against OpenAlex, Europe PMC and Crossref |
+
+Before delivering, the agent runs `validate_review.py`, which checks the
+workspace without a model. Every quote must occur in its paper, and every
+citation must point to exactly one screened paper. Every number in a claim must
+appear in its quote, and every cited sentence in the synthesis must agree with a
+verified claim in its numbers, negation and direction. A number in an uncited
+sentence is flagged. When a check fails, the agent receives the findings and up
+to three rounds to repair them.
+
+| The review arrives as | Meaning |
+|---|---|
+| valid | every check passed |
+| valid with warnings | the checks passed, with caveats listed beside the review, such as support from an abstract only or a bibliography that could not be resolved online |
+| INVALID EVIDENCE | problems remained after repair; the draft opens with this warning and names what failed, so treat it as unverified and ask the agent to fix those items or check them yourself |
+
+The checks confirm that the review says what its sources say. They do not
+confirm that the sources are right, and they cannot judge meaning, so a sentence
+that calls a finding "proven" where the paper says "suggested" passes. Read the
+review as critically as you would any draft.
+
+To re-check a workspace yourself:
+
+```bash
+python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.py \
+  --workspace review/{slug}
+```
 
 ## Research Toolchain
 
@@ -247,9 +290,9 @@ smoke is slower and environment-dependent; it does not replace scored evals.
 
 ## Evaluation Framework
 
-### Broad quality evaluation (26 cases)
+### Broad quality evaluation (32 cases)
 
-Run the 26-case broad quality benchmark from the repository root:
+Run the 32-case broad quality benchmark from the repository root:
 
 ```bash
 python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high"
@@ -257,7 +300,19 @@ python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high"
 
 This command requires an authenticated model provider and network access. It
 uses the repository's public quality cases; it does not require a private
-official-case directory. Historical broad-quality scores are
+official-case directory. A case that fails to execute, for example on a usage
+limit, is left out instead of scored as zero, and the run prints how to finish
+it with the same model:
+
+```bash
+python3 evals/run_eval.py all -j 4 --model "codex:gpt-5.2 high" --resume RUN_ID
+```
+
+Each run records the plugin release it ran under, and the dashboard compares
+runs within one release, on the same case set. Runs from before 2.7.0 were
+backfilled with the plugin version in effect at their timestamp.
+
+Historical broad-quality scores are
 **Quality-only historical run — not integrity evaluated**: a quality score is
 not an integrity result.
 
@@ -275,7 +330,16 @@ This command requires an authenticated model provider and network access. Its
 checked-in cases are public synthetic fixtures. Any private official-case
 directory is supplied separately by its owner and must not be added to the
 repository or CI. Each integrity run writes its auditable result bundle to
-`evals/results/runs/<run_id>/`.
+`evals/results/runs/<run_id>/`, which Git ignores. To show runs on the
+dashboard, publish them by ID:
+
+```bash
+python3 evals/publish_integrity_runs.py RUN_ID [RUN_ID ...]
+```
+
+The command validates each run, refuses one that contains your home directory
+path, copies it to `evals/published/runs/`, and adds it to the published index
+that the dashboard reads.
 
 Before a prospective pilot, its owner can verify the runtime-supplied manifest
 commitments without executing or scoring any case:
@@ -302,7 +366,7 @@ interface.
 
 ### Features
 - **Parallel Runner**: Multi-threaded execution with `-j` (jobs) flag
-- **Dynamic Rubrics**: 6 specialized rubrics matched to agent skills
+- **Dynamic Rubrics**: 7 specialized rubrics matched to agent skills
 - **Extended Targeting**: Support for specific versions and reasoning levels
 - **Persistent Indexing**: Rebuildable `latest/index.md` summary
 
@@ -338,7 +402,7 @@ Features: Model leaderboards, capability matrices, score trends, and detailed te
 - `skills/`: Specialized research skills (Markdown). Single source of truth for every platform.
 - `commands/`: Unified platform commands (.md for Claude, .toml for Gemini).
 - `.codex/`: Codex launcher (`co-researcher-codex`) and `bootstrap.md`; it reads `skills/` directly.
-- `evals/`: 26 broad quality cases, a separate literature-integrity mode, and
+- `evals/`: 32 broad quality cases, a separate literature-integrity mode, and
   the Python runner.
 - manifests: `.claude-plugin/plugin.json`, `gemini-extension.json`, `GEMINI.md`.
 

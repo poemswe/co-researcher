@@ -11,7 +11,7 @@ Clone this repository to a standard location (e.g., `~/.codex/co-researcher`):
 ```bash
 mkdir -p ~/.codex
 cd ~/.codex
-git clone <repo-url> co-researcher
+git clone https://github.com/poemswe/co-researcher co-researcher
 ```
 
 ## 3. Register the Hook

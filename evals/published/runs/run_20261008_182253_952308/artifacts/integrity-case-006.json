@@ -1,0 +1,529 @@
+{
+  "model_first_pass": {
+    "integrity": {
+      "dimensions": {
+        "bibliography_verification": {
+          "applicable": false,
+          "effective_weight": 0.0,
+          "evaluated_units": 0,
+          "findings": [],
+          "name": "bibliography_verification",
+          "nominal_weight": 10.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": null
+        },
+        "citation_binding": {
+          "applicable": true,
+          "effective_weight": 28.6,
+          "evaluated_units": 2,
+          "findings": [
+            {
+              "artifact": "claims.json",
+              "context": {
+                "citation": "La Cruz, 2024",
+                "claim_text": "The amber garden trial found stable recall.",
+                "numbers_missing": null,
+                "paper_id": "amber",
+                "result_index": 0,
+                "source_scope": null,
+                "status": "invalid_binding",
+                "validator_reason": "citation_identity_mismatch"
+              },
+              "message": "claim citation does not bind uniquely to its trusted source",
+              "reason_code": "citation_identity_mismatch",
+              "schema_version": "1.0.0",
+              "severity": "critical"
+            }
+          ],
+          "name": "citation_binding",
+          "nominal_weight": 20.0,
+          "passed_units": 1,
+          "schema_version": "1.0.0",
+          "score": 50.0
+        },
+        "prisma_artifact_completeness": {
+          "applicable": true,
+          "effective_weight": 14.3,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "prisma_artifact_completeness",
+          "nominal_weight": 10.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quantitative_grounding": {
+          "applicable": false,
+          "effective_weight": 0.0,
+          "evaluated_units": 0,
+          "findings": [],
+          "name": "quantitative_grounding",
+          "nominal_weight": 20.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": null
+        },
+        "quote_authenticity": {
+          "applicable": true,
+          "effective_weight": 35.7,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "quote_authenticity",
+          "nominal_weight": 25.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "synthesis_coverage": {
+          "applicable": true,
+          "effective_weight": 21.4,
+          "evaluated_units": 2,
+          "findings": [
+            {
+              "artifact": "claims.json",
+              "context": {
+                "citation": "author:la cruz:2024",
+                "citation_identity": "author:la cruz:2024",
+                "paper_id": null,
+                "source_scope": null,
+                "status": "uncovered_claim",
+                "synthesis_sentence": "The amber garden trial found stable recall (La Cruz, 2024).",
+                "synthesis_sentence_index": 0,
+                "validator_reason": "coverage_identity_missing"
+              },
+              "message": "synthesis statement lacks a complete verified claim trace",
+              "reason_code": "coverage_claim_missing",
+              "schema_version": "1.0.0",
+              "severity": "critical"
+            }
+          ],
+          "name": "synthesis_coverage",
+          "nominal_weight": 15.0,
+          "passed_units": 1,
+          "schema_version": "1.0.0",
+          "score": 50.0
+        }
+      },
+      "findings": [
+        {
+          "artifact": "claims.json",
+          "context": {
+            "citation": "La Cruz, 2024",
+            "claim_text": "The amber garden trial found stable recall.",
+            "numbers_missing": null,
+            "paper_id": "amber",
+            "result_index": 0,
+            "source_scope": null,
+            "status": "invalid_binding",
+            "validator_reason": "citation_identity_mismatch"
+          },
+          "message": "claim citation does not bind uniquely to its trusted source",
+          "reason_code": "citation_identity_mismatch",
+          "schema_version": "1.0.0",
+          "severity": "critical"
+        },
+        {
+          "artifact": "claims.json",
+          "context": {
+            "citation": "author:la cruz:2024",
+            "citation_identity": "author:la cruz:2024",
+            "paper_id": null,
+            "source_scope": null,
+            "status": "uncovered_claim",
+            "synthesis_sentence": "The amber garden trial found stable recall (La Cruz, 2024).",
+            "synthesis_sentence_index": 0,
+            "validator_reason": "coverage_identity_missing"
+          },
+          "message": "synthesis statement lacks a complete verified claim trace",
+          "reason_code": "coverage_claim_missing",
+          "schema_version": "1.0.0",
+          "severity": "critical"
+        }
+      ],
+      "integrity_score": 75.0,
+      "manifest_sha256": "8fb0419803782d0fe7e03536961b13a3d690ff06444c727c53f31bca8e774d50",
+      "schema_version": "1.0.0",
+      "status": "invalid"
+    },
+    "model_usage": {
+      "duration_seconds": 56.239827583543956,
+      "estimated_cost_usd": null,
+      "executor_version": "1.0.0",
+      "input_tokens": null,
+      "output_tokens": null,
+      "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+      "prompt_version": "literature-integrity-capture-v2",
+      "schema_version": "1.0.0"
+    },
+    "quality": {
+      "error": null,
+      "quality_score": 30.5,
+      "schema_version": "1.0.0",
+      "scores": {
+        "analytical-quality": 20.0,
+        "output-structure": 20.0,
+        "research-quality": 35.0
+      }
+    },
+    "schema_version": "1.0.0",
+    "workspace_manifest_sha256": "8fb0419803782d0fe7e03536961b13a3d690ff06444c727c53f31bca8e774d50"
+  },
+  "repair_cost": {
+    "duration_seconds": 27.102307667024434,
+    "estimated_cost_usd": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "rounds": 1,
+    "schema_version": "1.0.0"
+  },
+  "repair_rounds": [
+    {
+      "action": "pass",
+      "attempt": 1,
+      "integrity": {
+        "dimensions": {
+          "bibliography_verification": {
+            "applicable": false,
+            "effective_weight": 0.0,
+            "evaluated_units": 0,
+            "findings": [],
+            "name": "bibliography_verification",
+            "nominal_weight": 10.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": null
+          },
+          "citation_binding": {
+            "applicable": true,
+            "effective_weight": 28.6,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "citation_binding",
+            "nominal_weight": 20.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "prisma_artifact_completeness": {
+            "applicable": true,
+            "effective_weight": 14.3,
+            "evaluated_units": 10,
+            "findings": [],
+            "name": "prisma_artifact_completeness",
+            "nominal_weight": 10.0,
+            "passed_units": 10,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "quantitative_grounding": {
+            "applicable": false,
+            "effective_weight": 0.0,
+            "evaluated_units": 0,
+            "findings": [],
+            "name": "quantitative_grounding",
+            "nominal_weight": 20.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": null
+          },
+          "quote_authenticity": {
+            "applicable": true,
+            "effective_weight": 35.7,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "quote_authenticity",
+            "nominal_weight": 25.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "synthesis_coverage": {
+            "applicable": true,
+            "effective_weight": 21.4,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "synthesis_coverage",
+            "nominal_weight": 15.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          }
+        },
+        "findings": [],
+        "integrity_score": 100.0,
+        "manifest_sha256": "b52d40d07688e00e52825b8a43f07a9ef215f6c7a826d9b4a76aea2d6ef357c3",
+        "schema_version": "1.0.0",
+        "status": "valid"
+      },
+      "model_usage": {
+        "duration_seconds": 27.102307667024434,
+        "estimated_cost_usd": null,
+        "executor_version": "1.0.0",
+        "input_tokens": null,
+        "output_tokens": null,
+        "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+        "prompt_version": "literature-integrity-repair-v2",
+        "schema_version": "1.0.0"
+      },
+      "previous_integrity": {
+        "dimensions": {
+          "bibliography_verification": {
+            "applicable": false,
+            "effective_weight": 0.0,
+            "evaluated_units": 0,
+            "findings": [],
+            "name": "bibliography_verification",
+            "nominal_weight": 10.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": null
+          },
+          "citation_binding": {
+            "applicable": true,
+            "effective_weight": 28.6,
+            "evaluated_units": 2,
+            "findings": [
+              {
+                "artifact": "claims.json",
+                "context": {
+                  "citation": "La Cruz, 2024",
+                  "claim_text": "The amber garden trial found stable recall.",
+                  "numbers_missing": null,
+                  "paper_id": "amber",
+                  "result_index": 0,
+                  "source_scope": null,
+                  "status": "invalid_binding",
+                  "validator_reason": "citation_identity_mismatch"
+                },
+                "message": "claim citation does not bind uniquely to its trusted source",
+                "reason_code": "citation_identity_mismatch",
+                "schema_version": "1.0.0",
+                "severity": "critical"
+              }
+            ],
+            "name": "citation_binding",
+            "nominal_weight": 20.0,
+            "passed_units": 1,
+            "schema_version": "1.0.0",
+            "score": 50.0
+          },
+          "prisma_artifact_completeness": {
+            "applicable": true,
+            "effective_weight": 14.3,
+            "evaluated_units": 10,
+            "findings": [],
+            "name": "prisma_artifact_completeness",
+            "nominal_weight": 10.0,
+            "passed_units": 10,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "quantitative_grounding": {
+            "applicable": false,
+            "effective_weight": 0.0,
+            "evaluated_units": 0,
+            "findings": [],
+            "name": "quantitative_grounding",
+            "nominal_weight": 20.0,
+            "passed_units": 0,
+            "schema_version": "1.0.0",
+            "score": null
+          },
+          "quote_authenticity": {
+            "applicable": true,
+            "effective_weight": 35.7,
+            "evaluated_units": 2,
+            "findings": [],
+            "name": "quote_authenticity",
+            "nominal_weight": 25.0,
+            "passed_units": 2,
+            "schema_version": "1.0.0",
+            "score": 100.0
+          },
+          "synthesis_coverage": {
+            "applicable": true,
+            "effective_weight": 21.4,
+            "evaluated_units": 2,
+            "findings": [
+              {
+                "artifact": "claims.json",
+                "context": {
+                  "citation": "author:la cruz:2024",
+                  "citation_identity": "author:la cruz:2024",
+                  "paper_id": null,
+                  "source_scope": null,
+                  "status": "uncovered_claim",
+                  "synthesis_sentence": "The amber garden trial found stable recall (La Cruz, 2024).",
+                  "synthesis_sentence_index": 0,
+                  "validator_reason": "coverage_identity_missing"
+                },
+                "message": "synthesis statement lacks a complete verified claim trace",
+                "reason_code": "coverage_claim_missing",
+                "schema_version": "1.0.0",
+                "severity": "critical"
+              }
+            ],
+            "name": "synthesis_coverage",
+            "nominal_weight": 15.0,
+            "passed_units": 1,
+            "schema_version": "1.0.0",
+            "score": 50.0
+          }
+        },
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "La Cruz, 2024",
+              "claim_text": "The amber garden trial found stable recall.",
+              "numbers_missing": null,
+              "paper_id": "amber",
+              "result_index": 0,
+              "source_scope": null,
+              "status": "invalid_binding",
+              "validator_reason": "citation_identity_mismatch"
+            },
+            "message": "claim citation does not bind uniquely to its trusted source",
+            "reason_code": "citation_identity_mismatch",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:la cruz:2024",
+              "citation_identity": "author:la cruz:2024",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "The amber garden trial found stable recall (La Cruz, 2024).",
+              "synthesis_sentence_index": 0,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "integrity_score": 75.0,
+        "manifest_sha256": "8fb0419803782d0fe7e03536961b13a3d690ff06444c727c53f31bca8e774d50",
+        "schema_version": "1.0.0",
+        "status": "invalid"
+      },
+      "reason_codes": [],
+      "schema_version": "1.0.0",
+      "workspace_manifest_sha256": "b52d40d07688e00e52825b8a43f07a9ef215f6c7a826d9b4a76aea2d6ef357c3"
+    }
+  ],
+  "robustness": {
+    "error": null,
+    "expectation_met": true,
+    "expected_final_status": "passing",
+    "maximum_repair_rounds": 3,
+    "minimum_repair_rounds": 1,
+    "observed_final_status": "valid",
+    "schema_version": "1.0.0"
+  },
+  "schema_version": "1.0.0",
+  "system_final": {
+    "integrity": {
+      "dimensions": {
+        "bibliography_verification": {
+          "applicable": false,
+          "effective_weight": 0.0,
+          "evaluated_units": 0,
+          "findings": [],
+          "name": "bibliography_verification",
+          "nominal_weight": 10.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": null
+        },
+        "citation_binding": {
+          "applicable": true,
+          "effective_weight": 28.6,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "citation_binding",
+          "nominal_weight": 20.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "prisma_artifact_completeness": {
+          "applicable": true,
+          "effective_weight": 14.3,
+          "evaluated_units": 10,
+          "findings": [],
+          "name": "prisma_artifact_completeness",
+          "nominal_weight": 10.0,
+          "passed_units": 10,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "quantitative_grounding": {
+          "applicable": false,
+          "effective_weight": 0.0,
+          "evaluated_units": 0,
+          "findings": [],
+          "name": "quantitative_grounding",
+          "nominal_weight": 20.0,
+          "passed_units": 0,
+          "schema_version": "1.0.0",
+          "score": null
+        },
+        "quote_authenticity": {
+          "applicable": true,
+          "effective_weight": 35.7,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "quote_authenticity",
+          "nominal_weight": 25.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        },
+        "synthesis_coverage": {
+          "applicable": true,
+          "effective_weight": 21.4,
+          "evaluated_units": 2,
+          "findings": [],
+          "name": "synthesis_coverage",
+          "nominal_weight": 15.0,
+          "passed_units": 2,
+          "schema_version": "1.0.0",
+          "score": 100.0
+        }
+      },
+      "findings": [],
+      "integrity_score": 100.0,
+      "manifest_sha256": "b52d40d07688e00e52825b8a43f07a9ef215f6c7a826d9b4a76aea2d6ef357c3",
+      "schema_version": "1.0.0",
+      "status": "valid"
+    },
+    "model_usage": {
+      "duration_seconds": 27.102307667024434,
+      "estimated_cost_usd": null,
+      "executor_version": "1.0.0",
+      "input_tokens": null,
+      "output_tokens": null,
+      "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+      "prompt_version": "literature-integrity-repair-v2",
+      "schema_version": "1.0.0"
+    },
+    "quality": {
+      "error": null,
+      "quality_score": 46.4,
+      "schema_version": "1.0.0",
+      "scores": {
+        "analytical-quality": 35.0,
+        "output-structure": 30.0,
+        "research-quality": 52.0
+      }
+    },
+    "schema_version": "1.0.0",
+    "workspace_manifest_sha256": "b52d40d07688e00e52825b8a43f07a9ef215f6c7a826d9b4a76aea2d6ef357c3"
+  }
+}

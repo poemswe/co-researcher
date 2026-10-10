@@ -211,7 +211,7 @@ def run_cli(model: str, prompt: str, timeout: int = 600, use_tools: bool = True)
     if version:
         cmd += ["--model", version]
     if extra and provider == "codex":
-        cmd += ["-c", f"reasoning=\"{extra}\""]
+        cmd += ["-c", f"model_reasoning_effort=\"{extra}\""]
         
     if use_tools:
         cmd += config["tools"]

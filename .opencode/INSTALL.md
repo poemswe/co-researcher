@@ -7,9 +7,9 @@
 
 ## Installation
 
-1.  **Clone the repository** (if you hasn't already):
+1.  **Clone the repository** (if you haven't already):
     ```bash
-    git clone <repo-url> co-researcher
+    git clone https://github.com/poemswe/co-researcher co-researcher
     cd co-researcher
     ```
 

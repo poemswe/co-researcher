@@ -275,6 +275,15 @@ def test_literature_review_skill_requires_claims_to_restate_synthesis():
   assert "interpretation" in verify
 
 
+def test_literature_review_skill_grounds_each_claim_in_its_own_quote():
+  skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
+  verify = skill[skill.index("9. **Verify claims**"):skill.index("10. **Validate")]
+
+  assert "in that entry's own `supporting_quote`" in verify
+  assert "repeating the claim with another quote does not help" in verify
+  assert "split the synthesis sentence" in verify
+
+
 def test_literature_review_skill_pins_delivery_repair_contract():
   skill = LITERATURE_REVIEW_SKILL.read_text(encoding="utf-8")
 

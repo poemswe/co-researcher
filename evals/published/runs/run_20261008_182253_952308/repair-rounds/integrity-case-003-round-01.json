@@ -1,0 +1,238 @@
+{
+  "action": "pass",
+  "attempt": 1,
+  "integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": false,
+        "effective_weight": 0.0,
+        "evaluated_units": 0,
+        "findings": [],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": null
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 28.6,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 14.3,
+        "evaluated_units": 10,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 10,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": false,
+        "effective_weight": 0.0,
+        "evaluated_units": 0,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": null
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 35.7,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 21.4,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      }
+    },
+    "findings": [],
+    "integrity_score": 100.0,
+    "manifest_sha256": "62800327b0e8e026af6cc6303f38730434606d0475ff15da23fa0f4c885f9e62",
+    "schema_version": "1.0.0",
+    "status": "valid"
+  },
+  "model_usage": {
+    "duration_seconds": 32.70541024953127,
+    "estimated_cost_usd": null,
+    "executor_version": "1.0.0",
+    "input_tokens": null,
+    "output_tokens": null,
+    "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+    "prompt_version": "literature-integrity-repair-v2",
+    "schema_version": "1.0.0"
+  },
+  "previous_integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": false,
+        "effective_weight": 0.0,
+        "evaluated_units": 0,
+        "findings": [],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": null
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 28.6,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 14.3,
+        "evaluated_units": 10,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 10,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": false,
+        "effective_weight": 0.0,
+        "evaluated_units": 0,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": null
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 35.7,
+        "evaluated_units": 2,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Lumen, 2024",
+              "claim_text": "Garden recall held steady across the invented term.",
+              "numbers_missing": null,
+              "paper_id": "amber",
+              "result_index": 0,
+              "source_scope": "fulltext",
+              "status": "fabricated_quote",
+              "validator_reason": null
+            },
+            "message": "supporting quote could not be authenticated",
+            "reason_code": "fabricated_quote",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 1,
+        "schema_version": "1.0.0",
+        "score": 50.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 21.4,
+        "evaluated_units": 2,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:lumen:2024",
+              "citation_identity": "author:lumen:2024",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "Garden recall held steady across the invented term (Lumen, 2024).",
+              "synthesis_sentence_index": 0,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 1,
+        "schema_version": "1.0.0",
+        "score": 50.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Lumen, 2024",
+          "claim_text": "Garden recall held steady across the invented term.",
+          "numbers_missing": null,
+          "paper_id": "amber",
+          "result_index": 0,
+          "source_scope": "fulltext",
+          "status": "fabricated_quote",
+          "validator_reason": null
+        },
+        "message": "supporting quote could not be authenticated",
+        "reason_code": "fabricated_quote",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:lumen:2024",
+          "citation_identity": "author:lumen:2024",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "Garden recall held steady across the invented term (Lumen, 2024).",
+          "synthesis_sentence_index": 0,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      }
+    ],
+    "integrity_score": 71.4,
+    "manifest_sha256": "d755d661d3d8570bd0ebf09ac9b4a282bd2d1b81b0c1967976a94a91e802e2da",
+    "schema_version": "1.0.0",
+    "status": "invalid"
+  },
+  "reason_codes": [],
+  "schema_version": "1.0.0",
+  "workspace_manifest_sha256": "62800327b0e8e026af6cc6303f38730434606d0475ff15da23fa0f4c885f9e62"
+}

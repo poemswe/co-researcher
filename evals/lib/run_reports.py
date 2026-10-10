@@ -9,6 +9,7 @@ import math
 import os
 import re
 import secrets
+import shutil
 import stat
 import tempfile
 from contextlib import contextmanager
@@ -1468,6 +1469,49 @@ def _selected_registry_entry(runs_root: Path, selected: str) -> dict:
   return matches[0]
 
 
+def publish_runs(
+    source_root: Path, published_root: Path, run_ids: Sequence[str],
+    forbidden_text: Sequence[str] = (str(Path.home()),),
+) -> None:
+  """Copy validated runs into a published registry that holds only them."""
+  source_runs = Path(source_root) / "runs"
+  published_runs = Path(published_root) / "runs"
+  entries = {entry["run_id"]: entry
+             for entry in _read_registry(source_runs, missing_ok=False)}
+  for run_id in run_ids:
+    selected = _run_id(run_id)
+    load_dashboard_data(source_root, selected)
+    source = source_runs / selected
+    for path in sorted(source.rglob("*")):
+      if path.is_file():
+        text = path.read_bytes().decode("utf-8", errors="replace")
+        if any(fragment and fragment in text for fragment in forbidden_text):
+          raise ValueError(
+              f"{selected} contains a local path in "
+              f"{path.relative_to(source).as_posix()}")
+    published_runs.mkdir(parents=True, exist_ok=True)
+    destination = published_runs / selected
+    shutil.copytree(source, destination, symlinks=True)
+    registered = False
+    try:
+      _update_registry(published_runs, entries[selected])
+      registered = True
+      load_dashboard_data(published_root, selected)
+    except Exception:
+      if registered:
+        _remove_registry_entry(published_runs, selected)
+      shutil.rmtree(destination)
+      raise
+
+
+def _remove_registry_entry(runs_root: Path, run_id: str) -> None:
+  with _registry_lock(runs_root) as root_descriptor:
+    entries, _ = _read_registry_locked(root_descriptor, missing_ok=True)
+    remaining = [entry for entry in entries if entry["run_id"] != run_id]
+    payload = _json_bytes({"schema_version": SCHEMA_VERSION, "runs": remaining})
+    _replace_registry_payload(root_descriptor, payload, run_id)
+
+
 def load_dashboard_data(root: Path, run_id: str) -> dict:
   """Load one selected run, validate all links, and return dashboard data."""
   selected = _run_id(run_id)
@@ -1748,7 +1792,8 @@ def adapt_quality_history(value: object) -> dict:
   }
   for value in data["runs"]:
     run = _closed_object(
-        value, required, "quality history run", optional={"model_version"})
+        value, required, "quality history run",
+        optional={"model_version", "note", "release"})
     run_id = _run_id(run["run_id"])
     if run_id in seen:
       raise ValueError("quality history run_id values must be unique")
@@ -1764,6 +1809,12 @@ def adapt_quality_history(value: object) -> dict:
     model_version = run.get("model_version")
     if model_version is None:
       model_version = model.split(":", 1)[1] if ":" in model else model
+    note = run.get("note")
+    if note is not None:
+      note = _text(note, "quality history note")
+    release = run.get("release")
+    if release is not None:
+      release = _text(release, "quality history release")
     adapted.append({
         "run_id": run_id,
         "timestamp": _text(run["timestamp"], "timestamp"),
@@ -1779,6 +1830,8 @@ def adapt_quality_history(value: object) -> dict:
         "evaluation_label": QUALITY_HISTORY_LABEL,
         "integrity_score": None,
         "status": "not_evaluated",
+        "note": note,
+        "release": release,
     })
   return {
       "schema_version": SCHEMA_VERSION,

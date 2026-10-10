@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-007",
+  "files": [
+    {
+      "content": "[\n  {\"claim\": \"The amber garden trial reported stronger recall.\", \"paper_id\": \"amber\", \"citation\": \"Lumen, 2024\", \"supporting_quote\": \"The amber garden trial reported stronger recall after four guided sessions among learners from purely invented campuses.\", \"role\": \"evidence\"},\n  {\"claim\": \"The ivory harbor trial reported 64% stronger recall.\", \"paper_id\": \"ivory\", \"citation\": \"Vale, 2024\", \"supporting_quote\": \"The ivory harbor trial reported 64% stronger recall after four guided sessions among learners from invented campuses.\", \"role\": \"evidence\"}\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "27c981b31b63c072ec0674c8b241cf6e8c79889469513b3cdf3cb7ed004750bf",
+      "size": 557
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Niko Vale\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "f1b058ff8dd241f9da05e2749e40275f7ef292a1e041299f01c8097117d338a9",
+      "size": 676
+    },
+    {
+      "content": "The amber garden trial reported stronger recall after four guided sessions among learners from purely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "e7b8c8dbca7e504e4d5bc471717b76e1a167fcbe9b3b97f03eb9b17090730a05",
+      "size": 121
+    },
+    {
+      "content": "The ivory harbor trial reported 64% stronger recall after four guided sessions among learners from invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "31d6d4ab82ff4236eda195ee250c89516bcb1c3235b47d5453f9b66e9f80ebfd",
+      "size": 118
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do invented learning-garden trials report about learner recall after guided sessions?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "eedb6fa9dac1762258d4dd7f8f65d9f4bf64c591c1d7576fe3778ba21cfffcbf",
+      "size": 180
+    },
+    {
+      "content": "# Protocol: Invented Learning Gardens\n\n## Research question\nWhat do invented learning-garden trials report about learner recall after guided sessions?\n\n## Inclusion criteria\n- Records supplied in the public synthetic fixture (`fixture-001.json`)\n- Trials of guided learning-garden sessions reporting a recall outcome\n- Year: 2024\n\n## Exclusion criteria\n- Any record not present in the supplied fixture\n- Records without a recall outcome\n\n## Query log\n| Date | Backend | Query | Hits |\n|---|---|---|---|\n| 2026-10-08 | invented-index (supplied fixture) | none; records supplied directly by `fixture-001.json` | 2 |\n\nNo live backend searches were run. All records are entirely invented and supplied by the evaluation fixture.\n\n## Notes\n- Evaluation capture mode: claim/source pairs and synthesis wording are preserved exactly as supplied for deterministic integrity evaluation.\n- Validation, repair, and delivery are owned by the evaluation harness and were not run.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "fd4a8e195a37f06796d0535ec52da769e0c45578c065d55ed2fe4e61ee4a62c4",
+      "size": 965
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial reported 64% stronger recall (Lumen, 2024). The ivory harbor trial reported 64% stronger recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "f377d20e5f39588713fdc3569570d6e088e1521a31bd42f39c0a6e70f795ebb9",
+      "size": 133
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "032bf620e960e5bebcb8fa6dc0dbc553433acbece85ca1625829f6d5d6242dc4",
+  "schema_version": "1.0.0"
+}

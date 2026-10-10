@@ -7,6 +7,7 @@ sys.dont_write_bytecode = True
 
 import argparse
 import json
+import tempfile
 import concurrent.futures
 import threading
 from datetime import datetime, timezone
@@ -22,6 +23,7 @@ from lib.core import (
 )
 
 EVALS_DIR = Path(__file__).parent
+REPO_ROOT = Path(__file__).resolve().parents[1]
 TEST_CASES_DIR = EVALS_DIR / "test-cases"
 RESULTS_DIR = EVALS_DIR / "results"
 PRINT_LOCK = threading.Lock()
@@ -56,6 +58,10 @@ def _execute_single_test(tc, model: str, verbose: bool):
             return None
         
         report = evaluate_output(tc, result, model)
+        if report.judge_output.startswith("Judge error:"):
+            with PRINT_LOCK:
+                print(f"[{tc.agent}] {tc.name} failed: {report.judge_output}")
+            return None
         report_path = generate_report(report, RESULTS_DIR, model)
         
         status = "PASS" if report.passed else "FAIL"
@@ -95,8 +101,14 @@ def run_agent_tests(agent: str, model: str, verbose: bool = False, jobs: int = 1
     return reports
 
 
-def run_all_tests(model: str, verbose: bool = False, jobs: int = 1):
-    tests = discover_tests(TEST_CASES_DIR)
+def _test_slug(name: str) -> str:
+    return name.lower().replace(" ", "-")
+
+
+def run_all_tests(model: str, verbose: bool = False, jobs: int = 1,
+                  skip=frozenset()):
+    tests = [tc for tc in discover_tests(TEST_CASES_DIR)
+             if (tc.agent, _test_slug(tc.name)) not in skip]
     print(f"Starting {len(tests)} tests with {jobs} parallel jobs...")
     
     reports = _run_tests_parallel(tests, model, verbose, jobs)
@@ -268,16 +280,10 @@ def generate_run_id() -> str:
 
 
 def extract_model_version(model: str) -> str:
-    """Extract detailed model version"""
-    version_map = {
-        "claude": "claude-3.5-sonnet",
-        "codex": "gpt-5.2-xhigh",
-        "gemini": "gemini-3-flash-preview"
-    }
-    # Handle versioned models like "codex:gpt-5.2 xhigh"
+    """Return the requested version, or cli-default when none was given."""
     if ":" in model:
         return model.split(":", 1)[1].strip()
-    return version_map.get(model, model)
+    return "cli-default"
 
 
 def extract_difficulty(test_path: Path) -> str:
@@ -306,7 +312,36 @@ def extract_justification(judge_output: str) -> str:
     return ""
 
 
-def save_benchmark_v2(reports, model: str, run_id: str):
+def _local_path_prefixes():
+    temp = Path(tempfile.gettempdir())
+    prefixes = [
+        (str(REPO_ROOT), "<repo>"),
+        (str(temp.resolve()), "<tmp>"),
+        (str(temp), "<tmp>"),
+        (str(Path.home()), "~"),
+    ]
+    return sorted(set(prefixes), key=lambda item: len(item[0]), reverse=True)
+
+
+def redact_local_paths(value, prefixes=None):
+    prefixes = prefixes or _local_path_prefixes()
+    if isinstance(value, str):
+        for prefix, placeholder in prefixes:
+            value = value.replace(prefix, placeholder)
+        return value
+    if isinstance(value, dict):
+        return {key: redact_local_paths(item, prefixes) for key, item in value.items()}
+    if isinstance(value, list):
+        return [redact_local_paths(item, prefixes) for item in value]
+    return value
+
+
+def plugin_release() -> str:
+    plugin = json.loads((REPO_ROOT / ".claude-plugin/plugin.json").read_text())
+    return plugin["version"]
+
+
+def save_benchmark_v2(reports, model: str, run_id: str, previous_results=()):
     """Save to both overview and detail files (v2.0 schema)"""
     detail_dir = EVALS_DIR / "test_results_detail"
     detail_dir.mkdir(exist_ok=True)
@@ -320,6 +355,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
         "timestamp": timestamp,
         "model": model,
         "model_version": extract_model_version(model),
+        "release": plugin_release(),
         "test_results": []
     }
     
@@ -333,7 +369,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
             "id": test_id,
             "agent": rpt.test_case.agent,
             "implementation_skill": rpt.test_case.implementation_skill,
-            "test_case": rpt.test_case.name.lower().replace(" ", "-"),
+            "test_case": _test_slug(rpt.test_case.name),
             "test_name": rpt.test_case.name,
             "difficulty": extract_difficulty(rpt.test_case.file_path),
             "score": round(rpt.overall_score, 1),
@@ -357,8 +393,9 @@ def save_benchmark_v2(reports, model: str, run_id: str):
             "execution_metadata": rpt.execution_metadata
         }
         detail_data["test_results"].append(test_result)
+    detail_data["test_results"] = [*previous_results, *detail_data["test_results"]]
     
-    detail_file.write_text(json.dumps(detail_data, indent=2))
+    detail_file.write_text(json.dumps(redact_local_paths(detail_data), indent=2))
     
     # 2. Update overview file
     overview_file = EVALS_DIR / "benchmark_overview.json"
@@ -367,16 +404,18 @@ def save_benchmark_v2(reports, model: str, run_id: str):
     if overview_file.exists():
         overview = json.loads(overview_file.read_text())
     
-    scores = [r.overall_score for r in reports if r]
+    results = detail_data["test_results"]
+    scores = [result["score"] for result in results]
     avg_score = sum(scores) / len(scores) if scores else 0
-    passed_count = sum(1 for r in reports if r and r.passed)
-    total_count = len([r for r in reports if r])
+    passed_count = sum(1 for result in results if result["passed"])
+    total_count = len(results)
     
     run_entry = {
         "run_id": run_id,
         "timestamp": timestamp,
         "model": model,
         "model_version": detail_data["model_version"],
+        "release": detail_data["release"],
         "tests_run": total_count,
         "tests_passed": passed_count,
         "average_score": round(avg_score, 1),
@@ -385,13 +424,10 @@ def save_benchmark_v2(reports, model: str, run_id: str):
         "detail_file": f"test_results_detail/{run_id}.json"
     }
     
-    for r in reports:
-        if r:
-            agent_name = r.test_case.agent
-            if agent_name not in run_entry["scores_by_agent"]:
-                run_entry["scores_by_agent"][agent_name] = []
-            run_entry["scores_by_agent"][agent_name].append(round(r.overall_score, 1))
-    
+    for result in results:
+        run_entry["scores_by_agent"].setdefault(result["agent"], []).append(result["score"])
+
+    overview["runs"] = [run for run in overview["runs"] if run["run_id"] != run_id]
     overview["runs"].append(run_entry)
     
     # Update summary stats
@@ -416,7 +452,7 @@ def save_benchmark_v2(reports, model: str, run_id: str):
     print(f"\n✅ Benchmark saved (v2.0)")
     print(f"   Detail: {detail_file.name}")
     print(f"   Overview: {overview_file.name} ({len(overview['runs'])} runs)")
-    print(f"   Arena Dashboard: file://{EVALS_DIR.absolute()}/index.html")
+    print(f"   Evals dashboard: file://{EVALS_DIR.absolute()}/index.html")
     
     # Trend
     if len(overview["runs"]) > 1:
@@ -444,9 +480,9 @@ def main(argv=None):
     )
     parser.add_argument(
         "--resume", metavar="RUN_ID",
-        help="Literature integrity: re-run only the cases RUN_ID did not "
-             "evaluate and write one complete run (same model and clean "
-             "commit required)")
+        help="Re-run only the cases RUN_ID did not evaluate and write one "
+             "complete run (same model required; integrity also requires the "
+             "same clean commit)")
     parser.add_argument(
         "--dry-run-manifest-audit", action="store_true",
         help="Verify committed manifests without executing or scoring cases",
@@ -458,8 +494,9 @@ def main(argv=None):
         args.official_cases_dir is not None or args.dry_run_manifest_audit)
     if args.resume is not None and (
             audit_requested or args.check_prompts
-            or args.args != [INTEGRITY_CAPABILITY]):
-        parser.error("--resume is only valid for a literature-review-integrity run")
+            or args.args not in ([INTEGRITY_CAPABILITY], ["all"])):
+        parser.error(
+            "--resume is only valid for an all or literature-review-integrity run")
     if audit_requested:
         if (
             args.check_prompts
@@ -520,10 +557,28 @@ def main(argv=None):
     elif command == INTEGRITY_CAPABILITY:
         run_literature_integrity(args.model, resume=args.resume)
     elif command == "all":
-        run_id = generate_run_id()
-        reports = run_all_tests(args.model, args.verbose, args.jobs)
-        if reports and not args.no_benchmark:
-            save_benchmark_v2(reports, args.model, run_id)
+        previous = []
+        if args.resume is not None:
+            detail_file = EVALS_DIR / "test_results_detail" / f"{args.resume}.json"
+            if not detail_file.is_file():
+                print(f"cannot resume {args.resume}: no such broad run", file=sys.stderr)
+                sys.exit(2)
+            prior = json.loads(detail_file.read_text())
+            if prior["model"] != args.model:
+                print(f"cannot resume {args.resume}: a resumed run must use the "
+                      f"same model ({prior['model']})", file=sys.stderr)
+                sys.exit(2)
+            previous = prior["test_results"]
+        run_id = args.resume or generate_run_id()
+        done = {(result["agent"], result["test_case"]) for result in previous}
+        reports = run_all_tests(args.model, args.verbose, args.jobs, skip=done)
+        if (reports or previous) and not args.no_benchmark:
+            save_benchmark_v2(reports, args.model, run_id, previous_results=previous)
+        total = len(discover_tests(TEST_CASES_DIR))
+        missing = total - len(previous) - len(reports)
+        if missing:
+            print(f"\n{missing} of {total} tests did not run. Resume with: "
+                  f"run_eval.py all -m \"{args.model}\" --resume {run_id}")
     elif len(args.args) == 1:
         run_id = generate_run_id()
         reports = run_agent_tests(command, args.model, args.verbose, args.jobs)
