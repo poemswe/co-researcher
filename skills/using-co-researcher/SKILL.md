@@ -23,7 +23,7 @@ When you identify a task that matches a skill, you must:
 
 ## Available Skills (Core)
 - **research-methodology**: Selecting and validating study designs; creative reframing for stuck problems.
-- **literature-review**: Systematic search and citation chaining.
+- **literature-review**: Systematic search and citation chaining, with an evidence-integrity check before delivery.
 - **critical-analysis**: Identifying fallacies and bias.
 - **hypothesis-testing**: Experimental design and variable mapping.
 - **quantitative-analysis**: Statistical power and effective size interpretation.

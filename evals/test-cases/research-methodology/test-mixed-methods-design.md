@@ -1,7 +1,8 @@
 # Test Case: Mixed Methods Design & Integration
 
 ## Metadata
-- **Agent**: research-methodology
+- **Capability**: research-methodology
+- **Implementation Skill**: research-methodology
 - **Difficulty**: Hard
 - **Focus**: Designing integrated mixed-methods studies with clear qual-quant integration
 

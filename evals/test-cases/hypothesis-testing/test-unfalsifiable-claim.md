@@ -1,7 +1,8 @@
 # Test Case: Unfalsifiable Claim Analysis
 
 ## Metadata
-- **Agent**: hypothesis-testing
+- **Capability**: hypothesis-testing
+- **Implementation Skill**: hypothesis-testing
 - **Difficulty**: Hard
 - **Focus**: Identifying scientific vs pseudoscientific claims
 

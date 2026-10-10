@@ -1,7 +1,8 @@
 # Test Case: Constraint Satisfaction Puzzle
 
 ## Metadata
-- **Agent**: research-methodology
+- **Capability**: lateral-thinking
+- **Implementation Skill**: research-methodology
 - **Difficulty**: Hard
 - **Focus**: Creative problem-solving with hidden constraints
 

@@ -1,6 +1,21 @@
 # Test Cases & Rubrics Reference
 
-Quick lookup guide for all 26 test cases, their specifications, and evaluation rubrics.
+Quick lookup guide for all 32 test cases, their specifications, and evaluation rubrics.
+
+## Metadata Schema
+
+Each test case declares two separate identifiers:
+
+```markdown
+- **Capability**: lateral-thinking
+- **Implementation Skill**: research-methodology
+```
+
+`Capability` is the stable benchmark category used for scores and cross-model
+comparisons. It must match the canonical form of the test-case directory name.
+`Implementation Skill` names the skill that executes the case and may change
+without rewriting benchmark history. The parser accepts the former `Agent`
+field only for compatibility with external legacy cases.
 
 ---
 
@@ -208,7 +223,7 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 
 ---
 
-## Ethics-Expert (1 test)
+## Ethics-Expert (3 tests)
 
 ### 1. Privacy Risk
 - **Difficulty**: Hard
@@ -218,6 +233,24 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 - **Must Identify**: De-identification risks, consent issues, data protection, regulatory compliance
 - **Timeout**: 900s
 - **Key Skill**: Anticipate privacy threats, regulatory knowledge
+
+### 2. Deception Without Debriefing
+- **Difficulty**: Medium
+- **Focus**: Deception, debriefing and participant welfare in an online experiment
+- **Rubric Profile**: Design Quality (70%), Analytical Quality (20%), Output Structure (10%)
+- **Task**: Assess an online study that gives fabricated negative feedback with no debriefing
+- **Must Identify**: Missing debriefing, psychological harm, unfair pay, an invalid exemption claim
+- **Timeout**: 900s
+- **Key Skill**: Apply deception and debriefing standards
+
+### 3. Re-identification Risk
+- **Difficulty**: Hard
+- **Focus**: Re-identification risk in a "de-identified" health dataset
+- **Rubric Profile**: Design Quality (70%), Analytical Quality (20%), Output Structure (10%)
+- **Task**: Assess a public release of rare-disease records that keeps birth date, ZIP code and sex
+- **Must Identify**: Quasi-identifiers, small-population risk, HIPAA Safe Harbor not met, review required
+- **Timeout**: 900s
+- **Key Skill**: Recognize identifying combinations of fields
 
 ---
 
@@ -252,7 +285,7 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 
 ---
 
-## Peer-Reviewer (1 test)
+## Peer-Reviewer (3 tests)
 
 ### 1. Manuscript Critique
 - **Difficulty**: Medium
@@ -263,9 +296,27 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 - **Timeout**: 900s
 - **Key Skill**: Holistic research evaluation, constructive feedback
 
+### 2. Statistical Flaws
+- **Difficulty**: Medium
+- **Focus**: Statistical errors in a manuscript summary
+- **Rubric Profile**: Analytical Quality (50%), Research Quality (30%), Output Structure (20%)
+- **Task**: Referee a small observational study that claims causation from one of 15 outcomes
+- **Must Identify**: Causal overclaim, multiple comparisons, selective reporting, small sample
+- **Timeout**: 900s
+- **Key Skill**: Detect statistical overreach
+
+### 3. ML Reproducibility
+- **Difficulty**: Hard
+- **Focus**: Evaluation and reproducibility flaws in a machine-learning submission
+- **Rubric Profile**: Analytical Quality (50%), Research Quality (30%), Output Structure (20%)
+- **Task**: Referee a paper that tuned on the test set with one seed and mismatched baselines
+- **Must Identify**: Test-set leakage, missing variance, unfair baselines, missing code and data
+- **Timeout**: 900s
+- **Key Skill**: Apply sound machine-learning evaluation practice
+
 ---
 
-## Grant-Writer (1 test)
+## Grant-Writer (3 tests)
 
 ### 1. Grant Proposal Structure
 - **Difficulty**: Medium
@@ -275,6 +326,24 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 - **Must Identify**: Significance, independent specific aims, feasibility/limitations, NSF alignment
 - **Timeout**: 900s
 - **Key Skill**: Transform technical idea into fundable narrative arc
+
+### 2. Specific Aims Revision
+- **Difficulty**: Medium
+- **Focus**: Critiquing and rewriting a weak Specific Aims page
+- **Rubric Profile**: Design Quality (50%), Analytical Quality (30%), Output Structure (20%)
+- **Task**: Revise R01 aims that depend on each other and lack a hypothesis
+- **Must Identify**: Dependent aims, missing hypothesis, missing outcomes, independent rewritten aims
+- **Timeout**: 900s
+- **Key Skill**: Turn exploratory aims into testable ones
+
+### 3. Resubmission Introduction
+- **Difficulty**: Hard
+- **Focus**: Responding to reviewer critiques in a resubmission
+- **Rubric Profile**: Design Quality (50%), Analytical Quality (30%), Output Structure (20%)
+- **Task**: Write a one-page Introduction answering four reviewer critiques
+- **Must Identify**: Every critique addressed, valid points conceded with changes, no argument with reviewers
+- **Timeout**: 900s
+- **Key Skill**: Persuade the same panel on resubmission
 
 ---
 
@@ -291,7 +360,7 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 - Hypothesis-Explorer (2 of 3 tests)
 - Literature-Reviewer (1 test)
 - Qual-Researcher (1 test)
-- Peer-Reviewer (1 test)
+- Peer-Reviewer (all 3 tests)
 
 **Key Criteria**:
 - Logical validity and soundness
@@ -306,7 +375,7 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 
 **Used For**:
 - Literature-Reviewer (all 4 tests)
-- Peer-Reviewer (1 test)
+- Peer-Reviewer (all 3 tests)
 - Critical-Analyzer (1 test)
 
 **Key Criteria**:
@@ -350,9 +419,9 @@ Quick lookup guide for all 26 test cases, their specifications, and evaluation r
 
 **Used For**:
 - Hypothesis-Explorer (all 3 tests)
-- Ethics-Expert (1 test)
+- Ethics-Expert (all 3 tests)
 - Lateral-Thinker (1 test)
-- Grant-Writer (1 test)
+- Grant-Writer (all 3 tests)
 
 **Key Criteria**:
 - Testable hypothesis formulation
@@ -420,17 +489,17 @@ Score = (Primary_Score × Primary_Weight) + (Secondary_Score × Secondary_Weight
 
 ## Test Difficulty Rationale
 
-**Hard (56%, 13 tests)**:
+**Hard (50%, 16 tests)**:
 - Require high-level reasoning
 - Designed to differentiate frontier models
 - Examples: Analogy Finding, Simpson's Paradox, First Principles
 
-**Medium (35%, 8 tests)**:
+**Medium (47%, 15 tests)**:
 - Balanced cognitive load
 - Test practical competencies
 - Examples: Fallacy Detection, Effect Size Interpretation
 
-**Easy (4%, 1 test)**:
+**Easy (3%, 1 test)**:
 - Foundation-level validation
 - Example: Basic Search
 
@@ -463,11 +532,17 @@ This distribution is intentional - PhD-level agents should struggle with hard te
 | Simpson's Paradox | Quantitative (80%) | Analytical (20%) | Quant-Analyst |
 | Stat Method Selection | Quantitative (75%) | Output (25%) | Quant-Analyst |
 | Privacy Risk | Design (75%) | Reasoning (25%) | Ethics-Expert |
+| Deception Without Debriefing | Design (70%) | Analytical (20%) | Ethics-Expert |
+| Re-identification Risk | Design (70%) | Analytical (20%) | Ethics-Expert |
 | Methodology Selection | Design (70%) | Analytical (30%) | Methodology-Expert |
 | Mixed Methods Design | Design (75%) | Analytical (25%) | Methodology-Expert |
 | Methodology Validation | Analytical (70%) | Design (30%) | Methodology-Expert |
 | Grant Proposal | Design (50%) | Analytical (30%) | Grant-Writer |
+| Specific Aims Revision | Design (50%) | Analytical (30%) | Grant-Writer |
+| Resubmission Introduction | Design (50%) | Analytical (30%) | Grant-Writer |
 | Manuscript Critique | Analytical (75%) | Output (25%) | Peer-Reviewer |
+| Statistical Flaws | Analytical (50%) | Research (30%) | Peer-Reviewer |
+| ML Reproducibility | Analytical (50%) | Research (30%) | Peer-Reviewer |
 
 ---
 
@@ -503,4 +578,3 @@ See benchmark_history.json for latest scores per test case.
 - Know expected score ranges by difficulty
 - Understand rubric weighting for fair comparison
 - Reference agent specialization by test focus
-

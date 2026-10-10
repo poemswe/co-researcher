@@ -1,7 +1,8 @@
 # Test Case: Hypothesis Formulation
 
 ## Metadata
-- **Agent**: hypothesis-testing
+- **Capability**: hypothesis-testing
+- **Implementation Skill**: hypothesis-testing
 - **Difficulty**: Medium
 - **Focus**: Converting research questions to testable hypotheses
 

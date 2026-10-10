@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "final_status": "passing",
+  "minimum_repair_rounds": 1,
+  "maximum_repair_rounds": 3,
+  "attack_family": "malformed-artifact",
+  "reason_expectations": [
+    {
+      "reason_code": "artifact_malformed",
+      "present": true,
+      "unit": {
+        "artifact": "claims.json",
+        "context_key": null,
+        "context_value": null
+      }
+    },
+    {
+      "reason_code": "artifact_malformed",
+      "present": false,
+      "unit": {
+        "artifact": "refs.json",
+        "context_key": null,
+        "context_value": null
+      }
+    }
+  ]
+}

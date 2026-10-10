@@ -1,7 +1,8 @@
 # Test Case: Coding Strategy Development
 
 ## Metadata
-- **Agent**: qualitative-research
+- **Capability**: qualitative-research
+- **Implementation Skill**: qualitative-research
 - **Difficulty**: Medium
 - **Focus**: Developing coding schemes for qualitative data
 

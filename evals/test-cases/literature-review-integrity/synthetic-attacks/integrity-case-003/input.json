@@ -1,0 +1,16 @@
+{
+  "corpus": [
+    {"key": "amber", "ids": {"pmcid": "amber"}, "title": "Amber Garden Recall", "authors": ["Mira Lumen"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}},
+    {"key": "ivory", "ids": {"pmcid": "ivory"}, "title": "Ivory Harbor Recall", "authors": ["Niko Vale"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}}
+  ],
+  "claims": [
+    {"claim": "Garden recall held steady across the invented term.", "paper_id": "amber", "citation": "Lumen, 2024", "supporting_quote": "Garden recall held steady across the invented term. Tutors logged the same pattern during the final week."},
+    {"claim": "Harbor recall held steady across the invented term.", "paper_id": "ivory", "citation": "Vale, 2024", "supporting_quote": "Harbor recall held steady across the invented term. Tutors logged the same pattern during the final week."}
+  ],
+  "synthesis": "Garden recall held steady across the invented term (Lumen, 2024). Harbor recall held steady across the invented term (Vale, 2024).\n",
+  "references": [],
+  "sources": {
+    "amber": "Garden recall held steady across the invented term. A remote orchard survey then discussed unrelated lantern colors in detail. Tutors logged the same pattern during the final week.",
+    "ivory": "Harbor recall held steady across the invented term. Page 2.                                                                     Tutors logged the same pattern during the final week."
+  }
+}

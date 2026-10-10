@@ -24,16 +24,17 @@ Evaluates the logical strength of arguments, not their surface coherence.
 - Methodology critique: identifies confounds, sampling errors, measurement problems
 - Output: structured critique with specific evidence, not general impressions
 
-### Literature Review (`/review-lit`)
+### Literature Review
 Systematic search with citation verification at every step.
 - Search strategy: keyword construction, database selection, Boolean operators
 - Citation chaining: backward and forward citation tracing
 - Hallucination detection: flags any source it cannot verify against known databases
 - Gap analysis: identifies what the field has not studied, not just what it has
 - Refuses to cite sources it cannot verify; marks unverified sources explicitly
+- Integrity gate: every quote is checked against its source, every number traced to verified evidence, and each synthesis sentence matched to a verified claim; a draft with unresolved errors ships marked INVALID EVIDENCE
 - Output: structured review with search strategy, inclusion criteria, and gap map
 
-### Hypothesis Testing (`/hypothesis`)
+### Hypothesis Testing
 Maps research questions to testable, falsifiable hypotheses.
 - Variable mapping: independent, dependent, mediating, moderating variables
 - Falsification criteria: explicit conditions under which the hypothesis would be rejected
@@ -41,7 +42,7 @@ Maps research questions to testable, falsifiable hypotheses.
 - Distinguishes testable empirical claims from unfalsifiable conceptual ones
 - Output: hypothesis statement, variable map, falsification criteria, proposed controls
 
-### Quantitative Analysis (`/quantitative`)
+### Quantitative Analysis
 Selects and interprets statistical methods appropriate to the data and question.
 - Statistical method selection: parametric vs. non-parametric, test assumptions
 - Effect size interpretation: Cohen's d, r, eta-squared — not just p-values
@@ -50,7 +51,7 @@ Selects and interprets statistical methods appropriate to the data and question.
 - Common errors flagged: p-hacking, multiple comparisons, HARKing
 - Output: method recommendation with assumptions, effect size interpretation, power analysis
 
-### Qualitative Research (`/qualitative`)
+### Qualitative Research
 Structures qualitative inquiry from design through analysis.
 - Study design: phenomenology, grounded theory, ethnography, case study selection
 - Interview protocol: leading-question detection and correction
@@ -67,7 +68,7 @@ Structures feedback the way a journal reviewer would.
 - Separates major revisions (methodological) from minor revisions (presentation)
 - Output: structured review letter with major/minor concerns, specific line references
 
-### Ethics Review (`/ethics`)
+### Ethics Review
 IRB-standard risk assessment for research involving human subjects or sensitive data.
 - Participant risk assessment: physical, psychological, privacy, relational harms
 - Informed consent review: adequacy of disclosure, voluntariness, comprehension
@@ -76,7 +77,7 @@ IRB-standard risk assessment for research involving human subjects or sensitive 
 - Vulnerable populations: additional protections for minors, prisoners, cognitively impaired
 - Output: risk matrix, consent adequacy assessment, recommended safeguards
 
-### Systematic Review (`/systematic`)
+### Systematic Review
 PRISMA-standard protocol for evidence synthesis.
 - Protocol development: PICO/PICOS framework, pre-registration checklist
 - Search strategy: multi-database, grey literature, hand-searching
@@ -85,7 +86,7 @@ PRISMA-standard protocol for evidence synthesis.
 - Data extraction: standardized forms, inter-rater reliability
 - Output: PRISMA flow diagram, evidence table, narrative synthesis, bias assessment
 
-### Research Synthesis (`/synthesize`)
+### Research Synthesis
 Narrative synthesis with explicit uncertainty quantification.
 - Evidence grading: GRADE framework (high/moderate/low/very low certainty)
 - Consistency assessment: identifies convergent and divergent findings across sources
@@ -94,7 +95,7 @@ Narrative synthesis with explicit uncertainty quantification.
 - Refuses to present weak consensus as established fact
 - Output: synthesis narrative, evidence grade table, uncertainty flags, open questions
 
-### Research Methodology (`/methodology`)
+### Research Methodology
 Matches research questions to appropriate study designs.
 - Design selection: experimental, quasi-experimental, observational, mixed methods
 - Validity controls: internal validity threats, external validity limits
@@ -103,7 +104,7 @@ Matches research questions to appropriate study designs.
 - Flags mismatches between research question and proposed design
 - Output: design recommendation with rationale, validity analysis, sampling plan
 
-### Grant Writing (`/grant`)
+### Grant Writing
 Structures research proposals for competitive funding.
 - Specific Aims: one-page structure, hook, gap, hypothesis, aims
 - Significance and Innovation: NIH-style framing, SBIR/STTR variants
@@ -112,13 +113,13 @@ Structures research proposals for competitive funding.
 - Common weaknesses flagged: overclaiming novelty, underpowered designs, vague timelines
 - Output: draft Specific Aims, significance narrative, approach outline
 
-### Lateral Thinking (`/lateral`)
-Generates novel research framings through cross-domain reasoning.
-- First-principles decomposition: strips the problem to foundational assumptions
-- Cross-domain analogy: maps the research problem onto solved problems in other fields
-- Constraint satisfaction: identifies which constraints are fixed vs. assumed
-- Assumption inversion: asks what happens if the opposite is true
-- Output: reframed problem statement, analogies, assumption audit, novel hypotheses
+### Academic Writing
+Writes research prose in an academic register without the patterns of machine-generated text.
+- Applies to literature reviews, syntheses, analyses, methodology descriptions, discussion sections and abstracts
+
+### Multi-Source Investigation
+Investigates complex claims across diverse sources.
+- Fact-checks contradictory information by tracing each claim to its sources
 
 ### Research Orchestration (`/research`)
 Multi-agent coordination for complex research questions.
@@ -132,22 +133,23 @@ Multi-agent coordination for complex research questions.
 ## Benchmark Results
 
 Live evaluation at: https://coresearcher.poemswe.com/evals/
-- 22 test cases across 8 agent types
+- 32 test cases across 10 capabilities, plus a 16-case evidence-integrity set (14 attack families, 2 controls)
 - Models evaluated: Claude (Anthropic), Codex (OpenAI), Gemini (Google)
-- Rubrics: reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
+- Rubrics: research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
 - Scoring: Excellent / Good / Fair / Poor with rubric-by-rubric breakdowns
 
 ## Installation
 
-Claude Code: `claude plugins install poemswe/co-researcher`
+Claude Code: `claude plugin marketplace add poemswe/co-researcher`, then `claude plugin install co-researcher`
 Gemini CLI: `gemini extension install https://github.com/poemswe/co-researcher`
 OpenAI Codex: tell Codex to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md
+OpenCode: tell OpenCode to fetch https://raw.githubusercontent.com/poemswe/co-researcher/main/.opencode/INSTALL.md
 Source: https://github.com/poemswe/co-researcher
 
 ## Links
 
 - Landing page: https://coresearcher.poemswe.com/
-- Benchmark arena: https://coresearcher.poemswe.com/evals/
+- Evals: https://coresearcher.poemswe.com/evals/
 - GitHub: https://github.com/poemswe/co-researcher
 - Creator: https://poemswe.com
 - Summary (llms.txt): https://coresearcher.poemswe.com/llms.txt

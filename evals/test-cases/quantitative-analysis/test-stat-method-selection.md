@@ -1,7 +1,8 @@
 # Test Case: Statistical Method Selection
 
 ## Metadata
-- **Agent**: quantitative-analysis
+- **Capability**: quantitative-analysis
+- **Implementation Skill**: quantitative-analysis
 - **Difficulty**: Medium
 - **Focus**: Choosing appropriate statistical tests
 

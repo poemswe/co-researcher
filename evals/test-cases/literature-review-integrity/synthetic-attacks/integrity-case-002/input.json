@@ -1,0 +1,16 @@
+{
+  "corpus": [
+    {"key": "amber", "ids": {"pmcid": "amber"}, "title": "Amber Garden Recall", "authors": ["Mira Lumen"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}},
+    {"key": "ivory", "ids": {"pmcid": "ivory"}, "title": "Ivory Harbor Recall", "authors": ["Niko Vale"], "year": 2024, "role": "evidence", "found_via": "invented-index", "screening": {"status": "included"}}
+  ],
+  "claims": [
+    {"claim": "The amber garden trial found change in recall.", "paper_id": "amber", "citation": "Lumen, 2024", "supporting_quote": "The amber garden trial found change in recall after four guided sessions among learners from three entirely invented campuses."},
+    {"claim": "The ivory harbor trial found a change in recall.", "paper_id": "ivory", "citation": "Vale, 2024", "supporting_quote": "The ivory harbor trial found a change in recall after four guided sessions among learners from three entirely invented campuses."}
+  ],
+  "synthesis": "The amber garden trial found change in recall (Lumen, 2024). The ivory harbor trial found a change in recall (Vale, 2024).\n",
+  "references": [],
+  "sources": {
+    "amber": "The amber garden trial found no change in recall after four guided sessions among learners from three entirely invented campuses.",
+    "ivory": "The ivory harbor trial found a change in recall after four guided sessions among learners from three entirely invented campuses."
+  }
+}

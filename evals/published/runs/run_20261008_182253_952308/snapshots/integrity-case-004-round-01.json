@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-004",
+  "files": [
+    {
+      "content": "[\n  {\"claim\": \"The amber garden trial found stable recall.\", \"paper_id\": \"amber\", \"citation\": \"Lumen, 2024\", \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"},\n  {\"claim\": \"The ivory harbor trial found stable recall.\", \"paper_id\": \"ivory\", \"citation\": \"Merrow, 2024\", \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"}\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "f133148ab9eabab4247cdaf4d453de8c3e38567836b49f12b548a63ece8d68d1",
+      "size": 514
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Niko Merrow\"],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "539eee5c8b83472e2b96139c049a37ae91409a8e22b444c9c0c9f021694f6f48",
+      "size": 634
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "e3a4bf6555d0034befd7f68c272a7796106923925e7cd20ccfd07e7bcc7c3bab",
+      "size": 124
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "52128e9419078b780d03c2c2101ed91e153c3a4466e132db0996d6b8794eafce",
+      "size": 124
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-d90xw281\",\n  \"question\": \"What do invented learning-garden trials report about learner recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "7de5f273d9ade20492903195a011efc4e253619fbce88bc48607334ae39b85eb",
+      "size": 156
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\nDate: 2026-10-08\n\n## Research question\nWhat do invented learning-garden trials report about learner recall?\n\n## Inclusion criteria\n- Records supplied in the synthetic fixture (fixture-001.json)\n- Role: evidence\n- Language: English\n\n## Exclusion criteria\n- Any record not present in the supplied fixture\n\n## Query log\n- 2026-10-08 invented-index: supplied fixture records, no live search executed -> 2 hits\n\n## Notes\n- Claims and synthesis wording preserved verbatim from the fixture for deterministic integrity evaluation.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "64e45920ebebcd32a1c7e4514b86a5a8a658de583d8999778c23202af3a99ddb",
+      "size": 562
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (Merrow, 2024). The ivory harbor trial found stable recall (Merrow, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "be946aa9d49bbfccfaa7736504123096b35f039568c1f9447946abffa229d3bc",
+      "size": 118
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "2307b4e0e9ea28bbb3c30046c17dd39902e6bcb7cd6dac5caa2f27941a6b6b0b",
+  "schema_version": "1.0.0"
+}

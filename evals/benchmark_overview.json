@@ -55,7 +55,8 @@
         ]
       },
       "pass_rate": 100.0,
-      "detail_file": "test_results_detail/run_20251230_221024.json"
+      "detail_file": "test_results_detail/run_20251230_221024.json",
+      "release": "1.0.0"
     },
     {
       "run_id": "run_20251230_221026",
@@ -106,7 +107,8 @@
         ]
       },
       "pass_rate": 90.9,
-      "detail_file": "test_results_detail/run_20251230_221026.json"
+      "detail_file": "test_results_detail/run_20251230_221026.json",
+      "release": "1.0.0"
     },
     {
       "run_id": "run_20260102_175215",
@@ -164,7 +166,8 @@
         ]
       },
       "pass_rate": 100.0,
-      "detail_file": "test_results_detail/run_20260102_175215.json"
+      "detail_file": "test_results_detail/run_20260102_175215.json",
+      "release": "1.1.0"
     },
     {
       "run_id": "run_20260126_010734",
@@ -223,7 +226,8 @@
         ]
       },
       "pass_rate": 92.3,
-      "detail_file": "test_results_detail/run_20260126_010734.json"
+      "detail_file": "test_results_detail/run_20260126_010734.json",
+      "release": "1.1.1"
     },
     {
       "run_id": "run_20260126_044632",
@@ -281,16 +285,96 @@
           93.8
         ]
       },
-      "detail_file": "test_results_detail/run_20260126_044632.json"
+      "detail_file": "test_results_detail/run_20260126_044632.json",
+      "release": "2.0.0"
+    },
+    {
+      "run_id": "run_20261008_192224_025232",
+      "timestamp": "2026-10-08T19:41:52.612924Z",
+      "model": "claude:claude-opus-5-5",
+      "model_version": "claude-opus-5-5",
+      "tests_run": 32,
+      "tests_passed": 32,
+      "average_score": 84.8,
+      "scores_by_agent": {
+        "critical-analysis": [
+          88.5,
+          85.3,
+          88.8,
+          89.5
+        ],
+        "ethics-review": [
+          88.8,
+          82.4,
+          86.5
+        ],
+        "grant-proposal": [
+          78.3,
+          85.8,
+          78.2
+        ],
+        "hypothesis-testing": [
+          80.9,
+          74.7,
+          80.6
+        ],
+        "lateral-thinking": [
+          91.4,
+          83.9,
+          83.1
+        ],
+        "literature-review": [
+          78.0,
+          78.3,
+          83.9,
+          81.8
+        ],
+        "peer-review": [
+          89.4,
+          86.2,
+          91.0
+        ],
+        "qualitative-research": [
+          86.2,
+          84.2,
+          77.2
+        ],
+        "quantitative-analysis": [
+          92.8,
+          92.5,
+          93.2
+        ],
+        "research-methodology": [
+          84.6,
+          87.5,
+          79.0
+        ]
+      },
+      "pass_rate": 100.0,
+      "detail_file": "test_results_detail/run_20261008_192224_025232.json",
+      "release": "2.7.0"
     }
   ],
   "summary_stats": {
-    "total_runs": 4,
+    "total_runs": 6,
     "models": [
+      "claude:claude-opus-5-5",
       "claude:opus",
       "codex:gpt-5.2 xhigh",
       "gemini:gemini-3-flash-preview"
     ],
-    "overall_pass_rate": 96.8
+    "agents": [
+      "critical-analysis",
+      "ethics-review",
+      "grant-proposal",
+      "hypothesis-testing",
+      "lateral-thinking",
+      "literature-review",
+      "peer-review",
+      "qualitative-research",
+      "quantitative-analysis",
+      "research-methodology"
+    ],
+    "overall_pass_rate": 97.4
   }
 }

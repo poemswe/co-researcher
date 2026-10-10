@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-001",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found no change in recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial fоund no change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found no change in recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial found no change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "63bcbbd6ae5ca05958b5dfee447113dffcbdd6c6f266538e649cf26d4aaa7f08",
+      "size": 577
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a supplied synthetic record within the user-defined capture scope.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"cited_by\": null\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a supplied synthetic record within the user-defined capture scope.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"cited_by\": null\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "27088a12d1165dfb32b42657476667d4dbd31f7327f94ad330c2f90b506cf1d9",
+      "size": 912
+    },
+    {
+      "content": "The amber garden trial found no change in recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "bdb64f6a0e5f28008ece2f2121391d67afc42f5df4cd904b53095e574810ce78",
+      "size": 129
+    },
+    {
+      "content": "The ivory harbor trial found no change in recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "e9fd105b5bcd3c4467ae7e3d3d1be9881d90dfbb548bd09370a8cdebe383a3f4",
+      "size": 129
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records report about changes in recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "a7bdf2093f59f801e4a469c28352d2c35405270545b259c6385e09602cdc4a22",
+      "size": 175
+    },
+    {
+      "content": "# Review protocol\n\n## Research question\nWhat do the supplied invented learning-garden records report about changes in recall?\n\n## Scope and criteria\nInclude every record supplied in input.json for this synthetic capture task. Include the supplied source passages and associated claim/source pairs regardless of external resolvability. Exclude external literature and additional invented records. No date or language restrictions apply within the supplied fixture. The user authorized this fixed scope and instructed immediate artifact creation without approval checkpoints.\n\n## Workspace\nThe current directory itself is the workspace, initialized with WS=\"$(pwd)\". No nested review workspace is used. This review has no linked research project.\n\n## Input and provenance\ninput.json is copied byte-for-byte from /private/tmp/tmps25t_03m/fixture-001.json when no input.json already exists. The supplied corpus is already a distinct keyed pool and is retained directly; no backend merge is needed. Identifiers and authors are synthetic fixture metadata, not verified publication identities.\n\n## Query and acquisition log\n2026-10-08 — Local fixture import, not a search query: /private/tmp/tmps25t_03m/fixture-001.json. Two supplied records; both included. No external search queries executed. No remote full-text retrieval executed. Each complete supplied source passage is stored verbatim in papers/{key}/fulltext.md. The fulltext field records local source availability only.\n\n## Screening and synthesis\nBoth supplied records are evidence within this synthetic task. No records were excluded. No snowballing was performed because the closed fixture defines the entire scope. Notes describe only supplied content. Claims, supporting quotes, source passages, and synthesis wording are preserved exactly, without Unicode normalization or integrity repair. refs.json retains the supplied empty references list; no bibliography entries or identifiers are invented. The synthesis is not expanded with headings, references, or retrieval text because exact preservation was requested.\n\n## Retrieval summary\nBoth synthetic source passages are available locally. No supplied passage is missing; no PDF drop-in is required. These passages are the complete fixture sources, not independently retrieved research papers.\n\n## Deferred phases\nBibliography verification, claim verification, plugin validation, repair, and delivery are not run in capture mode. No verification report or successful validation status is asserted. The evaluation harness owns subsequent phases.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "1fc28a454ecb999aa97ef877527c616aa447a0bd147e03007c295e3a10d34e7b",
+      "size": 2558
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found no change in recall (Lumen, 2024). The ivory harbor trial found no change in recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "db7ab7ba21f646b388aa8084a378e0d1a715ac35ecf934eac3e752b41d718333",
+      "size": 127
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "d7116226c89941a3f3ceb234a404f8b9635f4a20bc10b499c6fa45e20c7fab6c",
+  "schema_version": "1.0.0"
+}

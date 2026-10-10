@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-006",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"La Cruz, 2024\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"de la Cruz, 2025\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "455a50eb1a9986a401e29cd24eacca2098b6722b4c0d19802512596fc01fc3f8",
+      "size": 560
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Ana de la Cruz\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Ana de la Cruz\"],\n    \"year\": 2025,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "428f2d8f4112c3e0c3f65db638bc23ab94e5e8d75dcf57a0ac64a3b24324de01",
+      "size": 685
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "e3a4bf6555d0034befd7f68c272a7796106923925e7cd20ccfd07e7bcc7c3bab",
+      "size": 124
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "52128e9419078b780d03c2c2101ed91e153c3a4466e132db0996d6b8794eafce",
+      "size": 124
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-80tqy8r3\",\n  \"question\": \"What do invented learning-garden trials report about learner recall after guided sessions?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "fe618ddac67a5d91d552ed280325d4b41c211f327d0fc848c933a54385c180d8",
+      "size": 178
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nWhat do invented learning-garden trials report about learner recall after guided sessions?\n\n## Inclusion criteria\n- Records supplied in the public synthetic fixture (`fixture-001.json`) for the invented learning-gardens domain.\n- Trials reporting a learner recall outcome after guided sessions.\n\n## Exclusion criteria\n- Any record not present in the supplied fixture.\n- Any real-world publication (this review is entirely synthetic).\n\n## Query log\n- 2026-10-08 | invented-index (supplied fixture, no live backend queried) | 2 hits\n\n## Notes\n- No OpenAlex, arXiv, or Europe PMC searches were run. The corpus is the supplied invented record set.\n- Claim/source pairs and synthesis wording are preserved verbatim from the fixture for deterministic integrity evaluation.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "aaf79a191f439ca3aac4ce1cbb7856f603701fd0d8464878b2975172c1ebc855",
+      "size": 827
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (La Cruz, 2024). The ivory harbor trial found stable recall (de la Cruz, 2025).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "fb5d26c5964da311060fc4edda556661ce1c670c50a463ded09c88a5606e8a55",
+      "size": 123
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "8fb0419803782d0fe7e03536961b13a3d690ff06444c727c53f31bca8e774d50",
+  "schema_version": "1.0.0"
+}

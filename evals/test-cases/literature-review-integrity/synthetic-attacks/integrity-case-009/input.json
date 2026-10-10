@@ -1,0 +1,16 @@
+{
+  "corpus": [
+    {"key": "amber", "ids": {"pmcid": "amber"}, "title": "Amber Garden Context", "authors": ["Mira Lumen"], "year": 2024, "role": "background", "found_via": "invented-index", "screening": {"status": "included"}},
+    {"key": "ivory", "ids": {"pmcid": "ivory"}, "title": "Ivory Harbor Context", "authors": ["Niko Vale"], "year": 2024, "role": "background", "found_via": "invented-index", "screening": {"status": "included"}}
+  ],
+  "claims": [
+    {"claim": "The amber garden note described 42% of sessions.", "paper_id": "amber", "citation": "Lumen, 2024", "supporting_quote": "The amber garden note described 42% of sessions as context for an entirely invented program review.", "role": "background"},
+    {"claim": "The ivory harbor note described few of sessions.", "paper_id": "ivory", "citation": "Vale, 2024", "supporting_quote": "The ivory harbor note described few of sessions as context for an entirely invented program review.", "role": "background"}
+  ],
+  "synthesis": "The amber garden note described 42% of sessions (Lumen, 2024). The ivory harbor note described few of sessions (Vale, 2024).\n",
+  "references": [],
+  "sources": {
+    "amber": "The amber garden note described 42% of sessions as context for an entirely invented program review.",
+    "ivory": "The ivory harbor note described few of sessions as context for an entirely invented program review."
+  }
+}

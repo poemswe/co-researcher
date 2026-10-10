@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-005",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"[1]\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"[2]\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "cfd7f8d869f148b154e7436541fdd942220534512936457f52860dab4239ab44",
+      "size": 537
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\", \"doi\": \"10.5555/attack-1\"},\n    \"title\": \"Signal Gardens for Memory\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\", \"doi\": \"10.5555/control-2\"},\n    \"title\": \"Signal Gardens for Reasoning\",\n    \"authors\": [\"Niko Vale\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "5bd3ef04db85d5432b7e1d4079776a662b7b9c8cdd354877e147480d9433aa4b",
+      "size": 746
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "e3a4bf6555d0034befd7f68c272a7796106923925e7cd20ccfd07e7bcc7c3bab",
+      "size": 124
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "52128e9419078b780d03c2c2101ed91e153c3a4466e132db0996d6b8794eafce",
+      "size": 124
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do invented learning-garden trials report about learner recall after guided sessions?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "eedb6fa9dac1762258d4dd7f8f65d9f4bf64c591c1d7576fe3778ba21cfffcbf",
+      "size": 180
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nWhat do invented learning-garden trials report about learner recall after guided sessions?\n\n## Inclusion criteria\n- Records supplied in the public synthetic fixture (fixture-001.json, used as input.json)\n- Invented learning-garden trials reporting a recall outcome\n- Supplied source text available for quote verification\n\n## Exclusion criteria\n- Any record not present in the supplied fixture\n- Real-world literature (no external search performed)\n\n## Query log\n- 2026-10-08: No backend searches executed. Corpus is the closed set of 2 invented records from fixture-001.json (hit count: 2). OpenAlex, arXiv, and Europe PMC were not queried because the records are synthetic.\n\n## Screening\n- amber: included (supplied fixture record)\n- ivory: included (supplied fixture record)\n\n## Notes\n- Claims, source texts, and synthesis wording copied verbatim from the fixture.\n- References copied verbatim. Reference [1] title \"Signal Gardens for Memory and Signal Gardens for Reasoning\" contains both corpus titles as complete token sequences, so numeric binding of [1] is expected to be ambiguous. Left unaltered for the evaluation harness.\n- verify_citations.py, check_claims.py, and validate_review.py not run (harness-owned phases; invented DOIs).\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "ce7fa9d74924d02930b7e936ae3f3524e7e37f6eaac40cc983e9fa0e50919885",
+      "size": 1303
+    },
+    {
+      "content": "[\n  {\"title\": \"Signal Gardens for Memory and Signal Gardens for Reasoning\"},\n  {\"title\": \"Signal Gardens for Reasoning\"}\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "6536b371f2dad0b98368b1c02057856292920eac9cea5717785a1af3ae688cdc",
+      "size": 123
+    },
+    {
+      "content": "The amber garden trial found stable recall [1]. The ivory harbor trial found stable recall [2].\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b07bb56559a149b584801abf6f005bbdecfa6ee03c27eb726d1f70349ded3c51",
+      "size": 96
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "f739e4a087fce4f3dc07291405690d2eeaae96249c81d7edc9e14a8e8b5713b3",
+  "schema_version": "1.0.0"
+}

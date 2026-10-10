@@ -1,0 +1,31 @@
+{
+  "runs": [
+    {
+      "capability": "literature-review-integrity",
+      "case_count": 16,
+      "evaluation_kind": "quality_and_integrity",
+      "evaluation_label": "Paired quality and integrity evaluation",
+      "model": "claude",
+      "report_schema_version": "1.2.0",
+      "result_file": "run_20261008_182253_952308/result.json",
+      "result_sha256": "2b2753736f844957c84e257c929cccf120448e1c1da99f8637f26ad4492866a0",
+      "run_id": "run_20261008_182253_952308",
+      "summary_sha256": "2ffec68760a232528ae696060622d1065e8c8f0df7973e5821552c53c360d9c5",
+      "timestamp": "2026-10-08T18:22:53.952697Z"
+    },
+    {
+      "capability": "literature-review-integrity",
+      "case_count": 16,
+      "evaluation_kind": "quality_and_integrity",
+      "evaluation_label": "Paired quality and integrity evaluation",
+      "model": "codex",
+      "report_schema_version": "1.2.0",
+      "result_file": "run_20261008_205523_885515/result.json",
+      "result_sha256": "7f2732e5fd8b8bb5be86b746b08f32efe499a35bb066b2e4c6f5fc20e999fd52",
+      "run_id": "run_20261008_205523_885515",
+      "summary_sha256": "e828f4e72a3ffc8b1327b465d2682f8c85994a2301dbf2f08a9b1de231c65c78",
+      "timestamp": "2026-10-08T20:55:23.885823Z"
+    }
+  ],
+  "schema_version": "1.0.0"
+}

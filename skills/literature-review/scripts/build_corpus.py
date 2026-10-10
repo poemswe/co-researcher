@@ -17,9 +17,11 @@ title, else a source identifier, in the schema `prisma_counts.py` and the
 review protocol expect. A record carrying none of those is dropped with a
 stderr warning rather than merged into an unrelated one. Papers found by
 several backends get a joined `found_via` (e.g. "openalex+epmc") and the
-highest `cited_by` any backend reported. Re-running against an existing
-corpus.json preserves every screening decision, `fulltext` status, and `role`
-already recorded, so a follow-up search never discards prior work.
+highest `cited_by` any backend reported. Author names are retained as trusted
+citation-binding metadata. Re-running against an existing corpus.json
+preserves every screening decision, `fulltext` status, and `role` already
+recorded while backfilling missing authors, so a follow-up search never
+discards prior work.
 
 `--epmc` also accepts `get_citations`/`get_references` output; pass
 `--found-via snowball:citations` to label those candidates' provenance.
@@ -58,7 +60,7 @@ def normalize_key(doi, title, ids=None):
   return None
 
 
-def _record(doi, title, year, cited_by, found_via, ids):
+def _record(doi, title, year, cited_by, found_via, ids, authors=None):
   ids = {k: v for k, v in ids.items() if v}
   key = normalize_key(doi, title, ids)
   if key is None:
@@ -69,6 +71,7 @@ def _record(doi, title, year, cited_by, found_via, ids):
       "key": key,
       "ids": ids,
       "title": title,
+      "authors": [a for a in (authors or []) if a],
       "year": year,
       "cited_by": cited_by,
       "found_via": found_via,
@@ -96,7 +99,9 @@ def load_openalex(path) -> list[dict]:
     record = _record(
         doi, work.get("title"), _int_or_none(work.get("publication_year")),
         work.get("cited_by_count") or 0, "openalex",
-        {"openalex": work.get("id"), "doi": doi})
+        {"openalex": work.get("id"), "doi": doi},
+        [(a.get("author") or {}).get("display_name")
+         for a in work.get("authorships") or []])
     if record:
       records.append(record)
   return records
@@ -108,7 +113,7 @@ def load_arxiv(path) -> list[dict]:
     record = _record(
         None, (paper.get("title") or "").strip(),
         _int_or_none((paper.get("published") or "")[:4]), 0, "arxiv",
-        {"arxiv": paper.get("id")})
+        {"arxiv": paper.get("id")}, paper.get("authors"))
     if record:
       records.append(record)
   return records
@@ -120,11 +125,15 @@ def load_epmc(path) -> list[dict]:
           or data.get("references") or [])
   records = []
   for hit in hits:
+    authors = [a.get("fullName") or a.get("lastName")
+               for a in ((hit.get("authorList") or {}).get("author") or [])]
+    if not authors and hit.get("authorString"):
+      authors = re.split(r"\s*[;,]\s*", hit["authorString"])
     record = _record(
         hit.get("doi"), hit.get("title"), _int_or_none(hit.get("pubYear")),
         _int_or_none(hit.get("citedByCount")) or 0, "epmc",
         {"doi": hit.get("doi"), "pmid": hit.get("pmid"),
-         "pmcid": hit.get("pmcid")})
+         "pmcid": hit.get("pmcid")}, authors)
     if record:
       records.append(record)
   return records
@@ -139,6 +148,7 @@ def _absorb(target, incoming):
   target["ids"].update(incoming["ids"])
   target["cited_by"] = max(target["cited_by"], incoming["cited_by"])
   target["title"] = target["title"] or incoming["title"]
+  target["authors"] = target.get("authors") or incoming.get("authors") or []
   target["year"] = target["year"] or incoming["year"]
   if incoming["screening"]["status"] and not target["screening"]["status"]:
     target["screening"] = incoming["screening"]

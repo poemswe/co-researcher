@@ -1,0 +1,43 @@
+{
+  "model_first_pass": null,
+  "operational_failure": {
+    "artifact": "../outside.json",
+    "attempt": 0,
+    "message": "artifact path is not canonical and relative: '../outside.json'",
+    "model_usage": {
+      "duration_seconds": 57.793505041860044,
+      "estimated_cost_usd": null,
+      "executor_version": "1.0.0",
+      "input_tokens": null,
+      "output_tokens": null,
+      "prompt_sha256": "1af4ec0a377fbf1cffd4cc2f2cdb79266c63d97668739ad58cc4bc4dd6ea2e96",
+      "prompt_version": "literature-integrity-capture-v2",
+      "schema_version": "1.0.0"
+    },
+    "phase": "initial_load",
+    "quality": null,
+    "reason_code": "artifact_traversal",
+    "schema_version": "1.0.0",
+    "status": "invalid",
+    "workspace_manifest_sha256": null
+  },
+  "repair_cost": {
+    "duration_seconds": 0,
+    "estimated_cost_usd": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "rounds": 0,
+    "schema_version": "1.0.0"
+  },
+  "repair_rounds": [],
+  "robustness": {
+    "error": null,
+    "expectation_met": true,
+    "expected_final_status": "invalid",
+    "maximum_repair_rounds": 0,
+    "minimum_repair_rounds": 0,
+    "observed_final_status": "invalid",
+    "schema_version": "1.0.0"
+  },
+  "schema_version": "1.0.0"
+}

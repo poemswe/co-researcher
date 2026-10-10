@@ -1,7 +1,8 @@
 # Test Case: First Principles Reasoning
 
 ## Metadata
-- **Agent**: research-methodology
+- **Capability**: lateral-thinking
+- **Implementation Skill**: research-methodology
 - **Difficulty**: Hard
 - **Focus**: Breaking down problems to fundamental truths
 

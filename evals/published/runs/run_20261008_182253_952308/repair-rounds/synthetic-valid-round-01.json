@@ -1,0 +1,1013 @@
+{
+  "action": "pass",
+  "attempt": 1,
+  "integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 4,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 13,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 13,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 15,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 15,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 16,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 16,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 13,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 13,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 13,
+        "findings": [],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 13,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 90.0,
+    "manifest_sha256": "6bf46e1cc1ae2d6d78755ed8bab6788980e632d343e451fdf777dc711f6bf885",
+    "schema_version": "1.0.0",
+    "status": "valid_with_warnings"
+  },
+  "model_usage": {
+    "duration_seconds": 106.34005550015718,
+    "estimated_cost_usd": null,
+    "executor_version": "1.0.0",
+    "input_tokens": null,
+    "output_tokens": null,
+    "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+    "prompt_version": "literature-integrity-repair-v2",
+    "schema_version": "1.0.0"
+  },
+  "previous_integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 4,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 13,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 13,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 15,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 15,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 31,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Brennan, 2021",
+              "claim_text": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up",
+              "numbers_missing": [
+                "0.3",
+                "24",
+                "0.08"
+              ],
+              "paper_id": "syntheticreadinglogswithoutinstructorfeedbackarandomizedtrialwithdelayedfollowup",
+              "result_index": 8,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Brennan, 2021",
+              "claim_text": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up",
+              "numbers_missing": [
+                "96"
+              ],
+              "paper_id": "syntheticreadinglogswithoutinstructorfeedbackarandomizedtrialwithdelayedfollowup",
+              "result_index": 7,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Haddad, 2022",
+              "claim_text": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone",
+              "numbers_missing": [
+                "148"
+              ],
+              "paper_id": "syntheticreadinglogspairedwithoneshotlibraryinstructionandlateralreadingbehavior",
+              "result_index": 4,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Haddad, 2022",
+              "claim_text": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone",
+              "numbers_missing": [
+                "18",
+                "37",
+                "16",
+                "21"
+              ],
+              "paper_id": "syntheticreadinglogspairedwithoneshotlibraryinstructionandlateralreadingbehavior",
+              "result_index": 5,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Okafor, 2023",
+              "claim_text": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41)",
+              "numbers_missing": [
+                "12"
+              ],
+              "paper_id": "syntheticstructuredreadinglogsandsourceevaluationinfirstyearcompositionaclusterrandomizedtrial",
+              "result_index": 0,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Okafor, 2023",
+              "claim_text": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41)",
+              "numbers_missing": [
+                "312",
+                "24",
+                "2.1",
+                "0.41"
+              ],
+              "paper_id": "syntheticstructuredreadinglogsandsourceevaluationinfirstyearcompositionaclusterrandomizedtrial",
+              "result_index": 1,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Tanaka-Reyes, 2024",
+              "claim_text": "Interviews with 24 undergraduates describe log prompts as a checklist that slowed students down before they trusted a source",
+              "numbers_missing": [
+                "24"
+              ],
+              "paper_id": "synthetichowundergraduatesexperiencestructuredreadinglogsaninterviewstudy",
+              "result_index": 10,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 16,
+        "schema_version": "1.0.0",
+        "score": 51.6
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 13,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Brennan, 2021",
+              "claim_text": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up",
+              "numbers_missing": [
+                "0.3",
+                "24",
+                "0.08"
+              ],
+              "paper_id": "syntheticreadinglogswithoutinstructorfeedbackarandomizedtrialwithdelayedfollowup",
+              "result_index": 8,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Brennan, 2021",
+              "claim_text": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up",
+              "numbers_missing": [
+                "96"
+              ],
+              "paper_id": "syntheticreadinglogswithoutinstructorfeedbackarandomizedtrialwithdelayedfollowup",
+              "result_index": 7,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Haddad, 2022",
+              "claim_text": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone",
+              "numbers_missing": [
+                "148"
+              ],
+              "paper_id": "syntheticreadinglogspairedwithoneshotlibraryinstructionandlateralreadingbehavior",
+              "result_index": 4,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Haddad, 2022",
+              "claim_text": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone",
+              "numbers_missing": [
+                "18",
+                "37",
+                "16",
+                "21"
+              ],
+              "paper_id": "syntheticreadinglogspairedwithoneshotlibraryinstructionandlateralreadingbehavior",
+              "result_index": 5,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Okafor, 2023",
+              "claim_text": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41)",
+              "numbers_missing": [
+                "12"
+              ],
+              "paper_id": "syntheticstructuredreadinglogsandsourceevaluationinfirstyearcompositionaclusterrandomizedtrial",
+              "result_index": 0,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Okafor, 2023",
+              "claim_text": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41)",
+              "numbers_missing": [
+                "312",
+                "24",
+                "2.1",
+                "0.41"
+              ],
+              "paper_id": "syntheticstructuredreadinglogsandsourceevaluationinfirstyearcompositionaclusterrandomizedtrial",
+              "result_index": 1,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Tanaka-Reyes, 2024",
+              "claim_text": "Interviews with 24 undergraduates describe log prompts as a checklist that slowed students down before they trusted a source",
+              "numbers_missing": [
+                "24"
+              ],
+              "paper_id": "synthetichowundergraduatesexperiencestructuredreadinglogsaninterviewstudy",
+              "result_index": 10,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 6,
+        "schema_version": "1.0.0",
+        "score": 46.2
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 9,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:brennan et al:2021",
+              "citation_identity": "author:brennan et al:2021",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up (Brennan et al., 2021).",
+              "synthesis_sentence_index": 11,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:brennan et al:2021",
+              "citation_identity": "author:brennan et al:2021",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "The authors note that completion-only credit may have encouraged rapid, low-effort log entries (Brennan et al., 2021).",
+              "synthesis_sentence_index": 12,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:haddad et al:2022",
+              "citation_identity": "author:haddad et al:2022",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone (Haddad et al., 2022).",
+              "synthesis_sentence_index": 17,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:haddad et al:2022",
+              "citation_identity": "author:haddad et al:2022",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "Sections were not randomized and no rubric-based quality score was reported, so the study shows a behavioral shift without showing better judgments (Haddad et al., 2022).",
+              "synthesis_sentence_index": 18,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:okafor et al:2023",
+              "citation_identity": "author:okafor et al:2023",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "Because only 12 clusters were randomized and there was no delayed post-test, the precision and durability of this effect remain uncertain (Okafor et al., 2023).",
+              "synthesis_sentence_index": 9,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:okafor et al:2023",
+              "citation_identity": "author:okafor et al:2023",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41) (Okafor et al., 2023).",
+              "synthesis_sentence_index": 7,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:okafor et al:2023",
+              "citation_identity": "author:okafor et al:2023",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "The largest gain appeared on the rubric item for checking claims against an outside source (Okafor et al., 2023).",
+              "synthesis_sentence_index": 8,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": null,
+              "citation_identity": null,
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "1.",
+              "synthesis_sentence_index": 27,
+              "validator_reason": "coverage_number_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_number_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": null,
+              "citation_identity": null,
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "2.",
+              "synthesis_sentence_index": 29,
+              "validator_reason": "coverage_number_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_number_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": null,
+              "citation_identity": null,
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "3.",
+              "synthesis_sentence_index": 32,
+              "validator_reason": "coverage_number_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_number_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": null,
+              "citation_identity": null,
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "4.",
+              "synthesis_sentence_index": 34,
+              "validator_reason": "coverage_number_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_number_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Brennan, 2021",
+          "claim_text": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up",
+          "numbers_missing": [
+            "0.3",
+            "24",
+            "0.08"
+          ],
+          "paper_id": "syntheticreadinglogswithoutinstructorfeedbackarandomizedtrialwithdelayedfollowup",
+          "result_index": 8,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Brennan, 2021",
+          "claim_text": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up",
+          "numbers_missing": [
+            "96"
+          ],
+          "paper_id": "syntheticreadinglogswithoutinstructorfeedbackarandomizedtrialwithdelayedfollowup",
+          "result_index": 7,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Haddad, 2022",
+          "claim_text": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone",
+          "numbers_missing": [
+            "148"
+          ],
+          "paper_id": "syntheticreadinglogspairedwithoneshotlibraryinstructionandlateralreadingbehavior",
+          "result_index": 4,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Haddad, 2022",
+          "claim_text": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone",
+          "numbers_missing": [
+            "18",
+            "37",
+            "16",
+            "21"
+          ],
+          "paper_id": "syntheticreadinglogspairedwithoneshotlibraryinstructionandlateralreadingbehavior",
+          "result_index": 5,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Okafor, 2023",
+          "claim_text": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41)",
+          "numbers_missing": [
+            "12"
+          ],
+          "paper_id": "syntheticstructuredreadinglogsandsourceevaluationinfirstyearcompositionaclusterrandomizedtrial",
+          "result_index": 0,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Okafor, 2023",
+          "claim_text": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41)",
+          "numbers_missing": [
+            "312",
+            "24",
+            "2.1",
+            "0.41"
+          ],
+          "paper_id": "syntheticstructuredreadinglogsandsourceevaluationinfirstyearcompositionaclusterrandomizedtrial",
+          "result_index": 1,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Tanaka-Reyes, 2024",
+          "claim_text": "Interviews with 24 undergraduates describe log prompts as a checklist that slowed students down before they trusted a source",
+          "numbers_missing": [
+            "24"
+          ],
+          "paper_id": "synthetichowundergraduatesexperiencestructuredreadinglogsaninterviewstudy",
+          "result_index": 10,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:brennan et al:2021",
+          "citation_identity": "author:brennan et al:2021",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "In a randomized trial of 96 undergraduates where logs earned completion credit only and received no instructor feedback, the log group scored just 0.3 points higher on the same 24-point rubric (d = 0.08), and the groups did not differ at a six-week follow-up (Brennan et al., 2021).",
+          "synthesis_sentence_index": 11,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:brennan et al:2021",
+          "citation_identity": "author:brennan et al:2021",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "The authors note that completion-only credit may have encouraged rapid, low-effort log entries (Brennan et al., 2021).",
+          "synthesis_sentence_index": 12,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:haddad et al:2022",
+          "citation_identity": "author:haddad et al:2022",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "A quasi-experimental study of 148 undergraduates found that the share of students who read laterally rose from 18% to 37% when a reading log followed one-shot library instruction, compared with a rise from 16% to 21% after instruction alone (Haddad et al., 2022).",
+          "synthesis_sentence_index": 17,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:haddad et al:2022",
+          "citation_identity": "author:haddad et al:2022",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "Sections were not randomized and no rubric-based quality score was reported, so the study shows a behavioral shift without showing better judgments (Haddad et al., 2022).",
+          "synthesis_sentence_index": 18,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:okafor et al:2023",
+          "citation_identity": "author:okafor et al:2023",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "Because only 12 clusters were randomized and there was no delayed post-test, the precision and durability of this effect remain uncertain (Okafor et al., 2023).",
+          "synthesis_sentence_index": 9,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:okafor et al:2023",
+          "citation_identity": "author:okafor et al:2023",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "In a cluster randomized trial across 12 first-year composition sections and 312 students, structured reading logs with biweekly instructor feedback raised scores on a 24-point source evaluation rubric by 2.1 points (d = 0.41) (Okafor et al., 2023).",
+          "synthesis_sentence_index": 7,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:okafor et al:2023",
+          "citation_identity": "author:okafor et al:2023",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "The largest gain appeared on the rubric item for checking claims against an outside source (Okafor et al., 2023).",
+          "synthesis_sentence_index": 8,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": null,
+          "citation_identity": null,
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "1.",
+          "synthesis_sentence_index": 27,
+          "validator_reason": "coverage_number_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_number_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": null,
+          "citation_identity": null,
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "2.",
+          "synthesis_sentence_index": 29,
+          "validator_reason": "coverage_number_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_number_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": null,
+          "citation_identity": null,
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "3.",
+          "synthesis_sentence_index": 32,
+          "validator_reason": "coverage_number_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_number_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": null,
+          "citation_identity": null,
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "4.",
+          "synthesis_sentence_index": 34,
+          "validator_reason": "coverage_number_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_number_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 51.9,
+    "manifest_sha256": "245b21cdc8bd7e8a26b0d3c4c8d5ad806b0a4760df3eab57c18dea1353961c66",
+    "schema_version": "1.0.0",
+    "status": "invalid"
+  },
+  "reason_codes": [
+    "citation_resolution_unavailable"
+  ],
+  "schema_version": "1.0.0",
+  "workspace_manifest_sha256": "6bf46e1cc1ae2d6d78755ed8bab6788980e632d343e451fdf777dc711f6bf885"
+}

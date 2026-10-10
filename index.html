@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Co-Researcher — Research Protocols for AI Agents</title>
-    <meta name="description" content="Co-Researcher installs structured research protocols into Claude Code, Gemini CLI, and OpenAI Codex. 14 research skills. No fabricated citations. Systemic Honesty by design.">
+    <meta name="description" content="Co-Researcher installs structured research protocols into Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. 14 research skills. Every citation checked against its source. Systemic Honesty by design.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://coresearcher.poemswe.com/">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://coresearcher.poemswe.com/">
     <meta property="og:title" content="Co-Researcher — AI Research Agent Suite">
-    <meta property="og:description" content="Structured research protocols for Claude Code, Gemini CLI, and Codex. 14 skills. No hallucinated citations.">
+    <meta property="og:description" content="Structured research protocols for Claude Code, Gemini CLI, Codex, and OpenCode. 14 skills. Every citation checked against its source.">
     <meta property="og:image" content="https://poemswe.com/images/og-default.png">
     <meta property="og:site_name" content="Co-Researcher">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Co-Researcher — AI Research Agent Suite">
-    <meta name="twitter:description" content="Structured research protocols for Claude Code, Gemini CLI, and Codex. 14 skills. No hallucinated citations.">
+    <meta name="twitter:description" content="Structured research protocols for Claude Code, Gemini CLI, Codex, and OpenCode. 14 skills. Every citation checked against its source.">
 
     <link rel="alternate" type="text/plain" href="/llms.txt">
     <link rel="alternate" type="text/plain" href="/llms-full.txt" title="llms-full">
@@ -30,11 +30,11 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Co-Researcher",
-      "description": "A research agent suite that installs structured research protocols into Claude Code, Gemini CLI, and OpenAI Codex. Fourteen skills covering literature review, critical analysis, hypothesis testing, quantitative analysis, systematic review, and more. Governed by Systemic Honesty: no fabricated citations, explicit uncertainty quantification.",
+      "description": "A research agent suite that installs structured research protocols into Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. Fourteen skills covering literature review, critical analysis, hypothesis testing, quantitative analysis, systematic review, and more. Governed by Systemic Honesty: every citation checked against its source, explicit uncertainty quantification.",
       "url": "https://coresearcher.poemswe.com/",
       "applicationCategory": "ResearchTool",
       "operatingSystem": "Claude Code, Gemini CLI, OpenAI Codex, OpenCode",
-      "softwareVersion": "2.6.2",
+      "softwareVersion": "2.7.0",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -488,7 +488,7 @@
             line-height: 1.5;
         }
 
-        /* ── Arena callout ── */
+        /* ── Evals callout ── */
         .arena {
             max-width: 860px;
             margin: 0 auto;
@@ -568,12 +568,12 @@
         <li><a href="#skills">Skills</a></li>
         <li><a href="#install">Install</a></li>
         <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
-        <li><a href="/evals/" class="nav-cta">Arena →</a></li>
+        <li><a href="/evals/" class="nav-cta">Evals →</a></li>
     </ul>
 </nav>
 
 <section class="hero">
-    <p class="hero-label">Co-Researcher v2.6.2 — Claude Code · Gemini CLI · OpenAI Codex · OpenCode</p>
+    <p class="hero-label">Co-Researcher v2.7.0 — Claude Code · Gemini CLI · OpenAI Codex · OpenCode</p>
     <h1>Your agent just cited<br>a paper that <em>doesn't exist.</em><br>Give it a protocol.</h1>
     <p class="hero-body">Fourteen research protocols — literature review, critical analysis, hypothesis testing, systematic review — installed natively into your AI CLI.</p>
     <div class="hero-actions">
@@ -618,7 +618,7 @@
             </div>
             <div class="skill-card">
                 <p class="skill-name">Literature Review</p>
-                <p class="skill-desc">Searches OpenAlex, arXiv, and Europe PMC directly, retrieves full text, and verifies every citation against the databases — fabricated, mismatched, and retracted references are caught before output.</p>
+                <p class="skill-desc">Searches OpenAlex, arXiv, and Europe PMC directly, retrieves full text, and verifies every citation against the databases — fabricated, mismatched, and retracted references are caught before output. Before delivery, every quote is checked against its source, every number is traced to verified evidence, and each synthesis sentence must match a verified claim.</p>
             </div>
             <div class="skill-card">
                 <p class="skill-name">Hypothesis Testing</p>
@@ -672,7 +672,7 @@
 <section class="honesty">
     <div class="honesty-inner">
         <h2>Systemic Honesty is a protocol constraint, not a model instruction.</h2>
-        <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — searches run against real scholarly databases, and a citation verifier resolves every reference before a bibliography ships, failing loudly on fabricated, mismatched, or retracted entries. The constraint doesn't depend on a single instruction holding under pressure.</p>
+        <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — searches run against real scholarly databases, and a citation verifier resolves every reference before a bibliography ships, failing loudly on fabricated, mismatched, or retracted entries. An integrity gate then checks the finished review link by link, and a draft with unresolved evidence errors ships marked INVALID EVIDENCE. The constraint doesn't depend on a single instruction holding under pressure.</p>
         <div class="honesty-rules">
             <p class="honesty-rule">Never fabricate a citation. If a source cannot be verified, say so.</p>
             <p class="honesty-rule">Distinguish what the evidence shows from what it suggests.</p>
@@ -686,13 +686,14 @@
 <section class="install" id="install">
     <div class="install-inner">
         <p class="section-label">Installation</p>
-        <h2 class="section-title">One command in the tool you already use.</h2>
+        <h2 class="section-title">Install in the tool you already use.</h2>
         <p class="section-sub">Co-Researcher installs as a native plugin or extension. Your existing agent gets research-grade method added to its repertoire.</p>
 
         <div class="platforms">
             <div class="platform">
                 <p class="platform-name">Claude Code</p>
                 <code>/plugin marketplace add poemswe/co-researcher</code>
+                <code>/plugin install co-researcher</code>
             </div>
             <div class="platform">
                 <p class="platform-name">Gemini CLI</p>
@@ -703,8 +704,12 @@
                 <code>Tell Codex: "Fetch and follow https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md"</code>
             </div>
             <div class="platform">
+                <p class="platform-name">OpenCode</p>
+                <code>Tell OpenCode: "Fetch and follow https://raw.githubusercontent.com/poemswe/co-researcher/main/.opencode/INSTALL.md"</code>
+            </div>
+            <div class="platform">
                 <p class="platform-name">From source</p>
-                <code>git clone github.com/poemswe/co-researcher</code>
+                <code>git clone https://github.com/poemswe/co-researcher</code>
             </div>
         </div>
         <p class="section-sub" style="margin-top:1.5rem;">After installing, run <code>/using-co-researcher</code> to orient Claude to all available skills.</p>
@@ -713,10 +718,10 @@
 
 <section class="arena">
     <div class="arena-text">
-        <h2>22 test cases. Six rubrics. Every agent output preserved.</h2>
-        <p>Claude and Codex scored across literature search, critical analysis, quantitative reasoning, and research design. Not demos — actual outputs with full rubric breakdowns.</p>
+        <h2>32 test cases. Seven rubrics. Every agent output preserved.</h2>
+        <p>Claude, Codex, and Gemini scored across literature search, critical analysis, quantitative reasoning, and research design. Not demos — actual outputs with full rubric breakdowns. A separate integrity set plants 14 kinds of evidence error into reviews and checks which ones the gate catches, including one it is known to miss.</p>
     </div>
-    <a href="/evals/" class="btn-primary">Open Benchmark Arena →</a>
+    <a href="/evals/" class="btn-primary">Open Evals →</a>
 </section>
 
 <footer>
@@ -727,7 +732,7 @@
         </p>
         <ul class="footer-links">
             <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
-            <li><a href="/evals/">Benchmark Arena</a></li>
+            <li><a href="/evals/">Evals</a></li>
             <li><a href="/llms.txt">llms.txt</a></li>
         </ul>
     </div>

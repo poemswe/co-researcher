@@ -1,7 +1,8 @@
 # Test Case: Privacy Risk (Ethics Expert)
 
 ## Metadata
-- **Agent**: ethics-review
+- **Capability**: ethics-review
+- **Implementation Skill**: ethics-review
 - **Difficulty**: Hard
 - **Area**: Data Privacy & Consent
 
