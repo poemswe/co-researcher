@@ -803,6 +803,7 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
 
 
 _HEADING_RE = re.compile(r"\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*\Z")
+_ORDERED_ITEM_RE = re.compile(r"\s{0,3}\d{1,9}[.)]\s+")
 _REFERENCE_HEADINGS = frozenset(
     {"references", "reference list", "bibliography", "works cited"})
 
@@ -810,6 +811,7 @@ _REFERENCE_HEADINGS = frozenset(
 def _prose_paragraphs(text: str) -> list[str]:
   paragraphs = []
   current = []
+  in_list = False
   skip_level = None
   for line in text.splitlines():
     heading = _HEADING_RE.fullmatch(line)
@@ -817,6 +819,7 @@ def _prose_paragraphs(text: str) -> list[str]:
       if current:
         paragraphs.append("\n".join(current))
         current = []
+      in_list = False
     if heading:
       level = len(heading.group(1))
       if skip_level is not None and level <= skip_level:
@@ -825,7 +828,14 @@ def _prose_paragraphs(text: str) -> list[str]:
         skip_level = level
       continue
     if line.strip() and skip_level is None:
-      current.append(line)
+      item = _ORDERED_ITEM_RE.match(line)
+      if item and (in_list or not current):
+        in_list = True
+        if current:
+          paragraphs.append("\n".join(current))
+        current = [line[item.end():]]
+      else:
+        current.append(line)
   if current:
     paragraphs.append("\n".join(current))
   return paragraphs

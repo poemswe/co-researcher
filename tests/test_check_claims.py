@@ -963,6 +963,38 @@ def test_split_sentences_resumes_after_reference_subsection_ends():
   assert cc._split_sentences(synthesis) == ["Text resumes."]
 
 
+@pytest.mark.parametrize("marker", ["1.", "1)", "  12."])
+def test_split_sentences_drops_numbered_list_markers(marker):
+  synthesis = (f"Open questions remain.\n\n{marker} No trial varied feedback\n"
+               "2. Only one study measured a delayed outcome.")
+
+  assert cc._split_sentences(synthesis) == [
+      "Open questions remain.", "No trial varied feedback",
+      "Only one study measured a delayed outcome."]
+
+
+def test_split_sentences_keeps_a_year_that_starts_a_wrapped_line():
+  synthesis = "Readmissions fell 18% (Patel, 2022) by the end of\n2022. A second sentence."
+
+  assert cc._split_sentences(synthesis) == [
+      "Readmissions fell 18% (Patel, 2022) by the end of\n2022.",
+      "A second sentence."]
+
+
+def test_coverage_ignores_numbered_list_markers():
+  synthesis = ("1. No study linked lateral reading to judgment quality.\n"
+               "2. All studies came from single institutions.")
+
+  assert cc.coverage_gaps(synthesis, [], []) == []
+
+
+def test_coverage_still_checks_numbers_inside_list_items():
+  synthesis = "1. Its 212 participants were drawn from one site."
+
+  gaps = cc.coverage_gaps(synthesis, [], [])
+  assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
+
+
 def test_coverage_ignores_headings_and_reference_list():
   synthesis = ("## 1. Thematic synthesis\n\n### Immediate performance: a "
                "positive signal that shrinks under stronger designs\n\n"
