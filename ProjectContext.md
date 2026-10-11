@@ -4,18 +4,19 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**v2.7.0 release in progress (2026-10-09).** `release/2.7.0` holds #31 (deploy-pages bump) and #28 (squashed as `905a482`); `chore/2.7.0-prep` adds the rest and merges into it, then the release goes to `main` as a **merge commit, not a squash**, so the benchmark pin `TARGET_COMMIT = 905a482` survives. 2.7.0 adds the evidence-integrity engine and gate, live integrity evals with resume, published integrity runs on the dashboard, broad-run resume and release filtering, six new broad cases (32), an overstated-finding integrity case recorded as a known gap, path redaction, honest model and effort labels, and the site renamed from Arena to Evals.
+**v2.7.0 released (2026-10-10).** PR #34 merged `release/2.7.0` into `main` as merge commit `6c6036b`, so the benchmark pin `905a482` is on `main`. Tag `v2.7.0` and the GitHub release are published; Tests and the Pages deploy passed, and the live site serves 2.7.0 (Evals, 32 cases, seven rubrics, published integrity runs). 2.7.0 adds the evidence-integrity engine and gate, live integrity evals with resume, published integrity runs on the dashboard, broad-run resume and release filtering, six new broad cases (32), an overstated-finding integrity case recorded as a known gap, path redaction, honest model and effort labels, and the site renamed from Arena to Evals.
 
-Published 2.7.0 runs: integrity on `5802823` (before the multi-quote skill fix `2329249`), Opus `claude-opus-5-5` and Codex `gpt-6-astra` (low effort), both 15/16, missing only the known gap. Broad: Opus 32/32, average 84.8, on `f1ee745`. The Codex broad run (`run_20261009_020033_158864`, 18/32 so far) is resuming in the scratchpad worktree across usage windows and will be added after the release.
+Published 2.7.0 runs: integrity on `5802823` (before the multi-quote skill fix `2329249`), Opus `claude-opus-5-5` and Codex `gpt-6-astra` (low effort), both 15/16, missing only the known gap. Broad: Opus 32/32, average 84.8. The Codex broad run (`run_20261009_020033_158864`) is at 28/32, average 89.7, in the detached scratchpad worktree `wt-broad` at `dbae72f`; Codex's weekly cap resets 2026-10-15 11:51. Finish with `run_eval.py all -m "codex:gpt-6-astra low" -j 2 --resume run_20261009_020033_158864` there, then add its overview entry and detail file to `main` by PR. Remove `wt-broad` only after that.
 
-Write-ups (private, not shared): the pilot protocol is a Claude Doc (`b84e270a-cf38-4882-a568-659a5bb799f1`); every decision is made (units, domains, cases per paper as the affine plane of order 3, models and runs, uncertainty, agreement bar, NIST beacon at a fixed time T, OSF registry), with Codex's review folded in. The freeze command, paper selection and reviewer handoff are a separate feature after 2.7.0. The workshop paper "Every Claim Traced" (https://claude.ai/artifact/FQUH5LQGXszNXnHhPhHDg1) needs the 2.7.0 numbers and the user's review before arXiv, then a `/paper/` page on the site.
+Write-ups (private, not shared): the pilot protocol is a Claude Doc (`b84e270a-cf38-4882-a568-659a5bb799f1`); every decision is made (units, domains, cases per paper as the affine plane of order 3, models and runs, uncertainty, agreement bar, NIST beacon at a fixed time T, OSF registry), with Codex's review folded in. The freeze command, paper selection and reviewer handoff are a separate feature after 2.7.0. The workshop paper "Every Claim Traced" (https://claude.ai/artifact/FQUH5LQGXszNXnHhPhHDg1) has the 2.7.0 runs as of version 8 (2026-10-10) and needs the user's review before arXiv, then a `/paper/` page on the site.
 
-PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock directory left by a killed process hangs every later call. It is planned for the next minor or major release, together with #28.
+PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock directory left by a killed process hangs every later call. It is planned for the next minor or major release.
 
 Next open item is the Semantic Scholar backend (see Open Threads).
 
 ## Open Threads
 
+- **Gate bug: numbered list markers read as uncited numbers** (open, found 2026-10-10). In a synthesis list, "1." to "4." each split into a sentence holding a bare number and raised `coverage_number_missing`. Seen on Opus's 2.7.0 clean control; current `main` still raises all four when re-validating that workspace (rebuilt from `evals/published/runs/run_20261008_182253_952308/snapshots/synthetic-valid-first-pass.json`). Fix needs a failing test first.
 - **Semantic Scholar backend** (backlog, new feature, not started) — feedback from a live-run session flagged this as a gap; no scope/design decided yet.
 - Decision pending on whether to merge `literature-review` and `systematic-review` into one skill with a rigor parameter. Currently kept separate (PRISMA distinction is meaningful).
 - **No multi-reviewer screening.** Covidence and Rayyan support two independent screeners with conflict adjudication, which real systematic reviews require. We have nothing there. Biggest honest capability gap vs incumbents.
@@ -38,6 +39,7 @@ Next open item is the Semantic Scholar backend (see Open Threads).
 
 ## Pitfalls
 
+- Never squash or rebase-merge a release branch into `main`. Both rewrite commit IDs and break the claim-verifier benchmark pin `TARGET_COMMIT`; use a merge commit.
 - `http_client.py` and `jats.py` are plain sibling modules in `scripts/` (no package/build). `uv run script.py` puts the script dir on `sys.path`, so `import http_client` resolves; tests load scripts by path and must `sys.path.insert(0, <scripts dir>)` first. Editing them is live — no `--reinstall` needed.
 - OpenAlex `--search` queries cost 10x more than `--filter`. Prefer `--filter` with resolved IDs over name-based `--search` when possible.
 - Europe PMC search auto-appends `OPEN_ACCESS:y`. To search closed-access metadata, would need to modify `europepmc_api.py` (don't unless asked).
