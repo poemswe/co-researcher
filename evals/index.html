@@ -1673,6 +1673,45 @@
             font-weight: 700;
         }
 
+        .integrity-detection-wrap {
+            overflow-x: auto;
+            margin-top: var(--spacing-sm);
+        }
+
+        .integrity-detection-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .integrity-detection-table th,
+        .integrity-detection-table td {
+            border-bottom: 1px solid var(--text-muted);
+            padding: 0.45rem 0.6rem;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .integrity-detection-table th {
+            border-bottom: 2px solid var(--text-primary);
+        }
+
+        .integrity-detection-table code {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        .detection-badge {
+            display: inline-block;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .detection-caught { color: var(--accent-success); }
+        .detection-missed { color: var(--accent-danger); }
+        .detection-not_assessable,
+        .detection-control { color: var(--text-tertiary); }
+
         .integrity-case-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1795,6 +1834,7 @@
             <div id="integrityRunSummary" class="integrity-run-summary">
                 No isolated integrity run selected.
             </div>
+            <div id="integrityDetection" class="integrity-detection-wrap"></div>
             <div id="integrityRunCases" class="integrity-case-grid"></div>
         </section>
 
@@ -2615,6 +2655,71 @@
                 .replaceAll("'", '&#039;');
         }
 
+        const DETECTION_LABELS = {
+            caught: 'Caught',
+            missed: 'Missed',
+            not_assessable: 'Not assessable',
+            control: 'Control',
+        };
+
+        function integrityDetectionRows(report) {
+            return report.cases.map(caseResult => {
+                const adversarial = isPlainObject(caseResult.adversarial_score) ?
+                    caseResult.adversarial_score : null;
+                const metrics = adversarial && isPlainObject(adversarial.reason_metrics) ?
+                    Object.entries(adversarial.reason_metrics) : [];
+                const expected = metrics
+                    .filter(([, m]) => m.true_positive + m.false_negative > 0)
+                    .map(([code]) => code);
+                const missed = metrics.some(([, m]) => m.false_negative > 0);
+                let outcome = 'control';
+                if (adversarial) {
+                    outcome = adversarial.assessable === false ? 'not_assessable' :
+                        missed || expected.length === 0 ? 'missed' : 'caught';
+                }
+                return {
+                    case_id: caseResult.case_id,
+                    family: caseResult.attack_family || null,
+                    expected,
+                    outcome,
+                    follow_on: metrics.filter(([, m]) => m.false_positive > 0).map(([code]) => code),
+                    unassessable_reason: adversarial && adversarial.assessable === false ?
+                        adversarial.unassessable_reason || null : null,
+                    first_pass: caseResult.first_pass ? caseResult.first_pass.status : null,
+                    final: caseResult.final ? caseResult.final.status : null,
+                };
+            });
+        }
+
+        function detectionBadgeHtml(row) {
+            const label = DETECTION_LABELS[row.outcome];
+            const reason = row.unassessable_reason ? ` (${escapeHtml(row.unassessable_reason)})` : '';
+            return `<span class="detection-badge detection-${row.outcome}">${label}${reason}</span>`;
+        }
+
+        function integrityDetectionTableHtml(rows) {
+            const attacks = rows.filter(row => row.outcome === 'caught' || row.outcome === 'missed');
+            const caught = attacks.filter(row => row.outcome === 'caught').length;
+            const codes = list => list.length ?
+                list.map(code => `<code>${escapeHtml(code)}</code>`).join(', ') : '—';
+            const status = value => value ? escapeHtml(value) : 'not loaded';
+            return `
+                <p><strong>Detection on the first pass:</strong> ${caught} of ${attacks.length} assessable attacks caught.
+                    Follow-on findings are raised because of the planted error and are not counted as misses.</p>
+                <table class="integrity-detection-table">
+                    <thead><tr><th>Case</th><th>Attack family</th><th>Expected finding</th>
+                        <th>First pass</th><th>Follow-on findings</th><th>Status: first → final</th></tr></thead>
+                    <tbody>${rows.map(row => `
+                        <tr><td>${escapeHtml(row.case_id)}</td>
+                            <td>${row.family ? escapeHtml(row.family) : 'control'}</td>
+                            <td>${codes(row.expected)}</td>
+                            <td>${detectionBadgeHtml(row)}</td>
+                            <td>${codes(row.follow_on)}</td>
+                            <td>${status(row.first_pass)} → ${status(row.final)}</td></tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+
         function renderIntegrityRun() {
             if (!selectedIntegrityRun) return;
             const report = selectedIntegrityRun;
@@ -2634,7 +2739,10 @@
                     ` · not evaluated: ${report.execution_errors
                         .map(error => escapeHtml(error.case_id)).join(', ')}` : ''}
             `;
-            document.getElementById('integrityRunCases').innerHTML = report.cases.map(caseResult => {
+            const detectionRows = integrityDetectionRows(report);
+            document.getElementById('integrityDetection').innerHTML =
+                integrityDetectionTableHtml(detectionRows);
+            document.getElementById('integrityRunCases').innerHTML = report.cases.map((caseResult, index) => {
                 const snapshot = caseResult[integritySnapshot];
                 const operational = Object.prototype.hasOwnProperty.call(
                     caseResult, 'operational_failure');
@@ -2663,6 +2771,7 @@
                         <h3>${escapeHtml(caseResult.case_id)}</h3>
                         <div>${integritySnapshot === 'first_pass' ? 'First pass' : 'Final'} snapshot</div>
                         ${attackFamily}
+                        <div><strong>Detection:</strong> ${detectionBadgeHtml(detectionRows[index])}</div>
                         ${operationalFailure}
                         <div class="integrity-score-pair">
                             <div class="integrity-score-field">Quality score<strong>${quality}</strong></div>

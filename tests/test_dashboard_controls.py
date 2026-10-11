@@ -146,3 +146,71 @@ def test_releases_sort_newest_first_and_scope_runs_and_models(tmp_path):
   assert scoped == [["d", "e"], ["claude:opus-5-5", "codex:z low"]]
   assert untouched == 6
   assert unreleased == ["f"]
+
+
+def _adversarial(family, metrics, assessable=True, reason=None):
+  return {"attack_family": family, "assessable": assessable,
+          "unassessable_reason": reason,
+          "reason_metrics": {code: {"true_positive": tp, "false_positive": fp,
+                                    "false_negative": fn}
+                             for code, (tp, fp, fn) in metrics.items()}}
+
+
+def test_detection_rows_show_caught_missed_and_controls(tmp_path):
+  report = {"cases": [
+      {"case_id": "integrity-case-001", "attack_family": "unicode-substitution",
+       "first_pass": {"status": "invalid"}, "final": {"status": "valid"},
+       "adversarial_score": _adversarial("unicode-substitution", {
+           "fabricated_quote": (1, 0, 0), "coverage_claim_missing": (0, 1, 0)})},
+      {"case_id": "integrity-case-014", "attack_family": "overstated-finding",
+       "first_pass": {"status": "valid"}, "final": {"status": "valid"},
+       "adversarial_score": _adversarial("overstated-finding", {
+           "coverage_claim_missing": (0, 0, 1)})},
+      {"case_id": "integrity-case-010", "attack_family": "missing-artifact",
+       "first_pass": None, "final": None,
+       "adversarial_score": _adversarial("missing-artifact", {
+           "artifact_missing": (0, 0, 1)}, False, "first_pass_unloadable")},
+      {"case_id": "synthetic-valid", "first_pass": {"status": "valid_with_warnings"},
+       "final": {"status": "valid_with_warnings"}},
+  ]}
+  output = _node(tmp_path, f"""
+    console.log(JSON.stringify(context.integrityDetectionRows({json.dumps(report)})));
+  """)
+
+  rows = json.loads(output)
+  assert rows == [
+      {"case_id": "integrity-case-001", "family": "unicode-substitution",
+       "expected": ["fabricated_quote"], "outcome": "caught",
+       "follow_on": ["coverage_claim_missing"], "unassessable_reason": None,
+       "first_pass": "invalid", "final": "valid"},
+      {"case_id": "integrity-case-014", "family": "overstated-finding",
+       "expected": ["coverage_claim_missing"], "outcome": "missed",
+       "follow_on": [], "unassessable_reason": None,
+       "first_pass": "valid", "final": "valid"},
+      {"case_id": "integrity-case-010", "family": "missing-artifact",
+       "expected": ["artifact_missing"], "outcome": "not_assessable",
+       "follow_on": [], "unassessable_reason": "first_pass_unloadable",
+       "first_pass": None, "final": None},
+      {"case_id": "synthetic-valid", "family": None, "expected": [],
+       "outcome": "control", "follow_on": [], "unassessable_reason": None,
+       "first_pass": "valid_with_warnings", "final": "valid_with_warnings"},
+  ]
+
+
+def test_detection_table_escapes_and_labels_outcomes(tmp_path):
+  rows = [
+      {"case_id": "c<1>", "family": "f", "expected": ["fabricated_quote"],
+       "outcome": "missed", "follow_on": [], "unassessable_reason": None,
+       "first_pass": "valid", "final": "valid"},
+      {"case_id": "ctl", "family": None, "expected": [], "outcome": "control",
+       "follow_on": [], "unassessable_reason": None,
+       "first_pass": "invalid", "final": "valid"},
+  ]
+  output = _node(tmp_path, f"""
+    console.log(context.integrityDetectionTableHtml({json.dumps(rows)}));
+  """)
+
+  assert "c&lt;1&gt;" in output and "c<1>" not in output
+  assert "Missed" in output and "Control" in output
+  assert "1 of 1 assessable attacks caught" not in output
+  assert "0 of 1 assessable attacks caught" in output
