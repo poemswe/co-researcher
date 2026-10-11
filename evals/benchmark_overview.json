@@ -353,14 +353,81 @@
       "pass_rate": 100.0,
       "detail_file": "test_results_detail/run_20261008_192224_025232.json",
       "release": "2.7.0"
+    },
+    {
+      "run_id": "run_20261009_020033_158864",
+      "timestamp": "2026-10-11T20:08:29.618326Z",
+      "model": "codex:gpt-6-astra low",
+      "model_version": "gpt-6-astra low",
+      "release": "2.7.0",
+      "tests_run": 32,
+      "tests_passed": 32,
+      "average_score": 89.7,
+      "scores_by_agent": {
+        "critical-analysis": [
+          96.5,
+          93.2,
+          95.2,
+          90.5
+        ],
+        "ethics-review": [
+          93.0,
+          88.4,
+          93.5
+        ],
+        "grant-proposal": [
+          86.3,
+          89.2,
+          78.5
+        ],
+        "hypothesis-testing": [
+          81.1,
+          87.0,
+          85.8
+        ],
+        "lateral-thinking": [
+          100.0,
+          89.9,
+          88.6
+        ],
+        "literature-review": [
+          83.0,
+          87.3,
+          86.5,
+          83.5
+        ],
+        "peer-review": [
+          94.3,
+          95.4,
+          94.6
+        ],
+        "qualitative-research": [
+          93.0,
+          85.8,
+          79.0
+        ],
+        "quantitative-analysis": [
+          95.0,
+          97.5,
+          99.0
+        ],
+        "research-methodology": [
+          85.5,
+          89.3,
+          84.2
+        ]
+      },
+      "pass_rate": 100.0,
+      "detail_file": "test_results_detail/run_20261009_020033_158864.json"
     }
   ],
   "summary_stats": {
-    "total_runs": 6,
+    "total_runs": 7,
     "models": [
       "claude:claude-opus-5-5",
       "claude:opus",
       "codex:gpt-5.2 xhigh",
+      "codex:gpt-6-astra low",
       "gemini:gemini-3-flash-preview"
     ],
     "agents": [
@@ -375,6 +442,6 @@
       "quantitative-analysis",
       "research-methodology"
     ],
-    "overall_pass_rate": 97.4
+    "overall_pass_rate": 97.9
   }
 }
