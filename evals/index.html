@@ -2549,6 +2549,7 @@
             summary.classList.toggle('integrity-run-error',
                 message !== 'No isolated integrity run selected.' && message !== 'Loading selected run…');
             document.getElementById('integrityRunCases').innerHTML = '';
+            document.getElementById('integrityDetection').innerHTML = '';
             document.getElementById('integrityEvaluationLabel').textContent =
                 'Paired quality and integrity evaluation. Quality scores and integrity scores are separate measurements; integrity status is not a quality pass label.';
         }

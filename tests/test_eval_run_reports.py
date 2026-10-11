@@ -1327,6 +1327,7 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
         }},
       },
       integrityRunCases: { innerHTML: 'stale cases' },
+      integrityDetection: { innerHTML: 'stale detection' },
       integrityEvaluationLabel: { textContent: 'stale label' },
       firstPassToggle: { disabled: false, classList: { toggle() {} } },
       finalToggle: { disabled: false, classList: { toggle() {} } },
@@ -1556,6 +1557,7 @@ def test_dashboard_parser_selects_one_integrity_run_without_network(tmp_path):
       }
       await context.handleIntegrityRunChange();
       if (elements.integrityRunCases.innerHTML !== '') process.exit(21);
+      if (elements.integrityDetection.innerHTML !== '') process.exit(28);
       if (!classes.has('integrity-run-error')) process.exit(22);
       if (!elements.integrityRunSummary.textContent.includes('unsafe')) process.exit(23);
 
@@ -1686,6 +1688,7 @@ def test_dashboard_parser_accepts_real_attack_and_operational_unions(tmp_path):
       integrityRunSummary: {innerHTML: '', textContent: '',
         classList: {toggle() {}}},
       integrityRunCases: {innerHTML: 'stale'},
+      integrityDetection: {innerHTML: 'stale'},
       integrityEvaluationLabel: {textContent: ''},
       firstPassToggle: {classList: {toggle() {}}},
       finalToggle: {classList: {toggle() {}}},
