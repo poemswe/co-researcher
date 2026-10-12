@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-001",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found no change in recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial found no change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found no change in recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial found no change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "07b9fc8c3003bb342271d0cb67d9921760626b9dce66a4ccdbfe196d4e68266d",
+      "size": 576
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined closed scope of supplied synthetic records.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined closed scope of supplied synthetic records.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "4a74a579c063d576f55be79e0e1b327d64a49620baf06d90c87e51351f4e9d01",
+      "size": 856
+    },
+    {
+      "content": "The amber garden trial found no change in recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "bdb64f6a0e5f28008ece2f2121391d67afc42f5df4cd904b53095e574810ce78",
+      "size": 129
+    },
+    {
+      "content": "The ivory harbor trial found no change in recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "e9fd105b5bcd3c4467ae7e3d3d1be9881d90dfbb548bd09370a8cdebe383a3f4",
+      "size": 129
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden trial records report about changes in recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "5ef5f3226bc4f941b291ab93f4b7dee29f06ea4e0fd647ef929e3c1e974b6ddd",
+      "size": 181
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat do the supplied invented learning-garden trial records report about changes in recall?\n\n## Scope and criteria\nThis is a closed review of entirely invented records supplied by the user for evaluation capture. Include both supplied records and their paired claims and source passages. Exclude external literature and any invented additions to the supplied evidence. No date or language restrictions are applied within the supplied set. The user explicitly requires exact preservation of supplied claim/source pairs and synthesis wording; this scope is authorized by that instruction.\n\n## Workspace\nThe current directory itself is the review workspace, initialized with `WS=\"$(pwd)\"`. No nested review workspace is used. No linked research project was supplied.\n\n## Input and search log\n- Date: 2026-10-08.\n- Source: `/private/tmp/tmpeonatdic/fixture-001.json`, copied verbatim to `input.json`.\n- Local selection: all records in `input.json`; two records supplied and included.\n- External search queries: none. OpenAlex, arXiv, and Europe PMC were not queried because the task is limited to invented fixtures.\n- Corpus assembly: the supplied corpus is retained, with retrieval status and screening detail added. No backend results require merging or deduplication.\n- Snowballing: not performed; external candidates are outside the authorized closed scope.\n\n## Screening and reading\nBoth supplied records are included as evidence. Each supplied source passage is stored unchanged in its matching `papers/{key}/fulltext.md`; fulltext denotes the complete supplied synthetic passage, not an independently retrieved publication. Notes distinguish reported information from unavailable methodological details.\n\n## Synthesis and references\nThe supplied synthesis is copied exactly, including its final newline. Claims and supporting quotes are copied without normalization or correction. The supplied references array is empty and is preserved in `refs.json`. No bibliographic identifiers or source-resolution results are invented. Retrieval information is recorded separately to avoid changing synthesis wording.\n\n## Capture boundary\nBibliography verification, claim verification, plugin validation, repair, and delivery are deferred to the evaluation harness. No verification report is generated and no integrity outcome is asserted.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "16600ee693d08b59a050d34a4e34a4173dbf131274541d616efada12d6f46a5f",
+      "size": 2399
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found no change in recall (Lumen, 2024). The ivory harbor trial found no change in recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "db7ab7ba21f646b388aa8084a378e0d1a715ac35ecf934eac3e752b41d718333",
+      "size": 127
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "16fed702e7a1f225b7cfe7290e9f17ccb24981974f6299a0d3d7000872d546b4",
+  "schema_version": "1.0.0"
+}

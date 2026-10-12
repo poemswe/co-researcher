@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-011",
+  "files": [
+    {
+      "content": "{not-json",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "f1dec6e9ee608550bd1c39ff2b90134059bac5d02e4e78f6410aed2fbd870bd0",
+      "size": 9
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by user-defined closed synthetic-fixture scope.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"cited_by\": 0\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by user-defined closed synthetic-fixture scope.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"cited_by\": 0\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "4a158c5c5eb6a0e9b4d898f3f68632e7962c12aa653e777f3bef72d5629bfe77",
+      "size": 862
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records report about recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "bdc0bf54a10bedecf2a79f7b1aae59019d73c8fb7f9d08d5855e60784a78e0fa",
+      "size": 164
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat do the supplied invented learning-garden records report about recall?\n\n## Scope and criteria\nInclude every record supplied in input.json, together with its exact claim, source passage, and synthesis wording. The population is the invented learners described in those records. Include the supplied trial descriptions regardless of methodological detail; restrict the corpus to the supplied English-language synthetic records from 2024. Exclude external records and any invented additions to the supplied evidence.\n\nThe user explicitly requested complete workspace capture with exact preservation. No scope approval or small-corpus checkpoint is pending.\n\n## Source and query log\n- Date: 2026-10-08.\n- Source: /private/tmp/tmpf9gyh1c5/fixture-001.json, copied unchanged to input.json.\n- Acquisition: local fixture import; no search query executed.\n- Records supplied: 2. Records retained: 2. Excluded: 0.\n- Backend searches: not executed; these are entirely invented records, not externally resolvable publications.\n- Deduplication: supplied normalized corpus retained; no backend results were merged.\n- Screening: both supplied records included because both meet the closed-fixture scope.\n- Source reading: the complete supplied source passage for each record was read. The fulltext label denotes the complete provided synthetic text, not a retrieved published paper.\n- Snowballing: not applicable to the closed fixture; no citation graph supplied.\n\n## Synthesis and integrity handling\nThe supplied synthesis is preserved exactly in synthesis.md. Claims and supporting quotes are preserved exactly in claims.json. Source strings are preserved exactly in papers/{key}/fulltext.md. The supplied empty reference list is preserved in refs.json; source metadata is recorded in the corpus and paper notes. Retrieval information is separate so it does not alter the synthesis wording.\n\nBibliography verification, claim verification, plugin validation, repair, and delivery were not run. No verification report or verified status is asserted. The evaluation harness owns subsequent phases.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "3e155bccd7e92c24cfdb87876735c49ec39981a26a119b70a2e4d0a464e222e0",
+      "size": 2153
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (Lumen, 2024). The ivory harbor trial found stable recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "9e9796cc8dac9b3474a6bf71a17702f833b60051d674eeec745ff7c799e8a771",
+      "size": 115
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "5ed01633a38124223c8152d6b6cf9043f5ee39e4fdac5f965dba6961efa213b8",
+  "schema_version": "1.0.0"
+}

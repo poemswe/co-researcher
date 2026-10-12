@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-006",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"de la Cruz, 2024\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"de la Cruz, 2025\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "b82f679cf6cf0854d181533e80c4a997e9e4eda30e4b5c5518978bb8258ec922",
+      "size": 563
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Ana de la Cruz\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Ana de la Cruz\"\n    ],\n    \"year\": 2025,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "433f6594bf62e6a7247f27751d728d5ee2b1f93db14839c46f80023893d8e137",
+      "size": 627
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records report about recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "bdc0bf54a10bedecf2a79f7b1aae59019d73c8fb7f9d08d5855e60784a78e0fa",
+      "size": 164
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat do the supplied invented learning-garden records report about recall?\n\n## Scope and inclusion criteria\nThis is a closed, entirely synthetic corpus supplied by the user for artifact capture. Include both supplied records and preserve every supplied claim, citation identity, source passage, and synthesis sentence exactly. Include all supplied years and settings. No population, language, or study-design restriction beyond membership in the supplied input applies.\n\n## Exclusion criteria\nExclude outside records and any invented additions to the supplied evidence. Do not infer methods, sample sizes, effect sizes, or bibliographic identifiers absent from the supplied records.\n\n## Authorization\nThe user explicitly requested a complete workspace from the supplied records with exact preservation and immediate stopping after artifact writing. This fixed scope governs artifact creation without a separate scoping checkpoint.\n\n## Input and query log\nDate: 2026-10-08.\nSource: input.json, copied from the supplied public fixture when no input file was present.\nLocal corpus import: two supplied records; two included; none excluded; no duplicates merged.\nNo search queries executed. External searching, acquisition, and snowballing are inapplicable to these entirely invented records. The provided source passages are the complete available synthetic source material, not independently retrieved publications.\n\n## Reading and synthesis\nEach supplied source passage is retained verbatim in its record's papers directory. Notes distinguish supplied statements from absent study details. Synthesis wording and claim/source bindings are copied without correction or reinterpretation. The supplied reference list is empty and retained as supplied.\n\n## Retrieval summary\nBoth synthetic source passages are available locally. No additional source documents were supplied or requested. The fulltext field records local availability of the complete supplied passage only.\n\n## Phase boundary\nArtifact capture ends after writing the workspace. No citation verification, claim verification, plugin validation, repair, or delivery phase is executed. No verification report is fabricated.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "61f96d43088ce2c52699e6426a1bd88c51feea1bff1ec7d34d393eb36d53a9fa",
+      "size": 2246
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (de la Cruz, 2024). The ivory harbor trial found stable recall (de la Cruz, 2025).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "9f054166cdc73440bb66ab000271aa007c71303594c523c36ef6c78ae635a9eb",
+      "size": 126
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "568ef0e4f40345e27706acb5173b24ac27e6279912912a1eb2086351c8462a34",
+  "schema_version": "1.0.0"
+}

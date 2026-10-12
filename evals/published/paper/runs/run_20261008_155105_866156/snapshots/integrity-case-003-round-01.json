@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-003",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"Garden recall held steady across the invented term.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"Garden recall held steady across the invented term.\"\n  },\n  {\n    \"claim\": \"Harbor recall held steady across the invented term.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"Harbor recall held steady across the invented term. Tutors logged the same pattern during the final week.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "8401f77ab5a112b1882cc693dc55d12335eb914f0fe9973bd5993361b31ac464",
+      "size": 478
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "f5e290e350b6f0383f6f44c15866b43a0ae15e4e7a6418b3ab597c88919f9e6e",
+      "size": 618
+    },
+    {
+      "content": "Garden recall held steady across the invented term. A remote orchard survey then discussed unrelated lantern colors in detail. Tutors logged the same pattern during the final week.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "653f82a45cbd97da3176a81b60ed81cb6149301f139650c49cc4666e6dd92392",
+      "size": 180
+    },
+    {
+      "content": "Harbor recall held steady across the invented term. Page 2.                                                                     Tutors logged the same pattern during the final week.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "a49d09e2b10ef3fbe4c999da536c9f296cbc7fa60301746fc2a040d230ce3d6d",
+      "size": 181
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented records state about garden and harbor recall across the invented term?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "1ae22429f5ef6be2837d7ca7ac96f5036f95111c96d324f4cbb494494c20c507",
+      "size": 190
+    },
+    {
+      "content": "# Invented learning gardens review protocol\n\n## Scope\n\nResearch question: What do the supplied invented records state about garden and harbor recall across the invented term?\n\nThis is a closed, entirely synthetic corpus supplied for capture mode. It is not a review of real-world research. The user authorizes preservation of both supplied claim/source pairs and the synthesis wording exactly.\n\nInclusion criteria: Include both supplied invented records, their source passages, and their associated claims. Include the garden and harbor settings. Accept the supplied year and English text without imposing additional study-design criteria.\n\nExclusion criteria: Exclude outside records, real-world literature, and newly inferred findings. Do not alter or repair supplied wording or source text.\n\n## Search and provenance log\n\n- Date: 2026-10-08.\n- Local input: /private/tmp/tmp29s7i9j3/fixture-001.json, copied byte-for-byte to input.json.\n- Query: none; direct import of the user-supplied fixture.\n- Records supplied: 2. Records included: 2. Records excluded: 0.\n- External backend searches: not performed; the task is restricted to the supplied invented records.\n\n## Corpus and screening\n\nThe input contains an already assembled corpus with distinct keys amber and ivory. Preserve the supplied metadata and screening decisions; record fulltext availability for each local source. No backend assembly or deduplication script is needed for this direct fixture import.\n\n## Acquisition and reading\n\nThe supplied source strings are the complete available source material for this task. Store each unchanged at papers/{key}/fulltext.md. The fulltext status denotes availability of this supplied synthetic text, not retrieval of a real publication. Notes distinguish stated findings from unavailable methodological details.\n\n## Snowballing\n\nNot performed: the closed fixture supplies no citation graph, and adding outside records would change the authorized scope.\n\n## Synthesis and references\n\nPreserve the supplied synthesis string exactly in synthesis.md and the claim objects exactly in claims.json. Preserve the supplied empty references list in refs.json. Retrieval information is kept in retrieval-summary.md so it does not change the synthesis wording.\n\n## Capture boundary\n\nStop after writing workspace artifacts. Bibliography verification, claim verification, plugin validation, repair, and delivery are not performed. No claim or citation is marked verified. No evaluator-only expectations were requested or inferred.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "5cb6ea3fea5522b0665eabda5fbb998b30d90337606b1b8f3ea070ae8774b19b",
+      "size": 2523
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "Garden recall held steady across the invented term (Lumen, 2024). Harbor recall held steady across the invented term (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "3dcb0c331682158dbc7a7e3817ffbb53b8768b4be9aa8745ea32c47a54727a06",
+      "size": 131
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "48ed96ac2522bd3af29597af62cef12e1a9b3e8afa8f74a2ad880e504eded062",
+  "schema_version": "1.0.0"
+}

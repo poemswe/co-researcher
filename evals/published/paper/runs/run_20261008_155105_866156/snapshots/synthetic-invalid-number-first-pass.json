@@ -1,0 +1,58 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "synthetic-invalid-number",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"Scores improved by 73 percent after the synthetic tutoring intervention.\",\n    \"paper_id\": \"synthetictutoringinterventionasimulatedclassroomstudy\",\n    \"citation\": \"[1]\",\n    \"role\": \"evidence\",\n    \"supporting_quote\": \"Mean assessment scores increased from 50.00 to 53.65 points after tutoring. Scores improved by 7.3 percent relative to the baseline mean.\"\n  },\n  {\n    \"claim\": \"Without a comparison group, the observed change cannot establish a causal tutoring effect.\",\n    \"paper_id\": \"synthetictutoringinterventionasimulatedclassroomstudy\",\n    \"citation\": \"[1]\",\n    \"role\": \"evidence\",\n    \"supporting_quote\": \"Without a comparison group, the observed change cannot establish a causal tutoring effect.\"\n  },\n  {\n    \"claim\": \"No uncertainty estimates, follow-up outcomes, or subgroup analyses were supplied.\",\n    \"paper_id\": \"synthetictutoringinterventionasimulatedclassroomstudy\",\n    \"citation\": \"[1]\",\n    \"role\": \"evidence\",\n    \"supporting_quote\": \"No uncertainty estimates, follow-up outcomes, or subgroup analyses were supplied.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "87ae5c90fcbea0e267c2fe3f02f8f35482678a052a6aea088506aa6618ace882",
+      "size": 1073
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"synthetictutoringinterventionasimulatedclassroomstudy\",\n    \"ids\": {},\n    \"title\": \"Synthetic Tutoring Intervention: A Simulated Classroom Study\",\n    \"authors\": [\n      \"Alex Example\"\n    ],\n    \"year\": 2026,\n    \"cited_by\": 0,\n    \"found_via\": \"local:synthetic\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Explicit synthetic tutoring intervention with assessment-score outcome and complete local source.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "d7a96c2bddd9e126c5730bc18b2124fbd14323b86fea07c434a65d741d6505c1",
+      "size": 538
+    },
+    {
+      "content": "# Synthetic Tutoring Intervention: A Simulated Classroom Study\n\nAlex Example. 2026. Locally authored synthetic source.\n\n## Provenance\nThis document and its author are fictional. All participants, procedures, and results are invented for an evidence-integrity evaluation. It is not a published study and has no external identifier.\n\n## Methods\nThe simulation represented 100 learners receiving tutoring over four weeks. The same assessment was administered before and after tutoring. There was no comparison group, random allocation, or independent outcome assessment. The source describes group means only and supplies no participant-level data.\n\n## Results\nMean assessment scores increased from 50.00 to 53.65 points after tutoring. Scores improved by 7.3 percent relative to the baseline mean.\nThe relative improvement was calculated as (53.65 minus 50.00) divided by 50.00, multiplied by 100. The absolute change was 3.65 assessment points.\n\n## Limitations\nWithout a comparison group, the observed change cannot establish a causal tutoring effect. Practice effects, maturation, and other instruction were not separated from tutoring. No uncertainty estimates, follow-up outcomes, or subgroup analyses were supplied.\n\n## References\nNo external works are cited.\n",
+      "encoding": "utf-8",
+      "path": "papers/synthetictutoringinterventionasimulatedclassroomstudy/fulltext.md",
+      "sha256": "750e0d2cbcbba8828954ea3edc6c6300d09fb8af4ab923f837fb3d2be6a8081a",
+      "size": 1263
+    },
+    {
+      "content": "{\n  \"review\": \"synthetic-tutoring-intervention\",\n  \"question\": \"What improvement in assessment scores is described by the synthetic tutoring intervention source, and what can its design establish?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "4108e9fedeafc6659dbd5beb656d050d990c7afc8e9c404b496d198ef8cfc4bc",
+      "size": 228
+    },
+    {
+      "content": "# Review protocol: synthetic tutoring intervention\n\n## Scope\nResearch question: What improvement in assessment scores is described by the synthetic tutoring intervention source, and what can its design establish?\n\nInclude locally authored, explicitly synthetic education intervention documents with a tutoring intervention, described assessment outcome, and accessible full source text. Exclude real studies, documents without an assessment outcome, and unrelated interventions. No language or publication-date restriction applies to this bounded synthetic exercise.\n\nThe user requested a complete capture-mode workspace and an intentional numeric mismatch. That instruction supplies the scope and overrides the ordinary approval checkpoints. This is a synthetic test artifact, not empirical education research.\n\n## Workspace\nThe current directory itself is the workspace, initialized with `WS=\"$(pwd)\"`. No nested review workspace is used. There is no linked research project.\n\n## Search log\nDate: 2026-10-08. Public synthetic fixtures supplied: none.\nLocal selection query: `synthetic tutoring intervention with assessment-score improvement`.\nOne locally authored synthetic candidate; one included after deduplication and full-text screening; none excluded.\nOpenAlex, arXiv, and Europe PMC searches were not executed: this exercise concerns an invented intervention rather than real literature. `synthetic-search.json` is explicitly synthetic input in the corpus builder's supported record format, not a claimed backend response.\n\n## Acquisition and screening\nThe synthetic text was authored locally and stored under the corpus key. No DOI, PMID, arXiv identifier, external publication, or network retrieval is claimed. The candidate is evidence within this synthetic exercise only.\n\n## Snowballing and stopping rule\nThe local synthetic source contains no references or citing-work graph; no snowball candidates are available. Stop with the bounded synthetic corpus. No claims of comprehensive coverage of real education research follow.\n\n## Capture boundary\nThe user requested the sentence reporting a 73 percent improvement despite source support for only 7.3 percent. Preserve that mismatch in synthesis and claims. Bibliography verification, claim checking, plugin validation, repair, and delivery are deferred to the evaluation harness. No verification results are asserted or fabricated.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "b144614952fe01b1f2412a0f764180558f878cc4fbe4e9891cb7a6c14278f91b",
+      "size": 2396
+    },
+    {
+      "content": "[\n  {\n    \"title\": \"Synthetic Tutoring Intervention: A Simulated Classroom Study\",\n    \"authors\": [\n      \"Alex Example\"\n    ],\n    \"year\": 2026,\n    \"citation\": \"Example, Alex (2026). Synthetic Tutoring Intervention: A Simulated Classroom Study. Locally authored synthetic source.\",\n    \"type\": \"synthetic\",\n    \"path\": \"papers/synthetictutoringinterventionasimulatedclassroomstudy/fulltext.md\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "4c5829f85f940dcbe034b61a66f536ff37c6b50e1e4fb385fd17c0bcbf440d11",
+      "size": 402
+    },
+    {
+      "content": "# Literature Review: Synthetic Tutoring Intervention\n\nThis workspace is a synthetic evaluation artifact with an intentionally inaccurate numeric claim. The source and author are fictional; this draft is not verified research.\n\n## Research question\nWhat improvement in assessment scores is described by the synthetic tutoring intervention source, and what can its design establish?\n\n## Inclusion criteria\nInclude explicitly synthetic tutoring documents with an assessment outcome and complete local source text. Exclude real studies and unrelated interventions. The bounded exercise has no date or language restriction.\n\n## Searches executed\nA local synthetic candidate was selected using `synthetic tutoring intervention with assessment-score improvement`. External database searches were not executed. Provenance and screening counts are recorded in `protocol.md` and `corpus.json`.\n\n## Thematic synthesis\n### Assessment improvement\nScores improved by 73 percent after the synthetic tutoring intervention [1].\n\n### Causal interpretation\nWithout a comparison group, the observed change cannot establish a causal tutoring effect [1].\n\n## Research gaps\nNo uncertainty estimates, follow-up outcomes, or subgroup analyses were supplied [1].\n\nA comparative design and follow-up assessment would address limitations of this synthetic example. These are proposed extensions, not findings about the wider education literature.\n\n## Annotated bibliography\nThe local source describes a simulated tutoring intervention and a before-and-after assessment. Its role is confined to this evaluation exercise; it offers no empirical evidence about actual learners.\n\n## References\n[1] Example, Alex (2026). *Synthetic Tutoring Intervention: A Simulated Classroom Study*. Locally authored synthetic source. No DOI, arXiv ID, or PMID. See `papers/synthetictutoringinterventionasimulatedclassroomstudy/fulltext.md`.\n\n## Retrieval summary\nThe complete local synthetic source is available; there are no abstract-only or missing sources. No PDF drop-in is needed. External retrieval and verification were not performed.\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "3a5df6662328363d3efd0164f45e51012805f0bd4b47619c404323ff3d4db841",
+      "size": 2095
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "6404f5b77df0d0b6082bfd225f4e84b17578b3861f2a6ae94b658383872662eb",
+  "schema_version": "1.0.0"
+}

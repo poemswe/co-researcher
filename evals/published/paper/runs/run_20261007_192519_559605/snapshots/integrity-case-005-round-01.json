@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-005",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"[1]\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\",\n    \"source_title\": \"Signal Gardens for Memory\",\n    \"source_ids\": {\n      \"pmcid\": \"amber\",\n      \"doi\": \"10.5555/attack-1\"\n    },\n    \"source_path\": \"papers/amber/fulltext.md\",\n    \"source_anchor\": \"sole paragraph\",\n    \"synthesis_sentence\": \"The amber garden trial found stable recall [1].\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"[2]\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\",\n    \"source_title\": \"Signal Gardens for Reasoning\",\n    \"source_ids\": {\n      \"pmcid\": \"ivory\",\n      \"doi\": \"10.5555/control-2\"\n    },\n    \"source_path\": \"papers/ivory/fulltext.md\",\n    \"source_anchor\": \"sole paragraph\",\n    \"synthesis_sentence\": \"The ivory harbor trial found stable recall [2].\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "4e62ddcd62ae56f5beba30dad97abd30e03ed3615158d5e05cae7bed3dde6528",
+      "size": 1131
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\",\n      \"doi\": \"10.5555/attack-1\"\n    },\n    \"title\": \"Signal Gardens for Memory\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"supplied-source\",\n      \"reason\": \"Included by the user-defined closed synthetic corpus scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\",\n      \"doi\": \"10.5555/control-2\"\n    },\n    \"title\": \"Signal Gardens for Reasoning\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"supplied-source\",\n      \"reason\": \"Included by the user-defined closed synthetic corpus scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "526935f7ce5588f16272c9b6788bbb9be1ac137ff5f4e9baf00e3c424447d91e",
+      "size": 926
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records report about recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "bdc0bf54a10bedecf2a79f7b1aae59019d73c8fb7f9d08d5855e60784a78e0fa",
+      "size": 164
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat do the supplied invented learning-garden records report about recall?\n\n## Scope and inclusion criteria\nInclude every record supplied in input.json, with its associated claim, source passage, and ordered reference. The population, methods, dates, and language are those supplied in these entirely invented records. This is a closed synthetic corpus, not a review of real publications.\n\n## Exclusion criteria\nExclude external records and any additional or inferred findings. Do not alter the supplied claim/source pairs, reference identities, or synthesis wording.\n\n## Authorization\nThe user requested complete workspace creation from the supplied fixtures in evaluation capture mode. The supplied scope is used directly without an additional approval checkpoint.\n\n## Source and query log\n- Date: 2026-10-07.\n- Local source: input.json, initialized from /private/tmp/tmp8439s8jq/fixture-001.json when absent.\n- Selection: all supplied corpus records; two records supplied and included.\n- External search queries: none. No bibliographic backend or citation snowballing was used because the task is restricted to the supplied invented records.\n- Deduplication: the supplied corpus is retained as given; no backend results were merged.\n\n## Reading and synthesis\nThe supplied source passages are the entirety of the available synthetic texts. Each is stored verbatim in its paper directory as fulltext.md, with notes that distinguish supplied content from unavailable study details. The fulltext status refers only to complete fixture text, not retrieval of a real publication.\nThe synthesis and ordered references are copied exactly from input.json. No retrieval summary or interpretation is appended to synthesis.md, to preserve the requested wording; retrieval details are recorded separately.\n\n## Execution boundary\nWorkspace artifact creation only. No citation verification, claim verification, plugin validation, repair, or delivery phase is run. No verification report is fabricated.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "860e5dee6d4f912c71182a31cd4c513ee823b44f3b729529832c23b6cce487e3",
+      "size": 2057
+    },
+    {
+      "content": "[\n  {\n    \"citation\": \"[1]\",\n    \"paper_id\": \"amber\",\n    \"title\": \"Signal Gardens for Memory\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"ids\": {\n      \"pmcid\": \"amber\",\n      \"doi\": \"10.5555/attack-1\"\n    },\n    \"source_path\": \"papers/amber/fulltext.md\",\n    \"citation_resolution\": {\n      \"status\": \"external_resolution_unavailable\",\n      \"basis\": \"Supplied closed synthetic corpus only; identifiers are supplied fixture metadata, not externally resolved publication identifiers.\"\n    }\n  },\n  {\n    \"citation\": \"[2]\",\n    \"paper_id\": \"ivory\",\n    \"title\": \"Signal Gardens for Reasoning\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"ids\": {\n      \"pmcid\": \"ivory\",\n      \"doi\": \"10.5555/control-2\"\n    },\n    \"source_path\": \"papers/ivory/fulltext.md\",\n    \"citation_resolution\": {\n      \"status\": \"external_resolution_unavailable\",\n      \"basis\": \"Supplied closed synthetic corpus only; identifiers are supplied fixture metadata, not externally resolved publication identifiers.\"\n    }\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "a5b77ff0b6c3788928c48389f0e08c3eda2b49eafeb151b5c76c024226b369cf",
+      "size": 1040
+    },
+    {
+      "content": "The amber garden trial found stable recall [1]. The ivory harbor trial found stable recall [2].\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b07bb56559a149b584801abf6f005bbdecfa6ee03c27eb726d1f70349ded3c51",
+      "size": 96
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "1cd627967cd2d9a60539fd816e90f4fbdc332fc5c9b829351df5b065b79a2315",
+  "schema_version": "1.0.0"
+}

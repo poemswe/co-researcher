@@ -1,0 +1,44 @@
+# Evidence for "Every Claim Traced"
+
+This directory holds the evidence behind the preprint that is not already in `evals/published/runs/`. The two release runs on 5802823 stay where the dashboard reads them.
+
+## Runs
+
+`runs/` holds the five earlier runs in Table 3, copied with `evals/publish_integrity_runs.py`. Each keeps its `result.json`, first-pass and repair snapshots, and repair rounds.
+
+| Run | Writer | Commit | Used for |
+|---|---|---|---|
+| `run_20261007_143121_203203` | Claude Opus | eca0b37 | Tables 3 and 5, Figures 4 and 5, §4.3 original scorecard (6/15) |
+| `run_20261007_192519_559605` | GPT Codex | eca0b37 | Tables 3 and 5, Figures 4 and 5, §4.3 original scorecard (4/15) |
+| `run_20261008_015639_166787` | Claude Opus | 21c3777 | Tables 3, 5 and 6, Figures 4 to 6, §5.3 |
+| `run_20261008_070048_889834` | GPT Codex | 21c3777 | Tables 3 and 5, Figures 4 to 6, §5.2 |
+| `run_20261008_155105_866156` | GPT Codex | 154c26f | Tables 3 and 5, Figures 4 and 6, §5.1 annotated-bibliography control |
+
+Some Codex snapshots contain temporary file paths that Codex wrote into its own syntheses. They are left as recorded.
+
+## Judge re-scores
+
+`rejudge/rejudge.jsonl` holds the 65 extra quality-judge scores behind Table 6: three re-scores of each first-pass and repaired synthesis for the 10 repaired cases on 21c3777, and five of the clean control. They were produced by `rejudge/rejudge.py` with the production judge and `claude:opus`. Each record keeps the snapshot label, repeat index, score and text length. Raw judge responses, resolved model strings and prompt hashes were not recorded.
+
+`python3 rejudge/table6.py` groups the scores by byte-identical synthesis and prints the Table 6 values: 15 texts, 4 or 8 judgments each, pooled standard deviation 9.6, median range 18.6 and maximum range 38.5.
+
+## Counterexamples
+
+`counterexamples/base` is the repaired case 001 workspace. The four other folders each change it in one way, and each `-report.json` is the gate's output at cb54321, the version §3 describes. All four return `valid` with integrity 100 and no findings. Each workspace has an empty bibliography, so the citation-resolution check is not applicable.
+
+| Folder | Edit | Gap (§3, §7) |
+|---|---|---|
+| `polarity-reversal` | claim and sentence say "found a change"; the quote says "found no change" | claim compared with its quote only on numbers |
+| `uncited-qualitative` | adds "This treatment conclusively cures dementia." | uncited sentences checked only for numbers |
+| `background-role` | gives a cited qualitative finding a background role | role check applies only to numeric sentences |
+| `number-swap` | source, quote and claim say 40 adults and 60 children; the sentence says 60 adults and 40 children | numbers compared as multisets |
+
+Rerun one with:
+
+```
+python skills/literature-review/scripts/validate_review.py --workspace evals/published/paper/counterexamples/polarity-reversal
+```
+
+## Release results
+
+§5.1, Table 4, the case 009 repair in §5.2 and the Opus clean control in §5.1 come from the two release runs in `evals/published/runs/`.

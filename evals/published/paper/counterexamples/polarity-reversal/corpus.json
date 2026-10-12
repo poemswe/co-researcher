@@ -1,0 +1,40 @@
+[
+  {
+    "key": "amber",
+    "ids": {
+      "pmcid": "amber"
+    },
+    "title": "Amber Garden Recall",
+    "authors": [
+      "Mira Lumen"
+    ],
+    "year": 2024,
+    "role": "evidence",
+    "found_via": "invented-index",
+    "screening": {
+      "status": "included",
+      "stage": "title_abstract",
+      "reason": null
+    },
+    "fulltext": "fulltext"
+  },
+  {
+    "key": "ivory",
+    "ids": {
+      "pmcid": "ivory"
+    },
+    "title": "Ivory Harbor Recall",
+    "authors": [
+      "Niko Vale"
+    ],
+    "year": 2024,
+    "role": "evidence",
+    "found_via": "invented-index",
+    "screening": {
+      "status": "included",
+      "stage": "title_abstract",
+      "reason": null
+    },
+    "fulltext": "fulltext"
+  }
+]

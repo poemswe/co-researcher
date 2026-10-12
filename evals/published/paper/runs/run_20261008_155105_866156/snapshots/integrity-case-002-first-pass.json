@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-002",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found change in recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial found change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found a change in recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial found a change in recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "4ce54f90ceb1bc9d231f672d9c46738bff2d71fdec532fa55dfa54cc4a647d63",
+      "size": 568
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined closed synthetic corpus scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included by the user-defined closed synthetic corpus scope.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "34c4456f019d62268e7538ea36c904ab389e6fdc8f229c38d678ea4bd2946aef",
+      "size": 830
+    },
+    {
+      "content": "The amber garden trial found no change in recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "bdb64f6a0e5f28008ece2f2121391d67afc42f5df4cd904b53095e574810ce78",
+      "size": 129
+    },
+    {
+      "content": "The ivory harbor trial found a change in recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "2c660ebf60adf61ca6304077bc845219827d3f9aa5b335421edb93e78e25460d",
+      "size": 128
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records report about change in recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "769a753b05f8ef25fe198aa96dd8e56e00bd31ba0edb631f699a50b6735b0ea0",
+      "size": 174
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat do the supplied invented learning-garden records report about change in recall?\n\n## Scope and criteria\nInclude every supplied synthetic record in input.json, retaining its claim/source pairing and exact synthesis wording. The scope is the supplied invented learner trials; there are no additional date or language restrictions. Exclude external literature and records not supplied in the input. This is a closed synthetic corpus, not a review of real-world research.\n\nThe user authorized artifact creation in evaluation capture mode. Preserve the supplied content without correcting discrepancies; do not run validation, repair, or delivery. No additional scope approval is required for this explicitly specified task.\n\n## Acquisition and query log\n2026-10-08: Imported the public synthetic fixture into input.json. Two supplied records were included. No external searches or citation resolution were performed; no search hit counts are asserted. Provenance label supplied for both records: invented-index.\n\n## Pool and screening\nThe supplied corpus is retained directly rather than reconstructed from search backend output. Both records are included as evidence. No records were excluded or merged. The supplied source strings are stored in papers/{key}/fulltext.md; this filename denotes the available fixture text, not an independently acquired full publication.\n\n## Reading and synthesis\nNotes distinguish supplied source wording from supplied claim wording. The synthesis and claims are copied exactly from input.json. Source excerpts supply no complete study methods or sample size. No external snowballing applies to this closed fixture corpus.\n\n## Verification status\nBibliographic and claim verification were not run. refs.json preserves the supplied empty reference list. No verification reports or integrity run ledger were generated. Validation, repair, and delivery are reserved for the evaluation harness.\n\n## Retrieval summary\nAll supplied source strings are available locally. No external full papers or PDFs were requested or retrieved; there are no missing fixture texts.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "c73e40ca17c5f35a46f38a9882e8cad9a0154eb0c6e5031caaea956054efc978",
+      "size": 2162
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found change in recall (Lumen, 2024). The ivory harbor trial found a change in recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "0f5d1d5572bb51f7358ca599b1e0ccffd702ef59aefd362b5168d39c8c04c093",
+      "size": 123
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "79b855aec621261d0be54ca6352c08f9c300a27743e6983bdb47a14de71294bc",
+  "schema_version": "1.0.0"
+}

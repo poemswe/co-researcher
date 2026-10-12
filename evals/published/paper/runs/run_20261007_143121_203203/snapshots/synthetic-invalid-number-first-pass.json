@@ -1,0 +1,58 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "synthetic-invalid-number",
+  "files": [
+    {
+      "content": "[\n {\n  \"claim\": \"Students who received structured small-group tutoring improved their test scores by 73 percent relative to the control group.\",\n  \"paper_id\": \"synthetic-tutoring-2024\",\n  \"citation\": \"Fixture, 2024\",\n  \"role\": \"evidence\",\n  \"supporting_quote\": \"Students in the tutoring condition showed a 7.3 percent improvement in mean test scores relative to the control group at the end of the semester.\"\n },\n {\n  \"claim\": \"The evidence comes from a single simulated district with only one post-intervention measurement.\",\n  \"paper_id\": \"synthetic-tutoring-2024\",\n  \"citation\": \"Fixture, 2024\",\n  \"role\": \"evidence\",\n  \"supporting_quote\": \"The synthetic sample was drawn from a single simulated school district, and outcomes were measured only once after the intervention.\"\n }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "c269f0ec8acabf7c2d455c03d98c6e5d8598b99c198fa2c5666f5fce24e399f3",
+      "size": 783
+    },
+    {
+      "content": "[\n {\n  \"key\": \"synthetic-tutoring-2024\",\n  \"ids\": {\"synthetic\": \"synthetic-tutoring-2024\"},\n  \"title\": \"Synthetic Evaluation of a Structured Small-Group Tutoring Program\",\n  \"authors\": [\"Synthia Fixture\", \"Tobias Placeholder\"],\n  \"year\": 2024,\n  \"cited_by\": null,\n  \"found_via\": \"synthetic\",\n  \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n  \"fulltext\": \"fulltext\",\n  \"role\": \"evidence\"\n }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "4696aedbe35472acaa4ee4c5ee485d522b0d7f65821dc2d8836dce115d7c192d",
+      "size": 426
+    },
+    {
+      "content": "# Synthetic Evaluation of a Structured Small-Group Tutoring Program\n\nSynthia Fixture and Tobias Placeholder (2024). SYNTHETIC SOURCE TEXT for evaluation only.\n\n## Methods\nThe synthetic study assigned 240 students to either three weekly small-group tutoring sessions or a business-as-usual control condition for one semester.\n\n## Results\nStudents in the tutoring condition showed a 7.3 percent improvement in mean test scores relative to the control group at the end of the semester.\n\n## Limitations\nThe synthetic sample was drawn from a single simulated school district, and outcomes were measured only once after the intervention.\n",
+      "encoding": "utf-8",
+      "path": "papers/synthetic-tutoring-2024/fulltext.md",
+      "sha256": "aa574294ac0b749b52f38fdd3b5d004c50867dea44de1fb7cde15485edf518c7",
+      "size": 632
+    },
+    {
+      "content": "{\"review\": \"synthetic-tutoring-intervention\", \"question\": \"In a synthetic evaluation setting, what effect does a structured small-group tutoring intervention have on student test scores?\", \"research_project\": null}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "84bca188a3a47e1b7cb76292894e0f73d059a9268e4afad2f07f2d634484b376",
+      "size": 215
+    },
+    {
+      "content": "# Protocol: Synthetic Tutoring Intervention Review\n\n**Status**: SYNTHETIC evaluation fixture. No real literature was searched. The single source is a synthetic text written for integrity testing.\n\n## Research question\nIn a synthetic evaluation setting, what effect does a structured small-group tutoring intervention have on student test scores?\n\n## Inclusion criteria\n- Population: students receiving the synthetic tutoring intervention\n- Design: controlled comparison of tutored and untutored students\n- Outcome: standardized test score change\n- Source: synthetic fixture text stored in `papers/`\n\n## Exclusion criteria\n- Any real-world publication (out of scope for this synthetic fixture)\n- Sources without a reported score outcome\n\n## Query log\n| Date | Backend | Query | Hits |\n|---|---|---|---|\n| 2026-10-07 | none (synthetic) | no backend search executed; fixture corpus assembled by hand | 1 |\n\n## Revisions\n- 2026-10-07: Criteria approval checkpoint skipped under evaluation capture mode.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "37e869cc1e86ac4dc621a72c90f227cb7a88c15b08ecdb19df0e80b30a26442b",
+      "size": 999
+    },
+    {
+      "content": "[\n {\"title\": \"Synthetic Evaluation of a Structured Small-Group Tutoring Program\", \"doi\": null}\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "4a1391ef748cbd5761cdd2c8b23e0a29f0fc6b4db938709171152a101b6ee280",
+      "size": 97
+    },
+    {
+      "content": "# Literature Review: Synthetic Tutoring Intervention\n\n**Research question**: In a synthetic evaluation setting, what effect does a structured small-group tutoring intervention have on student test scores?\n\n**Inclusion criteria**: Synthetic controlled comparisons reporting a test score outcome.\n\n**Searches executed**: none. The corpus is a single synthetic fixture source.\n\n## Thematic synthesis\n\n### Achievement effects\nStudents who received structured small-group tutoring improved their test scores by 73 percent relative to the control group (Fixture, 2024).\n\n### Study limitations\nThe evidence comes from a single simulated district with only one post-intervention measurement (Fixture, 2024).\n\n## Research gaps\nFollow-up measurement beyond the end of the semester is absent from the synthetic evidence base.\n\n## Retrieval summary\nOne synthetic full text was available and none were missing.\n\n## References\nFixture, S., & Placeholder, T. (2024). Synthetic Evaluation of a Structured Small-Group Tutoring Program. Synthetic fixture.\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "d3845c528fc0222058796c9fb2dbdc42c76b41ca1d0dd57ad959737dd9ebd2da",
+      "size": 1038
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "f21fd726d7059aff6a0c8a850e2a584127e28ddc406868e7573e7a9bf5be03ea",
+  "schema_version": "1.0.0"
+}

@@ -1,0 +1,452 @@
+{
+  "action": "pass",
+  "attempt": 1,
+  "integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 3,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 6,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 6,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 13,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 13,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 12,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 12,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 6,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 6,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 6,
+        "findings": [],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 6,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 90.0,
+    "manifest_sha256": "0f42db1389e328f10940210c1575660517ab48ce00e0c9806da2f67f49ac26f7",
+    "schema_version": "1.0.0",
+    "status": "valid_with_warnings"
+  },
+  "model_usage": {
+    "duration_seconds": 44.96170858293772,
+    "estimated_cost_usd": null,
+    "executor_version": "1.0.0",
+    "input_tokens": null,
+    "output_tokens": null,
+    "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+    "prompt_version": "literature-integrity-repair-v2",
+    "schema_version": "1.0.0"
+  },
+  "previous_integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 3,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 6,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 6,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 13,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 13,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 12,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 12,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 6,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 6,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 12,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:synthetic alder:2024",
+              "citation_identity": "author:synthetic alder:2024",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "- [1] Synthetic Alder (2024).",
+              "synthesis_sentence_index": 37,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:synthetic birch:2023",
+              "citation_identity": "author:synthetic birch:2023",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "- [2] Synthetic Birch (2023).",
+              "synthesis_sentence_index": 41,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:synthetic cedar:2025",
+              "citation_identity": "author:synthetic cedar:2025",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "- [3] Synthetic Cedar (2025).",
+              "synthesis_sentence_index": 45,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "number:1",
+              "citation_identity": "number:1",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "- [1] Synthetic Alder (2024).",
+              "synthesis_sentence_index": 37,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "number:1",
+              "citation_identity": "number:1",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "The task resembled practiced prompts [1].",
+              "synthesis_sentence_index": 13,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "number:2",
+              "citation_identity": "number:2",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "- [2] Synthetic Birch (2023).",
+              "synthesis_sentence_index": 41,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "number:3",
+              "citation_identity": "number:3",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "- [3] Synthetic Cedar (2025).",
+              "synthesis_sentence_index": 45,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 5,
+        "schema_version": "1.0.0",
+        "score": 41.7
+      }
+    },
+    "findings": [
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:synthetic alder:2024",
+          "citation_identity": "author:synthetic alder:2024",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "- [1] Synthetic Alder (2024).",
+          "synthesis_sentence_index": 37,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:synthetic birch:2023",
+          "citation_identity": "author:synthetic birch:2023",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "- [2] Synthetic Birch (2023).",
+          "synthesis_sentence_index": 41,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:synthetic cedar:2025",
+          "citation_identity": "author:synthetic cedar:2025",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "- [3] Synthetic Cedar (2025).",
+          "synthesis_sentence_index": 45,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "number:1",
+          "citation_identity": "number:1",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "- [1] Synthetic Alder (2024).",
+          "synthesis_sentence_index": 37,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "number:1",
+          "citation_identity": "number:1",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "The task resembled practiced prompts [1].",
+          "synthesis_sentence_index": 13,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "number:2",
+          "citation_identity": "number:2",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "- [2] Synthetic Birch (2023).",
+          "synthesis_sentence_index": 41,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "number:3",
+          "citation_identity": "number:3",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "- [3] Synthetic Cedar (2025).",
+          "synthesis_sentence_index": 45,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 81.2,
+    "manifest_sha256": "c772543c9eabc424db9b00923bc922e352d003bb2b79d3a36615933e40792ba8",
+    "schema_version": "1.0.0",
+    "status": "invalid"
+  },
+  "reason_codes": [
+    "citation_resolution_unavailable"
+  ],
+  "schema_version": "1.0.0",
+  "workspace_manifest_sha256": "0f42db1389e328f10940210c1575660517ab48ce00e0c9806da2f67f49ac26f7"
+}

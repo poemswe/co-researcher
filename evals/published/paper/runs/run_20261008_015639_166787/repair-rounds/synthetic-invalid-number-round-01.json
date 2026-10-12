@@ -1,0 +1,377 @@
+{
+  "action": "repair",
+  "attempt": 1,
+  "integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 1,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 8,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 8,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 1,
+        "findings": [],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 1,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 2,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": null,
+              "citation_identity": null,
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "(2025).",
+              "synthesis_sentence_index": 8,
+              "validator_reason": "coverage_number_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_number_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": null,
+          "citation_identity": null,
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "(2025).",
+          "synthesis_sentence_index": 8,
+          "validator_reason": "coverage_number_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_number_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 75.0,
+    "manifest_sha256": "6b4257abe529b4d6b99976e4bb4e8737bac161b5f41701c02c3a6ecb6e57b096",
+    "schema_version": "1.0.0",
+    "status": "invalid"
+  },
+  "model_usage": {
+    "duration_seconds": 23.399675874970853,
+    "estimated_cost_usd": null,
+    "executor_version": "1.0.0",
+    "input_tokens": null,
+    "output_tokens": null,
+    "prompt_sha256": "a8bdc3a758362a7aa583e29bec0c184e515b3636bf464a87fdeaf92b5162d922",
+    "prompt_version": "literature-integrity-repair-v2",
+    "schema_version": "1.0.0"
+  },
+  "previous_integrity": {
+    "dimensions": {
+      "bibliography_verification": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 1,
+        "findings": [
+          {
+            "artifact": "refs.json",
+            "context": {
+              "response_status": "unavailable"
+            },
+            "message": "external citation resolution was not supplied",
+            "reason_code": "citation_resolution_unavailable",
+            "schema_version": "1.0.0",
+            "severity": "warning"
+          }
+        ],
+        "name": "bibliography_verification",
+        "nominal_weight": 10.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "citation_binding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 2,
+        "findings": [],
+        "name": "citation_binding",
+        "nominal_weight": 20.0,
+        "passed_units": 2,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "prisma_artifact_completeness": {
+        "applicable": true,
+        "effective_weight": 10.0,
+        "evaluated_units": 8,
+        "findings": [],
+        "name": "prisma_artifact_completeness",
+        "nominal_weight": 10.0,
+        "passed_units": 8,
+        "schema_version": "1.0.0",
+        "score": 100.0
+      },
+      "quantitative_grounding": {
+        "applicable": true,
+        "effective_weight": 20.0,
+        "evaluated_units": 1,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Synthetic, 2025",
+              "claim_text": "In the synthetic trial, mean post-test scores in the tutoring group improved by 73 percent relative to the comparison group",
+              "numbers_missing": [
+                "73"
+              ],
+              "paper_id": "synthetic-tutor-trial-2025",
+              "result_index": 0,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "quantitative_grounding",
+        "nominal_weight": 20.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      },
+      "quote_authenticity": {
+        "applicable": true,
+        "effective_weight": 25.0,
+        "evaluated_units": 2,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "Synthetic, 2025",
+              "claim_text": "In the synthetic trial, mean post-test scores in the tutoring group improved by 73 percent relative to the comparison group",
+              "numbers_missing": [
+                "73"
+              ],
+              "paper_id": "synthetic-tutor-trial-2025",
+              "result_index": 0,
+              "source_scope": "fulltext",
+              "status": "needs_review",
+              "validator_reason": null
+            },
+            "message": "claim number is absent from its supporting quote",
+            "reason_code": "claim_needs_review",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "quote_authenticity",
+        "nominal_weight": 25.0,
+        "passed_units": 1,
+        "schema_version": "1.0.0",
+        "score": 50.0
+      },
+      "synthesis_coverage": {
+        "applicable": true,
+        "effective_weight": 15.0,
+        "evaluated_units": 2,
+        "findings": [
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": "author:synthetic:2025",
+              "citation_identity": "author:synthetic:2025",
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "In the synthetic trial, mean post-test scores in the tutoring group improved by 73 percent relative to the comparison group (Synthetic, 2025).",
+              "synthesis_sentence_index": 4,
+              "validator_reason": "coverage_identity_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_claim_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          },
+          {
+            "artifact": "claims.json",
+            "context": {
+              "citation": null,
+              "citation_identity": null,
+              "paper_id": null,
+              "source_scope": null,
+              "status": "uncovered_claim",
+              "synthesis_sentence": "(2025).",
+              "synthesis_sentence_index": 8,
+              "validator_reason": "coverage_number_missing"
+            },
+            "message": "synthesis statement lacks a complete verified claim trace",
+            "reason_code": "coverage_number_missing",
+            "schema_version": "1.0.0",
+            "severity": "critical"
+          }
+        ],
+        "name": "synthesis_coverage",
+        "nominal_weight": 15.0,
+        "passed_units": 0,
+        "schema_version": "1.0.0",
+        "score": 0.0
+      }
+    },
+    "findings": [
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "Synthetic, 2025",
+          "claim_text": "In the synthetic trial, mean post-test scores in the tutoring group improved by 73 percent relative to the comparison group",
+          "numbers_missing": [
+            "73"
+          ],
+          "paper_id": "synthetic-tutor-trial-2025",
+          "result_index": 0,
+          "source_scope": "fulltext",
+          "status": "needs_review",
+          "validator_reason": null
+        },
+        "message": "claim number is absent from its supporting quote",
+        "reason_code": "claim_needs_review",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": "author:synthetic:2025",
+          "citation_identity": "author:synthetic:2025",
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "In the synthetic trial, mean post-test scores in the tutoring group improved by 73 percent relative to the comparison group (Synthetic, 2025).",
+          "synthesis_sentence_index": 4,
+          "validator_reason": "coverage_identity_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_claim_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "claims.json",
+        "context": {
+          "citation": null,
+          "citation_identity": null,
+          "paper_id": null,
+          "source_scope": null,
+          "status": "uncovered_claim",
+          "synthesis_sentence": "(2025).",
+          "synthesis_sentence_index": 8,
+          "validator_reason": "coverage_number_missing"
+        },
+        "message": "synthesis statement lacks a complete verified claim trace",
+        "reason_code": "coverage_number_missing",
+        "schema_version": "1.0.0",
+        "severity": "critical"
+      },
+      {
+        "artifact": "refs.json",
+        "context": {
+          "response_status": "unavailable"
+        },
+        "message": "external citation resolution was not supplied",
+        "reason_code": "citation_resolution_unavailable",
+        "schema_version": "1.0.0",
+        "severity": "warning"
+      }
+    ],
+    "integrity_score": 42.5,
+    "manifest_sha256": "416093822c985834697d448a5ea8f677d15ae38afa00e2b2c0a5038652c32385",
+    "schema_version": "1.0.0",
+    "status": "invalid"
+  },
+  "reason_codes": [
+    "coverage_number_missing",
+    "citation_resolution_unavailable"
+  ],
+  "schema_version": "1.0.0",
+  "workspace_manifest_sha256": "6b4257abe529b4d6b99976e4bb4e8737bac161b5f41701c02c3a6ecb6e57b096"
+}

@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-007",
+  "files": [
+    {
+      "content": "[\n  {\"claim\": \"The amber garden trial reported stronger recall.\", \"paper_id\": \"amber\", \"citation\": \"Lumen, 2024\", \"supporting_quote\": \"The amber garden trial reported stronger recall after four guided sessions among learners from purely invented campuses.\"},\n  {\"claim\": \"The ivory harbor trial reported 64% stronger recall.\", \"paper_id\": \"ivory\", \"citation\": \"Vale, 2024\", \"supporting_quote\": \"The ivory harbor trial reported 64% stronger recall after four guided sessions among learners from invented campuses.\"}\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "1fa899b11f094c4eb6523f41b96f69b0b4b7b976c0f4c6c838e0123f68dee82b",
+      "size": 517
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Niko Vale\"],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "aac71202e9a6c5dcabc3f9c7a3c06c22eabcc2428bfb66f4b7595b90fc5fb3df",
+      "size": 632
+    },
+    {
+      "content": "The amber garden trial reported stronger recall after four guided sessions among learners from purely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "e7b8c8dbca7e504e4d5bc471717b76e1a167fcbe9b3b97f03eb9b17090730a05",
+      "size": 121
+    },
+    {
+      "content": "The ivory harbor trial reported 64% stronger recall after four guided sessions among learners from invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "31d6d4ab82ff4236eda195ee250c89516bcb1c3235b47d5453f9b66e9f80ebfd",
+      "size": 118
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-kbt24dzx\",\n  \"question\": \"What do invented learning-garden trials report about recall after guided sessions?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "c58f95890c4d6e3a546e807451e68750b4b1ab3d2faf86afae2ca87083806044",
+      "size": 170
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nWhat do invented learning-garden trials report about recall after guided sessions?\n\n## Inclusion criteria\n- Invented learning-garden trial records supplied in the public synthetic fixture\n- Reports a recall outcome after guided sessions\n\n## Exclusion criteria\n- Records not present in the supplied fixture\n\n## Query log\n- 2026-10-07: supplied synthetic fixture fixture-001.json (invented-index); no live backend searches run. Hits: 2.\n\n## Screening\n- amber (Lumen, 2024): included, evidence\n- ivory (Vale, 2024): included, evidence\n\n## Notes\n- Claims, sources, and synthesis wording are copied verbatim from the fixture for deterministic integrity evaluation.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "a4cc4c7853fdb0e318b5832019ccdc0e5f208341925afeee0649067b64e4316a",
+      "size": 720
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial reported stronger recall (Lumen, 2024). The ivory harbor trial reported 64% stronger recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "61ab7547e9ece7a7478c622a28648fde53fb4b4a87f42823ef22012befe06bc2",
+      "size": 129
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "22c4918ab8b397064aa2eec7a005d2ffd8e9557d9655cb38ebdf1cde2a57d968",
+  "schema_version": "1.0.0"
+}

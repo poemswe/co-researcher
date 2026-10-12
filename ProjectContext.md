@@ -8,7 +8,7 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 Published 2.7.0 runs: integrity on `5802823` (before the multi-quote skill fix `2329249`), Opus `claude-opus-5-5` and Codex `gpt-6-astra` (low effort), both 15/16, missing only the known gap. Broad: Opus 32/32, average 84.8. Codex broad `codex:gpt-6-astra low`: 32/32, average 89.7, added by #37. Post-release on `main`: #36 (`cb54321`) stops numbered list markers being read as uncited numbers.
 
-Write-ups (private, not shared): the pilot protocol is a Claude Doc (`b84e270a-cf38-4882-a568-659a5bb799f1`); every decision is made (units, domains, cases per paper as the affine plane of order 3, models and runs, uncertainty, agreement bar, NIST beacon at a fixed time T, OSF registry), with Codex's review folded in. The freeze command, paper selection and reviewer handoff are a separate feature after 2.7.0. The workshop paper "Every Claim Traced" (https://claude.ai/artifact/FQUH5LQGXszNXnHhPhHDg1) has the 2.7.0 runs and the list-marker fix as of version 9 (2026-10-11) and needs the user's review before arXiv, then a `/paper/` page on the site.
+Write-ups (private, not shared): the pilot protocol is a Claude Doc (`b84e270a-cf38-4882-a568-659a5bb799f1`); every decision is made (units, domains, cases per paper as the affine plane of order 3, models and runs, uncertainty, agreement bar, NIST beacon at a fixed time T, OSF registry), with Codex's review folded in. The freeze command, paper selection and reviewer handoff are a separate feature after 2.7.0. The workshop paper "Every Claim Traced" (https://claude.ai/artifact/FQUH5LQGXszNXnHhPhHDg1) is at version 11 (2026-10-12) after two Codex reviews, which narrowed its claims to what the gate checks. Its evidence package is in `evals/published/paper/` (earlier runs, judge re-scores with `table6.py`, §7 counterexamples). Next: the user's read-through, then LaTeX with static figures for arXiv, then a `/paper/` page on the site.
 
 PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock directory left by a killed process hangs every later call. It is planned for the next minor or major release.
 
@@ -16,6 +16,7 @@ Next open item is the Semantic Scholar backend (see Open Threads).
 
 ## Open Threads
 
+- **Gate gaps for 2.7.1.** Codex's paper review found, and we reproduced, five things the gate passes as valid/100: a claim that reverses its quote (claim–quote compared on numbers only), an uncited sentence with no number, a background role on a qualitative finding, swapped numbers (multiset comparison), and duplicate author–year citations (checked against the declared record only). A missing citation report is only a warning, and an empty bibliography raises nothing. Claim–quote polarity is the first fix planned.
 - **Semantic Scholar backend** (backlog, new feature, not started) — feedback from a live-run session flagged this as a gap; no scope/design decided yet.
 - Decision pending on whether to merge `literature-review` and `systematic-review` into one skill with a rigor parameter. Currently kept separate (PRISMA distinction is meaningful).
 - **No multi-reviewer screening.** Covidence and Rayyan support two independent screeners with conflict adjudication, which real systematic reviews require. We have nothing there. Biggest honest capability gap vs incumbents.
@@ -38,6 +39,7 @@ Next open item is the Semantic Scholar backend (see Open Threads).
 
 ## Pitfalls
 
+- A `&&` chain does not stop on pytest failures reported in output you don't read. Run the tests, check the counts, then commit in a separate step. Locally, run tests with `PYTHONNOUSERSITE=1 uv run --no-project --with pytest --with pymupdf4llm --with python-dotenv python -m pytest -q tests`; plain `uv run` picks up an x86_64 pymupdf from user site-packages.
 - Never squash or rebase-merge a release branch into `main`. Both rewrite commit IDs and break the claim-verifier benchmark pin `TARGET_COMMIT`; use a merge commit.
 - `http_client.py` and `jats.py` are plain sibling modules in `scripts/` (no package/build). `uv run script.py` puts the script dir on `sys.path`, so `import http_client` resolves; tests load scripts by path and must `sys.path.insert(0, <scripts dir>)` first. Editing them is live — no `--reinstall` needed.
 - OpenAlex `--search` queries cost 10x more than `--filter`. Prefer `--filter` with resolved IDs over name-based `--search` when possible.

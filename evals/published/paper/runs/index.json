@@ -1,0 +1,70 @@
+{
+  "runs": [
+    {
+      "capability": "literature-review-integrity",
+      "case_count": 15,
+      "evaluation_kind": "quality_and_integrity",
+      "evaluation_label": "Paired quality and integrity evaluation",
+      "model": "claude:opus",
+      "report_schema_version": "1.2.0",
+      "result_file": "run_20261007_143121_203203/result.json",
+      "result_sha256": "555bc75cabf63abac99eafb7650669d4e639079df246a7cbf1a9ed1b3dfaea0a",
+      "run_id": "run_20261007_143121_203203",
+      "summary_sha256": "a99eb82d3e9d2ed8732219fbfbde25c99e7066a0057dbe0b3be87274c576e0ba",
+      "timestamp": "2026-10-07T14:31:21.203614Z"
+    },
+    {
+      "capability": "literature-review-integrity",
+      "case_count": 15,
+      "evaluation_kind": "quality_and_integrity",
+      "evaluation_label": "Paired quality and integrity evaluation",
+      "model": "codex",
+      "report_schema_version": "1.2.0",
+      "result_file": "run_20261007_192519_559605/result.json",
+      "result_sha256": "fdd5a283ee1b882c6ee993235bc268e94c4b02fdb7bb331b51faa1ddfda347e7",
+      "run_id": "run_20261007_192519_559605",
+      "summary_sha256": "048f9faa792299158df5d79d03b1286c4c0d526b8e18a139e94fc0206637703e",
+      "timestamp": "2026-10-07T19:25:19.559878Z"
+    },
+    {
+      "capability": "literature-review-integrity",
+      "case_count": 15,
+      "evaluation_kind": "quality_and_integrity",
+      "evaluation_label": "Paired quality and integrity evaluation",
+      "model": "claude:opus",
+      "report_schema_version": "1.2.0",
+      "result_file": "run_20261008_015639_166787/result.json",
+      "result_sha256": "0d825f5194e1c2a3d2f0760777dbe3746296523a256d85295b9d4e63e033d02c",
+      "run_id": "run_20261008_015639_166787",
+      "summary_sha256": "2bcb4bebf763f56f6a7a3ac387adc540427168ca99d2445e602fa6e48299217b",
+      "timestamp": "2026-10-08T01:56:39.167306Z"
+    },
+    {
+      "capability": "literature-review-integrity",
+      "case_count": 15,
+      "evaluation_kind": "quality_and_integrity",
+      "evaluation_label": "Paired quality and integrity evaluation",
+      "model": "codex",
+      "report_schema_version": "1.2.0",
+      "result_file": "run_20261008_070048_889834/result.json",
+      "result_sha256": "b7a15fbcd3b8b3b47d71d29d9a87c1785951ab658f1b8390791af8b6e3795e47",
+      "run_id": "run_20261008_070048_889834",
+      "summary_sha256": "84f68c97342e214dcb03d8a08b55f76b97b7cbf9b3c2bb8cfb6e1074f6159cac",
+      "timestamp": "2026-10-08T07:00:48.890120Z"
+    },
+    {
+      "capability": "literature-review-integrity",
+      "case_count": 15,
+      "evaluation_kind": "quality_and_integrity",
+      "evaluation_label": "Paired quality and integrity evaluation",
+      "model": "codex",
+      "report_schema_version": "1.2.0",
+      "result_file": "run_20261008_155105_866156/result.json",
+      "result_sha256": "41cb1a383c46818a93848f16f8294b96837007d9782d38409830e95043b0af85",
+      "run_id": "run_20261008_155105_866156",
+      "summary_sha256": "78d9a178729eaa0d4f5815abd81d70e8b17f10932f738e7e959341de44b5d56a",
+      "timestamp": "2026-10-08T15:51:05.866498Z"
+    }
+  ],
+  "schema_version": "1.0.0"
+}

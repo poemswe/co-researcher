@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-009",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden note described 42% of sessions.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden note described 42% of sessions as context for an entirely invented program review.\",\n    \"role\": \"background\"\n  },\n  {\n    \"claim\": \"The ivory harbor note described few of sessions.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor note described few of sessions as context for an entirely invented program review.\",\n    \"role\": \"background\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "04c43f5974a40ce1969c2cd423f197ec4e60aaa01d832ac077da15334769c664",
+      "size": 566
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Context\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"background\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Context\",\n    \"authors\": [\"Niko Vale\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"background\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "a332d603948e06ffcdcb87b9805b39169eb9bc05a5a5f2a14e5c16dbe2bee656",
+      "size": 682
+    },
+    {
+      "content": "The amber garden note described 42% of sessions as context for an entirely invented program review.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "8bbdd734dbd7fb3fcdcf60bb1de4ad70f2c4d2a2c4dfe3828aef7c1c6d39dda2",
+      "size": 100
+    },
+    {
+      "content": "The ivory harbor note described few of sessions as context for an entirely invented program review.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "fbeba546709e9e09aafbd67dd85883994475c8230e35d0e3afa63224c19b4d6a",
+      "size": 100
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-8n0k0mgp\",\n  \"question\": \"What do the invented learning-garden context notes report about program sessions?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "e873e27e446055f04a94df453f4a1d7db3e394e14f78da9795b2e70690bf671a",
+      "size": 169
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nWhat do the invented learning-garden context notes report about program sessions?\n\n## Inclusion criteria\n- Records supplied in the invented fixture (fixture-001.json) describing learning-garden or harbor program context notes.\n- Any year, English.\n\n## Exclusion criteria\n- Any record not present in the supplied fixture.\n\n## Query log\n| Date | Backend | Query | Hits |\n|---|---|---|---|\n| 2026-10-07 | invented-index (supplied fixture) | all records in fixture-001.json | 2 |\n\nNo live backends were queried. All records are entirely invented and carry no DOI, arXiv ID, or PMID.\n\n## Screening\nBoth records included at title/abstract stage. Full text supplied for each.\n\n## Retrieval summary\n2 full-text / 0 abstract-only. No papers missing.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "f5badfdd8a4f49d33242bdb56cba3425be248982015cffb4ae8bd795d3b93d83",
+      "size": 801
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden note described 42% of sessions (Lumen, 2024). The ivory harbor note described few of sessions (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b68a4e2aae7a502a0238a77992bb4cd6d1ab4ac809ff7640eeba1dca4ab5fbaf",
+      "size": 125
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "7a1d48c81a5f1a471500d61c7569a231faf358d45a42ef284f8aadac30ade902",
+  "schema_version": "1.0.0"
+}

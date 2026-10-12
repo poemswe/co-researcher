@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-003",
+  "files": [
+    {
+      "content": "[\n  {\"claim\": \"Garden recall held steady across the invented term.\", \"paper_id\": \"amber\", \"citation\": \"Lumen, 2024\", \"supporting_quote\": \"Garden recall held steady across the invented term.\"},\n  {\"claim\": \"Harbor recall held steady across the invented term.\", \"paper_id\": \"ivory\", \"citation\": \"Vale, 2024\", \"supporting_quote\": \"Harbor recall held steady across the invented term. Tutors logged the same pattern during the final week.\"}\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "16ec47d71acf944b1f7124acef9bed20c546363687d9ddcca07c71047ffd2f48",
+      "size": 438
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Niko Vale\"],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": null},\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "aac71202e9a6c5dcabc3f9c7a3c06c22eabcc2428bfb66f4b7595b90fc5fb3df",
+      "size": 632
+    },
+    {
+      "content": "Garden recall held steady across the invented term. A remote orchard survey then discussed unrelated lantern colors in detail. Tutors logged the same pattern during the final week.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "85e78ca00cd972252cb7ae2b917c85f4d03658f47947c9b28b755aa475d64206",
+      "size": 181
+    },
+    {
+      "content": "Harbor recall held steady across the invented term. Page 2.                                                                     Tutors logged the same pattern during the final week.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "1cc64b7562f3d55990711658e4263151a3052cbe895272681ea20cbe0a9c6acc",
+      "size": 182
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-8wdqnl26\",\n  \"question\": \"How stable is learner recall across the term in invented learning gardens?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "3912aa2ee2beecb9791025ffdedf05dd01045f91adfe9cedd36ca1f0b1c9028b",
+      "size": 162
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nHow stable is learner recall across the term in invented learning gardens?\n\n## Inclusion criteria\n- Records supplied in the public synthetic fixture (fixture-001.json)\n- Reports learner recall across a term in an invented learning setting\n\n## Exclusion criteria\n- Any record not present in the supplied fixture\n- Any real-world source (this review is evaluation-only and fully invented)\n\n## Query log\n- 2026-10-07 | invented-index (supplied fixture, no live backend search) | 2 hits\n\n## Notes\n- Evaluation capture mode: claim/source pairs and synthesis wording are copied verbatim from the fixture.\n- Scope approval checkpoint skipped per evaluation instructions. Validation, repair, and delivery are owned by the harness.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "7f9b39e581c9d5aae2815808f6744f49dafaae74b89132e779429c1a33cbf057",
+      "size": 783
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "Garden recall held steady across the invented term (Lumen, 2024). Harbor recall held steady across the invented term (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "3dcb0c331682158dbc7a7e3817ffbb53b8768b4be9aa8745ea32c47a54727a06",
+      "size": 131
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "508383fb0c865d52a2c8ed2d849d712db42f963704dfb88b65c6a7ab93948efe",
+  "schema_version": "1.0.0"
+}

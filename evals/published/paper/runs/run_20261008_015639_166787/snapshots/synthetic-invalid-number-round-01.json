@@ -1,0 +1,58 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "synthetic-invalid-number",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"In the synthetic trial, mean post-test scores in the tutoring group improved by 7.3 percent relative to the comparison group\",\n    \"paper_id\": \"synthetic-tutor-trial-2025\",\n    \"citation\": \"Synthetic, 2025\",\n    \"role\": \"evidence\",\n    \"supporting_quote\": \"Relative to the comparison group, mean post-test scores in the tutoring group improved by 7.3 percent at the end of the term.\"\n  },\n  {\n    \"claim\": \"Students were randomly assigned to structured small-group tutoring or to business-as-usual instruction for one academic term\",\n    \"paper_id\": \"synthetic-tutor-trial-2025\",\n    \"citation\": \"Synthetic, 2025\",\n    \"role\": \"evidence\",\n    \"supporting_quote\": \"Students in the synthetic sample were randomly assigned to structured small-group tutoring or to business-as-usual instruction for one academic term.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "482cfb0667fc46286273216be1de3a927c5a9dab807a940a49eddabc27bf1c1f",
+      "size": 841
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"synthetic-tutor-trial-2025\",\n    \"ids\": {\"synthetic\": \"synthetic-tutor-trial-2025\"},\n    \"title\": \"A Synthetic Randomized Trial of Structured Small-Group Tutoring\",\n    \"authors\": [\"Avery Synthetic\", \"Jordan Fixture\"],\n    \"year\": 2025,\n    \"cited_by\": 0,\n    \"found_via\": \"synthetic-fixture\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"fulltext\", \"reason\": null},\n    \"fulltext\": \"fulltext\",\n    \"role\": \"evidence\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "e06f584f6f687eda489fc9caf7c7b4ceb5a5868323bef90998b75472d8c3b39d",
+      "size": 447
+    },
+    {
+      "content": "# A Synthetic Randomized Trial of Structured Small-Group Tutoring\n\nAvery Synthetic, Jordan Fixture (2025). SYNTHETIC FIXTURE, not a real publication.\n\n## Abstract\nThis synthetic document describes a fictional randomized trial of structured small-group tutoring, used only to test literature-review integrity tooling.\n\n## Methods\nStudents in the synthetic sample were randomly assigned to structured small-group tutoring or to business-as-usual instruction for one academic term. The outcome was a standardized end-of-term mathematics post-test.\n\n## Results\nRelative to the comparison group, mean post-test scores in the tutoring group improved by 7.3 percent at the end of the term.\n\n## Limitations\nBecause this is a synthetic fixture, the sample, setting, and effect are invented and carry no external validity.\n",
+      "encoding": "utf-8",
+      "path": "papers/synthetic-tutor-trial-2025/fulltext.md",
+      "sha256": "df5c733c956c3bbaee81b8a441153531e4c3264c31a63089c80b0d662e24c7bb",
+      "size": 813
+    },
+    {
+      "content": "{\n  \"review\": \"synthetic-tutoring-intervention\",\n  \"question\": \"In the synthetic tutoring-intervention fixture, how much did structured small-group tutoring change student post-test scores relative to a comparison condition?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "8a7bd7811e5b03c941a88f088b51280c9e8d2ddd03e4cbd58d17d352eb7ee6a4",
+      "size": 256
+    },
+    {
+      "content": "# Protocol: Synthetic Tutoring Intervention (evaluation fixture)\n\n**Status:** Synthetic evaluation fixture. The only source is invented test text, labeled synthetic, and must not be cited as real research.\n\n## Research question\nIn the synthetic tutoring-intervention fixture, how much did structured small-group tutoring change student post-test scores relative to a comparison condition?\n\n## Inclusion criteria\n- Population: students receiving an academic tutoring intervention (synthetic fixture population).\n- Intervention: structured small-group tutoring.\n- Comparison: business-as-usual instruction.\n- Outcome: standardized post-test score change.\n- Source type: synthetic fixture documents supplied for integrity evaluation only.\n\n## Exclusion criteria\n- Real-world publications (this workspace evaluates the integrity pipeline, not the literature).\n- Sources without a reported score outcome.\n\n## Criteria approval\nEvaluation capture mode: the harness owns approval, so criteria are recorded without an interactive pause.\n\n## Query log\n| Date | Backend | Query | Hits |\n|---|---|---|---|\n| 2026-10-07 | none (synthetic fixture) | No external search executed; one synthetic source authored in-workspace | 1 |\n\n## Screening log\n- synthetic-tutor-trial-2025: included (synthetic fixture reporting a tutoring score outcome). Role: evidence. Read depth: fulltext.\n\n## Integrity fixture note\n`synthesis.md` intentionally states that scores improved by 73 percent, while the cited synthetic source reports a 7.3 percent improvement. The mismatch is deliberate so the integrity repair loop can detect and repair it.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "916745b24f1539df2ace5afce70b33aa045d0b57d91a50fd0e56b117bd277162",
+      "size": 1615
+    },
+    {
+      "content": "[\n  {\"title\": \"A Synthetic Randomized Trial of Structured Small-Group Tutoring\", \"doi\": null}\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "759f880d8330220a4abb4ee8c28a26c9c53902d7e4ba5df877c8ca8b1be6c30c",
+      "size": 96
+    },
+    {
+      "content": "# Literature Review: Synthetic Tutoring Intervention\n\n**Research question**: In the synthetic tutoring-intervention fixture, how much did structured small-group tutoring change student post-test scores relative to a comparison condition?\n\n**Inclusion criteria**: Synthetic fixture sources reporting a tutoring score outcome against business-as-usual instruction.\n\n**Searches executed**: No external backend was queried. The corpus is a single synthetic fixture source.\n\n## Thematic synthesis\n\n### Achievement outcomes\n\nIn the synthetic trial, mean post-test scores in the tutoring group improved by 7.3 percent relative to the comparison group (Synthetic, 2025).\n\n### Design\n\nStudents were randomly assigned to structured small-group tutoring or to business-as-usual instruction for one academic term (Synthetic, 2025).\n\n## Research gaps\n\nThe synthetic corpus contains a single trial, so no claim about replication, dosage, or subgroup effects can be supported.\n\n## Annotated bibliography\n\n- Synthetic, A., & Fixture, J. (2025). A Synthetic Randomized Trial of Structured Small-Group Tutoring. Synthetic fixture, no DOI. Fictional randomized trial used only to test integrity tooling.\n\n## Retrieval summary\n\nThe single included source was read at full text. No papers remain unretrieved. A replacement PDF could be placed at `papers/synthetic-tutor-trial-2025/paper.pdf`.\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "9610d480bbed6eaa0044f9a7191743f1ad3355420e072d24ccc25c81c116ba8d",
+      "size": 1372
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "6b4257abe529b4d6b99976e4bb4e8737bac161b5f41701c02c3a6ecb6e57b096",
+  "schema_version": "1.0.0"
+}

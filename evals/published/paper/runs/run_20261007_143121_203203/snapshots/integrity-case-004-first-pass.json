@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-004",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Merrow, 2024\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Merrow, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "74971df69404a11cf1f53f9e3fb9e8c8a82936dd65c81577aee51cdfa0aeb9d0",
+      "size": 555
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\"pmcid\": \"amber\"},\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\"Mira Lumen\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": \"Invented learning-garden trial reporting learner recall.\"},\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\"pmcid\": \"ivory\"},\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\"Niko Merrow\"],\n    \"year\": 2024,\n    \"cited_by\": null,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\"status\": \"included\", \"stage\": \"title_abstract\", \"reason\": \"Invented learning-garden trial reporting learner recall.\"},\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "50013ebabe252d4461974426d94e2a938fd1cf89698c860a3660c2f2ad336e4e",
+      "size": 786
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "e3a4bf6555d0034befd7f68c272a7796106923925e7cd20ccfd07e7bcc7c3bab",
+      "size": 124
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\n",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "52128e9419078b780d03c2c2101ed91e153c3a4466e132db0996d6b8794eafce",
+      "size": 124
+    },
+    {
+      "content": "{\n  \"review\": \"literature-run-6pfab8o5\",\n  \"question\": \"What do invented learning-garden trials report about learner recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "149a5e0a39da076dc46f6c92a0af6e5bdbe60686f6a6eeaf9c9f0fc9cbb1e336",
+      "size": 156
+    },
+    {
+      "content": "# Protocol: invented learning gardens\n\n## Research question\nWhat do invented learning-garden trials report about learner recall?\n\n## Inclusion criteria\n- Records supplied in the public synthetic fixture (fixture-001.json)\n- Invented learning-garden trials reporting a learner recall outcome\n- Any year; any language\n\n## Exclusion criteria\n- Records not in the supplied fixture\n- No recall outcome reported\n\n## Query log\n| Date | Backend | Query | Hits |\n|---|---|---|---|\n| 2026-10-07 | invented-index (supplied fixture) | fixture-001.json corpus | 2 |\n\nNo live backend searches were run. The domain is entirely invented, and the corpus, sources, claims, and synthesis were supplied verbatim for deterministic integrity evaluation. Snowballing is not applicable.\n\n## Screening\nBoth supplied records were included at the title/abstract stage. Full texts are the supplied source passages in each paper's fulltext.md.\n\n## Integrity note\nClaims and synthesis are preserved exactly as supplied. Both supplied claims cite \"Merrow, 2024\", but the corpus first author for `amber` is Mira Lumen, so the amber claim's citation does not bind to its corpus record. Left unaltered per task instructions.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "8377ff7899d8d6272740340113b88d1d89b825f8681d091e3f18611ed49c5660",
+      "size": 1191
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (Merrow, 2024). The ivory harbor trial found stable recall (Merrow, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "be946aa9d49bbfccfaa7736504123096b35f039568c1f9447946abffa229d3bc",
+      "size": 118
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "3c673470f3d4925912fb4ee6b3bc785a8c78f54a549ee2f5d197b7a1912c125f",
+  "schema_version": "1.0.0"
+}

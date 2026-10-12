@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-005",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"[1]\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"[2]\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "cfd7f8d869f148b154e7436541fdd942220534512936457f52860dab4239ab44",
+      "size": 537
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\",\n      \"doi\": \"10.5555/attack-1\"\n    },\n    \"title\": \"Signal Gardens for Memory\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a supplied synthetic evidence record within the closed fixture scope.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"cited_by\": null\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\",\n      \"doi\": \"10.5555/control-2\"\n    },\n    \"title\": \"Signal Gardens for Reasoning\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a supplied synthetic evidence record within the closed fixture scope.\"\n    },\n    \"fulltext\": \"fulltext\",\n    \"cited_by\": null\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "4c79b83f3d858618701e35b16c6b15f3fc4bb1300782a54414c9731a6bf51e38",
+      "size": 1000
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied entirely invented learning-garden records report about stable recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "8863c02eae4fe701e1d1e7dac98377e410f646181fba201c4d1948a52d2aff4f",
+      "size": 180
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\n\nWhat do the supplied entirely invented learning-garden records report about stable recall?\n\n## Scope and criteria\n\nThis is a closed-input synthetic review workspace created for the user's requested evaluation capture. Include both supplied invented records and their supplied claim/source pairs. Exclude outside records and real-world evidence. No date, language, population, or design restrictions beyond membership in the supplied fixture apply. The user's explicit instruction to create the complete workspace establishes this scope without an additional approval checkpoint.\n\n## Input and provenance\n\nThe public fixture `/private/tmp/tmp_a5u0qgx/fixture-001.json` was copied verbatim to `input.json`. The current directory itself is the workspace, initialized with `WS=\"$(pwd)\"`. No nested review workspace was created.\n\n## Query and acquisition log\n\n- Date: 2026-10-08.\n- Source: user-supplied public synthetic fixture, identified above.\n- Search query: none; direct closed-fixture ingestion.\n- Records supplied: 2. Records included: 2. Records excluded: 0.\n- External searches, citation resolution, and snowballing: not performed because the scope is limited to the supplied invented records.\n- Corpus assembly: supplied normalized corpus retained directly; no backend results or cross-source merges exist.\n- Retrieval: both complete supplied source passages are available verbatim in `papers/amber/fulltext.md` and `papers/ivory/fulltext.md`. These are synthetic passages, not independently retrieved research articles.\n\n## Screening and extraction\n\nBoth records are evidence records within this synthetic scope. Supplied author, year, key, identifiers, role, and provenance are retained. Screening stage and reasons, fulltext availability, and an unknown citation count are recorded. Each paper has notes describing only the supplied passage and its limitations.\n\n## Synthesis preservation\n\n`synthesis.md` preserves the supplied synthesis string exactly. `claims.json` preserves both supplied claim objects and their source bindings exactly. `refs.json` preserves the supplied ordered reference objects exactly. No citation wording, source wording, or reference identity was repaired or normalized. Retrieval information is recorded here separately to avoid changing the supplied synthesis.\n\n## Retrieval summary\n\nBoth supplied passages are present; no supplied passage is missing. No external PDFs were requested or retrieved. If later supplied, PDFs belong at `papers/amber/paper.pdf` and `papers/ivory/paper.pdf`.\n\n## Capture boundary\n\nWorkspace artifacts only. Bibliography verification, claim verification, plugin validation, repair, and delivery were not run. No verification report or integrity verdict is asserted; the evaluation harness owns subsequent phases.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "420ddbcfd29847ac38e908502bd48d61dddebdaa4c0e589eec36d1915f1ba70a",
+      "size": 2846
+    },
+    {
+      "content": "[\n  {\n    \"title\": \"Signal Gardens for Memory\"\n  },\n  {\n    \"title\": \"Signal Gardens for Reasoning\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "40c4ec9847b47e35fd4a02f08bc7bf2655b4ce7a2862a4752dbd3fcd332aa23a",
+      "size": 106
+    },
+    {
+      "content": "The amber garden trial found stable recall [1]. The ivory harbor trial found stable recall [2].\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b07bb56559a149b584801abf6f005bbdecfa6ee03c27eb726d1f70349ded3c51",
+      "size": 96
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "f55eadbf1ad9dc51732066f59ea2ae6ccd3e8b11326b2c04fe85ed4b9289cda3",
+  "schema_version": "1.0.0"
+}

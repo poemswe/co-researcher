@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-009",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden note described 42% of sessions.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden note described 42% of sessions as context for an entirely invented program review.\",\n    \"role\": \"background\"\n  },\n  {\n    \"claim\": \"The ivory harbor note described few of sessions.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor note described few of sessions as context for an entirely invented program review.\",\n    \"role\": \"background\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "04c43f5974a40ce1969c2cd423f197ec4e60aaa01d832ac077da15334769c664",
+      "size": 566
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Context\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"background\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    }\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Context\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"background\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\"\n    }\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "fe4e8310950b1660f02bc04e3e392dc9139f9a7c0548dc002ac50d971636e875",
+      "size": 568
+    },
+    {
+      "content": "The amber garden note described 42% of sessions as context for an entirely invented program review.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "9b2b77cd2d2342468a48809703e17f829b877e1ff85259e463ca789734d2854c",
+      "size": 99
+    },
+    {
+      "content": "The ivory harbor note described few of sessions as context for an entirely invented program review.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "95bd412c2501cbcad5fe42d74ec00c85521bd90319c94066b2d91f89325a78bc",
+      "size": 99
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What context do the supplied invented records describe about invented learning gardens?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "4135a71b674e51059a277a145614d6f6dc6b412e1f2a4fccf957fa265e60ae09",
+      "size": 177
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat context do the supplied invented records describe about invented learning gardens?\n\n## Scope and criteria\nThis workspace captures the entirely invented records supplied by the user. Include both supplied claim/source pairs without editing their text or metadata. Exclude external records and inferred findings. There are no additional population, method, date, or language restrictions on the supplied set. Preserve the synthesis verbatim and retain the supplied background roles and empty reference list.\n\nThe user authorized complete artifact creation in evaluation capture mode. No scope-approval pause is needed for this explicitly fixed scope.\n\n## Input and acquisition log\n- Date: 2026-10-07.\n- Source: `/private/tmp/tmp6_274fvd/fixture-001.json`, copied verbatim to `input.json` because the current directory contained no input file.\n- Supplied records: two; included: two; excluded: none.\n- Search query: not applicable; no backend search executed. The supplied synthetic fixture defines the complete candidate set.\n- Corpus: preserved as supplied; no backend pooling or deduplication performed.\n- Acquisition: supplied source strings copied verbatim to each paper directory's `fulltext.md`. These files contain the complete supplied synthetic source strings, not independently retrieved publications. Original corpus retrieval metadata is unchanged.\n- Snowballing: not applicable to this closed invented set.\n\n## Synthesis and integrity handling\nThe supplied synthesis is reproduced exactly in `synthesis.md`. The supplied claims and source strings remain unchanged, including grammar, quantitative wording, citation identities, and background roles. Notes distinguish supplied wording from unavailable study information. No additional conclusions or research gaps are inferred from these short invented records.\n\n`refs.json` preserves the supplied empty reference list. Bibliographic resolution, claim verification, plugin validation, repair, and delivery were not run, as directed by the user. No verification results are asserted or manufactured. Evaluation is left to the harness.\n\n## Retrieval summary\nBoth supplied synthetic source strings are available locally. No external full text or PDF was sought, and no external retrieval failed. Methods, sample sizes, and publication metadata beyond the fixture are unavailable. No PDF drop-in is needed for this capture task.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "e059cbf73189b984c457ed2d4a4e598b30d44d3dfb9487fabfdf6d111edafbad",
+      "size": 2457
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden note described 42% of sessions (Lumen, 2024). The ivory harbor note described few of sessions (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "b68a4e2aae7a502a0238a77992bb4cd6d1ab4ac809ff7640eeba1dca4ab5fbaf",
+      "size": 125
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "ad962e073bf0df41665a7c6bc7bc8f18433e01121fe62cc355af57a7c4cfe761",
+  "schema_version": "1.0.0"
+}

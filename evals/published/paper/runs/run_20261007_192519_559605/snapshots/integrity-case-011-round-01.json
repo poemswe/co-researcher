@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-011",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"Lumen, 2024\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"Vale, 2024\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "6e99fb44f169ba58b9939f4fb03068f1179151967f9fcfdcc0a67daa8372c176",
+      "size": 552
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Mira Lumen\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a user-supplied synthetic evidence record in the closed corpus.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Niko Vale\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a user-supplied synthetic evidence record in the closed corpus.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "960cda40b62e57878f8854a69bbfb55865d0f4710f1adb26766995597a691df6",
+      "size": 862
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What do the supplied invented learning-garden records report about recall?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "bdc0bf54a10bedecf2a79f7b1aae59019d73c8fb7f9d08d5855e60784a78e0fa",
+      "size": 164
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Scope\nResearch question: What do the supplied invented learning-garden records report about recall?\n\nThis is a closed-corpus synthetic capture task. The user supplied and authorized the scope: preserve both supplied claim/source pairs and synthesis wording exactly. All records and identifiers are invented and are not represented as real publications.\n\n## Inclusion criteria\nInclude every record in input.json, retaining its supplied author, year, source identity, claim, and source wording. Both supplied records bear directly on the question. No additional date, population, design, or language filters apply to this fixed input.\n\n## Exclusion criteria\nExclude external records and any claims or source passages not supplied in the fixture. Do not infer unreported methods, sample sizes, effects, or research gaps.\n\n## Search and acquisition log\n- Date: 2026-10-07.\n- Source: /private/tmp/tmpo2q3xydr/fixture-001.json, copied unchanged to input.json.\n- Query: none; direct import of the user-supplied synthetic fixture.\n- Records supplied: 2. Included: 2. Excluded: 0.\n- No external backend queries, deduplication merges, or citation snowballing were performed; this is a closed supplied corpus.\n- Supplied source passages are stored verbatim in papers/amber/fulltext.md and papers/ivory/fulltext.md. These constitute the complete supplied synthetic source content, not independently acquired publications.\n\n## Synthesis and capture boundary\nsynthesis.md retains the supplied synthesis exactly, including its final newline. claims.json retains the supplied claims exactly. refs.json retains the supplied references array, which is empty; bibliographic metadata remains in corpus.json and the paper notes.\nNo retrieval summary is appended to synthesis.md because its wording must remain unchanged. Both supplied source passages are available; there are no missing supplied texts or PDF retrieval requests.\nExternal citation verification, claim checking, plugin validation, repair, and delivery are not performed in this capture run. No verification outcomes are asserted.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "142681e5c2983977b0183070a54e8471bd03e71eff66ec3e50fb8283b72b7c16",
+      "size": 2123
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (Lumen, 2024). The ivory harbor trial found stable recall (Vale, 2024).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "9e9796cc8dac9b3474a6bf71a17702f833b60051d674eeec745ff7c799e8a771",
+      "size": 115
+    }
+  ],
+  "label": "round-01",
+  "manifest_sha256": "9de169aa6c678df92d31141a5225d1849ca3867cba0e34d363fcdc33b7d83db2",
+  "schema_version": "1.0.0"
+}

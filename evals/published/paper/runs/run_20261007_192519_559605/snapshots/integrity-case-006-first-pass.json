@@ -1,0 +1,65 @@
+{
+  "canonicalization": "rfc8785-restricted-v1",
+  "case_id": "integrity-case-006",
+  "files": [
+    {
+      "content": "[\n  {\n    \"claim\": \"The amber garden trial found stable recall.\",\n    \"paper_id\": \"amber\",\n    \"citation\": \"La Cruz, 2024\",\n    \"supporting_quote\": \"The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  },\n  {\n    \"claim\": \"The ivory harbor trial found stable recall.\",\n    \"paper_id\": \"ivory\",\n    \"citation\": \"de la Cruz, 2025\",\n    \"supporting_quote\": \"The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "claims.json",
+      "sha256": "455a50eb1a9986a401e29cd24eacca2098b6722b4c0d19802512596fc01fc3f8",
+      "size": 560
+    },
+    {
+      "content": "[\n  {\n    \"key\": \"amber\",\n    \"ids\": {\n      \"pmcid\": \"amber\"\n    },\n    \"title\": \"Amber Garden Recall\",\n    \"authors\": [\n      \"Ana de la Cruz\"\n    ],\n    \"year\": 2024,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a user-supplied record in the closed synthetic corpus.\"\n    },\n    \"fulltext\": \"fulltext\"\n  },\n  {\n    \"key\": \"ivory\",\n    \"ids\": {\n      \"pmcid\": \"ivory\"\n    },\n    \"title\": \"Ivory Harbor Recall\",\n    \"authors\": [\n      \"Ana de la Cruz\"\n    ],\n    \"year\": 2025,\n    \"role\": \"evidence\",\n    \"found_via\": \"invented-index\",\n    \"screening\": {\n      \"status\": \"included\",\n      \"stage\": \"fulltext\",\n      \"reason\": \"Included as a user-supplied record in the closed synthetic corpus.\"\n    },\n    \"fulltext\": \"fulltext\"\n  }\n]\n",
+      "encoding": "utf-8",
+      "path": "corpus.json",
+      "sha256": "72600f57db33ebd4738bddeea2ac66cb668b5aff893d0515a24eddae6498d8e4",
+      "size": 853
+    },
+    {
+      "content": "The amber garden trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/amber/fulltext.md",
+      "sha256": "71898e7917267d0738c25c5e75e71ec83d88ba619f05c2f6d3f1f3dd43b08e54",
+      "size": 123
+    },
+    {
+      "content": "The ivory harbor trial found stable recall after four guided sessions among learners from three entirely invented campuses.",
+      "encoding": "utf-8",
+      "path": "papers/ivory/fulltext.md",
+      "sha256": "b0d2f9fb2e4938c140120f4e2b506fe448bb7b4c1ea2b110ff274cf62550e30e",
+      "size": 123
+    },
+    {
+      "content": "{\n  \"review\": \"invented-learning-gardens\",\n  \"question\": \"What recall findings do the supplied invented learning-garden records report?\",\n  \"research_project\": null\n}\n",
+      "encoding": "utf-8",
+      "path": "project.json",
+      "sha256": "2dbe681f92e385b653e85239caf34bb36d639e587749fc4f699ec51dfc0a9d75",
+      "size": 167
+    },
+    {
+      "content": "# Review protocol: invented learning gardens\n\n## Research question\nWhat recall findings do the supplied invented learning-garden records report?\n\n## Scope and criteria\nThis is a closed review of entirely invented records supplied by the user. Include every supplied record with its supplied claim and source passage. Exclude outside literature and invented additions. No population, date, language, or design restrictions beyond membership in the supplied fixture apply. The user authorized preservation of both supplied pairs and synthesis wording; no additional scope approval is needed.\n\n## Input and provenance\nThe public fixture `/private/tmp/tmpzjkkm4_p/fixture-001.json` was copied unchanged to `input.json`. Its corpus is already assembled. Preserve the supplied keys, identifiers, author metadata, citations, claims, quotations, references, and synthesis. Identifiers are synthetic labels, not verified external database identifiers.\n\n## Query and acquisition log\n- Date: 2026-10-07. Local input: `input.json`. Selection: all supplied records. Records: 2. No external search queries were executed.\n- Dedupe: the supplied pool contains two distinct records; retained both without merging or regenerating identifiers.\n- Screening: both supplied records included because they belong to the requested closed synthetic corpus.\n- Acquisition: supplied source strings saved verbatim to each paper's `fulltext.md`. Here `fulltext` means the complete supplied synthetic passage, not a retrieved publication.\n- Reading: notes are limited to these passages; no unreported methods or numerical effect estimates were inferred.\n- Snowballing: not applicable to the fixed supplied corpus; no external sources added.\n\n## Synthesis and retrieval\n`synthesis.md` preserves the supplied synthesis exactly. `claims.json` preserves the supplied claim entries exactly. `refs.json` preserves the supplied empty references list. All supplied source passages are available locally; no supplied sources remain unretrieved and no PDF drop-in is needed. This retrieval summary is kept here to avoid altering the requested synthesis wording.\n\n## Execution boundary\nWorkspace artifacts only. Bibliography verification, claim verification, plugin validation, repair, and delivery were not run; evaluation is owned by the harness. No verification results are asserted or fabricated.\n",
+      "encoding": "utf-8",
+      "path": "protocol.md",
+      "sha256": "30aafa161917d04073bae6d8f50ba43e57555637c61195b3c145491d942566c8",
+      "size": 2359
+    },
+    {
+      "content": "[]\n",
+      "encoding": "utf-8",
+      "path": "refs.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "size": 3
+    },
+    {
+      "content": "The amber garden trial found stable recall (La Cruz, 2024). The ivory harbor trial found stable recall (de la Cruz, 2025).\n",
+      "encoding": "utf-8",
+      "path": "synthesis.md",
+      "sha256": "fb5d26c5964da311060fc4edda556661ce1c670c50a463ded09c88a5606e8a55",
+      "size": 123
+    }
+  ],
+  "label": "first-pass",
+  "manifest_sha256": "9af2c6e3d22891701f1b1281fad7437b65a256a5009e99c89e9947336844dc33",
+  "schema_version": "1.0.0"
+}
