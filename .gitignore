@@ -17,6 +17,7 @@ review/
 # read_paper.py workspace outputs (full text, abstracts, downloaded PDFs)
 rp-smoke/
 papers/
+!evals/published/paper/counterexamples/*/papers/
 test_alphafold.md
 
 # Eval results

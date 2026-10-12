@@ -34,14 +34,22 @@ def main():
   df = sum(len(g) - 1 for g in groups)
   pooled = math.sqrt(sum((len(g) - 1) * statistics.variance(g) for g in groups) / df)
   ranges = [max(g) - min(g) for g in groups]
-  clean = [r["quality_score"] for r in rows if r["label"] == "synthetic-valid-first-pass"]
+  control = next(c for c in result["cases"] if c["case_id"] == "synthetic-valid")
+  clean = [control["first_pass"]["quality_score"]] + [
+      r["quality_score"] for r in rows if r["label"] == "synthetic-valid-first-pass"]
+  clean_chars = {r["chars"] for r in rows if r["label"] == "synthetic-valid-first-pass"}
   print(json.dumps({
       "texts": len(groups),
       "judgments_per_text": sorted({len(g) for g in groups}),
       "pooled_sd": round(pooled, 1),
       "median_range": round(statistics.median(ranges), 1),
       "max_range": round(max(ranges), 1),
-      "clean_control_rescores": clean,
+      "clean_control": {
+          "judgments": len(clean),
+          "sd": round(statistics.stdev(clean), 1),
+          "range": round(max(clean) - min(clean), 1),
+          "chars": clean_chars.pop(),
+      },
   }, indent=2))
 
 
