@@ -1,4 +1,4 @@
-# Co-Researcher (v2.7.0)
+# Co-Researcher (v2.7.1)
 
 A professional research suite for conducting rigorous academic research using specialized agents and multi-platform CLI commands. Compatible with **Claude Code**, **Gemini CLI**, **OpenAI Codex**, and **OpenCode**.
 
@@ -206,7 +206,7 @@ The `literature-review` skill ships CLI backends (`skills/literature-review/scri
 | `europepmc_api.py` | Life-science full text + forward/backward citation chaining |
 | `read_paper.py` | Any DOI/arXiv ID/PMCID → markdown full text via legal open-access routes; warns on retracted papers |
 | `build_corpus.py` | Merges raw backend results into a deduplicated `corpus.json`; retains trusted author metadata and preserves screening decisions on re-runs |
-| `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) against OpenAlex, Europe PMC, and Crossref/Retraction Watch; reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
+| `verify_citations.py` | Bibliography gate — resolves every citation (JSON, BibTeX, or plain text) against OpenAlex, Europe PMC, and Crossref/Retraction Watch, and checks a title mismatch against the DOI's own Crossref or DataCite record; reports `verified` / `mismatched` / `not_found` / `retracted` with a nonzero exit on any failure |
 | `prisma_counts.py` | PRISMA 2020 flow counts computed from the review workspace's `corpus.json` |
 | `check_claims.py` | Claim-to-source gate — verifies evidence/background quotes and binds author-year or ordered numeric citations to trusted corpus records; catches invented evidence, wrong-source attribution, and omissions |
 | `validate_review.py` | Deterministic offline one-pass integrity gate — snapshots a submitted review, runs the shared validators, scores explicit evidence units, and emits an auditable JSON report |
