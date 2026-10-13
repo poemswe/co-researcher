@@ -56,8 +56,18 @@ def test_home_and_evals_link_to_the_paper():
     assert "/paper/" in _parse(ROOT / page).hrefs, page
 
 
-def test_paper_internal_links_resolve():
-  for href in _parse(ROOT / "paper/index.html").hrefs:
-    if href.startswith("/") and not href.startswith("//"):
-      target = ROOT / href.lstrip("/").split("#")[0]
-      assert target.is_file() or (target / "index.html").is_file(), href
+def test_sitemap_lists_the_write_up():
+  assert f"{SITE}paper/write-up/" in _sitemap_urls()
+
+
+def test_summary_and_write_up_link_to_each_other():
+  assert "/paper/write-up/" in _parse(ROOT / "paper/index.html").hrefs
+  assert "/paper/" in _parse(ROOT / "paper/write-up/index.html").hrefs
+
+
+def test_report_internal_links_resolve():
+  for page in ("paper/index.html", "paper/write-up/index.html"):
+    for href in _parse(ROOT / page).hrefs:
+      if href.startswith("/") and not href.startswith("//"):
+        target = ROOT / href.lstrip("/").split("#")[0]
+        assert target.is_file() or (target / "index.html").is_file(), (page, href)

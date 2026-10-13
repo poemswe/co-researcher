@@ -429,6 +429,10 @@
             max-width: 560px;
         }
 
+        .honesty-link { margin-top: 1rem; }
+
+        .honesty-link a { font-weight: 600; color: var(--navy); }
+
         .honesty-rules {
             margin-top: 1.5rem;
             display: flex;
@@ -567,7 +571,7 @@
     <ul class="nav-links">
         <li><a href="#skills">Skills</a></li>
         <li><a href="#install">Install</a></li>
-        <li><a href="/paper/">Paper</a></li>
+        <li><a href="/paper/">Report</a></li>
         <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
         <li><a href="/evals/" class="nav-cta">Evals →</a></li>
     </ul>
@@ -674,6 +678,7 @@
     <div class="honesty-inner">
         <h2>Systemic Honesty is a protocol constraint, not a model instruction.</h2>
         <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — searches run against real scholarly databases, and a citation verifier resolves every reference before a bibliography ships, failing loudly on fabricated, mismatched, or retracted entries. An integrity gate then checks the finished review link by link, and a draft with unresolved evidence errors ships marked INVALID EVIDENCE. The constraint doesn't depend on a single instruction holding under pressure.</p>
+        <p class="honesty-link"><a href="/paper/">Does it hold up? See how I tested the checker →</a></p>
         <div class="honesty-rules">
             <p class="honesty-rule">Never fabricate a citation. If a source cannot be verified, say so.</p>
             <p class="honesty-rule">Distinguish what the evidence shows from what it suggests.</p>
@@ -734,7 +739,7 @@
         <ul class="footer-links">
             <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
             <li><a href="/evals/">Evals</a></li>
-            <li><a href="/paper/">Paper</a></li>
+            <li><a href="/paper/">Report</a></li>
             <li><a href="/llms.txt">llms.txt</a></li>
         </ul>
     </div>
