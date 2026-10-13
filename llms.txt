@@ -25,6 +25,10 @@ Co-Researcher provides specialized research skills that run inside AI coding ass
 - **Research Manager** — dynamic task scaffolding and polyglot session persistence
 - **Academic Writing** — eliminating AI-isms from research prose
 
+## Paper
+
+- [Every Claim Traced](https://coresearcher.poemswe.com/paper/): working paper on the evidence-integrity gate. It checks quotes, citations and synthesis sentences in an agent-written review against a claim ledger, and is tested against Claude Opus 5.5 and GPT Codex on 14 planted error families (13 caught on the first pass, one known gap).
+
 ## Evals (this site)
 
 Models evaluated: Claude (Anthropic), Codex (OpenAI), Gemini (Google)
