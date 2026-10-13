@@ -302,21 +302,21 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
   <p class="g-deck">Building a checker to find out.</p>
 
   <h3>Why I built this</h3>
-  <p>I build Co-Researcher, a set of research tools that run inside AI assistants like Claude Code and Codex. One of them writes literature reviews, the summaries of what published studies found. Early on it did what AI tools are known for and cited papers that don't exist. My name is on what it produces, so I needed that to stop.</p>
-  <p>Catching made-up papers turned out to be the easy part. You look the title up in a database of real papers, and either it's there or it isn't. The harder problem comes after. The paper is real, but the sentence citing it gets it wrong. A study that found “no change” gets reported as finding a change. A 6.4% becomes 64%. A finding gets credited to the wrong author. Checking that the paper exists catches none of this.</p>
+  <p>I build Co-Researcher, research tools that run inside AI assistants such as Claude Code and Codex. One tool writes literature reviews, which summarize what published studies found. AI writers sometimes cite papers that don't exist, and my name goes on what this tool produces, so I wanted every reference checked.</p>
+  <p>Checking that a paper exists takes one database lookup. Checking what the review says about it takes more. Take the sentence “The trial found no change in recall (Lumen, 2024).” Lumen 2024 can be a real paper and the sentence can still be wrong, because the study found a change, or measured something other than recall, or was written by someone else. A reference check passes all three.</p>
 
   <h3>How the checker works</h3>
-  <p>Every time the AI uses a study, I make it write down what it says the study found, the exact words from the study that back that up, and which study it is. Before the review goes out, the checker reads that list and asks four plain questions.</p>
+  <p>For every study it uses, the AI records what it says the study found, the exact words from the study that support it, and which study it is. Before the review goes out, the checker tests each entry against four rules.</p>
   <ul class="g-list">
-    <li>Do those exact words actually appear in the study?</li>
-    <li>Is the AI citing the right study?</li>
-    <li>Do the numbers in its claim appear in those words?</li>
-    <li>Does every sentence in the review match a claim on the list, with the same numbers and the same “no” or “not”?</li>
+    <li>The quoted words appear in the study.</li>
+    <li>The citation points to that study.</li>
+    <li>Every number in the claim appears in the quoted words.</li>
+    <li>Every cited sentence in the review matches a recorded claim, with the same numbers and the same “no” or “not”.</li>
   </ul>
-  <p>If any answer is no, the review goes back to the AI to fix, up to three times. If it still fails, it goes out stamped with a warning instead of looking clean. The checker doesn't ask an AI whether the review looks right. It's ordinary code comparing text, so it gives the same answer every time.</p>
+  <p>When a rule fails, the AI gets the list of failures and another try, for up to three rounds. A review that still fails goes out marked INVALID EVIDENCE. The rules run as ordinary code that compares text, so the same review always gets the same verdict and no second AI is asked for an opinion.</p>
 
   <h3>How I tested it</h3>
-  <p>I invented a set of small studies, so no AI could have seen them before, and slipped one mistake into each test. Then two AI writers, Anthropic's Claude and OpenAI's Codex, wrote reviews from them, and I checked whether the checker caught the mistake on its first look.</p>
+  <p>I wrote short, made-up studies so no AI could recognize them from training, and planted one mistake in each test. Claude, from Anthropic, and Codex, from OpenAI, then wrote reviews from those studies. For each test I recorded whether the checker flagged the planted mistake before any fixing.</p>
 
   <div class="g-table-wrap">
   <table class="g-table">
