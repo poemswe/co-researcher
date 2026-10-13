@@ -25,10 +25,8 @@ _spec.loader.exec_module(vc)
 def _no_live_crossref(monkeypatch):
   """No test may reach Crossref or DataCite unless it stubs the response."""
   monkeypatch.setattr(vc._CROSSREF, "fetch_json",
-                      lambda url: {"message": {"total-results": 0}})
-  def no_datacite(url):
-    raise vc.http_client.HttpError("nope", status_code=404)
-  monkeypatch.setattr(vc._DATACITE, "fetch_json", no_datacite)
+                      lambda url, **kwargs: {"message": {"total-results": 0}})
+  monkeypatch.setattr(vc._DATACITE, "fetch_json", _stub(None, None))
 
 
 def _openalex_work(title, doi="10.1/x", retracted=False):
@@ -231,21 +229,23 @@ def test_title_search_drops_phrase_breaking_operators(monkeypatch):
   assert result["status"] == "verified"
 
 
+def _stub(value, wrap):
+  def fetch(url, **kwargs):
+    if isinstance(value, Exception):
+      raise value
+    if value is None:
+      raise vc.http_client.HttpError("nope", status_code=404)
+    return wrap(value)
+  return fetch
+
+
 def _registry(monkeypatch, *, crossref=None, datacite=None):
-  def from_crossref(url):
-    if "/works/" not in url:
-      return {"message": {"total-results": 0}}
-    if crossref is None:
-      raise vc.http_client.HttpError("nope", status_code=404)
-    return {"message": {"title": [crossref]}}
-  def from_datacite(url):
-    if isinstance(datacite, Exception):
-      raise datacite
-    if datacite is None:
-      raise vc.http_client.HttpError("nope", status_code=404)
-    return {"data": {"attributes": {"titles": [{"title": datacite}]}}}
-  monkeypatch.setattr(vc._CROSSREF, "fetch_json", from_crossref)
-  monkeypatch.setattr(vc._DATACITE, "fetch_json", from_datacite)
+  registered = _stub(crossref, lambda t: {"message": {"title": [t]}})
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", lambda url, **kwargs: (
+      registered(url) if "/works/" in url
+      else {"message": {"total-results": 0}}))
+  monkeypatch.setattr(vc._DATACITE, "fetch_json", _stub(
+      datacite, lambda t: {"data": {"attributes": {"titles": [{"title": t}]}}}))
 
 
 _OPENALEX_PAPER = ("OpenAlex: a fully-open index of scholarly works, authors, "
@@ -324,7 +324,7 @@ def test_main_nonzero_exit_on_failures(monkeypatch, tmp_path, capsys):
 
 
 def _crossref(total):
-  return lambda url: {"message": {"total-results": total}}
+  return lambda url, **kwargs: {"message": {"total-results": total}}
 
 
 def test_retracted_via_crossref_true_when_retraction_notice_exists(monkeypatch):
