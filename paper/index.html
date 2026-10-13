@@ -324,7 +324,7 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
     <tbody>
       <tr><td>Altered quote</td><td>a letter from another alphabet that looks identical, a deleted “no”, two sentences glued together from different places</td><td class="g-res ok">Caught</td></tr>
       <tr><td>Wrong citation</td><td>a quote credited to the wrong author, a title that matches two papers, “La Cruz” for “de la Cruz”</td><td class="g-res ok">Caught</td></tr>
-      <tr><td>Wrong number or source</td><td>64% added out of nowhere, 64% where the study says 6.4%, a finding taken from a paper marked as background reading</td><td class="g-res ok">Caught</td></tr>
+      <tr><td>Wrong number or source</td><td>64% added with no source, 64% where the study says 6.4%, a finding taken from a paper marked as background reading</td><td class="g-res ok">Caught</td></tr>
       <tr><td>Broken files</td><td>a missing file, a corrupted file, a file swapped for a shortcut, a file pointing outside the project</td><td class="g-res ok">Caught</td></tr>
       <tr><td>Overstated finding</td><td>a study that “suggested” something, reported as having “proved” it</td><td class="g-res miss">Missed</td></tr>
     </tbody>
@@ -332,24 +332,24 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
   </div>
 
   <div class="g-stats">
-    <div class="g-stat"><b>13 of 13</b><span>kinds of mistake the checker was built for, caught on the first look, with both AI writers</span></div>
-    <div class="g-stat"><b>1 miss</b><span>“suggested” turned into “proved”. Every number still matches, so the checker can't tell.</span></div>
-    <div class="g-stat"><b>10 of 10</b><span>mistakes each AI fixed once I pointed it to the checker's rules. Before that, Claude fixed 8 and Codex 4. Each setup ran once, so treat it as a hint.</span></div>
-    <div class="g-stat"><b>38.5 points</b><span>the widest gap between scores an AI grader gave the exact same text on different tries, which is why I don't trust an AI grader for this</span></div>
+    <div class="g-stat"><b>13 of 13</b><span>kinds of mistake caught before any fixing, in every run with both AI writers</span></div>
+    <div class="g-stat"><b>1 miss</b><span>A review said a study “proved” what it only “suggested”. No rule compares those words.</span></div>
+    <div class="g-stat"><b>10 of 10</b><span>mistakes fixed by each AI once its repair instructions pointed to the checker's rules. Without them, Claude fixed 8 and Codex 4. I ran each setup once.</span></div>
+    <div class="g-stat"><b>38.5 points</b><span>the widest spread, out of 100, when an AI grader scored the same short text several times. A grader that moves that much can't stand in for the checker.</span></div>
   </div>
 
   <h3>What still gets through</h3>
-  <p>I asked Codex to pick apart my write-up. It found four mistakes the checker gives a perfect score, and I confirmed all four.</p>
+  <p>When Codex reviewed a draft of the technical write-up, it found four kinds of mistake that get a perfect score. I reproduced all four.</p>
   <ul class="g-list">
-    <li>The AI says a study “found a change” while the quoted words say “found no change”. The checker compares numbers between those two, not meaning. This is the one I'm fixing next.</li>
-    <li>A sentence with no citation and no number, such as “This treatment conclusively cures dementia.” Nothing checks it.</li>
-    <li>A finding taken from a paper marked as background reading. The checker only enforces that rule when the sentence has a number in it.</li>
-    <li>“60 adults and 40 children” when the study says 40 adults and 60 children. The numbers are right but in the wrong places.</li>
+    <li>A claim can say a study “found a change” while its quote says “found no change”, because the checker compares a claim with its quote on numbers only. I'm fixing this one first.</li>
+    <li>An uncited sentence with no number goes unchecked, so “This treatment conclusively cures dementia.” passes.</li>
+    <li>A finding can come from a paper marked as background reading, as long as the sentence states no number.</li>
+    <li>A review can write “60 adults and 40 children” for a study of 40 adults and 60 children, because the checker matches numbers without tracking what each one counts.</li>
   </ul>
 
-  <p class="g-caveat">What this shows is that the checker catches the mistakes I built it to catch, with real AI writers in the loop. It doesn't show how it does on real reviews of real papers, because I haven't tested that yet. I also wrote both the mistakes and the checker, which makes this a friendly test.</p>
+  <p class="g-caveat">The checker catches the mistakes I built it to catch, with real AI writers in the loop. I haven't yet tested it on reviews of real papers. Because I wrote the mistakes and the checker myself, this test is easier than real use would be.</p>
 
-  <p>The full technical write-up is below, with every number, method and test case, for anyone who wants to check my work.</p>
+  <p>Every number, method and test case is in the technical write-up below.</p>
 
   <div class="g-links">
     <a class="primary" href="#abstract-h">Technical write-up ↓</a>
