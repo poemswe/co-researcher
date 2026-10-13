@@ -23,9 +23,12 @@ _spec.loader.exec_module(vc)
 
 @pytest.fixture(autouse=True)
 def _no_live_crossref(monkeypatch):
-  """No test may reach Crossref unless it stubs the response itself."""
+  """No test may reach Crossref or DataCite unless it stubs the response."""
   monkeypatch.setattr(vc._CROSSREF, "fetch_json",
                       lambda url: {"message": {"total-results": 0}})
+  def no_datacite(url):
+    raise vc.http_client.HttpError("nope", status_code=404)
+  monkeypatch.setattr(vc._DATACITE, "fetch_json", no_datacite)
 
 
 def _openalex_work(title, doi="10.1/x", retracted=False):
@@ -207,6 +210,91 @@ def test_title_top_hit_dissimilar_is_not_found(monkeypatch):
                           "title": "Quantum Gravity In Two Dimensions",
                           "raw": "t"})
   assert result["status"] == "not_found"
+
+
+def test_title_search_drops_phrase_breaking_operators(monkeypatch):
+  urls = []
+  def search(url):
+    urls.append(url)
+    return {"results": [_openalex_work(
+        "Who is the Agent to Blame? Localizing Faithfulness and Citation "
+        "Mistakes in Agentic Deep Research")]}
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json", search)
+  result = vc.verify_one({
+      "doi": None, "raw": "t",
+      "title": "Who is the agent to blame? Localizing faithfulness and "
+               "citation mistakes | agentic* deep research"})
+  phrase = vc.urllib.parse.parse_qs(
+      vc.urllib.parse.urlsplit(urls[0]).query)["filter"][0]
+  assert not set("?*|") & set(phrase)
+  assert "Who is the agent to blame" in phrase
+  assert result["status"] == "verified"
+
+
+def _registry(monkeypatch, *, crossref=None, datacite=None):
+  def from_crossref(url):
+    if "/works/" not in url:
+      return {"message": {"total-results": 0}}
+    if crossref is None:
+      raise vc.http_client.HttpError("nope", status_code=404)
+    return {"message": {"title": [crossref]}}
+  def from_datacite(url):
+    if isinstance(datacite, Exception):
+      raise datacite
+    if datacite is None:
+      raise vc.http_client.HttpError("nope", status_code=404)
+    return {"data": {"attributes": {"titles": [{"title": datacite}]}}}
+  monkeypatch.setattr(vc._CROSSREF, "fetch_json", from_crossref)
+  monkeypatch.setattr(vc._DATACITE, "fetch_json", from_datacite)
+
+
+_OPENALEX_PAPER = ("OpenAlex: a fully-open index of scholarly works, authors, "
+                   "venues, institutions, and concepts")
+
+
+def test_doi_mismatch_cleared_by_datacite_registration(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json", lambda url: _openalex_work(
+      "OpenAlex Snapshot", doi="10.48550/arxiv.2205.01833"))
+  _registry(monkeypatch, datacite=_OPENALEX_PAPER)
+  result = vc.verify_one({"doi": "10.48550/arxiv.2205.01833",
+                          "title": _OPENALEX_PAPER, "raw": "x"})
+  assert result["status"] == "verified"
+  assert result["source"] == "datacite"
+  assert result["matched_title"] == _OPENALEX_PAPER
+
+
+def test_doi_mismatch_cleared_by_crossref_registration(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("Front Matter"))
+  _registry(monkeypatch, crossref="The Actual Published Title")
+  result = vc.verify_one({"doi": "10.1/x",
+                          "title": "The actual published title",
+                          "raw": "x"})
+  assert result["status"] == "verified"
+  assert result["source"] == "crossref"
+
+
+def test_doi_mismatch_stands_when_registration_disagrees(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("Randomness Beacon Format 2.0"))
+  _registry(monkeypatch, crossref="Randomness Beacon Format 2.0")
+  result = vc.verify_one({
+      "doi": "10.6028/NIST.IR.8213-draft",
+      "title": "A Reference for Randomness Beacons: Format and Protocol "
+               "Version 2", "raw": "x"})
+  assert result["status"] == "mismatched"
+  assert result["matched_title"] == "Randomness Beacon Format 2.0"
+
+
+def test_doi_mismatch_stands_when_registry_unreachable(monkeypatch, capsys):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("OpenAlex Snapshot"))
+  _registry(monkeypatch,
+            datacite=vc.http_client.HttpError("down", status_code=503))
+  result = vc.verify_one({"doi": "10.48550/arxiv.2205.01833",
+                          "title": _OPENALEX_PAPER, "raw": "x"})
+  assert result["status"] == "mismatched"
+  assert "DataCite" in capsys.readouterr().err
 
 
 def test_main_output_and_exit_code(monkeypatch, tmp_path, capsys):
