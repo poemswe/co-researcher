@@ -4,7 +4,7 @@
 
 ## Core Principle: Systemic Honesty
 
-Systemic Honesty is a protocol constraint, not a model instruction. Telling a model "don't fabricate" degrades under pressure. Co-Researcher builds verification into the method at every step: the search step, the citation step, the synthesis step.
+Systemic Honesty is a protocol constraint. Telling a model "don't fabricate" degrades under pressure. Co-Researcher builds verification into the method at every step: the search step, the citation step, the synthesis step.
 
 Rules enforced in every skill:
 - Never fabricate a citation. If a source cannot be verified, say so explicitly.
