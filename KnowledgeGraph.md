@@ -121,6 +121,12 @@ Shared helper modules `http_client.py` (rate limiting/retries/backoff) and `jats
 - Run reports carry provenance (target commit, clean tree, resolved model) and live under the ignored `evals/results/runs/`; `publish_integrity_runs.py` copies chosen runs into `evals/published/runs/` for the dashboard after refusing any that contain the home directory path
 - `evals/claim-verifier-benchmark/` holds the prospective benchmark's protocol core: deterministic split, commitments, coverage-unit enumeration and a dry-run manifest audit
 
+### Report Pages
+
+- `paper/index.html`: plain-language summary of the evidence checker, linked from the home nav, footer and Systemic Honesty section
+- `paper/write-up/index.html`: the full technical write-up, with interactive figures, linked from the summary
+- Both use the site theme (cream, Spectral/Outfit/DM Mono, navy) and are light only; `tests/test_site_pages.py` checks the sitemap, canonical URLs and links
+
 ### Evals Dashboard
 
 High-performance HTML/JS visualization platform:

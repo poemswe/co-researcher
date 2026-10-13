@@ -138,6 +138,12 @@ Live evaluation at: https://coresearcher.poemswe.com/evals/
 - Rubrics: research quality, reasoning quality, output structure, analytical depth, quantitative rigor, qualitative methods, research design
 - Scoring: Excellent / Good / Fair / Poor with rubric-by-rubric breakdowns
 
+## Report
+
+- Plain-language summary: https://coresearcher.poemswe.com/paper/
+- Technical write-up (Every Claim Traced): https://coresearcher.poemswe.com/paper/write-up/
+- The checker tests whether each sentence in an AI-written literature review matches its source. With Claude and Codex as writers on 14 planted mistakes, it caught 13 before any fixing and missed an overstated finding. It has not yet been tested on reviews of real papers.
+
 ## Installation
 
 Claude Code: `claude plugin marketplace add poemswe/co-researcher`, then `claude plugin install co-researcher`
@@ -150,6 +156,7 @@ Source: https://github.com/poemswe/co-researcher
 
 - Landing page: https://coresearcher.poemswe.com/
 - Evals: https://coresearcher.poemswe.com/evals/
+- Report: https://coresearcher.poemswe.com/paper/
 - GitHub: https://github.com/poemswe/co-researcher
 - Creator: https://poemswe.com
 - Summary (llms.txt): https://coresearcher.poemswe.com/llms.txt

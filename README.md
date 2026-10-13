@@ -195,6 +195,10 @@ python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.
   --workspace review/{slug}
 ```
 
+How the checker was tested, what it catches and what still gets through are in
+[the report](https://coresearcher.poemswe.com/paper/), with a
+[technical write-up](https://coresearcher.poemswe.com/paper/write-up/) behind it.
+
 ## Research Toolchain
 
 The `literature-review` skill ships CLI backends (`skills/literature-review/scripts/`, run via `uv`) that the other evidence-handling skills share:

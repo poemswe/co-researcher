@@ -1,6 +1,6 @@
 # Evidence for "Every Claim Traced"
 
-This directory holds the evidence behind the preprint that is not already in `evals/published/runs/`. The two release runs on 5802823 stay where the dashboard reads them.
+This directory holds the evidence behind the [technical write-up](https://coresearcher.poemswe.com/paper/write-up/) that is not already in `evals/published/runs/`. A [plain-language summary](https://coresearcher.poemswe.com/paper/) sits in front of it. The two release runs on 5802823 stay where the dashboard reads them.
 
 ## Runs
 

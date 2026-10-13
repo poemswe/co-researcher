@@ -4,7 +4,9 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**v2.7.1 in PR #42 (`fix/resolver-false-alarms`, version bumped on the branch).** It fixes resolver false alarms found by running the resolver on the paper's own references, where it verified 19 of 23 real works and now verifies 22. Merge needs the user's explicit go-ahead; after it, tag `v2.7.1` and publish the release.
+**v2.7.1 released (2026-10-13).** PR #42 squash-merged as `3bb8040`; tag `v2.7.1` and the GitHub release are published. It fixes resolver false alarms found by running the resolver on the paper's own references (19 of 23 real works verified before, 22 after).
+
+**Report on the site (PR #43, `feat/paper-page`).** `/paper/` is a plain-language, first-person summary of the evidence checker; `/paper/write-up/` is the full technical write-up, now in first person, with §8 a sketch of a real-paper test and no registration promise. Home links to it from a Read the report button, the nav and the footer.
 
 **v2.7.0 released (2026-10-10).** PR #34 merged `release/2.7.0` into `main` as merge commit `6c6036b`, so the benchmark pin `905a482` is on `main`. Tag `v2.7.0` and the GitHub release are published; Tests and the Pages deploy passed, and the live site serves 2.7.0 (Evals, 32 cases, seven rubrics, published integrity runs). 2.7.0 adds the evidence-integrity engine and gate, live integrity evals with resume, published integrity runs on the dashboard, broad-run resume and release filtering, six new broad cases (32), an overstated-finding integrity case recorded as a known gap, path redaction, honest model and effort labels, and the site renamed from Arena to Evals.
 
