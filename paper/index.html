@@ -19,88 +19,37 @@
 <link rel="icon" type="image/svg+xml" href="/evals/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: a preprint. A single white page on a desk, numbered sections, booktabs tables, numbered equations; interactive figures sit inside the page like printed ones. */
 :root {
-  --desk: #e7e9ee;
-  --page: #ffffff;
-  --ink: #16181d;
-  --ink-2: #474c57;
-  --ink-3: #6d7380;
-  --rule: #cfd3db;
-  --rule-2: #eceef2;
-  --fig: #f6f7f9;
-  --accent: #3b3496;
-  --accent-soft: rgba(59, 52, 150, 0.09);
-  --hl: #fff0a3;
-  --hl-ink: #16181d;
-  --good: #1d7f4e;
-  --good-soft: rgba(29, 127, 78, 0.12);
-  --warn: #a8670a;
-  --warn-soft: rgba(168, 103, 10, 0.13);
-  --bad: #c2362b;
-  --bad-soft: rgba(194, 54, 43, 0.11);
+  --desk: #fefce8;
+  --page: #fffef7;
+  --ink: #18181b;
+  --ink-2: #3f3f46;
+  --ink-3: #71717a;
+  --rule: #d4d4d8;
+  --rule-2: #ebe8d8;
+  --fig: #fef9e6;
+  --accent: #1e3a8a;
+  --accent-soft: rgba(30, 58, 138, 0.08);
+  --hl: #fde68a;
+  --hl-ink: #18181b;
+  --good: #065f46;
+  --good-soft: rgba(6, 95, 70, 0.1);
+  --warn: #92400e;
+  --warn-soft: rgba(146, 64, 14, 0.09);
+  --bad: #be123c;
+  --bad-soft: rgba(190, 18, 60, 0.09);
   --s1: #2a78d6;
   --s2: #eb6834;
   --s3: #1baf7a;
-  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --shadow: 0 1px 2px rgba(20, 24, 33, 0.06), 0 12px 40px rgba(20, 24, 33, 0.08);
+  --serif: "Spectral", Georgia, serif;
+  --sans: "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "DM Mono", "SF Mono", Menlo, monospace;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px rgba(24, 24, 27, 0.06);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --desk: #0b0d11;
-    --page: #15181f;
-    --ink: #e7e9ef;
-    --ink-2: #b0b6c2;
-    --ink-3: #8c93a1;
-    --rule: #303644;
-    --rule-2: #222733;
-    --fig: #1b1f28;
-    --accent: #a59bf3;
-    --accent-soft: rgba(165, 155, 243, 0.13);
-    --hl: rgba(255, 220, 90, 0.22);
-    --hl-ink: #f6f2df;
-    --good: #43b97c;
-    --good-soft: rgba(67, 185, 124, 0.14);
-    --warn: #e0a440;
-    --warn-soft: rgba(224, 164, 64, 0.14);
-    --bad: #ef6a5e;
-    --bad-soft: rgba(239, 106, 94, 0.14);
-    --s1: #3987e5;
-    --s2: #d95926;
-    --s3: #199e70;
-    --shadow: 0 0 0 1px #1f2430;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --desk: #0b0d11;
-  --page: #15181f;
-  --ink: #e7e9ef;
-  --ink-2: #b0b6c2;
-  --ink-3: #8c93a1;
-  --rule: #303644;
-  --rule-2: #222733;
-  --fig: #1b1f28;
-  --accent: #a59bf3;
-  --accent-soft: rgba(165, 155, 243, 0.13);
-  --hl: rgba(255, 220, 90, 0.22);
-  --hl-ink: #f6f2df;
-  --good: #43b97c;
-  --good-soft: rgba(67, 185, 124, 0.14);
-  --warn: #e0a440;
-  --warn-soft: rgba(224, 164, 64, 0.14);
-  --bad: #ef6a5e;
-  --bad-soft: rgba(239, 106, 94, 0.14);
-  --s1: #3987e5;
-  --s2: #d95926;
-  --s3: #199e70;
-  --shadow: 0 0 0 1px #1f2430;
-}
+
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -288,11 +237,21 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-.sitebar { max-width: 52rem; margin: 0 auto 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--sans); font-size: 0.86rem; }
-.sitebar a { color: var(--ink-2); text-decoration: none; }
-.sitebar a:hover { color: var(--accent); }
-.sitebar .brand { font-weight: 600; color: var(--ink); }
-.sitebar nav { display: flex; gap: 18px; }
+.site-nav { border-bottom: 1px solid var(--rule); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; background: var(--desk); position: sticky; top: 0; z-index: 100; margin: -32px -16px 32px; font-family: var(--sans); }
+.site-nav-brand { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; color: var(--ink); letter-spacing: -0.01em; text-decoration: none; }
+.site-nav-links { display: flex; gap: 2rem; align-items: center; list-style: none; margin: 0; padding: 0; }
+.site-nav-links a { font-size: 0.875rem; font-weight: 500; color: var(--ink-2); text-decoration: none; }
+.site-nav-links a:hover { color: var(--ink); }
+.site-nav-links a[aria-current] { color: var(--ink); }
+.site-nav-cta { font-size: 0.8rem !important; font-weight: 600 !important; background: var(--accent); color: #fff !important; padding: 0.4rem 1rem; border-radius: 4px; }
+.site-nav-cta:hover { background: var(--warn); }
+.site-nav-toggle { display: none; background: none; border: none; cursor: pointer; padding: 0.25rem; flex-direction: column; gap: 5px; }
+.site-nav-toggle span { display: block; width: 22px; height: 2px; background: var(--ink); border-radius: 1px; }
+.site-footer { max-width: 52rem; margin: 40px auto 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; font-family: var(--sans); font-size: 0.8rem; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 1.5rem; }
+.site-footer p { margin: 0; text-align: left; }
+.site-footer a { color: var(--ink-3); text-decoration: none; }
+.site-footer a:hover { color: var(--ink); }
+.site-footer ul { display: flex; gap: 1.5rem; list-style: none; margin: 0; padding: 0; }
 .glance { max-width: 52rem; margin: 0 auto 28px; background: var(--page); box-shadow: var(--shadow); border-radius: 4px; border-top: 3px solid var(--accent); padding-block: 36px 32px; padding-inline: clamp(20px, 6vw, 64px); font-family: var(--sans); font-size: 0.95rem; line-height: 1.6; }
 .glance p { text-align: left; hyphens: manual; -webkit-hyphens: manual; }
 .g-kicker { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
@@ -318,14 +277,22 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
 .g-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
 .g-links a { font-size: 0.86rem; padding: 7px 12px; border: 1px solid var(--rule); border-radius: 6px; text-decoration: none; color: var(--ink); background: var(--page); }
 .g-links a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-@media (max-width: 560px) { .sitebar { padding-inline: 20px; padding-top: 16px; } .glance { border-radius: 0; box-shadow: none; margin-bottom: 0; border-bottom: 1px solid var(--rule); } }
+@media (max-width: 768px) { .site-nav { padding: 1rem 1.25rem; flex-wrap: wrap; position: relative; } .site-nav-toggle { display: flex; } .site-nav-links { display: none; flex-direction: column; gap: 0; width: 100%; padding: 0.5rem 0 0.75rem; align-items: stretch; } .site-nav-links.open { display: flex; } .site-nav-links li { border-top: 1px solid var(--rule); } .site-nav-links a { display: block; padding: 0.6rem 0; font-size: 0.95rem; } .site-nav-cta { background: none; color: var(--accent) !important; padding: 0.6rem 0; } }
+@media (max-width: 560px) { .site-nav { margin: 0 0 0; } .site-footer { padding-inline: 20px; } .glance { border-radius: 0; box-shadow: none; margin-bottom: 0; border-bottom: 1px solid var(--rule); } }
 </style>
 </head>
 <body>
-<header class="sitebar">
-  <a class="brand" href="/">Co-Researcher</a>
-  <nav aria-label="Site"><a href="/evals/">Evals</a><a href="https://github.com/poemswe/co-researcher">GitHub</a></nav>
-</header>
+<nav class="site-nav" aria-label="Site">
+  <a href="/" class="site-nav-brand">Co-Researcher</a>
+  <button class="site-nav-toggle" aria-label="Toggle menu" onclick="this.nextElementSibling.classList.toggle('open')"><span></span><span></span><span></span></button>
+  <ul class="site-nav-links">
+    <li><a href="/#skills">Skills</a></li>
+    <li><a href="/#install">Install</a></li>
+    <li><a href="/paper/" aria-current="page">Paper</a></li>
+    <li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li>
+    <li><a href="/evals/" class="site-nav-cta">Evals →</a></li>
+  </ul>
+</nav>
 
 <section class="glance" aria-labelledby="glance-h">
   <p class="g-kicker">Working paper · Poe Poe Myint Swe · October 2026</p>
@@ -759,6 +726,11 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
     <div><b>Data and code.</b> Code, attack set and harness are in the co-researcher repository (github.com/poemswe/co-researcher), release 2.7.0. The two release runs on 5802823 are published with their snapshots and repair rounds in <code>evals/published/runs/</code>. The paper's evidence package is in <code>evals/published/paper/</code>. It holds the five earlier runs in Table 3, which also carry the trajectories in Figure 6, the 65 judge re-scores behind Table 6 with the script that recomputes the table, and the four §7 counterexample workspaces with their gate reports. Its README maps each table, figure and section to the runs and files behind it, and lists what the package does not hold, such as the earliest runs behind Figure 7. The re-score records keep scores and labels but not the raw judge responses. Reported pilot statistics were recomputed from these artifacts.</div>
   </div>
 </article>
+
+<footer class="site-footer">
+  <p>Co-Researcher · MIT License · Part of <a href="https://poemswe.com">poemswe.com</a></p>
+  <ul><li><a href="https://github.com/poemswe/co-researcher">GitHub</a></li><li><a href="/evals/">Evals</a></li><li><a href="/llms.txt">llms.txt</a></li></ul>
+</footer>
 
 <div class="tip" id="tip" role="status"></div>
 
