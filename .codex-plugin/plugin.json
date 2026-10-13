@@ -1,7 +1,7 @@
 {
   "name": "co-researcher",
   "version": "2.7.1",
-  "description": "PhD-level research capabilities: literature review, multi-source investigation, critical analysis, hypothesis-driven exploration, quantitative/qualitative methods, peer review, ethics review, and grant writing",
+  "description": "Academic research plugin for Codex: literature reviews, systematic reviews, peer review and citation checking, with every citation verified against OpenAlex, arXiv and Europe PMC",
   "author": {
     "name": "poemswe"
   },
@@ -9,24 +9,27 @@
   "repository": "https://github.com/poemswe/co-researcher",
   "homepage": "https://github.com/poemswe/co-researcher",
   "keywords": [
+    "academic-research",
     "research",
     "literature-review",
+    "systematic-review",
+    "citation-verification",
+    "peer-review",
+    "claude-code-plugin",
+    "research-assistant",
     "critical-analysis",
     "hypothesis",
-    "academic",
     "investigation",
-    "peer-review",
     "ethics",
     "grant-writing",
     "quantitative",
-    "qualitative",
-    "systematic-review"
+    "qualitative"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Co-Researcher",
-    "shortDescription": "PhD-level research suite — literature review, critical analysis, and multi-agent orchestration.",
-    "longDescription": "Co-Researcher is a professional research suite providing PhD-level capabilities across literature review, critical analysis, hypothesis testing, quantitative and qualitative methods, peer review, ethics review, and grant writing. Features an intelligent orchestration engine that coordinates specialized research agents. Compatible with Claude Code, Gemini CLI, OpenAI Codex, and OpenCode.",
+    "shortDescription": "Academic research plugin: literature reviews, systematic reviews and citation checking.",
+    "longDescription": "Co-Researcher is an academic research plugin covering literature review, critical analysis, hypothesis testing, quantitative and qualitative methods, peer review, ethics review, and grant writing. Features an intelligent orchestration engine that coordinates specialized research agents. Compatible with Claude Code, Gemini CLI, OpenAI Codex, and OpenCode.",
     "developerName": "poemswe",
     "category": "Research",
     "capabilities": [

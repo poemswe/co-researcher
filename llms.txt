@@ -1,6 +1,6 @@
 # Co-Researcher
 
-> A PhD-level research agent suite for Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. Governed by Systemic Honesty — no fabricated citations, no hallucinated data.
+> An academic research plugin for Claude Code, Gemini CLI, OpenAI Codex, and OpenCode. Governed by Systemic Honesty — no fabricated citations, no hallucinated data.
 
 This site publishes benchmark results evaluating research agent performance across 32 test cases and 10 capabilities, plus a 16-case evidence-integrity set.
 

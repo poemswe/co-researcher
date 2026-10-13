@@ -44,17 +44,12 @@ echo "New version: $NEW_VERSION"
 # Update all version files
 echo "Updating version files..."
 
-# 1. README.md
-sed -i.bak "s/# Co-Researcher (v[0-9.]*)/# Co-Researcher (v$NEW_VERSION)/" README.md && rm README.md.bak
-
-# 2. gemini-extension.json
-sed -i.bak "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/" gemini-extension.json && rm gemini-extension.json.bak
-
-# 3. .claude-plugin/plugin.json
-sed -i.bak "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/" .claude-plugin/plugin.json && rm .claude-plugin/plugin.json.bak
-
-# 4. .claude-plugin/marketplace.json
-sed -i.bak "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/" .claude-plugin/marketplace.json && rm .claude-plugin/marketplace.json.bak
+sed -i.bak "s|badge/version-[0-9.]*-|badge/version-$NEW_VERSION-|" README.md && rm README.md.bak
+for f in gemini-extension.json .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json; do
+  sed -i.bak "s/\"version\": \"[0-9.]*\"/\"version\": \"$NEW_VERSION\"/" "$f" && rm "$f.bak"
+done
+sed -i.bak "s/\*\*Current Version: v[0-9.]*\*\*/**Current Version: v$NEW_VERSION**/" KnowledgeGraph.md && rm KnowledgeGraph.md.bak
+sed -i.bak "s/\"softwareVersion\": \"[0-9.]*\"/\"softwareVersion\": \"$NEW_VERSION\"/; s/Co-Researcher v[0-9.]* —/Co-Researcher v$NEW_VERSION —/" index.html && rm index.html.bak
 
 echo "✅ Version updated to $NEW_VERSION in all files"
 echo ""

@@ -1,6 +1,6 @@
 # Co-Researcher for Gemini CLI
 
-PhD-level research capabilities for your Gemini CLI sessions.
+Academic research skills for your Gemini CLI sessions: literature reviews, systematic reviews, peer review and citation checking.
 
 ## Core principles
 

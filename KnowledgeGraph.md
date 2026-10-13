@@ -6,7 +6,7 @@ This document provides a technical overview of the co-researcher system architec
 
 ### Specialized Research Skills
 
-Domain-expert skills provide PhD-level research capabilities:
+Domain-expert skills cover academic research:
 
 - **literature-review**: Narrative/scoping reviews with thematic synthesis. **Owns the literature search backend** (`scripts/openalex_cli.py`, `europepmc_api.py`, `search_arxiv.py`, `read_paper.py`) consumed by both review skills and referenced by research-synthesis, multi-source-investigation, and peer-review for source resolution.
 - **systematic-review**: PRISMA/Cochrane/JBI reviews with Risk-of-Bias and GRADE. Reuses literature-review's backend scripts.
