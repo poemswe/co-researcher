@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Every Claim Traced · Co-Researcher</title>
-<meta name="description" content="A deterministic gate that checks an agent-written literature review against its evidence, tested against Claude Opus 5.5 and GPT Codex on 14 planted error families.">
+<meta name="description" content="AI can cite a real paper and still get what it says wrong. A checker for those mistakes, how I tested it, and what it still misses.">
 <link rel="canonical" href="https://coresearcher.poemswe.com/paper/">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://coresearcher.poemswe.com/paper/">
 <meta property="og:title" content="Every Claim Traced">
-<meta property="og:description" content="A deterministic gate that checks an agent-written literature review against its evidence, tested against Claude Opus 5.5 and GPT Codex on 14 planted error families.">
+<meta property="og:description" content="AI can cite a real paper and still get what it says wrong. A checker for those mistakes, how I tested it, and what it still misses.">
 <meta property="og:image" content="https://poemswe.com/images/og-default.png">
 <meta property="og:site_name" content="Co-Researcher">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Every Claim Traced">
-<meta name="twitter:description" content="A deterministic gate that checks an agent-written literature review against its evidence, tested against Claude Opus 5.5 and GPT Codex on 14 planted error families.">
+<meta name="twitter:description" content="AI can cite a real paper and still get what it says wrong. A checker for those mistakes, how I tested it, and what it still misses.">
 <meta name="author" content="Poe Poe Myint Swe">
 <link rel="icon" type="image/svg+xml" href="/evals/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -257,6 +257,7 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
 .g-kicker { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 10px; }
 .g-lead { font-family: var(--serif); font-size: clamp(1.3rem, 3vw, 1.65rem); line-height: 1.25; font-weight: 700; margin: 0 0 14px; text-wrap: balance; letter-spacing: -0.01em; }
 .glance h3 { font-size: 0.8rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin: 28px 0 10px; font-weight: 600; }
+.glance h3 + p, .glance h3 + .g-table-wrap { margin-top: 0; }
 .g-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); gap: 10px; margin: 20px 0 4px; }
 .g-stat { border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; background: var(--fig); }
 .g-stat b { display: block; font-family: var(--serif); font-size: 1.6rem; line-height: 1.1; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
@@ -270,7 +271,7 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
 .g-res { font-weight: 600; white-space: nowrap; }
 .g-res.ok { color: var(--good); }
 .g-res.miss { color: var(--bad); }
-.g-list { margin: 0; padding-left: 1.2rem; }
+.g-list { margin: 0 0 0.9rem; padding-left: 1.2rem; }
 .g-list li { margin-bottom: 6px; }
 .g-caveat { margin-top: 22px; padding: 12px 14px; border-left: 3px solid var(--warn); background: var(--warn-soft); border-radius: 0 6px 6px 0; font-size: 0.9rem; }
 .g-caveat:last-child { margin-bottom: 0; }
@@ -295,53 +296,69 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
 </nav>
 
 <section class="glance" aria-labelledby="glance-h">
-  <p class="g-kicker">Working paper · Poe Poe Myint Swe · October 2026</p>
-  <h2 class="g-lead" id="glance-h">An agent can write a literature review whose references all exist and still misreport what they say.</h2>
-  <p>Reference checkers confirm that a cited paper is real. They do not read the review's own sentences, where a dropped “no”, a number that appears nowhere in the source, or a finding credited to the wrong paper sits. Co-Researcher's evidence gate checks those sentences. The writing agent records every claim it takes from a paper, with the quote that supports it. Before the review is delivered, the gate confirms that each quote appears in its source, that each citation points to the right paper, and that each cited sentence agrees with its claim in numbers, negation and direction.</p>
-  <p>To test it, we planted 14 kinds of error into reviews written by two live agents, Claude Opus 5.5 and GPT Codex, and recorded which errors the gate raised before any repair.</p>
+  <p class="g-kicker">Project report · Poe Poe Myint Swe · October 2026</p>
+  <h2 class="g-lead" id="glance-h">AI can cite a real paper and still get what it says wrong. I built a checker for that.</h2>
 
-  <div class="g-stats">
-    <div class="g-stat"><b>13 / 13</b><span>error families the gate was built for, flagged on the first pass in every run, for both writers</span></div>
-    <div class="g-stat"><b>1 missed</b><span>an overstated finding, “suggested” restated as “proved”, which the gate's checks cannot see</span></div>
-    <div class="g-stat"><b>10 / 10</b><span>repair cases fixed by each writer when the repair step pointed to the gate's rules, against 8 and 4 without (one run each)</span></div>
-    <div class="g-stat"><b>38.5 pts</b><span>widest gap between scores a quality judge gave identical short texts, which is why a judge cannot replace the gate</span></div>
-  </div>
+  <h3>Why I built this</h3>
+  <p>I build Co-Researcher, a set of research tools that run inside AI assistants like Claude Code and Codex. One of them writes literature reviews, the summaries of what published studies found. Early on it did what AI tools are known for and cited papers that don't exist. My name is on what it produces, so I needed that to stop.</p>
+  <p>Catching made-up papers turned out to be the easy part. You look the title up in a database of real papers, and either it's there or it isn't. The harder problem comes after. The paper is real, but the sentence citing it gets it wrong. A study that found “no change” gets reported as finding a change. A 6.4% becomes 64%. A finding gets credited to the wrong author. Checking that the paper exists catches none of this.</p>
 
-  <h3>The planted errors</h3>
+  <h3>How the checker works</h3>
+  <p>Every time the AI uses a study, I make it write down what it says the study found, the exact words from the study that back that up, and which study it is. Before the review goes out, the checker reads that list and asks four plain questions.</p>
+  <ul class="g-list">
+    <li>Do those exact words actually appear in the study?</li>
+    <li>Is the AI citing the right study?</li>
+    <li>Do the numbers in its claim appear in those words?</li>
+    <li>Does every sentence in the review match a claim on the list, with the same numbers and the same “no” or “not”?</li>
+  </ul>
+  <p>If any answer is no, the review goes back to the AI to fix, up to three times. If it still fails, it goes out stamped with a warning instead of looking clean. The checker doesn't ask an AI whether the review looks right. It's ordinary code comparing text, so it gives the same answer every time.</p>
+
+  <h3>How I tested it</h3>
+  <p>I invented a set of small studies, so no AI could have seen them before, and slipped one mistake into each test. Then two AI writers, Anthropic's Claude and OpenAI's Codex, wrote reviews from them, and I checked whether the checker caught the mistake on its first look.</p>
+
   <div class="g-table-wrap">
   <table class="g-table">
-    <thead><tr><th>Family</th><th>What we planted</th><th>First pass</th></tr></thead>
+    <thead><tr><th>Kind of mistake</th><th>What I slipped in</th><th>Result</th></tr></thead>
     <tbody>
-      <tr><td>Tampered quote<span class="ids">001–003</span></td><td>a Cyrillic letter that looks Latin, a deleted “no”, two sentences stitched across a gap</td><td class="g-res ok">Caught</td></tr>
-      <tr><td>Wrong citation<span class="ids">004–006</span></td><td>a quote credited to another author, a title that matches two papers, “La Cruz” for “de la Cruz”</td><td class="g-res ok">Caught</td></tr>
-      <tr><td>Bad number or role<span class="ids">007–009</span></td><td>64% added to the summary, 64% where the claim says 6.4%, a finding cited to a background source</td><td class="g-res ok">Caught</td></tr>
-      <tr><td>Broken workspace<span class="ids">010–013</span></td><td>a missing file, a corrupted file, a symbolic link, a path outside the workspace</td><td class="g-res ok">Caught</td></tr>
-      <tr><td>Overstated finding<span class="ids">014</span></td><td>“suggested” restated as “proved”, with every number and negation intact</td><td class="g-res miss">Missed</td></tr>
+      <tr><td>Altered quote</td><td>a letter from another alphabet that looks identical, a deleted “no”, two sentences glued together from different places</td><td class="g-res ok">Caught</td></tr>
+      <tr><td>Wrong citation</td><td>a quote credited to the wrong author, a title that matches two papers, “La Cruz” for “de la Cruz”</td><td class="g-res ok">Caught</td></tr>
+      <tr><td>Wrong number or source</td><td>64% added out of nowhere, 64% where the study says 6.4%, a finding taken from a paper marked as background reading</td><td class="g-res ok">Caught</td></tr>
+      <tr><td>Broken files</td><td>a missing file, a corrupted file, a file swapped for a shortcut, a file pointing outside the project</td><td class="g-res ok">Caught</td></tr>
+      <tr><td>Overstated finding</td><td>a study that “suggested” something, reported as having “proved” it</td><td class="g-res miss">Missed</td></tr>
     </tbody>
   </table>
   </div>
 
-  <h3>What still passes</h3>
-  <p>While reviewing a draft, Codex found four edits that the gate scores valid at 100. We reproduced each, and §7 shows them.</p>
+  <div class="g-stats">
+    <div class="g-stat"><b>13 of 13</b><span>kinds of mistake the checker was built for, caught on the first look, with both AI writers</span></div>
+    <div class="g-stat"><b>1 miss</b><span>“suggested” turned into “proved”. Every number still matches, so the checker can't tell.</span></div>
+    <div class="g-stat"><b>10 of 10</b><span>mistakes each AI fixed once I pointed it to the checker's rules. Before that, Claude fixed 8 and Codex 4. Each setup ran once, so treat it as a hint.</span></div>
+    <div class="g-stat"><b>38.5 points</b><span>the widest gap between scores an AI grader gave the exact same text on different tries, which is why I don't trust an AI grader for this</span></div>
+  </div>
+
+  <h3>What still gets through</h3>
+  <p>I asked Codex to pick apart my write-up. It found four mistakes the checker gives a perfect score, and I confirmed all four.</p>
   <ul class="g-list">
-    <li>A claim that says “found a change” over a quote that says “found no change”.</li>
-    <li>An uncited sentence with no number, such as “This treatment conclusively cures dementia.”</li>
-    <li>A qualitative finding cited to a background source.</li>
-    <li>“60 adults and 40 children” where the source says 40 adults and 60 children.</li>
+    <li>The AI says a study “found a change” while the quoted words say “found no change”. The checker compares numbers between those two, not meaning. This is the one I'm fixing next.</li>
+    <li>A sentence with no citation and no number, such as “This treatment conclusively cures dementia.” Nothing checks it.</li>
+    <li>A finding taken from a paper marked as background reading. The checker only enforces that rule when the sentence has a number in it.</li>
+    <li>“60 adults and 40 children” when the study says 40 adults and 60 children. The numbers are right but in the wrong places.</li>
   </ul>
 
-  <p class="g-caveat">These results come from a synthetic pilot. We wrote both the attacks and the gate, the papers are invented so no model can recall them, and each configuration ran once. The next step is a pre-registered benchmark of real papers with independent human labels (§8).</p>
+  <p class="g-caveat">What this shows is that the checker catches the mistakes I built it to catch, with real AI writers in the loop. It doesn't show how it does on real reviews of real papers, because I haven't tested that yet. I also wrote both the mistakes and the checker, which makes this a friendly test.</p>
+
+  <p>The full technical write-up is below, with every number, method and test case, for anyone who wants to check my work.</p>
 
   <div class="g-links">
-    <a class="primary" href="#abstract-h">Read the paper ↓</a>
-    <a href="/evals/">Integrity runs on Evals</a>
-    <a href="https://github.com/poemswe/co-researcher/tree/main/evals/published/paper">Evidence package</a>
-    <a href="https://github.com/poemswe/co-researcher/tree/main/skills/literature-review/scripts/review_integrity">Gate source</a>
+    <a class="primary" href="#abstract-h">Technical write-up ↓</a>
+    <a href="/evals/">The test runs</a>
+    <a href="https://github.com/poemswe/co-researcher/tree/main/evals/published/paper">All the data</a>
+    <a href="https://github.com/poemswe/co-researcher/tree/main/skills/literature-review/scripts/review_integrity">The checker's code</a>
   </div>
 </section>
 
 <article class="sheet">
-  <div class="runninghead"><span>Working paper</span><span>Co-Researcher project · October 2026</span></div>
+  <div class="runninghead"><span>Technical write-up</span><span>Co-Researcher project · October 2026</span></div>
 
   <h1 class="title">Every Claim Traced</h1>
   <p class="subtitle">Deterministic evidence checks for agent-written literature reviews, and how to test them against live agents</p>
