@@ -429,9 +429,9 @@
             max-width: 560px;
         }
 
-        .honesty-link { margin-top: 1rem; }
+        .honesty-link { margin-top: 1.25rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; font-weight: 600; color: var(--text) !important; }
 
-        .honesty-link a { font-weight: 600; color: var(--navy); }
+        .honesty-link .btn-primary { display: inline-block; }
 
         .honesty-rules {
             margin-top: 1.5rem;
@@ -678,7 +678,7 @@
     <div class="honesty-inner">
         <h2>Systemic Honesty is a protocol constraint, not a model instruction.</h2>
         <p>Telling a model "don't fabricate" improves outputs until the task gets hard. Co-Researcher embeds verification into the method itself — searches run against real scholarly databases, and a citation verifier resolves every reference before a bibliography ships, failing loudly on fabricated, mismatched, or retracted entries. An integrity gate then checks the finished review link by link, and a draft with unresolved evidence errors ships marked INVALID EVIDENCE. The constraint doesn't depend on a single instruction holding under pressure.</p>
-        <p class="honesty-link"><a href="/paper/">Does it hold up? See how I tested the checker →</a></p>
+        <p class="honesty-link">Does it hold up? <a href="/paper/" class="btn-primary">Read the report →</a></p>
         <div class="honesty-rules">
             <p class="honesty-rule">Never fabricate a citation. If a source cannot be verified, say so.</p>
             <p class="honesty-rule">Distinguish what the evidence shows from what it suggests.</p>
