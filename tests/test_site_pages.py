@@ -11,6 +11,7 @@ class _Links(HTMLParser):
     super().__init__()
     self.hrefs = []
     self.canonical = None
+    self.meta = {}
 
   def handle_starttag(self, tag, attrs):
     attrs = dict(attrs)
@@ -18,6 +19,8 @@ class _Links(HTMLParser):
       self.hrefs.append(attrs["href"])
     if tag == "link" and attrs.get("rel") == "canonical":
       self.canonical = attrs.get("href")
+    if tag == "meta" and (attrs.get("property") or attrs.get("name")):
+      self.meta[attrs.get("property") or attrs.get("name")] = attrs.get("content")
 
 
 def _parse(path):
@@ -71,3 +74,13 @@ def test_report_internal_links_resolve():
       if href.startswith("/") and not href.startswith("//"):
         target = ROOT / href.lstrip("/").split("#")[0]
         assert target.is_file() or (target / "index.html").is_file(), (page, href)
+
+
+def test_html_pages_share_the_site_card():
+  for url in _sitemap_urls():
+    if url.endswith("/"):
+      meta = _parse(_local_file(url)).meta
+      assert meta["og:image"] == f"{SITE}og-image.png", url
+      assert meta["twitter:image"] == f"{SITE}og-image.png", url
+      assert meta["twitter:card"] == "summary_large_image", url
+  assert _local_file(f"{SITE}og-image.png").stat().st_size < 1_000_000
