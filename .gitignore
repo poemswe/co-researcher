@@ -27,3 +27,5 @@ evals/results/
 .claude/
 .worktrees/
 .superpowers/
+.playwright-mcp/
+*.egg-info/
