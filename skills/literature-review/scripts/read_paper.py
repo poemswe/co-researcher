@@ -15,12 +15,16 @@ Paywalled papers are a normal outcome (abstract-only), not an error.
 # ///
 
 import argparse
+import contextlib
 import hashlib
+import io
 import json
 import os
 import pathlib
 import re
+import shutil
 import sys
+import tempfile
 import urllib.parse
 from datetime import datetime, timezone
 
@@ -218,6 +222,48 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
   emit("abstract-only", None, "none", identifier)
 
 
+def identifier_args(identifier: str) -> tuple:
+  if re.fullmatch(r"PMC\d+", identifier):
+    return None, None, identifier
+  if identifier.startswith("10."):
+    return identifier, None, None
+  return None, identifier, None
+
+
+def recheck_source(receipt_path: pathlib.Path) -> tuple[pathlib.Path, str, str]:
+  receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+  name, source, identifier = receipt["file"], receipt["source"], receipt["id"]
+  current = receipt_path.parent / name
+  with tempfile.TemporaryDirectory() as tmp:
+    fresh_dir = pathlib.Path(tmp) / "papers" / sanitize_id(identifier)
+    fresh_dir.mkdir(parents=True)
+    if source == "user_pdf":
+      shutil.copyfile(receipt_path.parent / "paper.pdf", fresh_dir / "paper.pdf")
+    with contextlib.redirect_stdout(io.StringIO()):
+      read_paper(*identifier_args(identifier), tmp)
+    fresh_receipt = (fresh_dir / name).with_suffix(".receipt.json")
+    if not fresh_receipt.exists() or json.loads(
+        fresh_receipt.read_text(encoding="utf-8"))["source"] != source:
+      return current, source, "unavailable"
+    fresh = (fresh_dir / name).read_bytes()
+  same = current.is_file() and current.read_bytes() == fresh
+  return current, source, "match" if same else "mismatch"
+
+
+def recheck(workspace) -> int:
+  root = pathlib.Path(workspace)
+  failed = False
+  for receipt_path in sorted(root.glob("papers/*/*.receipt.json")):
+    try:
+      file, source, result = recheck_source(receipt_path)
+    except (ValueError, KeyError, TypeError, OSError):
+      source, result, file = None, "unreadable_receipt", receipt_path
+    failed = failed or result in ("mismatch", "unreadable_receipt")
+    print(json.dumps({"file": file.relative_to(root).as_posix(),
+                      "source": source, "result": result}))
+  return 1 if failed else 0
+
+
 def parse_args() -> argparse.Namespace:
   parser = argparse.ArgumentParser(
       description="Acquire full text for a paper into papers/{id}/."
@@ -226,6 +272,10 @@ def parse_args() -> argparse.Namespace:
   group.add_argument("--doi", help="DOI, e.g. 10.1038/s41586-021-03819-2")
   group.add_argument("--arxiv", help="arXiv ID, e.g. 1706.03762")
   group.add_argument("--pmcid", help="PubMed Central ID, e.g. PMC8371605")
+  group.add_argument(
+      "--recheck", action="store_true",
+      help="Re-fetch every receipted source and compare it to the workspace copy",
+  )
   parser.add_argument(
       "--workspace", default=".",
       help="Parent directory of papers/ (default: current directory)",
@@ -235,4 +285,6 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
   args = parse_args()
+  if args.recheck:
+    sys.exit(recheck(args.workspace))
   read_paper(args.doi, args.arxiv, args.pmcid, args.workspace)

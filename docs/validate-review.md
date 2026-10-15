@@ -29,6 +29,21 @@ sha256 no longer matches it, fails as `manifest_mismatch`. A receipt shows the
 text came from a fetch and was not edited afterwards. An agent could still
 write a receipt by hand, so it is a tripwire and not proof.
 
+For proof, re-fetch every receipted source and compare it to the workspace copy:
+
+```bash
+uv run skills/literature-review/scripts/read_paper.py --recheck \
+  --workspace /path/to/review/example
+```
+
+It prints one JSON line per receipt with `result` set to `match`, `mismatch`,
+`unavailable` or `unreadable_receipt`, and exits 1 on a mismatch or an
+unreadable receipt. A user PDF is re-extracted from `paper.pdf`. `unavailable`
+means the original route no longer returns that file. A mismatch can also come
+from a publisher correction or a different PDF extractor version, so read the
+two texts before calling it forged. The check needs the network, which is why
+it stays outside the offline validator.
+
 Fixtures built from invented papers cannot resolve or be fetched. For those,
 pass `--synthetic-fixture`, which skips both checks, restores the old warning,
 and records `citation_resolution.source` as `waived` so the report shows it

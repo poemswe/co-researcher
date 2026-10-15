@@ -379,3 +379,85 @@ def test_cached_fulltext_does_not_mint_a_receipt(tmp_path, capsys):
                         workspace=tmp_path)
 
   assert not (d / "fulltext.receipt.json").exists()
+
+
+def _recheck(workspace, capsys):
+  capsys.readouterr()
+  code = read_paper.recheck(workspace)
+  lines = capsys.readouterr().out.splitlines()
+  return code, [json.loads(line) for line in lines]
+
+
+def _epmc_workspace(tmp_path, capsys, monkeypatch, text="# epmc md"):
+  _no_network(monkeypatch, fetch_epmc_fulltext=lambda pmcid: text)
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC7",
+                        workspace=tmp_path)
+  return tmp_path / "papers" / "PMC7" / "fulltext.md"
+
+
+def test_recheck_matches_an_unchanged_source(tmp_path, capsys, monkeypatch):
+  _epmc_workspace(tmp_path, capsys, monkeypatch)
+  code, results = _recheck(tmp_path, capsys)
+
+  assert code == 0
+  assert results == [{"file": "papers/PMC7/fulltext.md", "source": "epmc",
+                      "result": "match"}]
+
+
+def test_recheck_flags_text_forged_with_its_receipt(
+    tmp_path, capsys, monkeypatch):
+  source = _epmc_workspace(tmp_path, capsys, monkeypatch)
+  source.write_text("# forged", encoding="utf-8")
+  receipt_path = source.with_suffix(".receipt.json")
+  receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+  receipt["sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
+  receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+  code, results = _recheck(tmp_path, capsys)
+
+  assert code == 1
+  assert results[0]["result"] == "mismatch"
+
+
+def test_recheck_reports_a_source_it_cannot_reach(
+    tmp_path, capsys, monkeypatch):
+  _epmc_workspace(tmp_path, capsys, monkeypatch)
+  _no_network(monkeypatch)
+  code, results = _recheck(tmp_path, capsys)
+
+  assert code == 0
+  assert results[0]["result"] == "unavailable"
+
+
+def test_recheck_re_extracts_a_user_pdf(tmp_path, capsys, monkeypatch):
+  d = tmp_path / "papers" / "10.1_x"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-fake")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
+  read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  _no_network(monkeypatch)
+  code, results = _recheck(tmp_path, capsys)
+
+  assert code == 0
+  assert results == [{"file": "papers/10.1_x/fulltext.md",
+                      "source": "user_pdf", "result": "match"}]
+
+
+def test_recheck_fails_on_an_unreadable_receipt(tmp_path, capsys):
+  d = tmp_path / "papers" / "PMC7"
+  d.mkdir(parents=True)
+  (d / "fulltext.receipt.json").write_text("{", encoding="utf-8")
+  code, results = _recheck(tmp_path, capsys)
+
+  assert code == 1
+  assert results == [{"file": "papers/PMC7/fulltext.receipt.json",
+                      "source": None, "result": "unreadable_receipt"}]
+
+
+@pytest.mark.parametrize("identifier, expected", [
+    ("PMC123", (None, None, "PMC123")),
+    ("10.1/x", ("10.1/x", None, None)),
+    ("1706.03762", (None, "1706.03762", None)),
+])
+def test_identifier_args_routes_by_shape(identifier, expected):
+  assert read_paper.identifier_args(identifier) == expected
