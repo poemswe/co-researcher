@@ -8,12 +8,12 @@ python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.
   --workspace /path/to/review/example
 ```
 
-This command is always offline. It never resolves citations over the network.
-When a nonempty bibliography has no explicit `--citation-report`, the report
-records `citation_resolution_unavailable` as a warning; it does not claim that
-the bibliography is verified. An empty bibliography makes that dimension not
-applicable. To score a prior offline resolver result, supply its immutable JSON
-report explicitly:
+This command is always offline. It never resolves citations over the network,
+so it scores the report that `verify_citations.py` wrote earlier. A nonempty
+bibliography with no `--citation-report` is invalid, and so is any cited paper
+that no `refs.json` entry identifies by DOI or title. Without both checks an
+agent could cite a corpus record it invented and never have it looked up.
+Supply the resolver report explicitly:
 
 ```bash
 python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.py \
@@ -21,6 +21,10 @@ python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.
   --citation-report /path/to/citation-report.json \
   --output /path/outside/review/integrity-report.md
 ```
+
+Fixtures built from invented papers cannot resolve. For those, pass
+`--synthetic-fixture`, which restores the old warning and records
+`citation_resolution.source` as `waived` so the report shows it was used.
 
 Standard output is always the complete compact JSON validation report. An
 optional `.json` output is byte-for-byte identical to stdout; `.md` produces a

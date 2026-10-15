@@ -366,7 +366,8 @@ def _valid_citation_report(report: object, bibliography: object) -> tuple[bool, 
 
 
 def citation_findings(
-    report: dict | None, bibliography: list | None = None,
+    report: dict | None, bibliography: list | None = None, *,
+    require_report: bool = False,
 ) -> tuple[Finding, ...]:
   """Map an explicit citation report without constructing a resolver."""
   if report is None:
@@ -375,7 +376,7 @@ def citation_findings(
     if isinstance(bibliography, list) and bibliography:
       return (Finding(
           reason_code=ReasonCode.CITATION_RESOLUTION_UNAVAILABLE,
-          severity=Severity.WARNING,
+          severity=Severity.CRITICAL if require_report else Severity.WARNING,
           artifact="refs.json",
           message="external citation resolution was not supplied",
           context={"response_status": "unavailable"},
@@ -567,8 +568,24 @@ def _snapshot_sources(snapshot: WorkspaceSnapshot) -> tuple[dict[str, str], dict
   return texts, scopes
 
 
+def unlisted_citation_findings(
+    entries: list[dict], corpus: list[dict], references: list,
+) -> tuple[Finding, ...]:
+  """Fail each cited paper that the bibliography never identifies."""
+  return tuple(Finding(
+      reason_code=ReasonCode.CITATION_IDENTITY_MISMATCH,
+      severity=Severity.CRITICAL,
+      artifact="refs.json",
+      message="cited paper is missing from the bibliography",
+      context={"paper_id": paper_id,
+               "reason": "cited_paper_not_in_bibliography"},
+  ) for paper_id in check_claims.unlisted_cited_papers(
+      entries, corpus, references))
+
+
 def validate_snapshot(
-    snapshot: WorkspaceSnapshot, citation_report: dict | None = None,
+    snapshot: WorkspaceSnapshot, citation_report: dict | None = None, *,
+    strict_bibliography: bool = False,
 ) -> tuple[Finding, ...]:
   """Execute all adapters in stable order and fail closed per adapter."""
   findings = []
@@ -600,9 +617,14 @@ def validate_snapshot(
   def citations() -> tuple[Finding, ...]:
     references = snapshot.read_json("refs.json")
     entries = verify_citations.normalize_citation_entries(references)
-    return citation_findings(citation_report, entries)
+    return citation_findings(
+        citation_report, entries, require_report=strict_bibliography)
 
   run("citation", "refs.json", citations)
+  if strict_bibliography:
+    run("citation", "refs.json", lambda: unlisted_citation_findings(
+        snapshot.read_json("claims.json"), snapshot.read_json("corpus.json"),
+        snapshot.read_json("refs.json")))
 
   def prisma() -> tuple[Finding, ...]:
     records = snapshot.read_json("corpus.json")
@@ -614,5 +636,6 @@ def validate_snapshot(
 
 __all__ = [
     "artifact_findings", "citation_findings", "claim_findings",
+    "unlisted_citation_findings",
     "prisma_findings", "validate_snapshot",
 ]

@@ -1549,3 +1549,22 @@ def test_fuzz_number_grounding():
 
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))
+
+
+def test_unlisted_cited_papers_matches_references_by_doi_or_title():
+  corpus = [
+      {"key": "a", "ids": {"doi": "10.1/a"}, "title": "Amber Garden Recall"},
+      {"key": "b", "ids": {}, "title": "Ivory Harbor Recall"},
+      {"key": "c", "ids": {}, "title": "Cobalt Field Trial"},
+  ]
+  entries = [{"paper_id": "a"}, {"paper_id": "b"}, {"paper_id": "c"},
+             {"paper_id": "c"}, {"paper_id": "unknown"}]
+  references = [{"doi": "https://doi.org/10.1/A"},
+                "Vale N. (2024). Ivory Harbor Recall. Invented Journal."]
+
+  assert cc.unlisted_cited_papers(entries, corpus, references) == ["c"]
+
+
+def test_unlisted_cited_papers_rejects_non_list_references():
+  with pytest.raises(ValueError):
+    cc.unlisted_cited_papers([], [], {"doi": "10.1/a"})

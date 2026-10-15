@@ -120,7 +120,7 @@ def validate_report(report: object) -> dict:
       "source", "resolver", "checked_at", "response_status",
   }:
     raise ValueError("citation_resolution has unknown or missing fields")
-  if citation["source"] not in {"supplied_report", "not_supplied"}:
+  if citation["source"] not in {"supplied_report", "not_supplied", "waived"}:
     raise ValueError("unknown citation resolution provenance")
   if citation["resolver"] is not None and not isinstance(
       citation["resolver"], str):
