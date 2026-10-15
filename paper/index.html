@@ -277,6 +277,8 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
 .g-res.miss { color: var(--bad); }
 .g-list { margin: 0 0 0.9rem; padding-left: 1.2rem; }
 .g-list li { margin-bottom: 6px; }
+.g-steps li { margin-bottom: 12px; }
+.g-steps b { color: var(--ink); }
 .g-caveat { margin-top: 22px; padding: 12px 14px; border-left: 3px solid var(--warn); background: var(--warn-soft); border-radius: 0 6px 6px 0; font-size: 0.9rem; }
 .g-caveat:last-child { margin-bottom: 0; }
 .g-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
@@ -312,14 +314,15 @@ ol.refs li { margin-bottom: 0.45rem; text-align: left; overflow-wrap: anywhere; 
   <p>Checking that a paper exists takes one database lookup. Checking what the review says about it takes more. Take the sentence “The trial found no change in recall (Lumen, 2024).” Lumen 2024 can be a real paper and the sentence can still be wrong, because the study found a change, or measured something other than recall, or was written by someone else. A reference check passes all three.</p>
 
   <h3>How the checker works</h3>
-  <p>For every study it uses, the AI records what it says the study found, the exact words from the study that support it, and which study it is. Before the review goes out, the checker tests each entry against four rules.</p>
-  <ul class="g-list">
-    <li>The quoted words appear in the study.</li>
-    <li>The citation points to that study.</li>
-    <li>Every number in the claim appears in the quoted words.</li>
-    <li>Every cited sentence in the review matches a recorded claim, with the same numbers and the same “no” or “not”.</li>
-  </ul>
-  <p>When a rule fails, the AI gets the list of failures and another try, for up to three rounds. A review that still fails goes out marked INVALID EVIDENCE. The rules run as ordinary code that compares text, so the same review always gets the same verdict and no second AI is asked for an opinion.</p>
+  <p>The checker never hunts for evidence on its own. For each study it relies on, the AI has to write down what it says the study found, the exact words from the study that back it up, and which study it is. The checker then tests that record in four steps, and each step closes off a different way of getting a citation wrong.</p>
+  <ol class="g-list g-steps">
+    <li><b>Is the study on the list?</b> Before any writing starts, a search of research databases builds the list of studies the review may use, so the AI doesn't write the list. The cited study has to be on it, and the citation has to match the entry. “(Lumen, 2024)” needs a study by Lumen from 2024, and “[3]” must lead to the same study in the reference list. An invented study fails here, and so does a real quote credited to the wrong author.</li>
+    <li><b>Are the quoted words in the study?</b> The checker opens the study's text, downloaded during the search, and looks for the quote. It ignores capital letters, line breaks and the page numbers that PDF conversion leaves behind, but any change in wording fails, even a single dropped “not”. Each number in the quote must match the number at the same spot in the study, so 18 can't stand in for 118. Quotes under eight words are refused, because short phrases turn up almost anywhere. A quote that sounds right but was never written is the easiest way to fake support, and this step is what stops it.</li>
+    <li><b>Does the claim match its quote?</b> A true quote can sit beside a claim it doesn't support, such as 64% where the study says 6.4%. Every number in the claim must appear in the quote. If the quote is only the study's title, or a “no” sits just outside the quoted words, the entry goes back for review.</li>
+    <li><b>Is every cited sentence backed?</b> Last, the checker reads the finished review. Each sentence that cites a study must match one of the checked claims for that study, with the same numbers and the same “no” or “not”, and a sentence with a number but no citation is flagged too. Without this step the AI could check a careful claim and then write a bolder one into the review.</li>
+  </ol>
+  <p>When a step fails, the AI gets the list of failures and another try, for up to three rounds. A review that still fails goes out marked INVALID EVIDENCE.</p>
+  <p>I wrote the checker as ordinary code that compares text, and no second AI is asked for an opinion. The same review always gets the same verdict, and anyone can read the exact rule that failed. What the code can't do is judge meaning. It sees words and numbers, which is why a review that turns “suggested” into “proved” still passes.</p>
 
   <h3>How I tested it</h3>
   <p>I wrote short, made-up studies so no AI could recognize them from training, and planted one mistake in each test. Claude, from Anthropic, and Codex, from OpenAI, then wrote reviews from those studies. For each test I recorded whether the checker flagged the planted mistake before any fixing.</p>
