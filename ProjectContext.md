@@ -4,13 +4,13 @@ Rolling state. Prune entries >3 weeks after each milestone.
 
 ## Current Focus
 
-**v2.8.1 (2026-10-14, `fix/non-latin-titles`, fixes #54).** `verify_citations._normalize_title` kept only `[a-z0-9 ]`, so a title in Japanese, Chinese, Korean or Cyrillic normalized to an empty string and a real paper was reported as mismatched. It now casefolds, drops accents and punctuation, and keeps letters and digits in every script. The unused `check_claims._normalize_bib_title` had the same flaw and is removed; reference matching there already uses the Unicode-aware `_normalized_tokens`.
+**v2.8.2 (2026-10-15, `chore/bump-2.8.2`).** Ships #63 (`474c376`, davdittrich, closes #47): hypothesis-testing gains step 5, Manipulation Check, which pilots a per-run mechanism proxy against a floor, confirms the treatment's own step occurs in its arm, keeps pilot runs out of the confirmatory sample, and refuses to count a null as disconfirmation when either check fails. Mitigation and Falsification are now steps 6 and 7. A 34th broad case `hypothesis-testing/test-manipulation-check` is added, and `evals/test-cases/README.md` is regenerated from the case files and pinned by `tests/test_rubric_reference.py`. The bump PR splits step 5 into separate sentences and drops its "2-3 cases per task type" floor, which contradicted the 5/f sizing rule. The site and llms files still say 32 cases.
+
+**v2.8.1 released (2026-10-15, tag on `354f194`, #62, fixes #54).** `verify_citations._normalize_title` kept only `[a-z0-9 ]`, so a title in Japanese, Chinese, Korean or Cyrillic normalized to an empty string and a real paper was reported as mismatched. It now casefolds, drops accents and punctuation, and keeps letters and digits in every script. The unused `check_claims._normalize_bib_title` had the same flaw and is removed; reference matching there already uses the Unicode-aware `_normalized_tokens`.
 
 **Roadmap from community feedback (2026-10-14).** A scan of 31 Reddit threads, 2 HN threads and ARS issues produced issues #54-#61: #55 Zotero or a PDF folder as the corpus (most-asked uncovered need, next to design), #56 checking citations in the user's own manuscript, #57 Semantic Scholar, #58 corpus diff between runs, #59 dual screening with kappa, #60 the five known gate gaps (polarity first), #61 partial resolution when a registry is unreachable. The common stance across threads is that AI should help find, triage and verify while the reading and judgement stay with the researcher.
 
 **v2.8.0 released (2026-10-14).** #51 (`33fbaa4`) bumped the version; the user pushed tag `v2.8.0` and published the GitHub release. It ships #50 (`10950d6`, closes #48): hypothesis-testing step 6 runs every outcome scorer on at least 5 real outputs and pre-registers a tie-break rule before the plan is frozen, the output gains a Scorer Check line, quantitative-analysis Data Inspection reads raw outputs against their scores, and a 33rd broad case `hypothesis-testing/test-outcome-scorer` is added. The site and llms files still say 32 cases, because the published runs used 32; change that after the next broad run. Also since 2.7.1: #49 (actions/checkout 7.0.1).
-
-**#47 (davdittrich, manipulation check between protocol steps 4 and 5) is accepted.** The reporter offered a PR with an eval case; we said yes and asked him to rebase after #50. Ship it as 2.8.1 or in 2.9.0.
 
 **Report on the site.** `/paper/` is the plain-language summary and `/paper/write-up/` the technical write-up, both built by a scratchpad script from the artifact source (https://claude.ai/artifact/FQUH5LQGXszNXnHhPhHDg1, v18). Merged: #43 (`6bf15c6`) the pages, #44 (`bcc2937`) the SEO pass (keyword-led descriptions, 18 GitHub topics, no "PhD-level" outside the eval rubric, `bump-version.sh` covers the README badge and site), #45 (`8b3361e`) og:image, #46 (`495b0ac`) Academic Research Skills cited as reference 16 (CC BY-NC, so cite only and reuse nothing), #52 (`5e3a68f`) "How the checker works" as four steps with the why of each. arXiv waits for an evaluation on real papers; its one-year ban for unchecked LLM output and the CS ban on review and position papers both apply. Search Console had not fetched the subdomain sitemap on 2026-10-13 and queries were brand-only; watch for non-brand queries.
 
@@ -53,4 +53,4 @@ PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock
 
 ## Test Status
 
-981 tests pass on `fix/non-latin-titles` (2.8.1, 2026-10-14).
+989 tests pass on `chore/bump-2.8.2` (2026-10-15).
