@@ -14,7 +14,7 @@ def _section(text, start, end):
 
 def test_hypothesis_protocol_tests_the_scorer_before_freezing_the_plan():
   skill = HYPOTHESIS_SKILL.read_text(encoding="utf-8")
-  step = _section(skill, "6. **Falsification Criteria**", "</protocol>")
+  step = _section(skill, "7. **Falsification Criteria**", "</protocol>")
 
   assert "at least 5 real outputs" in step
   assert "tie-break rule" in step

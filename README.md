@@ -40,7 +40,7 @@ Each skill follows the **Systemic Honesty** principles, which a session-start ho
 - **critical-analysis**: logic checking and fallacy detection
 - **peer-review**: manuscript critique and methodological review
 - **research-methodology**: design selection and validation, including cross-domain and first-principles reframing
-- **hypothesis-testing**: hypotheses, variables, falsification criteria and scorer checks
+- **hypothesis-testing**: hypotheses, variables, falsification criteria, manipulation checks and scorer checks
 - **quantitative-analysis**: test selection, power and effect sizes
 - **qualitative-research**: coding and thematic analysis
 - **ethics-review**: IRB compliance and privacy risk

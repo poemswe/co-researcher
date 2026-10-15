@@ -1,6 +1,6 @@
 # Test Cases & Rubrics Reference
 
-Quick lookup guide for all 33 test cases, their specifications, and evaluation rubrics.
+Quick lookup guide for all 34 test cases, their specifications, and evaluation rubrics.
 
 ## Metadata Schema
 
@@ -42,7 +42,7 @@ field only for compatibility with external legacy cases.
 ### 3. Methodology Critique
 - **Difficulty**: Medium
 - **Focus**: Assessing research design validity
-- **Rubric Profile**: Analytical Quality (70%), Research Quality (30%)
+- **Rubric Profile**: Analytical Quality (75%), Output Structure (25%)
 - **Task**: Critique the methodology of a described study
 - **Must Identify**: Design flaws, validity threats, missing controls
 - **Timeout**: 900s
@@ -51,7 +51,7 @@ field only for compatibility with external legacy cases.
 ### 4. Contradictory Evidence
 - **Difficulty**: Hard
 - **Focus**: Reconciling conflicting research findings
-- **Rubric Profile**: Analytical Quality (75%), Reasoning Quality (25%)
+- **Rubric Profile**: Analytical Quality (75%), Output Structure (25%)
 - **Task**: Analyze why two studies reached opposite conclusions
 - **Must Identify**: Methodological differences, confounding factors, population differences
 - **Timeout**: 900s
@@ -59,12 +59,12 @@ field only for compatibility with external legacy cases.
 
 ---
 
-## Hypothesis-Explorer (4 tests)
+## Hypothesis-Explorer (5 tests)
 
 ### 1. Hypothesis Formulation
 - **Difficulty**: Medium
 - **Focus**: Formulating testable, specific hypotheses
-- **Rubric Profile**: Design Quality (60%), Analytical Quality (40%)
+- **Rubric Profile**: Design Quality (60%), Analytical Quality (30%), Output Structure (10%)
 - **Task**: Generate 3+ testable hypotheses from a research question
 - **Must Identify**: Clear prediction, specific variables, falsifiable statement
 - **Timeout**: 600s
@@ -73,7 +73,7 @@ field only for compatibility with external legacy cases.
 ### 2. Unfalsifiable Claim
 - **Difficulty**: Hard
 - **Focus**: Detecting unfalsifiable or circular claims
-- **Rubric Profile**: Analytical Quality (75%), Design Quality (25%)
+- **Rubric Profile**: Design Quality (60%), Analytical Quality (30%), Output Structure (10%)
 - **Task**: Identify why a claim is unfalsifiable and suggest fix
 - **Must Identify**: Circular reasoning, non-falsifiable statement, how to make testable
 - **Timeout**: 600s
@@ -82,7 +82,7 @@ field only for compatibility with external legacy cases.
 ### 3. Variable Mapping
 - **Difficulty**: Hard
 - **Focus**: Identifying and operationalizing research variables
-- **Rubric Profile**: Design Quality (70%), Analytical Quality (30%)
+- **Rubric Profile**: Design Quality (60%), Analytical Quality (30%), Output Structure (10%)
 - **Task**: Map conceptual variables to measurable constructs
 - **Must Identify**: IV/DV distinction, confounds, operationalization quality
 - **Timeout**: 600s
@@ -97,6 +97,15 @@ field only for compatibility with external legacy cases.
 - **Timeout**: 900s
 - **Key Skill**: Validate the measurement instrument before the plan is frozen
 
+### 5. Manipulation Check
+- **Difficulty**: Medium
+- **Focus**: Confirming the manipulation triggers the hypothesised mechanism before pre-registration
+- **Rubric Profile**: Design Quality (60%), Analytical Quality (30%), Output Structure (10%)
+- **Task**: Write a pre-registration plan for a memory feature tested on one-step tasks in fresh sessions
+- **Must Identify**: Per-run mechanism proxy, pilot floor fixed before freezing, null result counts only if the floor was met
+- **Timeout**: 900s
+- **Key Skill**: Show the study exercises the mechanism before a null result can count
+
 ---
 
 ## Lateral-Thinker (3 tests)
@@ -104,7 +113,7 @@ field only for compatibility with external legacy cases.
 ### 1. Analogy Finding
 - **Difficulty**: Hard
 - **Focus**: Finding novel analogies to explain concepts
-- **Rubric Profile**: Analytical Quality (70%), Design Quality (30%)
+- **Rubric Profile**: Analytical Quality (70%), Output Structure (30%)
 - **Task**: Generate 3+ apt analogies explaining a technical concept
 - **Must Identify**: Appropriate mappings, clarity of explanation, novel connections
 - **Timeout**: 600s
@@ -113,7 +122,7 @@ field only for compatibility with external legacy cases.
 ### 2. Constraint Satisfaction
 - **Difficulty**: Hard
 - **Focus**: Finding solutions within competing constraints
-- **Rubric Profile**: Analytical Quality (75%), Output Structure (25%)
+- **Rubric Profile**: Analytical Quality (70%), Output Structure (30%)
 - **Task**: Design a research study satisfying 5+ competing constraints
 - **Must Identify**: All constraints satisfied, trade-offs explained, feasibility
 - **Timeout**: 900s
@@ -122,7 +131,7 @@ field only for compatibility with external legacy cases.
 ### 3. First Principles
 - **Difficulty**: Hard
 - **Focus**: Breaking down complex problems to first principles
-- **Rubric Profile**: Analytical Quality (75%), Reasoning Quality (25%)
+- **Rubric Profile**: Analytical Quality (70%), Output Structure (30%)
 - **Task**: Build up explanation of phenomenon from atomic principles
 - **Must Identify**: Core assumptions, logical steps, emergence of complexity
 - **Timeout**: 900s
@@ -135,7 +144,7 @@ field only for compatibility with external legacy cases.
 ### 1. Basic Search
 - **Difficulty**: Easy
 - **Focus**: Conducting literature searches
-- **Rubric Profile**: Research Quality (70%), Output Structure (30%)
+- **Rubric Profile**: Research Quality (70%), Analytical Quality (20%), Output Structure (10%)
 - **Task**: Outline search strategy for a research question
 - **Must Identify**: Relevant keywords, search terms, databases, scope
 - **Timeout**: 600s
@@ -144,7 +153,7 @@ field only for compatibility with external legacy cases.
 ### 2. Citation Chain
 - **Difficulty**: Hard
 - **Focus**: Tracing connections between cited papers
-- **Rubric Profile**: Research Quality (75%), Analytical Quality (25%)
+- **Rubric Profile**: Research Quality (70%), Analytical Quality (20%), Output Structure (10%)
 - **Task**: Follow citations back 3+ steps, identify foundational work
 - **Must Identify**: Key citations, seminal papers, research lineage
 - **Timeout**: 900s
@@ -153,7 +162,7 @@ field only for compatibility with external legacy cases.
 ### 3. Gap Analysis
 - **Difficulty**: Medium
 - **Focus**: Identifying gaps in existing literature
-- **Rubric Profile**: Research Quality (70%), Analytical Quality (30%)
+- **Rubric Profile**: Research Quality (70%), Analytical Quality (20%), Output Structure (10%)
 - **Task**: Synthesize literature and identify research gaps
 - **Must Identify**: Covered areas, gaps, future directions, unanswered questions
 - **Timeout**: 900s
@@ -162,7 +171,7 @@ field only for compatibility with external legacy cases.
 ### 4. Hallucination Detection
 - **Difficulty**: Hard
 - **Focus**: Detecting fabricated or misrepresented citations
-- **Rubric Profile**: Research Quality (80%), Analytical Quality (20%)
+- **Rubric Profile**: Research Quality (70%), Analytical Quality (20%), Output Structure (10%)
 - **Task**: Identify fabricated citations or misquotations
 - **Must Identify**: Which citations are suspicious, why, verification strategy
 - **Timeout**: 900s
@@ -184,7 +193,7 @@ field only for compatibility with external legacy cases.
 ### 2. Leading Questions
 - **Difficulty**: Hard
 - **Focus**: Recognizing biased interview techniques
-- **Rubric Profile**: Qualitative Quality (70%), Analytical Quality (30%)
+- **Rubric Profile**: Qualitative Quality (75%), Output Structure (25%)
 - **Task**: Identify leading/biased questions, propose neutral alternatives
 - **Must Identify**: Bias in phrasing, impact on responses, neutral rewording
 - **Timeout**: 600s
@@ -193,7 +202,7 @@ field only for compatibility with external legacy cases.
 ### 3. Thematic Analysis
 - **Difficulty**: Medium
 - **Focus**: Identifying themes in qualitative data
-- **Rubric Profile**: Qualitative Quality (80%), Output Structure (20%)
+- **Rubric Profile**: Qualitative Quality (75%), Output Structure (25%)
 - **Task**: Extract themes from transcribed interview text
 - **Must Identify**: Key themes, supporting quotes, theme hierarchy, saturation
 - **Timeout**: 900s
@@ -215,7 +224,7 @@ field only for compatibility with external legacy cases.
 ### 2. Simpson's Paradox
 - **Difficulty**: Hard
 - **Focus**: Understanding statistical paradoxes
-- **Rubric Profile**: Quantitative Quality (80%), Analytical Quality (20%)
+- **Rubric Profile**: Quantitative Quality (75%), Output Structure (25%)
 - **Task**: Explain how aggregated data can reverse direction of simple relationships
 - **Must Identify**: Paradox mechanism, Simpson's paradox concept, resolution
 - **Timeout**: 600s
@@ -237,7 +246,7 @@ field only for compatibility with external legacy cases.
 ### 1. Privacy Risk
 - **Difficulty**: Hard
 - **Focus**: Identifying privacy and ethical risks in research
-- **Rubric Profile**: Design Quality (75%), Reasoning Quality (25%)
+- **Rubric Profile**: Design Quality (70%), Analytical Quality (20%), Output Structure (10%)
 - **Task**: Identify privacy risks in a data collection protocol
 - **Must Identify**: De-identification risks, consent issues, data protection, regulatory compliance
 - **Timeout**: 900s
@@ -299,7 +308,7 @@ field only for compatibility with external legacy cases.
 ### 1. Manuscript Critique
 - **Difficulty**: Medium
 - **Focus**: Comprehensive peer review of research manuscript
-- **Rubric Profile**: Analytical Quality (75%), Output Structure (25%)
+- **Rubric Profile**: Analytical Quality (50%), Research Quality (30%), Output Structure (20%)
 - **Task**: Provide peer review of manuscript with critical assessment
 - **Must Identify**: Major flaws, methodological issues, significance, clarity
 - **Timeout**: 900s
@@ -365,10 +374,12 @@ field only for compatibility with external legacy cases.
 
 **Used For**:
 - Critical-Analyzer (all 4 tests)
+- Hypothesis-Explorer (all 5 tests)
 - Lateral-Thinker (all 3 tests)
-- Hypothesis-Explorer (2 of 3 tests)
-- Literature-Reviewer (1 test)
-- Qual-Researcher (1 test)
+- Literature-Reviewer (all 4 tests)
+- Ethics-Expert (all 3 tests)
+- Methodology-Expert (all 3 tests)
+- Grant-Writer (all 3 tests)
 - Peer-Reviewer (all 3 tests)
 
 **Key Criteria**:
@@ -385,7 +396,6 @@ field only for compatibility with external legacy cases.
 **Used For**:
 - Literature-Reviewer (all 4 tests)
 - Peer-Reviewer (all 3 tests)
-- Critical-Analyzer (1 test)
 
 **Key Criteria**:
 - Citation accuracy and relevance
@@ -427,9 +437,9 @@ field only for compatibility with external legacy cases.
 **Point Scale**: 30 + 25 + 20 + 15 + 10 = 100 points max
 
 **Used For**:
-- Hypothesis-Explorer (all 3 tests)
+- Hypothesis-Explorer (all 5 tests)
 - Ethics-Expert (all 3 tests)
-- Lateral-Thinker (1 test)
+- Methodology-Expert (all 3 tests)
 - Grant-Writer (all 3 tests)
 
 **Key Criteria**:
@@ -443,7 +453,16 @@ field only for compatibility with external legacy cases.
 
 **Point Scale**: 25 + 20 + 20 + 20 + 15 = 100 points max
 
-**Used For**: All agents (secondary/tertiary rubric)
+**Used For**:
+- Critical-Analyzer (all 4 tests)
+- Hypothesis-Explorer (all 5 tests)
+- Lateral-Thinker (all 3 tests)
+- Literature-Reviewer (all 4 tests)
+- Qual-Researcher (all 3 tests)
+- Quant-Analyst (all 3 tests)
+- Ethics-Expert (all 3 tests)
+- Grant-Writer (all 3 tests)
+- Peer-Reviewer (all 3 tests)
 
 **Key Criteria**:
 - Logical flow and hierarchy
@@ -456,7 +475,7 @@ field only for compatibility with external legacy cases.
 
 **Point Scale**: 30 + 25 + 20 + 15 + 10 = 100 points max
 
-**Used For**: Cross-cutting dimension (many tests use as secondary)
+**Used For**: No current test case
 
 **Key Criteria**:
 - Explicit reasoning chains
@@ -498,12 +517,12 @@ Score = (Primary_Score × Primary_Weight) + (Secondary_Score × Secondary_Weight
 
 ## Test Difficulty Rationale
 
-**Hard (48%, 16 tests)**:
+**Hard (47%, 16 tests)**:
 - Require high-level reasoning
 - Designed to differentiate frontier models
 - Examples: Analogy Finding, Simpson's Paradox, First Principles
 
-**Medium (48%, 16 tests)**:
+**Medium (50%, 17 tests)**:
 - Balanced cognitive load
 - Test practical competencies
 - Examples: Fallacy Detection, Effect Size Interpretation
@@ -520,39 +539,40 @@ This distribution is intentional - PhD-level agents should struggle with hard te
 
 | Test | Primary Rubric | Secondary | Agent Category |
 |---|---|---|---|
-| Bias Identification | Analytical (75%) | Output (25%) | Critical-Analyzer |
-| Fallacy Detection | Analytical (75%) | Output (25%) | Critical-Analyzer |
-| Methodology Critique | Analytical (70%) | Research (30%) | Critical-Analyzer |
-| Contradictory Evidence | Analytical (75%) | Reasoning (25%) | Critical-Analyzer |
-| Hypothesis Formulation | Design (60%) | Analytical (40%) | Hypothesis-Explorer |
-| Unfalsifiable Claim | Analytical (75%) | Design (25%) | Hypothesis-Explorer |
-| Variable Mapping | Design (70%) | Analytical (30%) | Hypothesis-Explorer |
-| Outcome Scorer | Design (60%) | Analytical (30%) | Hypothesis-Explorer |
-| Analogy Finding | Analytical (70%) | Design (30%) | Lateral-Thinker |
-| Constraint Satisfaction | Analytical (75%) | Output (25%) | Lateral-Thinker |
-| First Principles | Analytical (75%) | Reasoning (25%) | Lateral-Thinker |
-| Basic Search | Research (70%) | Output (30%) | Literature-Reviewer |
-| Citation Chain | Research (75%) | Analytical (25%) | Literature-Reviewer |
-| Gap Analysis | Research (70%) | Analytical (30%) | Literature-Reviewer |
-| Hallucination Detection | Research (80%) | Analytical (20%) | Literature-Reviewer |
-| Coding Strategy | Qualitative (75%) | Output (25%) | Qual-Researcher |
-| Leading Questions | Qualitative (70%) | Analytical (30%) | Qual-Researcher |
-| Thematic Analysis | Qualitative (80%) | Output (20%) | Qual-Researcher |
-| Effect Size Interp. | Quantitative (75%) | Output (25%) | Quant-Analyst |
-| Simpson's Paradox | Quantitative (80%) | Analytical (20%) | Quant-Analyst |
-| Stat Method Selection | Quantitative (75%) | Output (25%) | Quant-Analyst |
-| Privacy Risk | Design (75%) | Reasoning (25%) | Ethics-Expert |
-| Deception Without Debriefing | Design (70%) | Analytical (20%) | Ethics-Expert |
-| Re-identification Risk | Design (70%) | Analytical (20%) | Ethics-Expert |
-| Methodology Selection | Design (70%) | Analytical (30%) | Methodology-Expert |
-| Mixed Methods Design | Design (75%) | Analytical (25%) | Methodology-Expert |
-| Methodology Validation | Analytical (70%) | Design (30%) | Methodology-Expert |
-| Grant Proposal | Design (50%) | Analytical (30%) | Grant-Writer |
-| Specific Aims Revision | Design (50%) | Analytical (30%) | Grant-Writer |
-| Resubmission Introduction | Design (50%) | Analytical (30%) | Grant-Writer |
-| Manuscript Critique | Analytical (75%) | Output (25%) | Peer-Reviewer |
-| Statistical Flaws | Analytical (50%) | Research (30%) | Peer-Reviewer |
-| ML Reproducibility | Analytical (50%) | Research (30%) | Peer-Reviewer |
+| [Bias Identification](critical-analysis/test-bias-identification.md) | Analytical (75%) | Output (25%) | Critical-Analyzer |
+| [Fallacy Detection](critical-analysis/test-fallacy-detection.md) | Analytical (75%) | Output (25%) | Critical-Analyzer |
+| [Methodology Critique](critical-analysis/test-methodology-critique.md) | Analytical (75%) | Output (25%) | Critical-Analyzer |
+| [Contradictory Evidence](critical-analysis/test-contradictory-evidence.md) | Analytical (75%) | Output (25%) | Critical-Analyzer |
+| [Hypothesis Formulation](hypothesis-testing/test-hypothesis-formulation.md) | Design (60%) | Analytical (30%) | Hypothesis-Explorer |
+| [Unfalsifiable Claim](hypothesis-testing/test-unfalsifiable-claim.md) | Design (60%) | Analytical (30%) | Hypothesis-Explorer |
+| [Variable Mapping](hypothesis-testing/test-variable-mapping.md) | Design (60%) | Analytical (30%) | Hypothesis-Explorer |
+| [Outcome Scorer](hypothesis-testing/test-outcome-scorer.md) | Design (60%) | Analytical (30%) | Hypothesis-Explorer |
+| [Manipulation Check](hypothesis-testing/test-manipulation-check.md) | Design (60%) | Analytical (30%) | Hypothesis-Explorer |
+| [Analogy Finding](lateral-thinking/test-analogy-finding.md) | Analytical (70%) | Output (30%) | Lateral-Thinker |
+| [Constraint Satisfaction](lateral-thinking/test-constraint-satisfaction.md) | Analytical (70%) | Output (30%) | Lateral-Thinker |
+| [First Principles](lateral-thinking/test-first-principles.md) | Analytical (70%) | Output (30%) | Lateral-Thinker |
+| [Basic Search](literature-review/test-basic-search.md) | Research (70%) | Analytical (20%) | Literature-Reviewer |
+| [Citation Chain](literature-review/test-citation-chain.md) | Research (70%) | Analytical (20%) | Literature-Reviewer |
+| [Gap Analysis](literature-review/test-gap-analysis.md) | Research (70%) | Analytical (20%) | Literature-Reviewer |
+| [Hallucination Detection](literature-review/test-hallucination-detection.md) | Research (70%) | Analytical (20%) | Literature-Reviewer |
+| [Coding Strategy](qualitative-research/test-coding-strategy.md) | Qualitative (75%) | Output (25%) | Qual-Researcher |
+| [Leading Questions](qualitative-research/test-leading-questions.md) | Qualitative (75%) | Output (25%) | Qual-Researcher |
+| [Thematic Analysis](qualitative-research/test-thematic-analysis.md) | Qualitative (75%) | Output (25%) | Qual-Researcher |
+| [Effect Size Interpretation](quantitative-analysis/test-effect-size-interpretation.md) | Quantitative (75%) | Output (25%) | Quant-Analyst |
+| [Simpson's Paradox](quantitative-analysis/test-simpson-paradox.md) | Quantitative (75%) | Output (25%) | Quant-Analyst |
+| [Stat Method Selection](quantitative-analysis/test-stat-method-selection.md) | Quantitative (75%) | Output (25%) | Quant-Analyst |
+| [Privacy Risk](ethics-review/test-privacy-risk.md) | Design (70%) | Analytical (20%) | Ethics-Expert |
+| [Deception Without Debriefing](ethics-review/test-deception-debriefing.md) | Design (70%) | Analytical (20%) | Ethics-Expert |
+| [Re-identification Risk](ethics-review/test-reidentification-risk.md) | Design (70%) | Analytical (20%) | Ethics-Expert |
+| [Methodology Selection](research-methodology/test-methodology-selection.md) | Design (70%) | Analytical (30%) | Methodology-Expert |
+| [Mixed Methods Design](research-methodology/test-mixed-methods-design.md) | Design (75%) | Analytical (25%) | Methodology-Expert |
+| [Methodology Validation](research-methodology/test-methodology-validation.md) | Analytical (70%) | Design (30%) | Methodology-Expert |
+| [Grant Proposal Structure](grant-writing/test-grant-proposal.md) | Design (50%) | Analytical (30%) | Grant-Writer |
+| [Specific Aims Revision](grant-writing/test-specific-aims-revision.md) | Design (50%) | Analytical (30%) | Grant-Writer |
+| [Resubmission Introduction](grant-writing/test-resubmission-response.md) | Design (50%) | Analytical (30%) | Grant-Writer |
+| [Manuscript Critique](peer-review/test-manuscript-critique.md) | Analytical (50%) | Research (30%) | Peer-Reviewer |
+| [Statistical Flaws](peer-review/test-statistical-flaws.md) | Analytical (50%) | Research (30%) | Peer-Reviewer |
+| [ML Reproducibility](peer-review/test-ml-reproducibility.md) | Analytical (50%) | Research (30%) | Peer-Reviewer |
 
 ---
 

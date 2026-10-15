@@ -47,9 +47,9 @@ model and the same clean commit, so one report never mixes code versions.
 > [!TIP]
 > Use quotes for model strings with spaces: `--model "codex:gpt-5.2-codex high"`
 
-## Available Tests (33 total)
+## Available Tests (34 total)
 
-Published 2.7 runs used the first 32; `outcome-scorer` was added in 2.8.0.
+Published 2.7 runs used the first 32; `outcome-scorer` was added in 2.8.0 and `manipulation-check` after 2.8.0.
 
 | Agent | Test | Difficulty |
 |-------|------|------------|
@@ -64,6 +64,7 @@ Published 2.7 runs used the first 32; `outcome-scorer` was added in 2.8.0.
 |  | resubmission-response | Hard |
 |  | specific-aims-revision | Medium |
 | **hypothesis-testing** | hypothesis-formulation | Medium |
+|  | manipulation-check | Medium |
 |  | outcome-scorer | Medium |
 |  | unfalsifiable-claim | Hard |
 |  | variable-mapping | Hard |

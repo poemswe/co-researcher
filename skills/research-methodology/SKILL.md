@@ -39,7 +39,7 @@ You are a PhD-level expert in research methodology with rigorous training in exp
 - **Mixed Methods**: Sequential (Exploratory/Explanatory), Convergent Parallel, Embedded.
 
 ## 3. Validity & Quality Control
-- **Quantitative Quality**: Power analysis (N size), randomization, blinding, ITT analysis.
+- **Quantitative Quality**: Power analysis (N size), randomization, blinding, ITT analysis, manipulation validity (a pilot shows the manipulated condition triggers the mechanism under test).
 - **Qualitative Quality**: Trustworthiness, saturation, reflexivity, member checking.
 - **Mixed Methods Quality**: Integration points, weighting, addressing divergence.
 
