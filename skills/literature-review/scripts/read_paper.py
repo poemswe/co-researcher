@@ -60,9 +60,12 @@ def abstract_from_inverted_index(inv: dict) -> str:
   return " ".join(w for _, w in positions)
 
 
+_PMCID = re.compile(r"PMC\d+")
+
+
 def pmcid_from_ids(ids: dict) -> str | None:
   raw = ids.get("pmcid") or ""
-  match = re.search(r"PMC\d+", raw)
+  match = _PMCID.search(raw)
   return match.group(0) if match else None
 
 
@@ -76,18 +79,17 @@ def emit(status: str, path, source: str, identifier: str) -> None:
 
 
 def deliver(status: str, path: pathlib.Path, source: str,
-            identifier: str, locator: str | None) -> None:
+            identifier: str) -> tuple:
   receipt = {
       "file": path.name,
       "source": source,
       "id": identifier,
-      "locator": locator,
       "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
       "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
   }
   path.with_suffix(".receipt.json").write_text(
       json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
-  emit(status, path, source, identifier)
+  return status, path, source, identifier
 
 
 def extract_pdf(pdf_path: pathlib.Path) -> str:
@@ -182,6 +184,10 @@ def fetch_oa_pdf(url: str, dest: pathlib.Path) -> bool:
 
 
 def read_paper(doi, arxiv, pmcid, workspace) -> None:
+  emit(*acquire(doi, arxiv, pmcid, workspace))
+
+
+def acquire(doi, arxiv, pmcid, workspace) -> tuple:
   identifier = doi or arxiv or pmcid
   paper_dir = pathlib.Path(workspace) / "papers" / sanitize_id(identifier)
   paper_dir.mkdir(parents=True, exist_ok=True)
@@ -190,9 +196,9 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
   abstract_path = paper_dir / "abstract.md"
 
   if fulltext_path.exists():
-    return emit("fulltext", fulltext_path, "cached", identifier)
+    return "fulltext", fulltext_path, "cached", identifier
   if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
-    return deliver("fulltext", fulltext_path, "user_pdf", identifier, None)
+    return deliver("fulltext", fulltext_path, "user_pdf", identifier)
 
   work = (lookup_openalex_work(doi) if doi else None) or {}
   pmcid = pmcid or pmcid_from_ids(work.get("ids") or {})
@@ -204,59 +210,51 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
     text = fetch_epmc_fulltext(pmcid)
     if text:
       fulltext_path.write_text(text, encoding="utf-8")
-      return deliver("fulltext", fulltext_path, "epmc", identifier, pmcid)
+      return deliver("fulltext", fulltext_path, "epmc", identifier)
 
   if arxiv and fetch_arxiv_pdf(arxiv, pdf_path):
     if try_extract(pdf_path, fulltext_path):
-      return deliver("fulltext", fulltext_path, "arxiv_pdf", identifier, arxiv)
+      return deliver("fulltext", fulltext_path, "arxiv_pdf", identifier)
 
   oa = work.get("best_oa_location") or {}
   if oa.get("pdf_url") and fetch_oa_pdf(oa["pdf_url"], pdf_path):
     if try_extract(pdf_path, fulltext_path):
-      return deliver(
-          "fulltext", fulltext_path, "oa_pdf", identifier, oa["pdf_url"])
+      return deliver("fulltext", fulltext_path, "oa_pdf", identifier)
 
   abstract = abstract_markdown(work, identifier)
   if abstract:
     abstract_path.write_text(abstract, encoding="utf-8")
     return deliver(
-        "abstract-only", abstract_path, "openalex_abstract", identifier, doi)
+        "abstract-only", abstract_path, "openalex_abstract", identifier)
 
-  emit("abstract-only", None, "none", identifier)
-
-
-_PDF_FETCHERS = {"arxiv_pdf": fetch_arxiv_pdf, "oa_pdf": fetch_oa_pdf}
+  return "abstract-only", None, "none", identifier
 
 
-def refetch_text(receipt: dict, paper_dir: pathlib.Path) -> str | None:
-  source, locator = receipt["source"], receipt["locator"]
-  if source == "epmc":
-    return fetch_epmc_fulltext(locator)
-  if source == "openalex_abstract":
-    return abstract_markdown(lookup_openalex_work(locator) or {}, receipt["id"])
-  with tempfile.TemporaryDirectory() as tmp:
-    pdf = paper_dir / "paper.pdf"
-    if source != "user_pdf":
-      pdf = pathlib.Path(tmp) / "paper.pdf"
-      if not _PDF_FETCHERS[source](locator, pdf):
-        return None
-    try:
-      return extract_pdf(pdf) or None
-    except Exception:
-      return None
+def identifier_args(identifier: str) -> tuple:
+  if _PMCID.fullmatch(identifier):
+    return None, None, identifier
+  if identifier.startswith("10."):
+    return identifier, None, None
+  return None, identifier, None
 
 
 def recheck_source(receipt_path: pathlib.Path,
                    current: pathlib.Path) -> tuple[str | None, str]:
   try:
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-    fresh = refetch_text(receipt, receipt_path.parent)
+    source, identifier = receipt["source"], receipt["id"]
+    if sanitize_id(identifier) != receipt_path.parent.name:
+      raise ValueError("receipt names another paper")
   except (ValueError, KeyError, TypeError):
     return None, "unreadable_receipt"
-  if fresh is None:
-    return receipt["source"], "unavailable"
-  same = current.is_file() and current.read_bytes() == fresh.encode("utf-8")
-  return receipt["source"], "match" if same else "mismatch"
+  if source == "user_pdf":
+    return source, "unverifiable"
+  with tempfile.TemporaryDirectory() as tmp:
+    _, path, fresh_source, _ = acquire(*identifier_args(identifier), tmp)
+    if fresh_source != source or path.name != current.name:
+      return source, "unavailable"
+    same = current.is_file() and current.read_bytes() == path.read_bytes()
+  return source, "match" if same else "mismatch"
 
 
 def recheck(workspace) -> int:
@@ -266,7 +264,7 @@ def recheck(workspace) -> int:
     current = receipt_path.with_name(
         receipt_path.name.removesuffix(".receipt.json") + ".md")
     source, result = recheck_source(receipt_path, current)
-    failed = failed or result in ("mismatch", "unreadable_receipt")
+    failed = failed or result != "match"
     shown = receipt_path if source is None else current
     print(json.dumps({"file": shown.relative_to(root).as_posix(),
                       "source": source, "result": result}))

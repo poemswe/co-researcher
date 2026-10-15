@@ -395,6 +395,14 @@ def _epmc_workspace(tmp_path, monkeypatch):
   return tmp_path / "papers" / "PMC7" / "fulltext.md"
 
 
+def _rewrite_receipt(text_path, **fields):
+  receipt_path = text_path.with_suffix(".receipt.json")
+  receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+  receipt.update(fields)
+  receipt["sha256"] = hashlib.sha256(text_path.read_bytes()).hexdigest()
+  receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+
 def test_recheck_matches_an_unchanged_source(tmp_path, capsys, monkeypatch):
   _epmc_workspace(tmp_path, monkeypatch)
   code, results = _recheck(tmp_path, capsys)
@@ -408,39 +416,61 @@ def test_recheck_flags_text_forged_with_its_receipt(
     tmp_path, capsys, monkeypatch):
   source = _epmc_workspace(tmp_path, monkeypatch)
   source.write_text("# forged", encoding="utf-8")
-  receipt_path = source.with_suffix(".receipt.json")
-  receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
-  receipt["sha256"] = hashlib.sha256(source.read_bytes()).hexdigest()
-  receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+  _rewrite_receipt(source)
   code, results = _recheck(tmp_path, capsys)
 
   assert code == 1
   assert results[0]["result"] == "mismatch"
 
 
-def test_recheck_reports_a_source_it_cannot_reach(
+def test_recheck_flags_a_missing_source_file(tmp_path, capsys, monkeypatch):
+  _epmc_workspace(tmp_path, monkeypatch).unlink()
+  code, results = _recheck(tmp_path, capsys)
+
+  assert (code, results[0]["result"]) == (1, "mismatch")
+
+
+def test_recheck_fails_when_the_route_no_longer_answers(
     tmp_path, capsys, monkeypatch):
   _epmc_workspace(tmp_path, monkeypatch)
   _no_network(monkeypatch)
   code, results = _recheck(tmp_path, capsys)
 
-  assert code == 0
-  assert results[0]["result"] == "unavailable"
+  assert (code, results[0]["result"]) == (1, "unavailable")
 
 
-def test_recheck_re_extracts_a_user_pdf(tmp_path, capsys, monkeypatch):
+def test_recheck_ignores_a_route_the_receipt_claims(
+    tmp_path, capsys, monkeypatch):
+  source = _epmc_workspace(tmp_path, monkeypatch)
+  source.write_text("# forged", encoding="utf-8")
+  _rewrite_receipt(source, source="oa_pdf",
+                   locator="http://forger.example/paper.pdf")
+  code, results = _recheck(tmp_path, capsys)
+
+  assert (code, results[0]["result"]) == (1, "unavailable")
+
+
+def test_recheck_rejects_a_receipt_for_another_paper(
+    tmp_path, capsys, monkeypatch):
+  source = _epmc_workspace(tmp_path, monkeypatch)
+  _rewrite_receipt(source, id="PMC8")
+  code, results = _recheck(tmp_path, capsys)
+
+  assert (code, results[0]["result"]) == (1, "unreadable_receipt")
+
+
+def test_recheck_cannot_verify_a_user_pdf(tmp_path, capsys, monkeypatch):
   d = tmp_path / "papers" / "10.1_x"
   d.mkdir(parents=True)
   (d / "paper.pdf").write_bytes(b"%PDF-fake")
   monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
   read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None,
                         workspace=tmp_path)
-  _no_network(monkeypatch)
   code, results = _recheck(tmp_path, capsys)
 
-  assert code == 0
+  assert code == 1
   assert results == [{"file": "papers/10.1_x/fulltext.md",
-                      "source": "user_pdf", "result": "match"}]
+                      "source": "user_pdf", "result": "unverifiable"}]
 
 
 def test_recheck_fails_on_an_unreadable_receipt(tmp_path, capsys):
@@ -462,24 +492,29 @@ def test_recheck_refetches_an_abstract_by_its_doi(
                         workspace=tmp_path)
   code, results = _recheck(tmp_path, capsys)
 
-  assert code == 0
-  assert results[0]["result"] == "match"
+  assert (code, results[0]["result"]) == (0, "match")
 
 
-def test_recheck_calls_only_the_receipted_fetcher(
-    tmp_path, capsys, monkeypatch):
-  work = {"ids": {"pmcid": "https://.../PMC9"}}
-  _no_network(monkeypatch, lookup_openalex_work=lambda doi: work,
-              fetch_epmc_fulltext=lambda pmcid: "# md")
-  read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None,
-                        workspace=tmp_path)
-  receipt, _ = _receipt_matches(json.loads(capsys.readouterr().out))
+def test_recheck_resolves_an_arxiv_doi_again(tmp_path, capsys, monkeypatch):
+  def fake_pdf(arxiv_id, dest):
+    dest.write_bytes(b"%PDF-" + arxiv_id.encode())
+    return True
 
-  def no_lookup(doi):
-    raise AssertionError("recheck must call only the receipted fetcher")
-
-  monkeypatch.setattr(read_paper, "lookup_openalex_work", no_lookup)
+  _no_network(monkeypatch, fetch_arxiv_pdf=fake_pdf)
+  monkeypatch.setattr(read_paper, "extract_pdf",
+                      lambda p: p.read_bytes().decode())
+  read_paper.read_paper(doi="10.48550/arXiv.1706.03762", arxiv=None,
+                        pmcid=None, workspace=tmp_path)
   code, results = _recheck(tmp_path, capsys)
 
-  assert receipt["locator"] == "PMC9"
-  assert (code, results[0]["result"]) == (0, "match")
+  assert (code, results[0]["source"], results[0]["result"]) == (
+      0, "arxiv_pdf", "match")
+
+
+@pytest.mark.parametrize("identifier, expected", [
+    ("PMC123", (None, None, "PMC123")),
+    ("10.1/x", ("10.1/x", None, None)),
+    ("1706.03762", (None, "1706.03762", None)),
+])
+def test_identifier_args_routes_by_shape(identifier, expected):
+  assert read_paper.identifier_args(identifier) == expected
