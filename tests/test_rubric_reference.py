@@ -23,7 +23,6 @@ PROFILE_LINE = re.compile(
 
 
 def _profiles():
-  """Rubric profile of every broad case file, keyed by path under CASES."""
   profiles = {}
   for path in sorted(CASES.glob("*/test-*.md")):
     text = path.read_text(encoding="utf-8")

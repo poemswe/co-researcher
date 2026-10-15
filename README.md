@@ -1,6 +1,6 @@
 # Co-Researcher: Academic Research Plugin for Claude Code
 
-![Version](https://img.shields.io/badge/version-2.8.1-1e3a8a) ![License: MIT](https://img.shields.io/badge/license-MIT-065f46)
+![Version](https://img.shields.io/badge/version-2.8.2-1e3a8a) ![License: MIT](https://img.shields.io/badge/license-MIT-065f46)
 
 Co-Researcher is an academic research plugin for **Claude Code**, **Gemini CLI**, **OpenAI Codex** and **OpenCode**. It runs literature reviews, systematic reviews, peer review and citation checks inside the AI assistant you already use.
 
@@ -111,7 +111,7 @@ The scripts in `skills/literature-review/scripts/` run through `uv`, and the oth
 
 ## Evaluations
 
-The repository carries 33 broad quality cases across 10 capabilities, and a
+The repository carries 34 broad quality cases across 10 capabilities, and a
 separate 16-case evidence-integrity set. Results are on the
 [Evals dashboard](https://coresearcher.poemswe.com/evals/). A broad quality
 score is not an integrity result. Running and publishing evals is covered in

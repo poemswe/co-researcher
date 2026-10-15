@@ -1,6 +1,6 @@
 {
   "name": "co-researcher",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "description": "Academic research plugin for Codex: literature reviews, systematic reviews, peer review and citation checking, with every citation verified against OpenAlex, arXiv and Europe PMC",
   "author": {
     "name": "poemswe"
