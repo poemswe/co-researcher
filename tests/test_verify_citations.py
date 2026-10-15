@@ -150,6 +150,28 @@ def test_titles_match_tolerates_case_and_punctuation():
                              "A Completely Different Subject Entirely")
 
 
+def test_titles_match_identical_titles_in_any_script():
+  for title in ("深層学習による画像認識", "基于深度学习的图像识别",
+                "딥러닝 기반 이미지 인식", "Глубокое обучение для распознавания"):
+    assert vc.titles_match(title, title)
+
+
+def test_titles_match_rejects_different_non_latin_titles():
+  assert not vc.titles_match("深層学習による画像認識", "量子コンピュータの誤り訂正")
+  assert not vc.titles_match("Глубокое обучение для распознавания",
+                             "Квантовая коррекция ошибок")
+
+
+def test_titles_match_ignores_case_and_accents_outside_ascii():
+  assert vc.titles_match("ГЛУБОКОЕ ОБУЧЕНИЕ", "глубокое обучение")
+  assert vc.titles_match("Étude des réseaux", "Etude des reseaux")
+
+
+def test_titles_match_keeps_mixed_script_titles_apart():
+  assert vc.titles_match("BERT と日本語の意味解析", "BERTと日本語の意味解析")
+  assert not vc.titles_match("BERT と日本語の意味解析", "BERT とロボット制御の研究")
+
+
 def test_doi_verified_via_openalex(monkeypatch):
   monkeypatch.setattr(vc._OPENALEX, "fetch_json",
                       lambda url: _openalex_work("Real Title"))

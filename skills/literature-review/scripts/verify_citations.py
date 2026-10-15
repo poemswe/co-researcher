@@ -46,6 +46,7 @@ import os
 import pathlib
 import re
 import sys
+import unicodedata
 import urllib.parse
 from typing import Protocol
 
@@ -190,7 +191,11 @@ def bibliography_sha256(entries: list[dict]) -> str:
 
 
 def _normalize_title(title: str) -> str:
-  return re.sub(r"[^a-z0-9 ]", "", title.lower()).strip()
+  decomposed = unicodedata.normalize("NFKD", title.casefold())
+  kept = "".join(char for char in decomposed
+                 if not unicodedata.combining(char)
+                 and (char.isalnum() or char.isspace()))
+  return " ".join(unicodedata.normalize("NFC", kept).split())
 
 
 def titles_match(a: str, b: str) -> bool:

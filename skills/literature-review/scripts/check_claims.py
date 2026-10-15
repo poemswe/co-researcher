@@ -397,10 +397,6 @@ def _author_year_binding_matches(key: str, record: dict) -> bool:
   return False
 
 
-def _normalize_bib_title(title: str) -> str:
-  return re.sub(r"[^a-z0-9]+", "", title.lower())
-
-
 def _normalized_tokens(text: str) -> str:
   folded = unicodedata.normalize("NFKC", text).casefold()
   return " ".join("".join(char if char.isalnum() else " " for char in folded).split())
