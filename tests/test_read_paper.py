@@ -6,6 +6,7 @@
 # ]
 # ///
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -328,3 +329,53 @@ def test_lookup_openalex_work_url_accepted_by_client(monkeypatch):
 
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))
+
+
+def _receipt_matches(out):
+  source = pathlib.Path(out["path"])
+  receipt = json.loads(
+      source.with_suffix(".receipt.json").read_text(encoding="utf-8"))
+  digest = hashlib.sha256(source.read_bytes()).hexdigest()
+  return receipt, receipt["file"] == source.name and receipt["sha256"] == digest
+
+
+def test_epmc_fetch_writes_a_receipt(tmp_path, capsys, monkeypatch):
+  _no_network(monkeypatch, fetch_epmc_fulltext=lambda pmcid: "# epmc md")
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC7",
+                        workspace=tmp_path)
+  receipt, matches = _receipt_matches(json.loads(capsys.readouterr().out))
+
+  assert matches
+  assert receipt["source"] == "epmc"
+  assert receipt["fetched_at"].endswith("Z")
+
+
+def test_user_pdf_and_abstract_routes_write_receipts(
+    tmp_path, capsys, monkeypatch):
+  d = tmp_path / "papers" / "PMC8"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-fake")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC8",
+                        workspace=tmp_path)
+  pdf_receipt, pdf_matches = _receipt_matches(
+      json.loads(capsys.readouterr().out))
+  work = {"ids": {}, "title": "T", "abstract_inverted_index": {"hi": [0]}}
+  _no_network(monkeypatch, lookup_openalex_work=lambda doi: work)
+  read_paper.read_paper(doi="10.1/abs", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  abstract_receipt, abstract_matches = _receipt_matches(
+      json.loads(capsys.readouterr().out))
+
+  assert pdf_matches and pdf_receipt["source"] == "user_pdf"
+  assert abstract_matches and abstract_receipt["file"] == "abstract.md"
+
+
+def test_cached_fulltext_does_not_mint_a_receipt(tmp_path, capsys):
+  d = tmp_path / "papers" / "PMC9"
+  d.mkdir(parents=True)
+  (d / "fulltext.md").write_text("# written by hand", encoding="utf-8")
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC9",
+                        workspace=tmp_path)
+
+  assert not (d / "fulltext.receipt.json").exists()

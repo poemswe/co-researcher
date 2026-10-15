@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
+import json
 import math
 import re
 from typing import Callable
@@ -583,9 +585,48 @@ def unlisted_citation_findings(
       entries, corpus, references))
 
 
+def receipt_source_paths(snapshot: WorkspaceSnapshot) -> tuple[str, ...]:
+  """Source paths whose text claims are checked against."""
+  return tuple(artifact.relative_path for artifact in snapshot.files
+               if artifact.preferred_for_claims)
+
+
+def _receipt_reason(source: bytes, raw: bytes | None, filename: str) -> str | None:
+  try:
+    receipt = json.loads(raw) if raw is not None else None
+  except ValueError:
+    receipt = None
+  if (not isinstance(receipt, dict) or receipt.get("file") != filename
+      or not isinstance(receipt.get("sha256"), str)):
+    return "missing_fetch_receipt"
+  if receipt["sha256"] != hashlib.sha256(source).hexdigest():
+    return "source_changed_after_fetch"
+  return None
+
+
+def receipt_findings(
+    snapshot: WorkspaceSnapshot, receipts: dict[str, bytes | None],
+) -> tuple[Finding, ...]:
+  """Fail each claim source whose text no fetch receipt vouches for."""
+  findings = []
+  for path in receipt_source_paths(snapshot):
+    reason = _receipt_reason(
+        snapshot.read_bytes(path), receipts.get(path), path.rsplit("/", 1)[1])
+    if reason is not None:
+      findings.append(Finding(
+          reason_code=ReasonCode.MANIFEST_MISMATCH,
+          severity=Severity.CRITICAL,
+          artifact=path,
+          message="source text does not match a read_paper.py fetch receipt",
+          context={"artifact": path, "reason": reason},
+      ))
+  return tuple(findings)
+
+
 def validate_snapshot(
     snapshot: WorkspaceSnapshot, citation_report: dict | None = None, *,
     strict_bibliography: bool = False,
+    receipts: dict[str, bytes | None] | None = None,
 ) -> tuple[Finding, ...]:
   """Execute all adapters in stable order and fail closed per adapter."""
   findings = []
@@ -622,6 +663,7 @@ def validate_snapshot(
 
   run("citation", "refs.json", citations)
   if strict_bibliography:
+    run("receipt", "papers", lambda: receipt_findings(snapshot, receipts or {}))
     run("citation", "refs.json", lambda: unlisted_citation_findings(
         snapshot.read_json("claims.json"), snapshot.read_json("corpus.json"),
         snapshot.read_json("refs.json")))
@@ -636,6 +678,6 @@ def validate_snapshot(
 
 __all__ = [
     "artifact_findings", "citation_findings", "claim_findings",
-    "unlisted_citation_findings",
+    "receipt_findings", "receipt_source_paths", "unlisted_citation_findings",
     "prisma_findings", "validate_snapshot",
 ]

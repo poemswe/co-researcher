@@ -15,12 +15,14 @@ Paywalled papers are a normal outcome (abstract-only), not an error.
 # ///
 
 import argparse
+import hashlib
 import json
 import os
 import pathlib
 import re
 import sys
 import urllib.parse
+from datetime import datetime, timezone
 
 # Must precede the pymupdf4llm import: stops PyMuPDF printing its layout
 # recommendation to stdout, which would corrupt our JSON status line.
@@ -70,6 +72,20 @@ def emit(status: str, path, source: str, identifier: str) -> None:
       "source": source,
       "id": identifier,
   }))
+
+
+def deliver(status: str, path: pathlib.Path, source: str,
+            identifier: str) -> None:
+  receipt = {
+      "file": path.name,
+      "source": source,
+      "id": identifier,
+      "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+      "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+  }
+  path.with_suffix(".receipt.json").write_text(
+      json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+  emit(status, path, source, identifier)
 
 
 def extract_pdf(pdf_path: pathlib.Path) -> str:
@@ -166,7 +182,7 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
   if fulltext_path.exists():
     return emit("fulltext", fulltext_path, "cached", identifier)
   if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
-    return emit("fulltext", fulltext_path, "user_pdf", identifier)
+    return deliver("fulltext", fulltext_path, "user_pdf", identifier)
 
   work = (lookup_openalex_work(doi) if doi else None) or {}
   pmcid = pmcid or pmcid_from_ids(work.get("ids") or {})
@@ -178,16 +194,16 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
     text = fetch_epmc_fulltext(pmcid)
     if text:
       fulltext_path.write_text(text, encoding="utf-8")
-      return emit("fulltext", fulltext_path, "epmc", identifier)
+      return deliver("fulltext", fulltext_path, "epmc", identifier)
 
   if arxiv and fetch_arxiv_pdf(arxiv, pdf_path):
     if try_extract(pdf_path, fulltext_path):
-      return emit("fulltext", fulltext_path, "arxiv_pdf", identifier)
+      return deliver("fulltext", fulltext_path, "arxiv_pdf", identifier)
 
   oa = work.get("best_oa_location") or {}
   if oa.get("pdf_url") and fetch_oa_pdf(oa["pdf_url"], pdf_path):
     if try_extract(pdf_path, fulltext_path):
-      return emit("fulltext", fulltext_path, "oa_pdf", identifier)
+      return deliver("fulltext", fulltext_path, "oa_pdf", identifier)
 
   inv = work.get("abstract_inverted_index")
   if inv:
@@ -196,7 +212,8 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
         f"# {title}\n\n{abstract_from_inverted_index(inv)}\n",
         encoding="utf-8",
     )
-    return emit("abstract-only", abstract_path, "openalex_abstract", identifier)
+    return deliver(
+        "abstract-only", abstract_path, "openalex_abstract", identifier)
 
   emit("abstract-only", None, "none", identifier)
 

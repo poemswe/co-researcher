@@ -1,5 +1,6 @@
 import hashlib
 import importlib.util
+import hashlib
 import json
 import os
 import pathlib
@@ -42,7 +43,7 @@ class _StaticResolver:
     }
 
 
-def _review(root, *, refs=None, quote=None, synthesis=None):
+def _review(root, *, refs=None, quote=None, synthesis=None, receipt=True):
   refs = ([{"doi": "10.1/example", "title": "Example Study"}]
           if refs is None else refs)
   payloads = {
@@ -72,7 +73,17 @@ def _review(root, *, refs=None, quote=None, synthesis=None):
     destination = root / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(text, encoding="utf-8")
+  if receipt:
+    _write_receipt(root / "papers/p1/fulltext.md")
   return root
+
+
+def _write_receipt(source):
+  source.with_suffix(".receipt.json").write_text(json.dumps({
+      "file": source.name, "source": "epmc", "id": "p1",
+      "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+      "fetched_at": "2026-10-15T12:00:00Z",
+  }), encoding="utf-8")
 
 
 def _citation_report(path, refs, *, status="verified"):
@@ -170,6 +181,49 @@ def test_cli_without_report_is_invalid_and_never_resolves(
   assert bibliography["score"] == 0.0
 
 
+@pytest.mark.parametrize("tamper, reason", [
+    (None, "missing_fetch_receipt"),
+    ("edit", "source_changed_after_fetch"),
+    ("garbage", "missing_fetch_receipt"),
+])
+def test_cli_rejects_source_text_without_a_matching_receipt(
+    tmp_path, tamper, reason):
+  refs = [{"doi": "10.1/example", "title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs, receipt=tamper is not None)
+  source = workspace / "papers/p1/fulltext.md"
+  if tamper == "edit":
+    source.write_text(source.read_text() + " Planted sentence.", encoding="utf-8")
+  if tamper == "garbage":
+    source.with_suffix(".receipt.json").write_text("not json", encoding="utf-8")
+  citation_report = tmp_path / "citation-report.json"
+  _citation_report(citation_report, refs)
+
+  report, _synthesis = _load_cli_module().run_validation(
+      workspace, citation_report)
+
+  assert report["status"] == "invalid"
+  receipts = [item for item in report["findings"]
+              if item["reason_code"] == "manifest_mismatch"]
+  assert len(receipts) == 1
+  assert receipts[0]["severity"] == "critical"
+  assert receipts[0]["artifact"] == "papers/p1/fulltext.md"
+  assert receipts[0]["context"] == {
+      "artifact": "papers/p1/fulltext.md", "reason": reason}
+
+
+def test_cli_accepts_source_text_with_a_matching_receipt(tmp_path):
+  refs = [{"doi": "10.1/example", "title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs)
+  citation_report = tmp_path / "citation-report.json"
+  _citation_report(citation_report, refs)
+
+  report, _synthesis = _load_cli_module().run_validation(
+      workspace, citation_report)
+
+  assert report["status"] == "valid"
+  assert report["findings"] == []
+
+
 @pytest.mark.parametrize("refs", [
     [], [{"doi": "10.1/other", "title": "Other Study"}]])
 def test_cli_rejects_cited_paper_missing_from_bibliography(tmp_path, refs):
@@ -192,7 +246,7 @@ def test_cli_rejects_cited_paper_missing_from_bibliography(tmp_path, refs):
       "paper_id": "p1", "reason": "cited_paper_not_in_bibliography"}
 
 def test_synthetic_fixture_waives_bibliography_and_says_so(tmp_path):
-  workspace = _review(tmp_path / "review", refs=[])
+  workspace = _review(tmp_path / "review", refs=[], receipt=False)
 
   result = _run(workspace, "--synthetic-fixture")
 

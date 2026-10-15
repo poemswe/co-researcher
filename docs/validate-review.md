@@ -22,9 +22,17 @@ python3 /path/to/co-researcher/skills/literature-review/scripts/validate_review.
   --output /path/outside/review/integrity-report.md
 ```
 
-Fixtures built from invented papers cannot resolve. For those, pass
-`--synthetic-fixture`, which restores the old warning and records
-`citation_resolution.source` as `waived` so the report shows it was used.
+Each source text that claims are checked against needs the receipt
+`read_paper.py` wrote beside it (`fulltext.receipt.json` or
+`abstract.receipt.json`). A missing or unreadable receipt, or text whose
+sha256 no longer matches it, fails as `manifest_mismatch`. A receipt shows the
+text came from a fetch and was not edited afterwards. An agent could still
+write a receipt by hand, so it is a tripwire and not proof.
+
+Fixtures built from invented papers cannot resolve or be fetched. For those,
+pass `--synthetic-fixture`, which skips both checks, restores the old warning,
+and records `citation_resolution.source` as `waived` so the report shows it
+was used.
 
 Standard output is always the complete compact JSON validation report. An
 optional `.json` output is byte-for-byte identical to stdout; `.md` produces a
