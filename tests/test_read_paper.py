@@ -388,15 +388,15 @@ def _recheck(workspace, capsys):
   return code, [json.loads(line) for line in lines]
 
 
-def _epmc_workspace(tmp_path, capsys, monkeypatch, text="# epmc md"):
-  _no_network(monkeypatch, fetch_epmc_fulltext=lambda pmcid: text)
+def _epmc_workspace(tmp_path, monkeypatch):
+  _no_network(monkeypatch, fetch_epmc_fulltext=lambda pmcid: "# epmc md")
   read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC7",
                         workspace=tmp_path)
   return tmp_path / "papers" / "PMC7" / "fulltext.md"
 
 
 def test_recheck_matches_an_unchanged_source(tmp_path, capsys, monkeypatch):
-  _epmc_workspace(tmp_path, capsys, monkeypatch)
+  _epmc_workspace(tmp_path, monkeypatch)
   code, results = _recheck(tmp_path, capsys)
 
   assert code == 0
@@ -406,7 +406,7 @@ def test_recheck_matches_an_unchanged_source(tmp_path, capsys, monkeypatch):
 
 def test_recheck_flags_text_forged_with_its_receipt(
     tmp_path, capsys, monkeypatch):
-  source = _epmc_workspace(tmp_path, capsys, monkeypatch)
+  source = _epmc_workspace(tmp_path, monkeypatch)
   source.write_text("# forged", encoding="utf-8")
   receipt_path = source.with_suffix(".receipt.json")
   receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
@@ -420,7 +420,7 @@ def test_recheck_flags_text_forged_with_its_receipt(
 
 def test_recheck_reports_a_source_it_cannot_reach(
     tmp_path, capsys, monkeypatch):
-  _epmc_workspace(tmp_path, capsys, monkeypatch)
+  _epmc_workspace(tmp_path, monkeypatch)
   _no_network(monkeypatch)
   code, results = _recheck(tmp_path, capsys)
 
@@ -454,10 +454,32 @@ def test_recheck_fails_on_an_unreadable_receipt(tmp_path, capsys):
                       "source": None, "result": "unreadable_receipt"}]
 
 
-@pytest.mark.parametrize("identifier, expected", [
-    ("PMC123", (None, None, "PMC123")),
-    ("10.1/x", ("10.1/x", None, None)),
-    ("1706.03762", (None, "1706.03762", None)),
-])
-def test_identifier_args_routes_by_shape(identifier, expected):
-  assert read_paper.identifier_args(identifier) == expected
+def test_recheck_refetches_an_abstract_by_its_doi(
+    tmp_path, capsys, monkeypatch):
+  work = {"ids": {}, "title": "T", "abstract_inverted_index": {"hi": [0]}}
+  _no_network(monkeypatch, lookup_openalex_work=lambda doi: work)
+  read_paper.read_paper(doi="10.1/abs", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  code, results = _recheck(tmp_path, capsys)
+
+  assert code == 0
+  assert results[0]["result"] == "match"
+
+
+def test_recheck_calls_only_the_receipted_fetcher(
+    tmp_path, capsys, monkeypatch):
+  work = {"ids": {"pmcid": "https://.../PMC9"}}
+  _no_network(monkeypatch, lookup_openalex_work=lambda doi: work,
+              fetch_epmc_fulltext=lambda pmcid: "# md")
+  read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None,
+                        workspace=tmp_path)
+  receipt, _ = _receipt_matches(json.loads(capsys.readouterr().out))
+
+  def no_lookup(doi):
+    raise AssertionError("recheck must call only the receipted fetcher")
+
+  monkeypatch.setattr(read_paper, "lookup_openalex_work", no_lookup)
+  code, results = _recheck(tmp_path, capsys)
+
+  assert receipt["locator"] == "PMC9"
+  assert (code, results[0]["result"]) == (0, "match")

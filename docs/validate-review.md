@@ -38,7 +38,8 @@ uv run skills/literature-review/scripts/read_paper.py --recheck \
 
 It prints one JSON line per receipt with `result` set to `match`, `mismatch`,
 `unavailable` or `unreadable_receipt`, and exits 1 on a mismatch or an
-unreadable receipt. A user PDF is re-extracted from `paper.pdf`. `unavailable`
+unreadable receipt. Each source is fetched again from the route and locator its
+receipt records, and a user PDF is re-extracted from `paper.pdf`. `unavailable`
 means the original route no longer returns that file. A mismatch can also come
 from a publisher correction or a different PDF extractor version, so read the
 two texts before calling it forged. The check needs the network, which is why
