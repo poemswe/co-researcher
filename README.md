@@ -1,6 +1,6 @@
 # Co-Researcher: Academic Research Plugin for Claude Code
 
-![Version](https://img.shields.io/badge/version-2.7.1-1e3a8a) ![License: MIT](https://img.shields.io/badge/license-MIT-065f46)
+![Version](https://img.shields.io/badge/version-2.8.0-1e3a8a) ![License: MIT](https://img.shields.io/badge/license-MIT-065f46)
 
 Co-Researcher is an academic research plugin for **Claude Code**, **Gemini CLI**, **OpenAI Codex** and **OpenCode**. It runs literature reviews, systematic reviews, peer review and citation checks inside the AI assistant you already use.
 
