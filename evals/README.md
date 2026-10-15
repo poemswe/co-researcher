@@ -47,36 +47,45 @@ model and the same clean commit, so one report never mixes code versions.
 > [!TIP]
 > Use quotes for model strings with spaces: `--model "codex:gpt-5.2-codex high"`
 
-## Available Tests (26 total)
+## Available Tests (33 total)
+
+Published 2.7 runs used the first 32; `outcome-scorer` was added in 2.8.0.
 
 | Agent | Test | Difficulty |
 |-------|------|------------|
 | **critical-analysis** | bias-identification | Hard |
-| | contradictory-evidence | Hard |
-| | fallacy-detection | Medium |
-| | methodology-critique | Medium |
-| **ethics-review** | privacy-risk | Hard |
-| **grant-writing** | grant-writing | Medium |
+|  | contradictory-evidence | Hard |
+|  | fallacy-detection | Medium |
+|  | methodology-critique | Medium |
+| **ethics-review** | deception-debriefing | Medium |
+|  | privacy-risk | Hard |
+|  | reidentification-risk | Hard |
+| **grant-writing** | grant-proposal | Medium |
+|  | resubmission-response | Hard |
+|  | specific-aims-revision | Medium |
 | **hypothesis-testing** | hypothesis-formulation | Medium |
-| | unfalsifiable-claim | Hard |
-| | variable-mapping | Hard |
+|  | outcome-scorer | Medium |
+|  | unfalsifiable-claim | Hard |
+|  | variable-mapping | Hard |
 | **lateral-thinking** | analogy-finding | Hard |
-| | constraint-satisfaction | Hard |
-| | first-principles | Hard |
+|  | constraint-satisfaction | Hard |
+|  | first-principles | Hard |
 | **literature-review** | basic-search | Easy |
-| | citation-chain | Hard |
-| | gap-analysis | Medium |
-| | hallucination-detection | Hard |
-| **peer-review** | manuscript-critique | Hard |
+|  | citation-chain | Hard |
+|  | gap-analysis | Medium |
+|  | hallucination-detection | Hard |
+| **peer-review** | manuscript-critique | Medium |
+|  | ml-reproducibility | Hard |
+|  | statistical-flaws | Medium |
 | **qualitative-research** | coding-strategy | Medium |
-| | leading-questions | Hard |
-| | thematic-analysis | Medium |
+|  | leading-questions | Hard |
+|  | thematic-analysis | Medium |
 | **quantitative-analysis** | effect-size-interpretation | Medium |
-| | simpson-paradox | Hard |
-| | stat-method-selection | Medium |
+|  | simpson-paradox | Hard |
+|  | stat-method-selection | Medium |
 | **research-methodology** | methodology-selection | Medium |
-| | methodology-validation | Hard |
-| | mixed-methods-design | Hard |
+|  | methodology-validation | Medium |
+|  | mixed-methods-design | Hard |
 
 ## Scoring (Task-Specific)
 
@@ -199,6 +208,19 @@ The broad benchmark (32 cases) predates integrity evaluation. Its dashboard rows
 are labeled **Quality-only historical run — not integrity evaluated**. A broad
 quality pass does not imply an integrity pass.
 
+### Publishing integrity runs
+
+Each integrity run writes its result bundle to `evals/results/runs/<run_id>/`,
+which Git ignores. To show runs on the dashboard, publish them by ID:
+
+```bash
+python3 evals/publish_integrity_runs.py RUN_ID [RUN_ID ...]
+```
+
+The command validates each run, refuses one that contains your home directory
+path, copies it to `evals/published/runs/`, and adds it to the published index
+that the dashboard reads.
+
 ### Test Results
 
 Results saved to `evals/results/`:
@@ -223,8 +245,9 @@ Every test run automatically generates benchmark data using a two-file architect
 
 **View Dashboard**:
 ```bash
-open evals/index.html
+python3 -m http.server 8000 --directory evals
 ```
+Then open `http://localhost:8000`. The dashboard reads local result files only. A hosted view is at [coresearcher.poemswe.com/evals](https://coresearcher.poemswe.com/evals/).
 
 **Features:**
 - **Model Leaderboards**: Compare performance trends across models.
