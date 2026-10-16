@@ -591,6 +591,24 @@ def test_emitted_json_round_trips_through_strict_report_validation(tmp_path):
   )
 
 
+@pytest.mark.parametrize("quote, action", [
+    (None, "repair"),
+    (None, "stop_invalid"),
+    ("This invented evidence passage is deliberately long enough to be "
+     "checked but it does not occur in the retained source text.", "pass"),
+])
+def test_strict_report_rejects_an_action_the_status_cannot_take(
+    tmp_path, quote, action):
+  module = _load_cli_module()
+  report, _ = module.run_validation(_review(tmp_path / "review", quote=quote),
+                                    None)
+  assert report["action"] != action
+  report["action"] = action
+
+  with pytest.raises(ValueError, match="repair action does not match"):
+    module.validate_report(report)
+
+
 def test_json_render_is_independent_of_mapping_insertion_order(tmp_path):
   workspace = _review(
       tmp_path / "review",
