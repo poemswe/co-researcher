@@ -44,7 +44,7 @@ whose `result` is one of these:
 
 - `match`: the same route returned the same bytes.
 - `mismatch`: the text differs, or the workspace file is gone.
-- `unavailable`: the chain now ends at a different route or at none.
+- `unavailable`: the chain now ends at a different route or at none, or the fetch failed.
 - `unverifiable`: the text came from a user PDF, which has no public copy to
   compare against.
 - `unreadable_receipt`: the receipt cannot be parsed or names another paper.

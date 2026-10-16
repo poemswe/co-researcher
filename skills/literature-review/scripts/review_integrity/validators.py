@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import hashlib
 import json
 import math
+from pathlib import PurePosixPath
 import re
 from typing import Callable
 
@@ -604,7 +604,7 @@ def receipt_source_paths(snapshot: WorkspaceSnapshot) -> tuple[str, ...]:
                if artifact.preferred_for_claims)
 
 
-def _receipt_reason(source: bytes, raw: bytes | None, filename: str) -> str | None:
+def _receipt_reason(sha256: str, raw: bytes | None, filename: str) -> str | None:
   try:
     receipt = json.loads(raw) if raw is not None else None
   except ValueError:
@@ -612,7 +612,7 @@ def _receipt_reason(source: bytes, raw: bytes | None, filename: str) -> str | No
   if (not isinstance(receipt, dict) or receipt.get("file") != filename
       or not isinstance(receipt.get("sha256"), str)):
     return "missing_fetch_receipt"
-  if receipt["sha256"] != hashlib.sha256(source).hexdigest():
+  if receipt["sha256"] != sha256:
     return "source_changed_after_fetch"
   return None
 
@@ -622,9 +622,12 @@ def receipt_findings(
 ) -> tuple[Finding, ...]:
   """Fail each claim source whose text no fetch receipt vouches for."""
   findings = []
-  for path in receipt_source_paths(snapshot):
+  for artifact in snapshot.files:
+    if not artifact.preferred_for_claims:
+      continue
+    path = artifact.relative_path
     reason = _receipt_reason(
-        snapshot.read_bytes(path), receipts.get(path), path.rsplit("/", 1)[1])
+        artifact.sha256, receipts.get(path), PurePosixPath(path).name)
     if reason is not None:
       findings.append(Finding(
           reason_code=ReasonCode.MANIFEST_MISMATCH,
