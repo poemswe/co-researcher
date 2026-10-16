@@ -76,6 +76,13 @@ def combined_manifest_sha256(
   return hashlib.sha256(canonical).hexdigest()
 
 
+_STATUS_ACTIONS = {
+    "valid": {"pass"},
+    "valid_with_warnings": {"pass", "repair"},
+    "invalid": {"repair", "stop_invalid"},
+}
+
+
 def validate_report(report: object) -> dict:
   """Validate the closed top-level wire schema without changing it."""
   if type(report) is not dict or set(report) != _TOP_LEVEL_FIELDS:
@@ -159,7 +166,8 @@ def validate_report(report: object) -> dict:
   action = report["action"]
   if action not in REPAIR_ACTIONS:
     raise ValueError("unknown repair action")
-  if ((pass_report.status.value == "invalid") == (action == "pass")):
+  if (action not in _STATUS_ACTIONS[pass_report.status.value]
+      or (action == "repair" and not pass_report.repair_required)):
     raise ValueError("repair action does not match validation status")
   if report["repair_feedback"] != safe_repair_feedback(pass_report):
     raise ValueError("repair_feedback does not match the public finding allowlist")

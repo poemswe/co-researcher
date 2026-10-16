@@ -77,6 +77,8 @@ ATTACK_EXPECTATIONS = (
 KNOWN_GAPS = (
     ("integrity-case-014", "overstated-finding",
      ReasonCode.COVERAGE_CLAIM_MISSING),
+    ("integrity-case-015", "forged-source",
+     ReasonCode.FABRICATED_QUOTE),
 )
 
 FAMILY_NAMES = {family for _case, family, _reason, _mutation
@@ -208,7 +210,7 @@ def test_critical_attack_is_detected_at_its_expected_unit(
 
 
 @pytest.mark.parametrize(("case_id", "family", "reason_code"), KNOWN_GAPS)
-def test_overstated_finding_is_a_recorded_detection_gap(
+def test_known_gap_is_reported_as_a_false_negative(
     tmp_path, case_id, family, reason_code,
 ):
   case = next(item for item in load_cases(ATTACKS) if item.case_id == case_id)

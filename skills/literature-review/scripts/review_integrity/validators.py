@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-import hashlib
 import json
 import math
+from pathlib import PurePosixPath
 import re
 from typing import Callable
 
@@ -585,13 +585,26 @@ def unlisted_citation_findings(
       entries, corpus, references))
 
 
+def unregistered_source_findings(
+    entries: list[dict], corpus: list[dict],
+) -> tuple[Finding, ...]:
+  """Warn on each cited paper that no scholarly registry identifies."""
+  return tuple(Finding(
+      reason_code=ReasonCode.SOURCE_UNREGISTERED,
+      severity=Severity.WARNING,
+      artifact="corpus.json",
+      message="cited source has no DOI, PMID, PMCID or arXiv id",
+      context={"paper_id": paper_id},
+  ) for paper_id in check_claims.unregistered_cited_papers(entries, corpus))
+
+
 def receipt_source_paths(snapshot: WorkspaceSnapshot) -> tuple[str, ...]:
   """Source paths whose text claims are checked against."""
   return tuple(artifact.relative_path for artifact in snapshot.files
                if artifact.preferred_for_claims)
 
 
-def _receipt_reason(source: bytes, raw: bytes | None, filename: str) -> str | None:
+def _receipt_reason(sha256: str, raw: bytes | None, filename: str) -> str | None:
   try:
     receipt = json.loads(raw) if raw is not None else None
   except ValueError:
@@ -599,7 +612,7 @@ def _receipt_reason(source: bytes, raw: bytes | None, filename: str) -> str | No
   if (not isinstance(receipt, dict) or receipt.get("file") != filename
       or not isinstance(receipt.get("sha256"), str)):
     return "missing_fetch_receipt"
-  if receipt["sha256"] != hashlib.sha256(source).hexdigest():
+  if receipt["sha256"] != sha256:
     return "source_changed_after_fetch"
   return None
 
@@ -609,9 +622,12 @@ def receipt_findings(
 ) -> tuple[Finding, ...]:
   """Fail each claim source whose text no fetch receipt vouches for."""
   findings = []
-  for path in receipt_source_paths(snapshot):
+  for artifact in snapshot.files:
+    if not artifact.preferred_for_claims:
+      continue
+    path = artifact.relative_path
     reason = _receipt_reason(
-        snapshot.read_bytes(path), receipts.get(path), path.rsplit("/", 1)[1])
+        artifact.sha256, receipts.get(path), PurePosixPath(path).name)
     if reason is not None:
       findings.append(Finding(
           reason_code=ReasonCode.MANIFEST_MISMATCH,
@@ -667,6 +683,8 @@ def validate_snapshot(
     run("citation", "refs.json", lambda: unlisted_citation_findings(
         snapshot.read_json("claims.json"), snapshot.read_json("corpus.json"),
         snapshot.read_json("refs.json")))
+    run("provenance", "corpus.json", lambda: unregistered_source_findings(
+        snapshot.read_json("claims.json"), snapshot.read_json("corpus.json")))
 
   def prisma() -> tuple[Finding, ...]:
     records = snapshot.read_json("corpus.json")
@@ -679,5 +697,6 @@ def validate_snapshot(
 __all__ = [
     "artifact_findings", "citation_findings", "claim_findings",
     "receipt_findings", "receipt_source_paths", "unlisted_citation_findings",
+    "unregistered_source_findings",
     "prisma_findings", "validate_snapshot",
 ]

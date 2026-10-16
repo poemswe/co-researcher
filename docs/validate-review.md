@@ -29,6 +29,37 @@ sha256 no longer matches it, fails as `manifest_mismatch`. A receipt shows the
 text came from a fetch and was not edited afterwards. An agent could still
 write a receipt by hand, so it is a tripwire and not proof.
 
+To check where the text came from, re-fetch every receipted source and compare
+it to the workspace copy:
+
+```bash
+uv run skills/literature-review/scripts/read_paper.py --recheck \
+  --workspace /path/to/review/example
+```
+
+Recheck trusts nothing in the receipt except the paper id, and the id must
+match the paper's directory name. It runs the full fetch chain for that id again
+and compares the result to the workspace copy. Each receipt gets one JSON line
+whose `result` is one of these:
+
+- `match`: the same route returned the same bytes.
+- `mismatch`: the text differs, or the workspace file is gone.
+- `unavailable`: the chain now ends at a different route or at none, or the fetch failed.
+- `unverifiable`: the text came from a user PDF, which has no public copy to
+  compare against.
+- `unreadable_receipt`: the receipt cannot be parsed or names another paper.
+
+Any result other than `match` exits 1. A match on `oa_pdf` shows only that
+OpenAlex points at the same file, so it is as good as that host. A mismatch can also come
+from a publisher correction or a different PDF extractor version, so read the
+two texts before calling it forged. The check needs the network, which is why
+it stays outside the offline validator.
+
+A cited paper whose `corpus.json` record has no DOI, PMID, PMCID or arXiv id
+gets a `source_unregistered` warning. A web page an agent published during the
+run has none of these, so check each flagged source by hand before relying on
+it. The warning cannot be repaired and does not lower the score.
+
 Fixtures built from invented papers cannot resolve or be fetched. For those,
 pass `--synthetic-fixture`, which skips both checks, restores the old warning,
 and records `citation_resolution.source` as `waived` so the report shows it
