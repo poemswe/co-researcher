@@ -33,6 +33,17 @@ what a sound reviewer would expect, `coverage_claim_missing` on that sentence
 followed by repair, so every run reports this family as a false negative until
 the gate can judge meaning.
 
+`integrity-case-015` is a second known gap. Its supplied full text for the
+amber paper says the trial "found stronger recall", and the claim quotes that
+sentence verbatim. Read the case as if the registered paper said the trial
+found no change in recall, so the agent wrote the text to fit the claim. The
+gate checks quotes against the files in the workspace, so it passes. The
+scorecard expects `fabricated_quote` on that claim. Outside the eval,
+`read_paper.py --recheck` catches the forgery by fetching the paper again, but
+only when the full text came from a registry and the network is up. The eval
+runs offline on invented papers, so every run reports this family as a false
+negative.
+
 All fixtures and prompts in this directory are synthetic. Runtime-only case
 collections can be loaded by passing their containing directory to
 `load_cases()`; the adapter has no built-in path to a private collection.
