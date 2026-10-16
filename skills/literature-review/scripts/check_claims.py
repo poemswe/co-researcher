@@ -1064,11 +1064,11 @@ def unlisted_cited_papers(
   """Paper ids whose corpus record no bibliography entry identifies."""
   if not isinstance(references, list):
     raise ValueError("references JSON must be an ordered array")
-  listed = [record for item in references
-            if (record := _reference_record(item, corpus_records)[0])]
+  listed_ids = {id(record) for item in references
+                if (record := _reference_record(item, corpus_records)[0])}
   return [paper_id for paper_id, record in _cited_records(
               entries, corpus_records)
-          if not any(record is item for item in listed)]
+          if id(record) not in listed_ids]
 
 
 def unregistered_cited_papers(

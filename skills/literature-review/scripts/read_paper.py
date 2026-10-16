@@ -250,8 +250,12 @@ def recheck_source(receipt_path: pathlib.Path,
   if source == "user_pdf":
     return source, "unverifiable"
   with tempfile.TemporaryDirectory() as tmp:
-    _, path, fresh_source, _ = acquire(*identifier_args(identifier), tmp)
-    if fresh_source != source or path.name != current.name:
+    try:
+      _, path, fresh_source, _ = acquire(*identifier_args(identifier), tmp)
+    except Exception as err:
+      print(f"Recheck fetch failed for {identifier}: {err}", file=sys.stderr)
+      return source, "unavailable"
+    if path is None or fresh_source != source or path.name != current.name:
       return source, "unavailable"
     same = current.is_file() and current.read_bytes() == path.read_bytes()
   return source, "match" if same else "mismatch"
