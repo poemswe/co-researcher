@@ -249,6 +249,24 @@ def test_invalid_claim_report_exits_one_and_preserves_json_report(tmp_path):
   assert "verified" not in result.stderr.lower()
 
 
+def test_repairable_warning_asks_for_repair_without_crashing(tmp_path):
+  refs = [{"title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs)
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, refs)
+  run_report = tmp_path / "run-report.json"
+
+  result = _run(workspace, "--citation-report", str(citation_path),
+                "--run-report", str(run_report))
+
+  assert result.returncode == 0, result.stderr
+  report = _report(result)
+  assert (report["status"], report["action"]) == (
+      "valid_with_warnings", "repair")
+  assert report["repair_feedback"]["reason_codes"] == [
+      "bibliography_incomplete"]
+
+
 def test_cli_run_report_retains_first_and_intermediate_passes(tmp_path):
   workspace = _review(
       tmp_path / "review",
