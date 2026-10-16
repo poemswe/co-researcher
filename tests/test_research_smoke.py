@@ -168,7 +168,7 @@ def test_literature_review_delivery_validation_smoke(tmp_path):
 
   result = _run(
       VALIDATE_REVIEW, "--workspace", workspace,
-      "--run-report", run_report)
+      "--synthetic-fixture", "--run-report", run_report)
 
   assert result.returncode == 0, result.stderr
   report = json.loads(result.stdout)
@@ -189,7 +189,7 @@ def test_literature_review_altered_number_smoke_is_invalid(tmp_path):
 
   result = _run(
       VALIDATE_REVIEW, "--workspace", workspace,
-      "--run-report", run_report, cwd=tmp_path)
+      "--synthetic-fixture", "--run-report", run_report, cwd=tmp_path)
 
   assert result.returncode == 1, result.stderr
   report = json.loads(result.stdout)
@@ -231,7 +231,7 @@ def test_literature_review_invalid_repair_sequence_smoke(tmp_path):
           encoding="utf-8")
     result = _run(
         VALIDATE_REVIEW, "--workspace", workspace,
-        "--run-report", run_report)
+        "--synthetic-fixture", "--run-report", run_report)
     assert result.returncode == 1, result.stderr
     actions.append(json.loads(result.stdout)["action"])
 

@@ -1043,6 +1043,44 @@ def corpus_with_source_scopes(
   return enriched
 
 
+_REGISTRY_IDS = ("doi", "pmid", "pmcid", "arxiv")
+
+
+def _cited_records(entries: list[dict], corpus_records: list[dict]):
+  seen = set()
+  for entry in entries:
+    paper_id = entry.get("paper_id") if isinstance(entry, dict) else None
+    if not isinstance(paper_id, str) or paper_id in seen:
+      continue
+    seen.add(paper_id)
+    record = _record_for_paper_id(corpus_records, paper_id)
+    if record is not None:
+      yield paper_id, record
+
+
+def unlisted_cited_papers(
+    entries: list[dict], corpus_records: list[dict], references: list,
+) -> list[str]:
+  """Paper ids whose corpus record no bibliography entry identifies."""
+  if not isinstance(references, list):
+    raise ValueError("references JSON must be an ordered array")
+  listed_ids = {id(record) for item in references
+                if (record := _reference_record(item, corpus_records)[0])}
+  return [paper_id for paper_id, record in _cited_records(
+              entries, corpus_records)
+          if id(record) not in listed_ids]
+
+
+def unregistered_cited_papers(
+    entries: list[dict], corpus_records: list[dict],
+) -> list[str]:
+  """Paper ids whose corpus record carries no DOI, PMID, PMCID or arXiv id."""
+  return [paper_id for paper_id, record in _cited_records(
+              entries, corpus_records)
+          if not any((record.get("ids") or {}).get(name)
+                     for name in _REGISTRY_IDS)]
+
+
 def check_claims_document(
     entries: list[dict], corpus_records: list[dict],
     source_texts: dict[str, str], synthesis: str | None, references: list | None,

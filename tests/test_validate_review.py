@@ -42,14 +42,16 @@ class _StaticResolver:
     }
 
 
-def _review(root, *, refs=None, quote=None, synthesis=None):
+def _review(root, *, refs=None, quote=None, synthesis=None, receipt=True,
+            ids=None):
   refs = ([{"doi": "10.1/example", "title": "Example Study"}]
           if refs is None else refs)
   payloads = {
       "protocol.md": "# Protocol\n",
       "corpus.json": json.dumps([{
-          "key": "paper-one", "ids": {"pmcid": "p1"},
-          "authors": ["Priya Patel"], "year": 2022,
+          "key": "paper-one",
+          "ids": ids or {"pmcid": "p1", "doi": "10.1/example"},
+          "title": "Example Study", "authors": ["Priya Patel"], "year": 2022,
           "role": "evidence", "found_via": "openalex",
           "fulltext": "fulltext", "screening": {"status": "included"},
       }]),
@@ -72,7 +74,17 @@ def _review(root, *, refs=None, quote=None, synthesis=None):
     destination = root / relative
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(text, encoding="utf-8")
+  if receipt:
+    _write_receipt(root / "papers/p1/fulltext.md")
   return root
+
+
+def _write_receipt(source):
+  source.with_suffix(".receipt.json").write_text(json.dumps({
+      "file": source.name, "source": "epmc", "id": "p1",
+      "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+      "fetched_at": "2026-10-15T12:00:00Z",
+  }), encoding="utf-8")
 
 
 def _citation_report(path, refs, *, status="verified"):
@@ -142,7 +154,7 @@ def test_valid_review_cli_exits_zero_and_prints_strict_json_from_any_cwd(
   assert result.stderr.startswith("VALID: ")
 
 
-def test_cli_without_report_is_offline_unresolved_warning_not_incomplete(
+def test_cli_without_report_is_invalid_and_never_resolves(
     tmp_path, monkeypatch,
 ):
   workspace = _review(tmp_path / "review")
@@ -157,7 +169,7 @@ def test_cli_without_report_is_offline_unresolved_warning_not_incomplete(
       ForbiddenNetworkResolver)
   report, _synthesis = module.run_validation(workspace, None)
 
-  assert report["status"] == "valid_with_warnings"
+  assert report["status"] == "invalid"
   assert report["citation_report_sha256"] is None
   assert report["citation_resolution"] == {
       "source": "not_supplied", "resolver": None, "checked_at": None,
@@ -165,23 +177,126 @@ def test_cli_without_report_is_offline_unresolved_warning_not_incomplete(
   }
   assert [item["reason_code"] for item in report["findings"]] == [
       "citation_resolution_unavailable"]
-  assert report["findings"][0]["severity"] == "warning"
-  assert report["findings"][0]["context"]["response_status"] == "unavailable"
+  assert report["findings"][0]["severity"] == "critical"
   bibliography = report["dimensions"]["bibliography_verification"]
-  assert (bibliography["evaluated_units"], bibliography["passed_units"]) == (
-      1, 0)
   assert bibliography["score"] == 0.0
 
 
-def test_empty_bibliography_without_report_is_not_applicable(tmp_path):
-  workspace = _review(tmp_path / "review", refs=[])
+@pytest.mark.parametrize("tamper, reason", [
+    (None, "missing_fetch_receipt"),
+    ("edit", "source_changed_after_fetch"),
+    ("garbage", "missing_fetch_receipt"),
+])
+def test_cli_rejects_source_text_without_a_matching_receipt(
+    tmp_path, tamper, reason):
+  refs = [{"doi": "10.1/example", "title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs, receipt=tamper is not None)
+  source = workspace / "papers/p1/fulltext.md"
+  if tamper == "edit":
+    source.write_text(source.read_text() + " Planted sentence.", encoding="utf-8")
+  if tamper == "garbage":
+    source.with_suffix(".receipt.json").write_text("not json", encoding="utf-8")
+  citation_report = tmp_path / "citation-report.json"
+  _citation_report(citation_report, refs)
 
-  result = _run(workspace)
+  report, _synthesis = _load_cli_module().run_validation(
+      workspace, citation_report)
+
+  assert report["status"] == "invalid"
+  receipts = [item for item in report["findings"]
+              if item["reason_code"] == "manifest_mismatch"]
+  assert len(receipts) == 1
+  assert receipts[0]["severity"] == "critical"
+  assert receipts[0]["artifact"] == "papers/p1/fulltext.md"
+  assert receipts[0]["context"] == {
+      "artifact": "papers/p1/fulltext.md", "reason": reason}
+
+
+def test_cli_accepts_source_text_with_a_matching_receipt(tmp_path):
+  refs = [{"doi": "10.1/example", "title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs)
+  citation_report = tmp_path / "citation-report.json"
+  _citation_report(citation_report, refs)
+
+  report, _synthesis = _load_cli_module().run_validation(
+      workspace, citation_report)
+
+  assert report["status"] == "valid"
+  assert report["findings"] == []
+
+
+@pytest.mark.parametrize("refs", [
+    [], [{"doi": "10.1/other", "title": "Other Study"}]])
+def test_cli_rejects_cited_paper_missing_from_bibliography(tmp_path, refs):
+  workspace = _review(tmp_path / "review", refs=refs)
+  module = _load_cli_module()
+  citation_report = None
+  if refs:
+    citation_report = tmp_path / "citation-report.json"
+    _citation_report(citation_report, refs)
+
+  report, _synthesis = module.run_validation(workspace, citation_report)
+
+  assert report["status"] == "invalid"
+  unlisted = [item for item in report["findings"]
+              if item["reason_code"] == "citation_identity_mismatch"]
+  assert len(unlisted) == 1
+  assert unlisted[0]["severity"] == "critical"
+  assert unlisted[0]["artifact"] == "refs.json"
+  assert unlisted[0]["context"] == {
+      "paper_id": "p1", "reason": "cited_paper_not_in_bibliography"}
+
+
+def _title_only_run(root, ids=None):
+  refs = [{"title": "Example Study"}]
+  workspace = _review(root / "review", refs=refs, ids=ids)
+  citation_report = root / "citation-report.json"
+  _citation_report(citation_report, refs)
+  return _load_cli_module().run_validation(workspace, citation_report)[0]
+
+
+def test_cli_flags_a_cited_source_with_no_registry_id(tmp_path):
+  registered = _title_only_run(tmp_path / "registered")
+  report = _title_only_run(tmp_path / "unregistered",
+                           ids={"openalex": "W1", "url": "p1"})
+
+  assert not any(item["reason_code"] == "source_unregistered"
+                 for item in registered["findings"])
+  assert report["integrity_score"] == registered["integrity_score"]
+  assert report["status"] == "valid_with_warnings"
+  assert [{key: value for key, value in item.items()
+           if key != "schema_version"}
+          for item in report["findings"]
+          if item["reason_code"] == "source_unregistered"] == [{
+      "reason_code": "source_unregistered", "severity": "warning",
+      "artifact": "corpus.json",
+      "message": "cited source has no DOI, PMID, PMCID or arXiv id",
+      "context": {"paper_id": "p1"},
+  }]
+
+
+def test_synthetic_fixture_skips_the_registry_check(tmp_path):
+  workspace = _review(tmp_path / "review", refs=[], receipt=False,
+                      ids={"url": "p1"})
+
+  report = _report(_run(workspace, "--synthetic-fixture"))
+
+  assert not any(item["reason_code"] == "source_unregistered"
+                 for item in report["findings"])
+
+
+def test_synthetic_fixture_waives_bibliography_and_says_so(tmp_path):
+  workspace = _review(tmp_path / "review", refs=[], receipt=False)
+
+  result = _run(workspace, "--synthetic-fixture")
 
   assert result.returncode == 0, result.stderr
   report = _report(result)
   assert report["status"] == "valid"
-  assert report["citation_resolution"]["response_status"] == "not_applicable"
+  assert report["citation_resolution"] == {
+      "source": "waived", "resolver": None, "checked_at": None,
+      "response_status": "not_applicable",
+  }
   assert report["dimensions"]["bibliography_verification"]["applicable"] is False
   assert not any(item["artifact"] == "refs.json" for item in report["findings"])
 
@@ -453,10 +568,11 @@ def test_cli_rejects_reserved_fields_recursively_in_run_report_context(
 def test_cli_refuses_to_append_after_terminal_run_report(tmp_path):
   workspace = _review(tmp_path / "review", refs=[])
   run_report = tmp_path / "run-report.json"
-  first = _run(workspace, "--run-report", str(run_report))
+  first = _run(workspace, "--synthetic-fixture", "--run-report", str(run_report))
   retained = run_report.read_bytes()
 
-  second = _run(workspace, "--run-report", str(run_report))
+  second = _run(
+      workspace, "--synthetic-fixture", "--run-report", str(run_report))
 
   assert first.returncode == 0
   assert _report(first)["action"] == "pass"
@@ -470,7 +586,7 @@ def test_json_stdout_and_output_are_exactly_identical(tmp_path):
   workspace = _review(tmp_path / "review")
   output = tmp_path / "report.json"
 
-  result = _run(workspace, "--output", str(output))
+  result = _run(workspace, "--synthetic-fixture", "--output", str(output))
 
   assert result.returncode == 0, result.stderr
   assert output.read_bytes() == result.stdout.encode("utf-8")
@@ -500,8 +616,8 @@ def test_emitted_json_round_trips_through_strict_report_validation(tmp_path):
 def test_strict_report_rejects_an_action_the_status_cannot_take(
     tmp_path, quote, action):
   module = _load_cli_module()
-  report, _ = module.run_validation(_review(tmp_path / "review", quote=quote),
-                                    None)
+  report, _ = module.run_validation(
+      _review(tmp_path / "review", quote=quote), None, synthetic_fixture=True)
   assert report["action"] != action
   report["action"] = action
 

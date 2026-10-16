@@ -1549,3 +1549,36 @@ def test_fuzz_number_grounding():
 
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))
+
+
+def test_unlisted_cited_papers_matches_references_by_doi_or_title():
+  corpus = [
+      {"key": "a", "ids": {"doi": "10.1/a"}, "title": "Amber Garden Recall"},
+      {"key": "b", "ids": {}, "title": "Ivory Harbor Recall"},
+      {"key": "c", "ids": {}, "title": "Cobalt Field Trial"},
+  ]
+  entries = [{"paper_id": "a"}, {"paper_id": "b"}, {"paper_id": "c"},
+             {"paper_id": "c"}, {"paper_id": "unknown"}]
+  references = [{"doi": "https://doi.org/10.1/A"},
+                "Vale N. (2024). Ivory Harbor Recall. Invented Journal."]
+
+  assert cc.unlisted_cited_papers(entries, corpus, references) == ["c"]
+
+
+def test_unlisted_cited_papers_rejects_non_list_references():
+  with pytest.raises(ValueError):
+    cc.unlisted_cited_papers([], [], {"doi": "10.1/a"})
+
+
+def test_unregistered_cited_papers_lacks_doi_pmid_pmcid_and_arxiv():
+  corpus = [
+      {"key": "a", "ids": {"doi": "10.1/a"}},
+      {"key": "b", "ids": {"pmid": "1"}},
+      {"key": "c", "ids": {"openalex": "W1", "doi": ""}},
+      {"key": "e"},
+      {"key": "f", "ids": {"arxiv": "1706.03762"}},
+  ]
+  entries = [{"paper_id": key} for key in "abccef"] + [
+      {"paper_id": "unknown"}, "not-an-entry"]
+
+  assert cc.unregistered_cited_papers(entries, corpus) == ["c", "e"]

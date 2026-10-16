@@ -457,6 +457,10 @@ def score_integrity(
       attach("quote_authenticity", finding)
       mapped = True
 
+    if reason is ReasonCode.SOURCE_UNREGISTERED and not mapped:
+      attach("bibliography_verification", finding)
+      mapped = True
+
     if not mapped and finding.severity is Severity.CRITICAL:
       for name in DIMENSION_ORDER:
         zero(name, finding)

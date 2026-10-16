@@ -17,7 +17,7 @@ def _validate(workspace, tmp_path):
   output = tmp_path / "report.json"
   completed = subprocess.run(
       [sys.executable, str(CLI), "--workspace", str(workspace),
-       "--output", str(output)],
+       "--synthetic-fixture", "--output", str(output)],
       capture_output=True, text=True, check=False)
   assert completed.returncode == 0, completed.stdout + completed.stderr
   return json.loads(output.read_text())

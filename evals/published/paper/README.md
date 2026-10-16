@@ -36,7 +36,7 @@ Some Codex snapshots contain temporary file paths that Codex wrote into its own 
 Rerun one with:
 
 ```
-python skills/literature-review/scripts/validate_review.py --workspace evals/published/paper/counterexamples/polarity-reversal
+python skills/literature-review/scripts/validate_review.py --workspace evals/published/paper/counterexamples/polarity-reversal --synthetic-fixture
 ```
 
 ## Release results

@@ -56,6 +56,7 @@ class ReasonCode(_StringEnum):
   CITATION_AMBIGUOUS = "citation_ambiguous"
   CITATION_RETRACTED = "citation_retracted"
   CITATION_RESOLUTION_UNAVAILABLE = "citation_resolution_unavailable"
+  SOURCE_UNREGISTERED = "source_unregistered"
   CLAIM_NEEDS_REVIEW = "claim_needs_review"
   COVERAGE_NUMBER_MISSING = "coverage_number_missing"
   COVERAGE_CLAIM_MISSING = "coverage_claim_missing"

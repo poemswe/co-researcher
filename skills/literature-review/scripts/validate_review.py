@@ -38,7 +38,8 @@ from review_integrity.reporting import (  # noqa: E402
     validate_report,
 )
 from review_integrity.scoring import score_integrity  # noqa: E402
-from review_integrity.validators import validate_snapshot  # noqa: E402
+from review_integrity.validators import (  # noqa: E402
+    receipt_source_paths, validate_snapshot)
 from review_integrity.workspace import (  # noqa: E402
     MAX_ARTIFACT_BYTES,
     WorkspaceError,
@@ -189,12 +190,13 @@ def git_provenance(workspace: pathlib.Path) -> tuple[Optional[str], Optional[boo
 
 
 def _citation_resolution(
-    report: object, *, supplied: bool, bibliography: object,
+    report: object, *, supplied: bool, bibliography: object, waived: bool,
 ) -> dict[str, object]:
   if not supplied:
     response = "not_applicable" if bibliography == [] else "unavailable"
     return {
-        "source": "not_supplied", "resolver": None, "checked_at": None,
+        "source": "waived" if waived else "not_supplied",
+        "resolver": None, "checked_at": None,
         "response_status": response,
     }
   if not isinstance(report, dict):
@@ -220,9 +222,18 @@ def _citation_resolution(
   }
 
 
+def _optional_receipt(workspace: pathlib.Path, source: str) -> bytes | None:
+  receipt = workspace / pathlib.PurePosixPath(source).with_suffix(".receipt.json")
+  try:
+    return _read_regular_bytes(receipt, "fetch receipt")
+  except (ValidationInputError, OSError):
+    return None
+
+
 def _retained_validation(
     workspace: os.PathLike[str] | str,
     citation_report: os.PathLike[str] | str | None,
+    synthetic_fixture: bool = False,
 ) -> tuple[dict, str, object, PassReport]:
   """Retain all inputs once, execute offline validators, and build a report."""
   citation_payload = None
@@ -241,7 +252,12 @@ def _retained_validation(
   except WorkspaceError as exc:
     raise ValidationInputError(str(exc)) from exc
 
-  findings = validate_snapshot(snapshot, parsed_citation_report)
+  receipts = {} if synthetic_fixture else {
+      path: _optional_receipt(workspace_path, path)
+      for path in receipt_source_paths(snapshot)}
+  findings = validate_snapshot(
+      snapshot, parsed_citation_report,
+      strict_bibliography=not synthetic_fixture, receipts=receipts)
   scored = score_integrity(snapshot, findings)
   citation_hash = (None if citation_payload is None else
                    hashlib.sha256(citation_payload).hexdigest())
@@ -278,7 +294,7 @@ def _retained_validation(
       "status": pass_wire["status"],
       "citation_resolution": _citation_resolution(
           parsed_citation_report, supplied=citation_payload is not None,
-          bibliography=bibliography),
+          bibliography=bibliography, waived=synthetic_fixture),
   }
   return report, snapshot.read_text("synthesis.md"), snapshot, combined_pass
 
@@ -294,10 +310,11 @@ def _attach_decision(report: dict, decision: object) -> dict:
 def run_validation(
     workspace: os.PathLike[str] | str,
     citation_report: os.PathLike[str] | str | None,
+    synthetic_fixture: bool = False,
 ) -> tuple[dict, str]:
   """Validate one retained pass without persisting a repair run report."""
   report, synthesis, snapshot, pass_report = _retained_validation(
-      workspace, citation_report)
+      workspace, citation_report, synthetic_fixture)
   decision = RepairController().record(pass_report, snapshot)
   return _attach_decision(report, decision), synthesis
 
@@ -664,6 +681,7 @@ def _parser() -> argparse.ArgumentParser:
   parser.add_argument("--citation-report")
   parser.add_argument("--output")
   parser.add_argument("--run-report")
+  parser.add_argument("--synthetic-fixture", action="store_true")
   return parser
 
 
@@ -681,7 +699,7 @@ def main(argv=None) -> int:
         raise ValidationInputError("output and run report paths must differ")
       run_destination = _prepare_run_report(args.run_report, args.workspace)
     report, synthesis, snapshot, pass_report = _retained_validation(
-        args.workspace, args.citation_report)
+        args.workspace, args.citation_report, args.synthetic_fixture)
     controller = (RepairController()
                   if run_destination is None
                   or run_destination.existing_report is None

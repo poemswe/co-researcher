@@ -15,12 +15,15 @@ Paywalled papers are a normal outcome (abstract-only), not an error.
 # ///
 
 import argparse
+import hashlib
 import json
 import os
 import pathlib
 import re
 import sys
+import tempfile
 import urllib.parse
+from datetime import datetime, timezone
 
 # Must precede the pymupdf4llm import: stops PyMuPDF printing its layout
 # recommendation to stdout, which would corrupt our JSON status line.
@@ -57,9 +60,12 @@ def abstract_from_inverted_index(inv: dict) -> str:
   return " ".join(w for _, w in positions)
 
 
+_PMCID = re.compile(r"PMC\d+")
+
+
 def pmcid_from_ids(ids: dict) -> str | None:
   raw = ids.get("pmcid") or ""
-  match = re.search(r"PMC\d+", raw)
+  match = _PMCID.search(raw)
   return match.group(0) if match else None
 
 
@@ -70,6 +76,20 @@ def emit(status: str, path, source: str, identifier: str) -> None:
       "source": source,
       "id": identifier,
   }))
+
+
+def deliver(status: str, path: pathlib.Path, source: str,
+            identifier: str) -> tuple:
+  receipt = {
+      "file": path.name,
+      "source": source,
+      "id": identifier,
+      "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+      "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+  }
+  path.with_suffix(".receipt.json").write_text(
+      json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+  return status, path, source, identifier
 
 
 def extract_pdf(pdf_path: pathlib.Path) -> str:
@@ -86,6 +106,14 @@ def try_extract(pdf_path: pathlib.Path, fulltext_path: pathlib.Path) -> bool:
     return False
   fulltext_path.write_text(md, encoding="utf-8")
   return True
+
+
+def abstract_markdown(work: dict, identifier: str) -> str | None:
+  inv = work.get("abstract_inverted_index")
+  if not inv:
+    return None
+  title = work.get("title") or identifier
+  return f"# {title}\n\n{abstract_from_inverted_index(inv)}\n"
 
 
 def lookup_openalex_work(doi: str) -> dict | None:
@@ -156,6 +184,10 @@ def fetch_oa_pdf(url: str, dest: pathlib.Path) -> bool:
 
 
 def read_paper(doi, arxiv, pmcid, workspace) -> None:
+  emit(*acquire(doi, arxiv, pmcid, workspace))
+
+
+def acquire(doi, arxiv, pmcid, workspace) -> tuple:
   identifier = doi or arxiv or pmcid
   paper_dir = pathlib.Path(workspace) / "papers" / sanitize_id(identifier)
   paper_dir.mkdir(parents=True, exist_ok=True)
@@ -164,9 +196,9 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
   abstract_path = paper_dir / "abstract.md"
 
   if fulltext_path.exists():
-    return emit("fulltext", fulltext_path, "cached", identifier)
+    return "fulltext", fulltext_path, "cached", identifier
   if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
-    return emit("fulltext", fulltext_path, "user_pdf", identifier)
+    return deliver("fulltext", fulltext_path, "user_pdf", identifier)
 
   work = (lookup_openalex_work(doi) if doi else None) or {}
   pmcid = pmcid or pmcid_from_ids(work.get("ids") or {})
@@ -178,27 +210,69 @@ def read_paper(doi, arxiv, pmcid, workspace) -> None:
     text = fetch_epmc_fulltext(pmcid)
     if text:
       fulltext_path.write_text(text, encoding="utf-8")
-      return emit("fulltext", fulltext_path, "epmc", identifier)
+      return deliver("fulltext", fulltext_path, "epmc", identifier)
 
   if arxiv and fetch_arxiv_pdf(arxiv, pdf_path):
     if try_extract(pdf_path, fulltext_path):
-      return emit("fulltext", fulltext_path, "arxiv_pdf", identifier)
+      return deliver("fulltext", fulltext_path, "arxiv_pdf", identifier)
 
   oa = work.get("best_oa_location") or {}
   if oa.get("pdf_url") and fetch_oa_pdf(oa["pdf_url"], pdf_path):
     if try_extract(pdf_path, fulltext_path):
-      return emit("fulltext", fulltext_path, "oa_pdf", identifier)
+      return deliver("fulltext", fulltext_path, "oa_pdf", identifier)
 
-  inv = work.get("abstract_inverted_index")
-  if inv:
-    title = work.get("title") or identifier
-    abstract_path.write_text(
-        f"# {title}\n\n{abstract_from_inverted_index(inv)}\n",
-        encoding="utf-8",
-    )
-    return emit("abstract-only", abstract_path, "openalex_abstract", identifier)
+  abstract = abstract_markdown(work, identifier)
+  if abstract:
+    abstract_path.write_text(abstract, encoding="utf-8")
+    return deliver(
+        "abstract-only", abstract_path, "openalex_abstract", identifier)
 
-  emit("abstract-only", None, "none", identifier)
+  return "abstract-only", None, "none", identifier
+
+
+def identifier_args(identifier: str) -> tuple:
+  if _PMCID.fullmatch(identifier):
+    return None, None, identifier
+  if identifier.startswith("10."):
+    return identifier, None, None
+  return None, identifier, None
+
+
+def recheck_source(receipt_path: pathlib.Path,
+                   current: pathlib.Path) -> tuple[str | None, str]:
+  try:
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    source, identifier = receipt["source"], receipt["id"]
+    if sanitize_id(identifier) != receipt_path.parent.name:
+      raise ValueError("receipt names another paper")
+  except (ValueError, KeyError, TypeError):
+    return None, "unreadable_receipt"
+  if source == "user_pdf":
+    return source, "unverifiable"
+  with tempfile.TemporaryDirectory() as tmp:
+    try:
+      _, path, fresh_source, _ = acquire(*identifier_args(identifier), tmp)
+    except Exception as err:
+      print(f"Recheck fetch failed for {identifier}: {err}", file=sys.stderr)
+      return source, "unavailable"
+    if path is None or fresh_source != source or path.name != current.name:
+      return source, "unavailable"
+    same = current.is_file() and current.read_bytes() == path.read_bytes()
+  return source, "match" if same else "mismatch"
+
+
+def recheck(workspace) -> int:
+  root = pathlib.Path(workspace)
+  failed = False
+  for receipt_path in sorted(root.glob("papers/*/*.receipt.json")):
+    current = receipt_path.with_name(
+        receipt_path.name.removesuffix(".receipt.json") + ".md")
+    source, result = recheck_source(receipt_path, current)
+    failed = failed or result != "match"
+    shown = receipt_path if source is None else current
+    print(json.dumps({"file": shown.relative_to(root).as_posix(),
+                      "source": source, "result": result}))
+  return int(failed)
 
 
 def parse_args() -> argparse.Namespace:
@@ -209,6 +283,10 @@ def parse_args() -> argparse.Namespace:
   group.add_argument("--doi", help="DOI, e.g. 10.1038/s41586-021-03819-2")
   group.add_argument("--arxiv", help="arXiv ID, e.g. 1706.03762")
   group.add_argument("--pmcid", help="PubMed Central ID, e.g. PMC8371605")
+  group.add_argument(
+      "--recheck", action="store_true",
+      help="Re-fetch every receipted source and compare it to the workspace copy",
+  )
   parser.add_argument(
       "--workspace", default=".",
       help="Parent directory of papers/ (default: current directory)",
@@ -218,4 +296,6 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
   args = parse_args()
+  if args.recheck:
+    sys.exit(recheck(args.workspace))
   read_paper(args.doi, args.arxiv, args.pmcid, args.workspace)
