@@ -450,6 +450,35 @@ def test_recheck_ignores_a_route_the_receipt_claims(
   assert (code, results[0]["result"]) == (1, "unavailable")
 
 
+def test_recheck_reports_a_receipt_whose_route_found_nothing(
+    tmp_path, capsys, monkeypatch):
+  source = _epmc_workspace(tmp_path, monkeypatch)
+  _rewrite_receipt(source, source="none")
+  _no_network(monkeypatch)
+  code, results = _recheck(tmp_path, capsys)
+
+  assert (code, results[0]["result"]) == (1, "unavailable")
+
+
+def test_recheck_reports_a_failed_fetch_and_checks_the_rest(
+    tmp_path, capsys, monkeypatch):
+  _epmc_workspace(tmp_path, monkeypatch)
+  _no_network(monkeypatch, fetch_epmc_fulltext=lambda pmcid: "# epmc md")
+  read_paper.read_paper(doi=None, arxiv=None, pmcid="PMC8",
+                        workspace=tmp_path)
+
+  def fetch(pmcid):
+    if pmcid == "PMC7":
+      raise read_paper.http_client.HttpError("down")
+    return "# epmc md"
+
+  monkeypatch.setattr(read_paper, "fetch_epmc_fulltext", fetch)
+  code, results = _recheck(tmp_path, capsys)
+
+  assert code == 1
+  assert [r["result"] for r in results] == ["unavailable", "match"]
+
+
 def test_recheck_rejects_a_receipt_for_another_paper(
     tmp_path, capsys, monkeypatch):
   source = _epmc_workspace(tmp_path, monkeypatch)
