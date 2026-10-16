@@ -14,6 +14,7 @@ Searches run against real scholarly databases (OpenAlex, arXiv, Europe PMC), and
 | Gemini CLI | `gemini extension install https://github.com/poemswe/co-researcher` |
 | Codex | Tell Codex: `Fetch and follow instructions from https://raw.githubusercontent.com/poemswe/co-researcher/main/.codex/INSTALL.md` |
 | OpenCode | Tell OpenCode: `Fetch and follow instructions from https://raw.githubusercontent.com/poemswe/co-researcher/main/.opencode/INSTALL.md` |
+| Other agents ([skills.sh](https://skills.sh/poemswe/co-researcher)) | `npx skills add poemswe/co-researcher` (skills only, without the commands or the session-start hook) |
 
 Manual setup for each platform is in [.codex/INSTALL.md](.codex/INSTALL.md) and [.opencode/INSTALL.md](.opencode/INSTALL.md). From a local clone, Gemini users can run `gemini extension link .`, and Claude CLI users `claude plugin marketplace add poemswe/co-researcher && claude plugin install co-researcher`.
 
