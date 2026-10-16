@@ -249,6 +249,24 @@ def test_invalid_claim_report_exits_one_and_preserves_json_report(tmp_path):
   assert "verified" not in result.stderr.lower()
 
 
+def test_repairable_warning_asks_for_repair_without_crashing(tmp_path):
+  refs = [{"title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs)
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, refs)
+  run_report = tmp_path / "run-report.json"
+
+  result = _run(workspace, "--citation-report", str(citation_path),
+                "--run-report", str(run_report))
+
+  assert result.returncode == 0, result.stderr
+  report = _report(result)
+  assert (report["status"], report["action"]) == (
+      "valid_with_warnings", "repair")
+  assert report["repair_feedback"]["reason_codes"] == [
+      "bibliography_incomplete"]
+
+
 def test_cli_run_report_retains_first_and_intermediate_passes(tmp_path):
   workspace = _review(
       tmp_path / "review",
@@ -471,6 +489,24 @@ def test_emitted_json_round_trips_through_strict_report_validation(tmp_path):
       "synthesis_coverage", "bibliography_verification",
       "prisma_artifact_completeness",
   )
+
+
+@pytest.mark.parametrize("quote, action", [
+    (None, "repair"),
+    (None, "stop_invalid"),
+    ("This invented evidence passage is deliberately long enough to be "
+     "checked but it does not occur in the retained source text.", "pass"),
+])
+def test_strict_report_rejects_an_action_the_status_cannot_take(
+    tmp_path, quote, action):
+  module = _load_cli_module()
+  report, _ = module.run_validation(_review(tmp_path / "review", quote=quote),
+                                    None)
+  assert report["action"] != action
+  report["action"] = action
+
+  with pytest.raises(ValueError, match="repair action does not match"):
+    module.validate_report(report)
 
 
 def test_json_render_is_independent_of_mapping_insertion_order(tmp_path):
