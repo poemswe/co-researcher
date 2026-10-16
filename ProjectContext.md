@@ -55,4 +55,4 @@ PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock
 
 ## Test Status
 
-1016 tests pass on `fix/67-provenance` (2026-10-15).
+1020 tests pass on `fix/67-provenance` (2026-10-15).

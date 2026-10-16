@@ -1043,6 +1043,21 @@ def corpus_with_source_scopes(
   return enriched
 
 
+_REGISTRY_IDS = ("doi", "pmid", "pmcid", "arxiv")
+
+
+def _cited_records(entries: list[dict], corpus_records: list[dict]):
+  seen = set()
+  for entry in entries:
+    paper_id = entry.get("paper_id") if isinstance(entry, dict) else None
+    if not isinstance(paper_id, str) or paper_id in seen:
+      continue
+    seen.add(paper_id)
+    record = _record_for_paper_id(corpus_records, paper_id)
+    if record is not None:
+      yield paper_id, record
+
+
 def unlisted_cited_papers(
     entries: list[dict], corpus_records: list[dict], references: list,
 ) -> list[str]:
@@ -1056,9 +1071,6 @@ def unlisted_cited_papers(
           if not any(record is item for item in listed)]
 
 
-_REGISTRY_IDS = ("doi", "pmid", "pmcid", "arxiv")
-
-
 def unregistered_cited_papers(
     entries: list[dict], corpus_records: list[dict],
 ) -> list[str]:
@@ -1067,18 +1079,6 @@ def unregistered_cited_papers(
               entries, corpus_records)
           if not any((record.get("ids") or {}).get(name)
                      for name in _REGISTRY_IDS)]
-
-
-def _cited_records(entries: list[dict], corpus_records: list[dict]):
-  seen = set()
-  for entry in entries:
-    paper_id = entry.get("paper_id") if isinstance(entry, dict) else None
-    if not isinstance(paper_id, str) or paper_id in seen:
-      continue
-    seen.add(paper_id)
-    record = _record_for_paper_id(corpus_records, paper_id)
-    if record is not None:
-      yield paper_id, record
 
 
 def check_claims_document(

@@ -247,16 +247,23 @@ def test_cli_rejects_cited_paper_missing_from_bibliography(tmp_path, refs):
   assert unlisted[0]["context"] == {
       "paper_id": "p1", "reason": "cited_paper_not_in_bibliography"}
 
-def test_cli_flags_a_cited_source_with_no_registry_id(tmp_path):
+
+def _title_only_run(root, ids=None):
   refs = [{"title": "Example Study"}]
-  workspace = _review(tmp_path / "review", refs=refs,
-                      ids={"openalex": "W1", "url": "p1"})
-  citation_report = tmp_path / "citation-report.json"
+  workspace = _review(root / "review", refs=refs, ids=ids)
+  citation_report = root / "citation-report.json"
   _citation_report(citation_report, refs)
+  return _load_cli_module().run_validation(workspace, citation_report)[0]
 
-  report, _synthesis = _load_cli_module().run_validation(
-      workspace, citation_report)
 
+def test_cli_flags_a_cited_source_with_no_registry_id(tmp_path):
+  registered = _title_only_run(tmp_path / "registered")
+  report = _title_only_run(tmp_path / "unregistered",
+                           ids={"openalex": "W1", "url": "p1"})
+
+  assert not any(item["reason_code"] == "source_unregistered"
+                 for item in registered["findings"])
+  assert report["integrity_score"] == registered["integrity_score"]
   assert report["status"] == "valid_with_warnings"
   assert [{key: value for key, value in item.items()
            if key != "schema_version"}
@@ -267,6 +274,16 @@ def test_cli_flags_a_cited_source_with_no_registry_id(tmp_path):
       "message": "cited source has no DOI, PMID, PMCID or arXiv id",
       "context": {"paper_id": "p1"},
   }]
+
+
+def test_synthetic_fixture_skips_the_registry_check(tmp_path):
+  workspace = _review(tmp_path / "review", refs=[], receipt=False,
+                      ids={"url": "p1"})
+
+  report = _report(_run(workspace, "--synthetic-fixture"))
+
+  assert not any(item["reason_code"] == "source_unregistered"
+                 for item in report["findings"])
 
 
 def test_synthetic_fixture_waives_bibliography_and_says_so(tmp_path):
@@ -600,8 +617,8 @@ def test_emitted_json_round_trips_through_strict_report_validation(tmp_path):
 def test_strict_report_rejects_an_action_the_status_cannot_take(
     tmp_path, quote, action):
   module = _load_cli_module()
-  report, _ = module.run_validation(_review(tmp_path / "review", quote=quote),
-                                    None)
+  report, _ = module.run_validation(
+      _review(tmp_path / "review", quote=quote), None, synthetic_fixture=True)
   assert report["action"] != action
   report["action"] = action
 
