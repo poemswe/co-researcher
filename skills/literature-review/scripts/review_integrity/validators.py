@@ -585,6 +585,19 @@ def unlisted_citation_findings(
       entries, corpus, references))
 
 
+def unregistered_source_findings(
+    entries: list[dict], corpus: list[dict],
+) -> tuple[Finding, ...]:
+  """Warn on each cited paper that no scholarly registry identifies."""
+  return tuple(Finding(
+      reason_code=ReasonCode.SOURCE_UNREGISTERED,
+      severity=Severity.WARNING,
+      artifact="corpus.json",
+      message="cited source has no DOI, PMID, PMCID or arXiv id",
+      context={"paper_id": paper_id},
+  ) for paper_id in check_claims.unregistered_cited_papers(entries, corpus))
+
+
 def receipt_source_paths(snapshot: WorkspaceSnapshot) -> tuple[str, ...]:
   """Source paths whose text claims are checked against."""
   return tuple(artifact.relative_path for artifact in snapshot.files
@@ -667,6 +680,8 @@ def validate_snapshot(
     run("citation", "refs.json", lambda: unlisted_citation_findings(
         snapshot.read_json("claims.json"), snapshot.read_json("corpus.json"),
         snapshot.read_json("refs.json")))
+    run("provenance", "corpus.json", lambda: unregistered_source_findings(
+        snapshot.read_json("claims.json"), snapshot.read_json("corpus.json")))
 
   def prisma() -> tuple[Finding, ...]:
     records = snapshot.read_json("corpus.json")
@@ -679,5 +694,6 @@ def validate_snapshot(
 __all__ = [
     "artifact_findings", "citation_findings", "claim_findings",
     "receipt_findings", "receipt_source_paths", "unlisted_citation_findings",
+    "unregistered_source_findings",
     "prisma_findings", "validate_snapshot",
 ]

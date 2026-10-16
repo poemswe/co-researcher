@@ -148,7 +148,7 @@ uv run scripts/validate_review.py --workspace "$WS" \
 ```
 The validator prints one JSON object. Obey its `action` field:
 
-   - `pass`: deliver the review. A `valid_with_warnings` pass lists its remaining warnings; it may still carry `abstract_only_support` or `citation_resolution_unavailable`, or repairable warnings left after the repair limit.
+   - `pass`: deliver the review. A `valid_with_warnings` pass lists its remaining warnings; it may still carry `abstract_only_support`, `citation_resolution_unavailable` or `source_unregistered` (a cited paper with no DOI, PMID, PMCID or arXiv id; name each one to the user as unverified), or repairable warnings left after the repair limit.
    - `repair`: issued for any critical finding and for the repairable warnings `claim_needs_review`, `bibliography_incomplete`, and `prisma_exclusion_reason_missing`. Send only the emitted `repair_feedback` object to the repair prompt. Do not send the full validation output, run report, finding contexts, evaluator fields, or any gold data. Apply the repair, rerun bibliography verification if `refs.json` changed, and invoke this validation command again with the same `$RUN_REPORT`.
    - `stop_invalid`: stop repairing and deliver the draft with this exact warning, followed by the unresolved `reason_codes` and `affected_artifacts` from `repair_feedback`:
 

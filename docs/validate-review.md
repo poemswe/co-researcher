@@ -55,6 +55,11 @@ from a publisher correction or a different PDF extractor version, so read the
 two texts before calling it forged. The check needs the network, which is why
 it stays outside the offline validator.
 
+A cited paper whose `corpus.json` record has no DOI, PMID, PMCID or arXiv id
+gets a `source_unregistered` warning. A web page an agent published during the
+run has none of these, so check each flagged source by hand before relying on
+it. The warning cannot be repaired and does not lower the score.
+
 Fixtures built from invented papers cannot resolve or be fetched. For those,
 pass `--synthetic-fixture`, which skips both checks, restores the old warning,
 and records `citation_resolution.source` as `waived` so the report shows it

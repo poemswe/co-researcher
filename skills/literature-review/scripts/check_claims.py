@@ -1051,15 +1051,34 @@ def unlisted_cited_papers(
     raise ValueError("references JSON must be an ordered array")
   listed = [record for item in references
             if (record := _reference_record(item, corpus_records)[0])]
-  unlisted = []
+  return [paper_id for paper_id, record in _cited_records(
+              entries, corpus_records)
+          if not any(record is item for item in listed)]
+
+
+_REGISTRY_IDS = ("doi", "pmid", "pmcid", "arxiv")
+
+
+def unregistered_cited_papers(
+    entries: list[dict], corpus_records: list[dict],
+) -> list[str]:
+  """Paper ids whose corpus record carries no DOI, PMID, PMCID or arXiv id."""
+  return [paper_id for paper_id, record in _cited_records(
+              entries, corpus_records)
+          if not any((record.get("ids") or {}).get(name)
+                     for name in _REGISTRY_IDS)]
+
+
+def _cited_records(entries: list[dict], corpus_records: list[dict]):
+  seen = set()
   for entry in entries:
     paper_id = entry.get("paper_id") if isinstance(entry, dict) else None
-    if not isinstance(paper_id, str) or paper_id in unlisted:
+    if not isinstance(paper_id, str) or paper_id in seen:
       continue
+    seen.add(paper_id)
     record = _record_for_paper_id(corpus_records, paper_id)
-    if record is not None and not any(record is item for item in listed):
-      unlisted.append(paper_id)
-  return unlisted
+    if record is not None:
+      yield paper_id, record
 
 
 def check_claims_document(

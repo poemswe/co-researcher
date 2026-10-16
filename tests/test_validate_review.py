@@ -43,13 +43,15 @@ class _StaticResolver:
     }
 
 
-def _review(root, *, refs=None, quote=None, synthesis=None, receipt=True):
+def _review(root, *, refs=None, quote=None, synthesis=None, receipt=True,
+            ids=None):
   refs = ([{"doi": "10.1/example", "title": "Example Study"}]
           if refs is None else refs)
   payloads = {
       "protocol.md": "# Protocol\n",
       "corpus.json": json.dumps([{
-          "key": "paper-one", "ids": {"pmcid": "p1", "doi": "10.1/example"},
+          "key": "paper-one",
+          "ids": ids or {"pmcid": "p1", "doi": "10.1/example"},
           "title": "Example Study", "authors": ["Priya Patel"], "year": 2022,
           "role": "evidence", "found_via": "openalex",
           "fulltext": "fulltext", "screening": {"status": "included"},
@@ -244,6 +246,28 @@ def test_cli_rejects_cited_paper_missing_from_bibliography(tmp_path, refs):
   assert unlisted[0]["artifact"] == "refs.json"
   assert unlisted[0]["context"] == {
       "paper_id": "p1", "reason": "cited_paper_not_in_bibliography"}
+
+def test_cli_flags_a_cited_source_with_no_registry_id(tmp_path):
+  refs = [{"title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs,
+                      ids={"openalex": "W1", "url": "p1"})
+  citation_report = tmp_path / "citation-report.json"
+  _citation_report(citation_report, refs)
+
+  report, _synthesis = _load_cli_module().run_validation(
+      workspace, citation_report)
+
+  assert report["status"] == "valid_with_warnings"
+  assert [{key: value for key, value in item.items()
+           if key != "schema_version"}
+          for item in report["findings"]
+          if item["reason_code"] == "source_unregistered"] == [{
+      "reason_code": "source_unregistered", "severity": "warning",
+      "artifact": "corpus.json",
+      "message": "cited source has no DOI, PMID, PMCID or arXiv id",
+      "context": {"paper_id": "p1"},
+  }]
+
 
 def test_synthetic_fixture_waives_bibliography_and_says_so(tmp_path):
   workspace = _review(tmp_path / "review", refs=[], receipt=False)
