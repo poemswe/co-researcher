@@ -38,7 +38,8 @@ from review_integrity.reporting import (  # noqa: E402
     validate_report,
 )
 from review_integrity.scoring import score_integrity  # noqa: E402
-from review_integrity.validators import validate_snapshot  # noqa: E402
+from review_integrity.validators import (  # noqa: E402
+    receipt_source_paths, validate_snapshot)
 from review_integrity.workspace import (  # noqa: E402
     MAX_ARTIFACT_BYTES,
     WorkspaceError,
@@ -221,6 +222,14 @@ def _citation_resolution(
   }
 
 
+def _optional_receipt(workspace: pathlib.Path, source: str) -> bytes | None:
+  receipt = workspace / pathlib.PurePosixPath(source).with_suffix(".receipt.json")
+  try:
+    return _read_regular_bytes(receipt, "fetch receipt")
+  except (ValidationInputError, OSError):
+    return None
+
+
 def _retained_validation(
     workspace: os.PathLike[str] | str,
     citation_report: os.PathLike[str] | str | None,
@@ -243,9 +252,12 @@ def _retained_validation(
   except WorkspaceError as exc:
     raise ValidationInputError(str(exc)) from exc
 
+  receipts = {} if synthetic_fixture else {
+      path: _optional_receipt(workspace_path, path)
+      for path in receipt_source_paths(snapshot)}
   findings = validate_snapshot(
       snapshot, parsed_citation_report,
-      strict_bibliography=not synthetic_fixture)
+      strict_bibliography=not synthetic_fixture, receipts=receipts)
   scored = score_integrity(snapshot, findings)
   citation_hash = (None if citation_payload is None else
                    hashlib.sha256(citation_payload).hexdigest())
