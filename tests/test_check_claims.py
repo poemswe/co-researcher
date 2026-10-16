@@ -1568,3 +1568,17 @@ def test_unlisted_cited_papers_matches_references_by_doi_or_title():
 def test_unlisted_cited_papers_rejects_non_list_references():
   with pytest.raises(ValueError):
     cc.unlisted_cited_papers([], [], {"doi": "10.1/a"})
+
+
+def test_unregistered_cited_papers_lacks_doi_pmid_pmcid_and_arxiv():
+  corpus = [
+      {"key": "a", "ids": {"doi": "10.1/a"}},
+      {"key": "b", "ids": {"pmid": "1"}},
+      {"key": "c", "ids": {"openalex": "W1", "doi": ""}},
+      {"key": "e"},
+      {"key": "f", "ids": {"arxiv": "1706.03762"}},
+  ]
+  entries = [{"paper_id": key} for key in "abccef"] + [
+      {"paper_id": "unknown"}, "not-an-entry"]
+
+  assert cc.unregistered_cited_papers(entries, corpus) == ["c", "e"]

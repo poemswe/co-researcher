@@ -1,6 +1,5 @@
 import hashlib
 import importlib.util
-import hashlib
 import json
 import os
 import pathlib
@@ -43,13 +42,15 @@ class _StaticResolver:
     }
 
 
-def _review(root, *, refs=None, quote=None, synthesis=None, receipt=True):
+def _review(root, *, refs=None, quote=None, synthesis=None, receipt=True,
+            ids=None):
   refs = ([{"doi": "10.1/example", "title": "Example Study"}]
           if refs is None else refs)
   payloads = {
       "protocol.md": "# Protocol\n",
       "corpus.json": json.dumps([{
-          "key": "paper-one", "ids": {"pmcid": "p1", "doi": "10.1/example"},
+          "key": "paper-one",
+          "ids": ids or {"pmcid": "p1", "doi": "10.1/example"},
           "title": "Example Study", "authors": ["Priya Patel"], "year": 2022,
           "role": "evidence", "found_via": "openalex",
           "fulltext": "fulltext", "screening": {"status": "included"},
@@ -245,6 +246,45 @@ def test_cli_rejects_cited_paper_missing_from_bibliography(tmp_path, refs):
   assert unlisted[0]["context"] == {
       "paper_id": "p1", "reason": "cited_paper_not_in_bibliography"}
 
+
+def _title_only_run(root, ids=None):
+  refs = [{"title": "Example Study"}]
+  workspace = _review(root / "review", refs=refs, ids=ids)
+  citation_report = root / "citation-report.json"
+  _citation_report(citation_report, refs)
+  return _load_cli_module().run_validation(workspace, citation_report)[0]
+
+
+def test_cli_flags_a_cited_source_with_no_registry_id(tmp_path):
+  registered = _title_only_run(tmp_path / "registered")
+  report = _title_only_run(tmp_path / "unregistered",
+                           ids={"openalex": "W1", "url": "p1"})
+
+  assert not any(item["reason_code"] == "source_unregistered"
+                 for item in registered["findings"])
+  assert report["integrity_score"] == registered["integrity_score"]
+  assert report["status"] == "valid_with_warnings"
+  assert [{key: value for key, value in item.items()
+           if key != "schema_version"}
+          for item in report["findings"]
+          if item["reason_code"] == "source_unregistered"] == [{
+      "reason_code": "source_unregistered", "severity": "warning",
+      "artifact": "corpus.json",
+      "message": "cited source has no DOI, PMID, PMCID or arXiv id",
+      "context": {"paper_id": "p1"},
+  }]
+
+
+def test_synthetic_fixture_skips_the_registry_check(tmp_path):
+  workspace = _review(tmp_path / "review", refs=[], receipt=False,
+                      ids={"url": "p1"})
+
+  report = _report(_run(workspace, "--synthetic-fixture"))
+
+  assert not any(item["reason_code"] == "source_unregistered"
+                 for item in report["findings"])
+
+
 def test_synthetic_fixture_waives_bibliography_and_says_so(tmp_path):
   workspace = _review(tmp_path / "review", refs=[], receipt=False)
 
@@ -322,6 +362,24 @@ def test_invalid_claim_report_exits_one_and_preserves_json_report(tmp_path):
   assert report["status"] == "invalid"
   assert any(item["severity"] == "critical" for item in report["findings"])
   assert "verified" not in result.stderr.lower()
+
+
+def test_repairable_warning_asks_for_repair_without_crashing(tmp_path):
+  refs = [{"title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs)
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, refs)
+  run_report = tmp_path / "run-report.json"
+
+  result = _run(workspace, "--citation-report", str(citation_path),
+                "--run-report", str(run_report))
+
+  assert result.returncode == 0, result.stderr
+  report = _report(result)
+  assert (report["status"], report["action"]) == (
+      "valid_with_warnings", "repair")
+  assert report["repair_feedback"]["reason_codes"] == [
+      "bibliography_incomplete"]
 
 
 def test_cli_run_report_retains_first_and_intermediate_passes(tmp_path):
@@ -547,6 +605,24 @@ def test_emitted_json_round_trips_through_strict_report_validation(tmp_path):
       "synthesis_coverage", "bibliography_verification",
       "prisma_artifact_completeness",
   )
+
+
+@pytest.mark.parametrize("quote, action", [
+    (None, "repair"),
+    (None, "stop_invalid"),
+    ("This invented evidence passage is deliberately long enough to be "
+     "checked but it does not occur in the retained source text.", "pass"),
+])
+def test_strict_report_rejects_an_action_the_status_cannot_take(
+    tmp_path, quote, action):
+  module = _load_cli_module()
+  report, _ = module.run_validation(
+      _review(tmp_path / "review", quote=quote), None, synthetic_fixture=True)
+  assert report["action"] != action
+  report["action"] = action
+
+  with pytest.raises(ValueError, match="repair action does not match"):
+    module.validate_report(report)
 
 
 def test_json_render_is_independent_of_mapping_insertion_order(tmp_path):
