@@ -65,4 +65,4 @@ PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock
 
 ## Test Status
 
-1061 tests pass on `fix/pin-pymupdf4llm` (2026-10-19).
+1140 tests pass on `feat/55-library-import` (2026-10-19).
