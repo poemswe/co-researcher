@@ -25,11 +25,13 @@ _spec = importlib.util.spec_from_file_location("read_paper", _SCRIPT)
 read_paper = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(read_paper)
 
+import check_claims  # noqa: E402
+from review_integrity import workspace  # noqa: E402
+
 
 def test_paper_directories_and_claim_lookup_share_one_sanitizer():
-  import check_claims
-
   assert read_paper.sanitize_id is check_claims.sanitize_id
+  assert workspace._sanitize_id is check_claims.sanitize_id
 
 
 def test_sanitize_id_replaces_unsafe_chars():
