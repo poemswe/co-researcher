@@ -16,6 +16,7 @@ Paywalled papers are a normal outcome (abstract-only), not an error.
 # ///
 
 import argparse
+import functools
 import hashlib
 import json
 import os
@@ -282,8 +283,18 @@ def recheck_user_pdf(receipt: dict, current: pathlib.Path,
   return "match" if same else "mismatch"
 
 
+def _load_records(root: pathlib.Path) -> list[dict]:
+  try:
+    records = json.loads((root / "corpus.json").read_text(encoding="utf-8"))
+  except (OSError, ValueError):
+    return []
+  if not isinstance(records, list):
+    return []
+  return [record for record in records if isinstance(record, dict)]
+
+
 def recheck_source(receipt_path: pathlib.Path, current: pathlib.Path,
-                   records: list[dict] = ()) -> tuple[str | None, str]:
+                   records=lambda: []) -> tuple[str | None, str]:
   try:
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     source, identifier = receipt["source"], receipt["id"]
@@ -294,7 +305,7 @@ def recheck_source(receipt_path: pathlib.Path, current: pathlib.Path,
   if source == "user_pdf":
     return source, recheck_user_pdf(
         receipt, current,
-        _record_for_paper_id(list(records), receipt_path.parent.name))
+        _record_for_paper_id(records(), receipt_path.parent.name))
   with tempfile.TemporaryDirectory() as tmp:
     try:
       _, path, fresh_source, _ = acquire(workspace=tmp, **identifier_args(identifier))
@@ -310,13 +321,7 @@ def recheck_source(receipt_path: pathlib.Path, current: pathlib.Path,
 def recheck(workspace) -> int:
   root = pathlib.Path(workspace)
   failed = False
-  try:
-    records = json.loads((root / "corpus.json").read_text(encoding="utf-8"))
-  except (OSError, ValueError):
-    records = []
-  if not isinstance(records, list):
-    records = []
-  records = [record for record in records if isinstance(record, dict)]
+  records = functools.cache(lambda: _load_records(root))
   for receipt_path in sorted(root.glob("papers/*/*.receipt.json")):
     current = receipt_path.with_name(
         receipt_path.name.removesuffix(".receipt.json") + ".md")
