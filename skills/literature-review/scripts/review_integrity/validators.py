@@ -407,7 +407,8 @@ def citation_findings(
     elif status == "not_found" and index in library_unregistered:
       findings.append(_citation_finding(
           ReasonCode.SOURCE_UNREGISTERED, Severity.WARNING,
-          "cited library source is not in any registry", result, index))
+          "cited library source is not in any registry", result, index,
+          {"library_source": True}))
     elif status in {"mismatched", "not_found"}:
       findings.append(_citation_finding(
           ReasonCode.CITATION_IDENTITY_MISMATCH, Severity.CRITICAL,
