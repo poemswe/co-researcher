@@ -1,10 +1,11 @@
-"""Unified full-text acquisition for a paper given a DOI, arXiv ID, or PMCID.
+"""Unified full-text acquisition for a paper given a DOI, arXiv ID, PMCID, or corpus key.
 
 Resolution chain: cached/user files, Europe PMC JATS, arXiv PDF,
 OpenAlex best_oa_location PDF, OpenAlex abstract fallback.
 Prints exactly one JSON status line to stdout:
   {"status": "fulltext|abstract-only", "path": ..., "source": ..., "id": ...}
 Paywalled papers are a normal outcome (abstract-only), not an error.
+`--key` reads only a PDF the user placed and never touches the network.
 """
 
 # /// script
@@ -57,6 +58,8 @@ def abstract_from_inverted_index(inv: dict) -> str:
 
 
 _PMCID = re.compile(r"PMC\d+")
+_ARXIV_ID = re.compile(
+    r"(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})(?:v\d+)?")
 
 
 def pmcid_from_ids(ids: dict) -> str | None:
@@ -83,6 +86,12 @@ def deliver(status: str, path: pathlib.Path, source: str,
       "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
       "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
   }
+  origin_path = path.parent / "paper.origin.json"
+  if source == "user_pdf" and origin_path.is_file():
+    try:
+      receipt["origin"] = json.loads(origin_path.read_text(encoding="utf-8"))
+    except ValueError:
+      pass
   path.with_suffix(".receipt.json").write_text(
       json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
   return status, path, source, identifier
@@ -179,12 +188,14 @@ def fetch_oa_pdf(url: str, dest: pathlib.Path) -> bool:
   return _download_pdf(client, url, dest, timeout=120)
 
 
-def read_paper(doi, arxiv, pmcid, workspace) -> None:
-  emit(*acquire(doi, arxiv, pmcid, workspace))
+def read_paper(doi, arxiv, pmcid, workspace, key=None) -> tuple:
+  result = acquire(doi, arxiv, pmcid, workspace, key=key)
+  emit(*result)
+  return result
 
 
-def acquire(doi, arxiv, pmcid, workspace) -> tuple:
-  identifier = doi or arxiv or pmcid
+def acquire(doi, arxiv, pmcid, workspace, key=None) -> tuple:
+  identifier = doi or arxiv or pmcid or key
   paper_dir = pathlib.Path(workspace) / "papers" / sanitize_id(identifier)
   paper_dir.mkdir(parents=True, exist_ok=True)
   pdf_path = paper_dir / "paper.pdf"
@@ -195,6 +206,8 @@ def acquire(doi, arxiv, pmcid, workspace) -> tuple:
     return "fulltext", fulltext_path, "cached", identifier
   if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
     return deliver("fulltext", fulltext_path, "user_pdf", identifier)
+  if key:
+    return "abstract-only", None, "none", identifier
 
   work = (lookup_openalex_work(doi) if doi else None) or {}
   pmcid = pmcid or pmcid_from_ids(work.get("ids") or {})
@@ -226,12 +239,17 @@ def acquire(doi, arxiv, pmcid, workspace) -> tuple:
   return "abstract-only", None, "none", identifier
 
 
-def identifier_args(identifier: str) -> tuple:
+def identifier_args(identifier: str) -> dict:
+  args = {"doi": None, "arxiv": None, "pmcid": None, "key": None}
   if _PMCID.fullmatch(identifier):
-    return None, None, identifier
-  if identifier.startswith("10."):
-    return identifier, None, None
-  return None, identifier, None
+    args["pmcid"] = identifier
+  elif identifier.startswith("10."):
+    args["doi"] = identifier
+  elif _ARXIV_ID.fullmatch(identifier):
+    args["arxiv"] = identifier
+  else:
+    args["key"] = identifier
+  return args
 
 
 def recheck_source(receipt_path: pathlib.Path,
@@ -247,7 +265,7 @@ def recheck_source(receipt_path: pathlib.Path,
     return source, "unverifiable"
   with tempfile.TemporaryDirectory() as tmp:
     try:
-      _, path, fresh_source, _ = acquire(*identifier_args(identifier), tmp)
+      _, path, fresh_source, _ = acquire(workspace=tmp, **identifier_args(identifier))
     except Exception as err:
       print(f"Recheck fetch failed for {identifier}: {err}", file=sys.stderr)
       return source, "unavailable"
@@ -280,6 +298,10 @@ def parse_args() -> argparse.Namespace:
   group.add_argument("--arxiv", help="arXiv ID, e.g. 1706.03762")
   group.add_argument("--pmcid", help="PubMed Central ID, e.g. PMC8371605")
   group.add_argument(
+      "--key",
+      help="Corpus key of a paper whose PDF the user placed; extracts it offline",
+  )
+  group.add_argument(
       "--recheck", action="store_true",
       help="Re-fetch every receipted source and compare it to the workspace copy",
   )
@@ -290,8 +312,15 @@ def parse_args() -> argparse.Namespace:
   return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main() -> None:
   args = parse_args()
   if args.recheck:
     sys.exit(recheck(args.workspace))
-  read_paper(args.doi, args.arxiv, args.pmcid, args.workspace)
+  _, _, source, _ = read_paper(args.doi, args.arxiv, args.pmcid,
+                               args.workspace, key=args.key)
+  if args.key and source == "none":
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+  main()

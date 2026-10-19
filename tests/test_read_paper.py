@@ -548,10 +548,55 @@ def test_recheck_resolves_an_arxiv_doi_again(tmp_path, capsys, monkeypatch):
       0, "arxiv_pdf", "match")
 
 
+def test_key_route_extracts_a_placed_pdf_with_its_origin(tmp_path, monkeypatch):
+  d = tmp_path / "papers" / "aministryreport"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-fake")
+  origin = {"kind": "zotero", "item": "ITEM1", "attachment": "ATT1"}
+  (d / "paper.origin.json").write_text(json.dumps(origin), encoding="utf-8")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
+  monkeypatch.setattr(read_paper, "lookup_openalex_work", _forbidden)
+
+  status, path, source, identifier = read_paper.read_paper(
+      doi=None, arxiv=None, pmcid=None, workspace=tmp_path,
+      key="aministryreport")
+
+  assert (status, source, identifier) == ("fulltext", "user_pdf", "aministryreport")
+  receipt = json.loads((d / "fulltext.receipt.json").read_text(encoding="utf-8"))
+  assert receipt["origin"] == origin
+
+
+def _forbidden(*args, **kwargs):
+  raise AssertionError("network call")
+
+
+def test_key_route_without_a_pdf_fails_offline(tmp_path, monkeypatch, capsys):
+  monkeypatch.setattr(read_paper, "lookup_openalex_work", _forbidden)
+  monkeypatch.setattr(read_paper, "fetch_epmc_fulltext", _forbidden)
+  monkeypatch.setattr(sys, "argv", ["read_paper.py", "--key", "nothing",
+                                    "--workspace", str(tmp_path)])
+  with pytest.raises(SystemExit) as exit_info:
+    read_paper.main()
+  assert exit_info.value.code == 1
+  assert json.loads(capsys.readouterr().out)["source"] == "none"
+
+
+def test_doi_route_receipt_has_no_origin(tmp_path, monkeypatch):
+  d = tmp_path / "papers" / "10.1_x"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-fake")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
+  read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None, workspace=tmp_path)
+  receipt = json.loads((d / "fulltext.receipt.json").read_text(encoding="utf-8"))
+  assert "origin" not in receipt
+
+
 @pytest.mark.parametrize("identifier, expected", [
-    ("PMC123", (None, None, "PMC123")),
-    ("10.1/x", ("10.1/x", None, None)),
-    ("1706.03762", (None, "1706.03762", None)),
+    ("PMC123", {"doi": None, "arxiv": None, "pmcid": "PMC123", "key": None}),
+    ("10.1/x", {"doi": "10.1/x", "arxiv": None, "pmcid": None, "key": None}),
+    ("2301.01234", {"doi": None, "arxiv": "2301.01234", "pmcid": None, "key": None}),
+    ("hep-th/9901001", {"doi": None, "arxiv": "hep-th/9901001", "pmcid": None, "key": None}),
+    ("aministryreport", {"doi": None, "arxiv": None, "pmcid": None, "key": "aministryreport"}),
 ])
-def test_identifier_args_routes_by_shape(identifier, expected):
+def test_identifier_args_routes_every_receipt_id(identifier, expected):
   assert read_paper.identifier_args(identifier) == expected
