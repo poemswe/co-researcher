@@ -192,3 +192,14 @@ def test_unavailable_zotero_exits_with_the_fix(monkeypatch, tmp_path, capsys):
   code = import_library.main(["--zotero", "R", "--workspace", str(tmp_path)])
   assert code == 1
   assert "Zotero is not reachable" in capsys.readouterr().err
+
+
+def test_a_windows_path_on_this_machine_is_missing_on_disk(tmp_path, capsys):
+  bib = tmp_path / "lib.bib"
+  bib.write_text("@article{w, title={Windows Paper}, author={A, B}, year={2020},"
+                 r" doi={10.1000/w}, file={Full Text:C\:\\Users\\me\\w.pdf:application/pdf}}",
+                 encoding="utf-8")
+  code, summary = _run(capsys, "--file", str(bib), "--workspace", str(tmp_path / "ws"))
+  assert code == 0
+  assert summary["missing_on_disk"] == ["Windows Paper"]
+  assert summary["no_pdf"] == 0

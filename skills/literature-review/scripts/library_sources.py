@@ -22,7 +22,10 @@ import zotero_local
 
 _ARXIV_RE = re.compile(
     r"arxiv(?:\.org/abs/|:)\s*(\d{4}\.\d{4,5})(?:v\d+)?", re.IGNORECASE)
-_BIB_FILE_DESC_RE = re.compile(r"^[^:/\\]*:(?=/|[A-Za-z]:|\w)")
+_BIB_FILE_SPLIT_RE = re.compile(r"(?<!\\);")
+_BIB_FIELD_SPLIT_RE = re.compile(r"(?<!\\):")
+_BIB_ESCAPE_RE = re.compile(r"\\(.)")
+_WINDOWS_PATH_RE = re.compile(r"^[A-Za-z]:[\\/]")
 _AND_RE = re.compile(r"\s+and\s+")
 _DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"'<>]+")
 
@@ -70,12 +73,18 @@ def _bib_author(name: str) -> dict:
 
 
 def _bib_pdf(field: str | None, base: pathlib.Path) -> str | None:
-  for part in (field or "").split(";"):
-    candidate = _BIB_FILE_DESC_RE.sub(
-        "", part.strip().removesuffix(":application/pdf"), count=1)
-    if candidate.lower().endswith(".pdf") and "\\" not in candidate:
-      path = pathlib.Path(candidate)
-      return str(path if path.is_absolute() else (base / path).resolve())
+  for part in _BIB_FILE_SPLIT_RE.split(field or ""):
+    part = part.strip()
+    paths = ([part] if _WINDOWS_PATH_RE.match(part)
+             else [_BIB_ESCAPE_RE.sub(r"\1", segment.strip())
+                   for segment in _BIB_FIELD_SPLIT_RE.split(part)])
+    for path in paths:
+      if not path.lower().endswith(".pdf"):
+        continue
+      if (pathlib.PureWindowsPath(path).is_absolute()
+          or pathlib.Path(path).is_absolute()):
+        return path
+      return str((base / path).resolve())
   return None
 
 

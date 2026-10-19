@@ -67,11 +67,16 @@ def test_bibtex_file_field_gives_the_pdf_and_origin(tmp_path):
   assert grey["pdf"] is None and grey["origin"] is None
 
 
-def test_bibtex_windows_file_path_does_not_crash(tmp_path):
-  text = ("@article{w, title={T}, author={A, B}, year={2020},"
-          r" file={Full Text:C\:\\Users\\me\\w.pdf:application/pdf}}")
+@pytest.mark.parametrize("field, expected", [
+    (r"Full Text:C\:\\Users\\me\\w.pdf:application/pdf", r"C:\Users\me\w.pdf"),
+    (r"C:\Users\me\w.pdf", r"C:\Users\me\w.pdf"),
+    (r"Full Text PDF:/abs/a\;b.pdf:application/pdf", "/abs/a;b.pdf"),
+])
+def test_bibtex_unescapes_zotero_file_paths(tmp_path, field, expected):
+  text = "@article{w, title={T}, author={A, B}, year={2020}, file={" + field + "}}"
   (item,) = library_sources.read_bibtex(_bib(tmp_path, text))
-  assert item["pdf"] is None or item["pdf"].lower().endswith("w.pdf")
+  assert item["pdf"] == expected
+  assert item["origin"] == {"kind": "file", "path": expected}
 
 
 def test_unparsable_bibtex_is_an_error(tmp_path):
