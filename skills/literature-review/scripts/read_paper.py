@@ -33,6 +33,7 @@ import pymupdf4llm
 
 import http_client
 import jats
+from check_claims import sanitize_id
 
 _OPENALEX = http_client.HttpClient("https://api.openalex.org/", qps=1.0)
 _EPMC = http_client.HttpClient(
@@ -41,11 +42,6 @@ _EPMC = http_client.HttpClient(
     referer_skill="literature-search-europepmc",
 )
 _ARXIV = http_client.HttpClient("https://arxiv.org/", qps=1.0 / 3.0)
-
-
-def sanitize_id(identifier: str) -> str:
-  safe = re.sub(r"[^A-Za-z0-9._-]", "_", identifier)
-  return re.sub(r"^\.+", "_", safe) or "_"
 
 
 def doi_to_arxiv(doi: str) -> str | None:

@@ -418,6 +418,27 @@ def _author_year_binding_matches(key: str, record: dict) -> bool:
   return False
 
 
+def _author_year_is_ambiguous(key: str, records: list[dict]) -> bool:
+  """An unsuffixed author-year key that fits several unexcluded papers."""
+  if key[-1].isalpha():
+    return False
+  return sum(
+      1 for record in records
+      if (record.get("screening") or {}).get("status") != "excluded"
+      and _author_year_binding_matches(key, record)
+      and _coauthor_fits(key, record)) > 1
+
+
+def _coauthor_fits(key: str, record: dict) -> bool:
+  """A cited "X and Y" names the record's second author as Y."""
+  author = key.split(":", 2)[1]
+  if " and " not in author:
+    return True
+  coauthor = author.split(" and ", 1)[1]
+  authors = record.get("authors") or []
+  return len(authors) > 1 and coauthor in _name_aliases(authors[1])
+
+
 def _normalized_tokens(text: str) -> str:
   folded = unicodedata.normalize("NFKC", text).casefold()
   return " ".join("".join(char if char.isalnum() else " " for char in folded).split())
@@ -1020,6 +1041,8 @@ def _validate_citation_bindings(
         results.append(_invalid_binding(entry, "corpus_metadata_missing")); continue
       if not _author_year_binding_matches(key, record):
         results.append(_invalid_binding(entry, "citation_identity_mismatch")); continue
+      if _author_year_is_ambiguous(key, records):
+        results.append(_invalid_binding(entry, "citation_ambiguous")); continue
     elif key not in numeric or numeric.get(key) is None:
       results.append(_invalid_binding(entry, "reference_not_found")); continue
     elif "_binding_error" in numeric[key]:
@@ -1126,6 +1149,23 @@ def unregistered_cited_papers(
               entries, corpus_records)
           if not any((record.get("ids") or {}).get(name)
                      for name in _REGISTRY_IDS)]
+
+
+_DOI_PREFIX_RE = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)")
+
+
+def doi_key(doi) -> str:
+  return _DOI_PREFIX_RE.sub("", str(doi).strip().lower())
+
+
+def unconfirmed_doi_papers(
+    entries: list[dict], corpus_records: list[dict], confirmed: set[str],
+) -> list[tuple[str, str]]:
+  """(paper id, DOI) for each cited record whose DOI is not in `confirmed`."""
+  return [(paper_id, doi) for paper_id, record in _cited_records(
+              entries, corpus_records)
+          if (doi := (record.get("ids") or {}).get("doi"))
+          and doi_key(doi) not in confirmed]
 
 
 def check_claims_document(
