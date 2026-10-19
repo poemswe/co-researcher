@@ -10,7 +10,7 @@ Paywalled papers are a normal outcome (abstract-only), not an error.
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#   "pymupdf4llm",
+#   "pymupdf4llm<2",
 # ]
 # ///
 

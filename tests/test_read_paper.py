@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #   "pytest",
-#   "pymupdf4llm",
+#   "pymupdf4llm<2",
 # ]
 # ///
 
