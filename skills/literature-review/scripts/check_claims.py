@@ -1134,6 +1134,20 @@ def unregistered_cited_papers(
                      for name in _REGISTRY_IDS)]
 
 
+def doi_key(doi) -> str:
+  return str(doi).strip().removeprefix("https://doi.org/").lower()
+
+
+def unconfirmed_doi_papers(
+    entries: list[dict], corpus_records: list[dict], confirmed: set[str],
+) -> list[tuple[str, str]]:
+  """(paper id, DOI) for each cited record whose DOI is not in `confirmed`."""
+  return [(paper_id, doi) for paper_id, record in _cited_records(
+              entries, corpus_records)
+          if (doi := (record.get("ids") or {}).get("doi"))
+          and doi_key(doi) not in confirmed]
+
+
 def check_claims_document(
     entries: list[dict], corpus_records: list[dict],
     source_texts: dict[str, str], synthesis: str | None, references: list | None,

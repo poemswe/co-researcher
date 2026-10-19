@@ -585,17 +585,37 @@ def unlisted_citation_findings(
       entries, corpus, references))
 
 
+def _confirmed_dois(report: dict | None) -> set[str] | None:
+  results = report.get("results") if isinstance(report, dict) else None
+  if not isinstance(results, list):
+    return None
+  return {check_claims.doi_key(result["doi"]) for result in results
+          if isinstance(result, dict) and result.get("status") == "verified"
+          and isinstance(result.get("doi"), str)}
+
+
 def unregistered_source_findings(
-    entries: list[dict], corpus: list[dict],
+    entries: list[dict], corpus: list[dict], citation_report: dict | None = None,
 ) -> tuple[Finding, ...]:
   """Warn on each cited paper that no scholarly registry identifies."""
-  return tuple(Finding(
+  findings = [Finding(
       reason_code=ReasonCode.SOURCE_UNREGISTERED,
       severity=Severity.WARNING,
       artifact="corpus.json",
       message="cited source has no DOI, PMID, PMCID or arXiv id",
       context={"paper_id": paper_id},
-  ) for paper_id in check_claims.unregistered_cited_papers(entries, corpus))
+  ) for paper_id in check_claims.unregistered_cited_papers(entries, corpus)]
+  confirmed = _confirmed_dois(citation_report)
+  if confirmed is not None:
+    findings.extend(Finding(
+        reason_code=ReasonCode.SOURCE_UNREGISTERED,
+        severity=Severity.WARNING,
+        artifact="corpus.json",
+        message="cited source DOI was not confirmed by the citation report",
+        context={"paper_id": paper_id, "doi": doi},
+    ) for paper_id, doi in check_claims.unconfirmed_doi_papers(
+        entries, corpus, confirmed))
+  return tuple(findings)
 
 
 def receipt_source_paths(snapshot: WorkspaceSnapshot) -> tuple[str, ...]:
@@ -684,7 +704,8 @@ def validate_snapshot(
         snapshot.read_json("claims.json"), snapshot.read_json("corpus.json"),
         snapshot.read_json("refs.json")))
     run("provenance", "corpus.json", lambda: unregistered_source_findings(
-        snapshot.read_json("claims.json"), snapshot.read_json("corpus.json")))
+        snapshot.read_json("claims.json"), snapshot.read_json("corpus.json"),
+        citation_report))
 
   def prisma() -> tuple[Finding, ...]:
     records = snapshot.read_json("corpus.json")

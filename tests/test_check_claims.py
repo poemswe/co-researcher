@@ -1642,6 +1642,18 @@ def test_unregistered_cited_papers_lacks_doi_pmid_pmcid_and_arxiv():
   assert cc.unregistered_cited_papers(entries, corpus) == ["c", "e"]
 
 
+def test_unconfirmed_doi_papers_needs_the_doi_in_the_confirmed_set():
+  corpus = [
+      {"key": "a", "ids": {"doi": "https://doi.org/10.1/A"}},
+      {"key": "b", "ids": {"doi": "10.9/invented", "pmid": "1"}},
+      {"key": "c", "ids": {"pmid": "2"}},
+  ]
+  entries = [{"paper_id": key} for key in "abc"]
+
+  assert cc.unconfirmed_doi_papers(entries, corpus, {"10.1/a"}) == [
+      ("b", "10.9/invented")]
+
+
 def _lumen(key, title):
   return {"key": key, "ids": {}, "title": title, "authors": ["Mira Lumen"],
           "year": 2024, "role": "evidence"}
