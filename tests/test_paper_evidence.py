@@ -11,7 +11,8 @@ CLI = ROOT / "skills/literature-review/scripts/validate_review.py"
 EVIDENCE = ROOT / "evals/published/paper"
 COUNTEREXAMPLES = ("polarity-reversal", "uncited-qualitative",
                    "background-role", "number-swap")
-CAUGHT = {"polarity-reversal": "claim_needs_review"}
+CAUGHT = {"polarity-reversal": "claim_needs_review",
+          "number-swap": "coverage_number_missing"}
 
 
 def _validate(workspace, tmp_path, returncode=0):

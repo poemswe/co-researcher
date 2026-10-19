@@ -17,13 +17,15 @@ CLI = SCRIPTS / "validate_review.py"
 sys.path.insert(0, str(SCRIPTS))
 
 import verify_citations  # noqa: E402
+from review_integrity import validators  # noqa: E402
 
 
 class _StaticResolver:
   identity = "static-offline-test"
 
-  def __init__(self, *, status="verified"):
+  def __init__(self, *, status="verified", doi="10.1/example"):
     self.status = status
+    self.doi = doi
 
   def resolve(self, entry):
     if self.status == "not_found":
@@ -35,7 +37,8 @@ class _StaticResolver:
           "resolution_status": "complete",
       }
     return {
-        "input": entry["raw"], "status": "verified", "doi": entry["doi"],
+        "input": entry["raw"], "status": "verified",
+        "doi": entry["doi"] or self.doi,
         "matched_title": "Example Study", "source": "fixture",
         "retraction_checked": True, "retraction_source": "fixture",
         "retraction_status": "complete", "resolution_status": "complete",
@@ -87,10 +90,10 @@ def _write_receipt(source):
   }), encoding="utf-8")
 
 
-def _citation_report(path, refs, *, status="verified"):
+def _citation_report(path, refs, *, status="verified", doi="10.1/example"):
   entries = verify_citations.normalize_citation_entries(refs)
   report = verify_citations.verify_citation_entries(
-      entries, _StaticResolver(status=status),
+      entries, _StaticResolver(status=status, doi=doi),
       datetime(2026, 8, 4, 12, 30, tzinfo=timezone.utc))
   payload = json.dumps(report, sort_keys=True).encode("utf-8")
   path.write_bytes(payload)
@@ -275,6 +278,58 @@ def test_cli_flags_a_cited_source_with_no_registry_id(tmp_path):
   }]
 
 
+def test_cli_flags_a_cited_doi_the_citation_report_did_not_confirm(tmp_path):
+  report = _title_only_run(tmp_path / "forged",
+                           ids={"pmcid": "p1", "doi": "10.9/invented"})
+
+  assert report["status"] == "valid_with_warnings"
+  assert [(item["message"], item["context"])
+          for item in report["findings"]
+          if item["reason_code"] == "source_unregistered"] == [(
+      "cited source DOI was not confirmed by the citation report",
+      {"paper_id": "p1", "doi": "10.9/invented"})]
+
+
+def test_cli_rejects_a_claim_citing_a_paper_missing_from_the_corpus(tmp_path):
+  refs = [{"doi": "10.1/example", "title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs)
+  claims_path = workspace / "claims.json"
+  claims = json.loads(claims_path.read_text())
+  claims[0]["paper_id"] = "ghost"
+  claims_path.write_text(json.dumps(claims))
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, refs)
+
+  result = _run(workspace, "--citation-report", str(citation_path))
+
+  assert result.returncode == 1
+  report = _report(result)
+  assert report["status"] == "invalid"
+  assert [(item["reason_code"], item["context"]["validator_reason"])
+          for item in report["findings"]
+          if item["context"].get("paper_id") == "ghost"] == [
+      ("citation_identity_mismatch", "paper_not_in_corpus")]
+
+
+@pytest.mark.parametrize("status, warned", [
+    ("verified", False), ("retracted", False), ("mismatched", False),
+    ("not_found", True),
+])
+def test_a_resolved_doi_counts_as_confirmed_whatever_its_status(status, warned):
+  report = {"results": [{"status": status, "doi": "10.1/EXAMPLE"}]}
+  corpus = [{"key": "p1", "ids": {"doi": "https://doi.org/10.1/example"}}]
+  findings = validators.unregistered_source_findings(
+      [{"paper_id": "p1"}], corpus, report)
+  assert bool(findings) is warned
+
+
+@pytest.mark.parametrize("report", [None, {}, {"results": "x"}])
+def test_doi_confirmation_needs_a_readable_report(report):
+  corpus = [{"key": "p1", "ids": {"doi": "10.9/invented"}}]
+  assert validators.unregistered_source_findings(
+      [{"paper_id": "p1"}], corpus, report) == ()
+
+
 def test_synthetic_fixture_skips_the_registry_check(tmp_path):
   workspace = _review(tmp_path / "review", refs=[], receipt=False,
                       ids={"url": "p1"})
@@ -366,9 +421,9 @@ def test_invalid_claim_report_exits_one_and_preserves_json_report(tmp_path):
 
 def test_repairable_warning_asks_for_repair_without_crashing(tmp_path):
   refs = [{"title": "Example Study"}]
-  workspace = _review(tmp_path / "review", refs=refs)
+  workspace = _review(tmp_path / "review", refs=refs, ids={"pmcid": "p1"})
   citation_path = tmp_path / "citation.json"
-  _citation_report(citation_path, refs)
+  _citation_report(citation_path, refs, doi=None)
   run_report = tmp_path / "run-report.json"
 
   result = _run(workspace, "--citation-report", str(citation_path),

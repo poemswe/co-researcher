@@ -779,6 +779,48 @@ def test_coverage_rejects_added_number_for_each_identity():
   assert gaps[0]["reason_code"] == "coverage_number_missing"
 
 
+_SWAP_CLAIM = "The trial enrolled 40 adults and 60 children from regional clinics."
+
+
+@pytest.mark.parametrize("synthesis, gaps_expected", [
+    ("The trial enrolled 60 adults and 40 children from regional clinics "
+     "(Patel, 2022).", ["coverage_number_missing"]),
+    ("The trial enrolled 40 adults and 60 children from regional clinics "
+     "(Patel, 2022).", []),
+])
+def test_coverage_binds_each_number_to_the_word_it_counts(
+    synthesis, gaps_expected):
+  claims = [_entry(claim=_SWAP_CLAIM)]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == gaps_expected
+
+
+@pytest.mark.parametrize("claim, quote", [
+    ("Outcomes were assessed at 6 months.",
+     "Outcomes were assessed at 3, 6 and 12 months in every enrolled clinic."),
+    ("Participants were aged 18 years or older.",
+     "Participants were aged 18 to 65 years across every enrolled clinic."),
+    ("The trial enrolled 40 participants.",
+     "The trial enrolled 40 adults and 60 children across every clinic."),
+    ("The trial ran 12 weeks and enrolled 12 clinics.",
+     "The trial ran 12 weeks and enrolled 12 clinics across the region."),
+])
+def test_number_binding_leaves_honest_claims_alone(claim, quote):
+  anchors, numbers_ok = cc._anchor_check(
+      cc.normalize_text(claim), cc.normalize_text(quote))
+  assert numbers_ok, anchors
+
+
+def test_needs_review_when_claim_swaps_the_quote_numbers(tmp_path):
+  source = ("The trial enrolled 40 adults and 60 children from regional "
+            "clinics across the first year of follow-up.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim="The trial enrolled 60 adults and 40 children.", quote=source), ws)
+  assert r["status"] == "needs_review"
+  assert r["anchors"]["numbers_missing"] == ["60", "40"]
+
+
 def test_coverage_rejects_ungrounded_four_digit_count_but_not_year():
   synthesis = ("In 2020, the trial enrolled 2019 participants from regional "
                "clinics (Patel, 2022).")
@@ -1629,3 +1671,53 @@ def test_unregistered_cited_papers_lacks_doi_pmid_pmcid_and_arxiv():
       {"paper_id": "unknown"}, "not-an-entry"]
 
   assert cc.unregistered_cited_papers(entries, corpus) == ["c", "e"]
+
+
+@pytest.mark.parametrize("written", [
+    "10.1/AB", "https://doi.org/10.1/ab", "http://dx.doi.org/10.1/ab",
+    "doi:10.1/ab", " DOI: 10.1/ab ",
+])
+def test_doi_key_folds_the_ways_a_doi_is_written(written):
+  assert cc.doi_key(written) == "10.1/ab"
+
+
+def test_unconfirmed_doi_papers_needs_the_doi_in_the_confirmed_set():
+  corpus = [
+      {"key": "a", "ids": {"doi": "https://doi.org/10.1/A"}},
+      {"key": "b", "ids": {"doi": "10.9/invented", "pmid": "1"}},
+      {"key": "c", "ids": {"pmid": "2"}},
+  ]
+  entries = [{"paper_id": key} for key in "abc"]
+
+  assert cc.unconfirmed_doi_papers(entries, corpus, {"10.1/a"}) == [
+      ("b", "10.9/invented")]
+
+
+def _lumen(key, title):
+  return {"key": key, "ids": {}, "title": title, "authors": ["Mira Lumen"],
+          "year": 2024, "role": "evidence"}
+
+
+def _pair(key, coauthor):
+  return {**_lumen(key, key), "authors": ["Mira Lumen", f"Ana {coauthor}"]}
+
+
+@pytest.mark.parametrize(("citation", "records", "reason"), [
+    ("Lumen, 2024", [_lumen("amber", "Amber"), _lumen("ivory", "Ivory")],
+     "citation_ambiguous"),
+    ("Lumen and Vale, 2024", [_pair("amber", "Vale"), _pair("ivory", "Reed")],
+     None),
+    ("Lumen et al., 2024", [_pair("amber", "Vale"), _pair("ivory", "Reed")],
+     "citation_ambiguous"),
+    ("Lumen, 2024a", [_lumen("amber", "Amber"), _lumen("ivory", "Ivory")],
+     None),
+    ("Lumen, 2024", [_lumen("amber", "Amber")], None),
+    ("Lumen, 2024", [_lumen("amber", "Amber"),
+                     {**_lumen("ivory", "Ivory"),
+                      "screening": {"status": "excluded"}}], None),
+])
+def test_author_year_citation_must_name_one_corpus_paper(
+    citation, records, reason):
+  entry = {"claim": "x", "paper_id": "amber", "citation": citation}
+  [result] = cc._validate_citation_bindings([entry], records, None)
+  assert (result or {}).get("reason_code") == reason
