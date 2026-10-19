@@ -117,7 +117,8 @@ def _pdf(path, text):
 
 def test_zotero_reader_walks_subcollections_once(monkeypatch, tmp_path):
   pdf = _pdf(tmp_path / "z.pdf", "x")
-  monkeypatch.setattr(zotero_local, "collection_key", lambda c: "ROOT")
+  monkeypatch.setattr(zotero_local, "collection_key",
+                      lambda c, names=None: "ROOT")
   monkeypatch.setattr(zotero_local, "collection_names",
                       lambda: {"ROOT": "Review", "SUB": "Methods"})
   monkeypatch.setattr(zotero_local, "subcollection_keys",
@@ -142,7 +143,8 @@ def test_zotero_reader_walks_subcollections_once(monkeypatch, tmp_path):
 
 def test_zotero_attachment_missing_from_disk_keeps_its_origin(
     monkeypatch):
-  monkeypatch.setattr(zotero_local, "collection_key", lambda c: "ROOT")
+  monkeypatch.setattr(zotero_local, "collection_key",
+                      lambda c, names=None: "ROOT")
   monkeypatch.setattr(zotero_local, "collection_names", lambda: {"ROOT": "R"})
   monkeypatch.setattr(zotero_local, "subcollection_keys", lambda k: ["ROOT"])
   monkeypatch.setattr(zotero_local, "collection_items",
