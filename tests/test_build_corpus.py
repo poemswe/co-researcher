@@ -249,3 +249,51 @@ def test_main_resumes_from_existing_corpus(tmp_path):
 
 if __name__ == "__main__":
   sys.exit(pytest.main([__file__, "-v"]))
+
+
+def _library(tmp_path, items, source="zotero"):
+  return _write(tmp_path, "library.json", {"source": source, "items": items})
+
+
+def test_load_library_shapes_records(tmp_path):
+  path = _library(tmp_path, [{
+      "title": "Sleep", "DOI": "https://doi.org/10.1234/ABC", "arxiv": None,
+      "PMID": "7", "PMCID": None, "zotero": "ITEM1",
+      "author": [{"family": "Lumen", "given": "Ana"},
+                 {"literal": "World Health Organization"}],
+      "issued": {"date-parts": [[2024, 5]]}, "pdf": None, "origin": None}])
+
+  (record,) = bc.load_library(path)
+
+  assert record["key"] == "10.1234/abc"
+  assert record["ids"] == {"doi": "10.1234/abc", "pmid": "7", "zotero": "ITEM1"}
+  assert record["authors"] == ["Ana Lumen", "World Health Organization"]
+  assert record["year"] == 2024
+  assert record["found_via"] == "zotero"
+
+
+def test_identifierless_library_item_keys_on_its_title(tmp_path):
+  path = _library(tmp_path, [{"title": "A Ministry Report", "zotero": "I9",
+                              "author": [], "issued": None}], source="bibtex")
+  (record,) = bc.load_library(path)
+  assert record["key"] == "aministryreport"
+  assert record["found_via"] == "bibtex"
+
+
+def test_library_merges_with_openalex_and_keeps_screening(tmp_path, capsys):
+  openalex = _write(tmp_path, "openalex.json", {"results": [{
+      "doi": "https://doi.org/10.1234/abc", "title": "Sleep",
+      "publication_year": 2024, "id": "W1", "authorships": []}]})
+  library = _library(tmp_path, [{"title": "Sleep", "DOI": "10.1234/ABC",
+                                 "author": [], "issued": None}])
+  output = tmp_path / "corpus.json"
+  bc.main(["--openalex", str(openalex), "--output", str(output)])
+  corpus = json.loads(output.read_text(encoding="utf-8"))
+  corpus[0]["screening"] = {"status": "included", "stage": "title", "reason": None}
+  output.write_text(json.dumps(corpus), encoding="utf-8")
+
+  bc.main(["--library", str(library), "--output", str(output)])
+
+  (record,) = json.loads(output.read_text(encoding="utf-8"))
+  assert record["found_via"] == "openalex+zotero"
+  assert record["screening"]["status"] == "included"

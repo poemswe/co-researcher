@@ -23,6 +23,8 @@ preserves every screening decision, `fulltext` status, and `role` already
 recorded while backfilling missing authors, so a follow-up search never
 discards prior work.
 
+`--library` reads the `library.json` that `import_library.py` writes.
+
 `--epmc` also accepts `get_citations`/`get_references` output; pass
 `--found-via snowball:citations` to label those candidates' provenance.
 """
@@ -36,6 +38,8 @@ import json
 import pathlib
 import re
 import sys
+
+import check_claims
 
 _EMPTY_SCREENING = {"status": None, "stage": None, "reason": None}
 _ID_FALLBACK_ORDER = ("arxiv", "pmcid", "pmid", "openalex")
@@ -167,12 +171,43 @@ def merge(records: list[dict]) -> list[dict]:
   return list(merged.values())
 
 
+def library_ids(item: dict) -> dict:
+  doi = item.get("DOI")
+  return {"doi": check_claims.doi_key(doi) if doi else None,
+          "arxiv": item.get("arxiv"), "pmid": item.get("PMID"),
+          "pmcid": item.get("PMCID"), "zotero": item.get("zotero")}
+
+
+def _csl_author(author: dict) -> str | None:
+  if author.get("literal"):
+    return author["literal"]
+  return " ".join(p for p in (author.get("given"), author.get("family"))
+                  if p) or None
+
+
+def load_library(path) -> list[dict]:
+  data = _read(path)
+  records = []
+  for item in data.get("items") or []:
+    ids = library_ids(item)
+    parts = ((item.get("issued") or {}).get("date-parts") or [[None]])[0]
+    record = _record(
+        ids["doi"], item.get("title"),
+        _int_or_none(parts[0] if parts else None), 0,
+        data.get("source") or "library", ids,
+        [_csl_author(a) for a in item.get("author") or []])
+    if record:
+      records.append(record)
+  return records
+
+
 def main(argv=None) -> int:
   parser = argparse.ArgumentParser(
       description="Merge backend search results into a corpus.json.")
   parser.add_argument("--openalex", action="append", default=[])
   parser.add_argument("--arxiv", action="append", default=[])
   parser.add_argument("--epmc", action="append", default=[])
+  parser.add_argument("--library", action="append", default=[])
   parser.add_argument("--found-via", dest="found_via",
                       help="Override the provenance label for every input in "
                            "this run, e.g. snowball:citations")
@@ -189,6 +224,8 @@ def main(argv=None) -> int:
     incoming.extend(load_arxiv(path))
   for path in args.epmc:
     incoming.extend(load_epmc(path))
+  for path in args.library:
+    incoming.extend(load_library(path))
   if args.found_via:
     for record in incoming:
       record["found_via"] = args.found_via
