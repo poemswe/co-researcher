@@ -17,6 +17,7 @@ CLI = SCRIPTS / "validate_review.py"
 sys.path.insert(0, str(SCRIPTS))
 
 import verify_citations  # noqa: E402
+from review_integrity import validators  # noqa: E402
 
 
 class _StaticResolver:
@@ -287,6 +288,25 @@ def test_cli_flags_a_cited_doi_the_citation_report_did_not_confirm(tmp_path):
           if item["reason_code"] == "source_unregistered"] == [(
       "cited source DOI was not confirmed by the citation report",
       {"paper_id": "p1", "doi": "10.9/invented"})]
+
+
+@pytest.mark.parametrize("status, warned", [
+    ("verified", False), ("retracted", False), ("mismatched", False),
+    ("not_found", True),
+])
+def test_a_resolved_doi_counts_as_confirmed_whatever_its_status(status, warned):
+  report = {"results": [{"status": status, "doi": "10.1/EXAMPLE"}]}
+  corpus = [{"key": "p1", "ids": {"doi": "https://doi.org/10.1/example"}}]
+  findings = validators.unregistered_source_findings(
+      [{"paper_id": "p1"}], corpus, report)
+  assert bool(findings) is warned
+
+
+@pytest.mark.parametrize("report", [None, {}, {"results": "x"}])
+def test_doi_confirmation_needs_a_readable_report(report):
+  corpus = [{"key": "p1", "ids": {"doi": "10.9/invented"}}]
+  assert validators.unregistered_source_findings(
+      [{"paper_id": "p1"}], corpus, report) == ()
 
 
 def test_synthetic_fixture_skips_the_registry_check(tmp_path):

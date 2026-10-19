@@ -309,10 +309,12 @@ def _number_bindings(text: str) -> list[tuple[str, str]]:
 
 
 def _misbound_numbers(text: str, reference: set[tuple[str, str]]) -> list[str]:
-  """Numbers counting a word the reference counts only with other numbers."""
+  """Numbers the reference ties to a different counted word."""
   counted = {word for _, word in reference}
+  bound = {number for number, _ in reference}
   return [number for number, word in _number_bindings(text)
-          if word in counted and (number, word) not in reference]
+          if word in counted and number in bound
+          and (number, word) not in reference]
 
 
 def _prose_numbers(text: str) -> list[str]:
@@ -423,7 +425,18 @@ def _author_year_is_ambiguous(key: str, records: list[dict]) -> bool:
   return sum(
       1 for record in records
       if (record.get("screening") or {}).get("status") != "excluded"
-      and _author_year_binding_matches(key, record)) > 1
+      and _author_year_binding_matches(key, record)
+      and _coauthor_fits(key, record)) > 1
+
+
+def _coauthor_fits(key: str, record: dict) -> bool:
+  """A cited "X and Y" names the record's second author as Y."""
+  author = key.split(":", 2)[1]
+  if " and " not in author:
+    return True
+  coauthor = author.split(" and ", 1)[1]
+  authors = record.get("authors") or []
+  return len(authors) > 1 and coauthor in _name_aliases(authors[1])
 
 
 def _normalized_tokens(text: str) -> str:
@@ -834,10 +847,14 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
   return len(_NEGATION_RE.findall(text_norm)) % 2, poles
 
 
+_QUANTIFIER_RE = re.compile(
+    r"\b(?:more|less|fewer|greater)\s+than\s+[-+]?[\d.,]*\d")
+
+
 def _polarity_risks(claim_norm: str, quote_norm: str) -> list[str]:
   """Flag a claim whose negation or direction reverses its quote."""
-  claim_negated, claim_poles = _polarity(claim_norm)
-  quote_negated, quote_poles = _polarity(quote_norm)
+  claim_negated, claim_poles = _polarity(_QUANTIFIER_RE.sub(" ", claim_norm))
+  quote_negated, quote_poles = _polarity(_QUANTIFIER_RE.sub(" ", quote_norm))
   risks = []
   if claim_negated != quote_negated:
     risks.append("claim_negation_mismatch")
@@ -1134,8 +1151,11 @@ def unregistered_cited_papers(
                      for name in _REGISTRY_IDS)]
 
 
+_DOI_PREFIX_RE = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)")
+
+
 def doi_key(doi) -> str:
-  return str(doi).strip().removeprefix("https://doi.org/").lower()
+  return _DOI_PREFIX_RE.sub("", str(doi).strip().lower())
 
 
 def unconfirmed_doi_papers(
