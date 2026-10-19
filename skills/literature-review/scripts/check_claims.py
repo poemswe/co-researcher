@@ -1151,8 +1151,11 @@ def unregistered_cited_papers(
                      for name in _REGISTRY_IDS)]
 
 
+_DOI_PREFIX_RE = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)")
+
+
 def doi_key(doi) -> str:
-  return str(doi).strip().removeprefix("https://doi.org/").lower()
+  return _DOI_PREFIX_RE.sub("", str(doi).strip().lower())
 
 
 def unconfirmed_doi_papers(
