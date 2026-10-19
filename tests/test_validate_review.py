@@ -953,8 +953,7 @@ def test_help_exits_two_on_stderr_without_non_json_stdout():
   assert "not validated" in result.stderr.lower()
 
 
-def test_cli_accepts_a_cited_library_source_no_registry_knows(
-    tmp_path, monkeypatch):
+def _library_review(tmp_path, monkeypatch):
   import build_corpus
   import read_paper
   workspace = tmp_path / "review"
@@ -993,6 +992,12 @@ def test_cli_accepts_a_cited_library_source_no_registry_knows(
   read_paper.read_paper(None, None, None, workspace, key="aministryreport")
   citation_path = tmp_path / "citation.json"
   _citation_report(citation_path, refs, status="not_found")
+  return workspace, citation_path
+
+
+def test_cli_accepts_a_cited_library_source_no_registry_knows(
+    tmp_path, monkeypatch):
+  workspace, citation_path = _library_review(tmp_path, monkeypatch)
 
   result = _run(workspace, "--citation-report", str(citation_path))
 
@@ -1004,3 +1009,28 @@ def test_cli_accepts_a_cited_library_source_no_registry_knows(
   assert {item["artifact"] for item in findings} == {"refs.json", "corpus.json"}
   assert "cited library source is not in any registry" in {
       item["message"] for item in findings}
+
+
+def test_cli_lists_each_library_source_for_the_user_to_confirm(
+    tmp_path, monkeypatch):
+  workspace, citation_path = _library_review(tmp_path, monkeypatch)
+
+  result = _run(workspace, "--citation-report", str(citation_path))
+
+  (finding,) = [item for item in _report(result)["findings"]
+                if item["artifact"] == "refs.json"]
+  assert finding["context"]["library_source"] is True
+  lines = result.stderr.splitlines()
+  start = lines.index("LIBRARY SOURCES NOT IN ANY REGISTRY "
+                      "(confirm each is in the user's library):")
+  assert lines[start + 1:] == ['  [1] {"title":"A Ministry Report"}']
+
+
+def test_cli_prints_no_library_list_without_library_sources(tmp_path):
+  workspace = _review(tmp_path / "review")
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, [{"doi": "10.1/example", "title": "Example Study"}])
+
+  result = _run(workspace, "--citation-report", str(citation_path))
+
+  assert "LIBRARY SOURCES" not in result.stderr

@@ -1,6 +1,6 @@
 {
   "name": "co-researcher",
-  "version": "2.10.0",
+  "version": "2.11.0",
   "description": "Academic research plugin for Claude Code: literature reviews, systematic reviews, peer review and citation checking, with every citation verified against OpenAlex, arXiv and Europe PMC",
   "author": {
     "name": "poemswe"

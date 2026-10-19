@@ -67,7 +67,10 @@ from the user's library that no registry knows gets the same warning on
 only when its `refs.json` title is exactly the title of a corpus record that
 came from the library, has no identifier, and has a `user_pdf` receipt in its
 paper directory. The warning cannot be repaired and
-does not lower the score.
+does not lower the score. The validator also lists each such library source on
+stderr under `LIBRARY SOURCES NOT IN ANY REGISTRY`, and its finding carries
+`"library_source": true`, so the user can confirm each one is in their
+library.
 
 Fixtures built from invented papers cannot resolve or be fetched. For those,
 pass `--synthetic-fixture`, which skips both checks, restores the old warning,

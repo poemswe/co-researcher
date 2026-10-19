@@ -721,6 +721,14 @@ def main(argv=None) -> int:
     print(
         f"{status.upper()}: integrity {report['integrity_score']:.1f}; "
         f"{len(report['findings'])} finding(s)", file=sys.stderr)
+    library = [item["context"] for item in report["findings"]
+               if item.get("context", {}).get("library_source")]
+    if library:
+      print("LIBRARY SOURCES NOT IN ANY REGISTRY "
+            "(confirm each is in the user's library):", file=sys.stderr)
+      for context in library:
+        print(f"  [{context['result_index'] + 1}] {context['input']}",
+              file=sys.stderr)
     return 1 if status == "invalid" else 0
   except (ValidationInputError, ValueError, OSError) as exc:
     print(f"NOT VALIDATED: {exc}", file=sys.stderr)
