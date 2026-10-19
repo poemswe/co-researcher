@@ -696,8 +696,23 @@ def test_claim_that_reverses_its_quote_is_needs_review(
   assert r["context_risks"] == [risk]
 
 
+def test_reversed_claim_keeps_the_boundary_negation_risk(tmp_path):
+  source = ("The intervention did not reduce mortality among adults across "
+            "the full follow-up period in this regional cohort.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim="The intervention did not reduce mortality among adults.",
+      quote="reduce mortality among adults across the full follow-up period "
+            "in this regional cohort"), ws)
+  assert r["status"] == "needs_review"
+  assert r["context_risks"] == [
+      "leading_negation_context", "claim_negation_mismatch"]
+
+
 @pytest.mark.parametrize("source, claim", [
     (_RECALL, "The program did not change recall."),
+    ("More than 200 patients avoided readmission after the program across "
+     "all twelve regional hospitals.", "The program reduced readmissions."),
     (_READMISSIONS, "Readmissions rose after the program."),
     (_READMISSIONS, "The program was followed for a year in twelve hospitals."),
 ])
