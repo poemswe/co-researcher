@@ -309,10 +309,12 @@ def _number_bindings(text: str) -> list[tuple[str, str]]:
 
 
 def _misbound_numbers(text: str, reference: set[tuple[str, str]]) -> list[str]:
-  """Numbers counting a word the reference counts only with other numbers."""
+  """Numbers the reference ties to a different counted word."""
   counted = {word for _, word in reference}
+  bound = {number for number, _ in reference}
   return [number for number, word in _number_bindings(text)
-          if word in counted and (number, word) not in reference]
+          if word in counted and number in bound
+          and (number, word) not in reference]
 
 
 def _prose_numbers(text: str) -> list[str]:

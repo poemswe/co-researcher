@@ -795,6 +795,22 @@ def test_coverage_binds_each_number_to_the_word_it_counts(
   assert [gap["reason_code"] for gap in gaps] == gaps_expected
 
 
+@pytest.mark.parametrize("claim, quote", [
+    ("Outcomes were assessed at 6 months.",
+     "Outcomes were assessed at 3, 6 and 12 months in every enrolled clinic."),
+    ("Participants were aged 18 years or older.",
+     "Participants were aged 18 to 65 years across every enrolled clinic."),
+    ("The trial enrolled 40 participants.",
+     "The trial enrolled 40 adults and 60 children across every clinic."),
+    ("The trial ran 12 weeks and enrolled 12 clinics.",
+     "The trial ran 12 weeks and enrolled 12 clinics across the region."),
+])
+def test_number_binding_leaves_honest_claims_alone(claim, quote):
+  anchors, numbers_ok = cc._anchor_check(
+      cc.normalize_text(claim), cc.normalize_text(quote))
+  assert numbers_ok, anchors
+
+
 def test_needs_review_when_claim_swaps_the_quote_numbers(tmp_path):
   source = ("The trial enrolled 40 adults and 60 children from regional "
             "clinics across the first year of follow-up.")
