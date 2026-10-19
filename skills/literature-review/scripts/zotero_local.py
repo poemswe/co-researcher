@@ -6,6 +6,7 @@ Zotero" is enabled.
 """
 
 import pathlib
+import re
 import urllib.parse
 import urllib.request
 
@@ -19,8 +20,23 @@ _NOT_RUNNING = ("Zotero is not reachable at localhost:23119. Start Zotero 7, "
                 "or export the collection to BibTeX or CSL JSON and use --file.")
 
 
+_ITEM_KEY_RE = re.compile(r"[A-Z0-9]{8}")
+
+
 class ZoteroUnavailable(RuntimeError):
   pass
+
+
+def _unexpected(path, payload):
+  return ZoteroUnavailable(
+      f"unexpected Zotero response for {path}: {str(payload)[:200]}")
+
+
+def _list(path):
+  payload = _get(path)
+  if not isinstance(payload, list):
+    raise _unexpected(path, payload)
+  return payload
 
 
 def _get(path, *, text=False, missing_ok=False):
@@ -39,7 +55,7 @@ def _get(path, *, text=False, missing_ok=False):
 
 
 def collection_names() -> dict[str, str]:
-  return {c["key"]: c["data"]["name"] for c in _get("collections")}
+  return {c["key"]: c["data"]["name"] for c in _list("collections")}
 
 
 def collection_key(name_or_key: str) -> str:
@@ -63,18 +79,28 @@ def subcollection_keys(key: str) -> list[str]:
     if current in keys:
       continue
     keys.append(current)
-    pending.extend(c["key"] for c in _get(f"collections/{current}/collections"))
+    pending.extend(
+        c["key"] for c in _list(f"collections/{current}/collections"))
   return keys
 
 
 def collection_items(key: str) -> list[tuple[str, dict]]:
-  data = _get(f"collections/{key}/items/top?format=csljson")
-  items = data.get("items", []) if isinstance(data, dict) else data
-  return [(str(item.get("id", "")).rsplit("/", 1)[-1], item) for item in items]
+  path = f"collections/{key}/items/top?format=csljson"
+  data = _get(path)
+  items = data.get("items") if isinstance(data, dict) else data
+  if not isinstance(items, list):
+    raise _unexpected(path, data)
+  keyed = []
+  for item in items:
+    item_key = str(item.get("id", "")).rsplit("/", 1)[-1]
+    if not _ITEM_KEY_RE.fullmatch(item_key):
+      raise _unexpected(path, item)
+    keyed.append((item_key, item))
+  return keyed
 
 
 def pdf_attachment(item_key: str) -> str | None:
-  for child in _get(f"items/{item_key}/children"):
+  for child in _list(f"items/{item_key}/children"):
     data = child.get("data") or {}
     if (data.get("itemType") == "attachment"
         and data.get("contentType") == "application/pdf"):

@@ -117,3 +117,26 @@ def test_item_title_reads_the_item_record(monkeypatch):
                            "gone", status_code=404)})
   assert zotero_local.item_title("ITEM0001") == "Real Paper"
   assert zotero_local.item_title("GONE0001") is None
+
+
+@pytest.mark.parametrize("call, routes", [
+    (lambda: zotero_local.collection_names(), {"collections": {"error": "x"}}),
+    (lambda: zotero_local.collection_items("AAAA1111"),
+     {"collections/AAAA1111/items/top?format=csljson": {"error": "x"}}),
+    (lambda: zotero_local.collection_items("AAAA1111"),
+     {"collections/AAAA1111/items/top?format=csljson": {
+         "items": [{"title": "no id"}]}}),
+    (lambda: zotero_local.pdf_attachment("ITEM0001"),
+     {"items/ITEM0001/children": {"items": []}}),
+])
+def test_unexpected_response_shapes_fail_loudly(monkeypatch, call, routes):
+  _serve(monkeypatch, routes)
+  with pytest.raises(zotero_local.ZoteroUnavailable, match="unexpected"):
+    call()
+
+
+def test_a_plain_csl_list_is_accepted(monkeypatch):
+  _serve(monkeypatch, {"collections/AAAA1111/items/top?format=csljson": [
+      {"id": "ITEM0001", "title": "A"}]})
+  assert zotero_local.collection_items("AAAA1111") == [
+      ("ITEM0001", {"id": "ITEM0001", "title": "A"})]
