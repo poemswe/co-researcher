@@ -1151,6 +1151,27 @@ def unregistered_cited_papers(
                      for name in _REGISTRY_IDS)]
 
 
+_LIBRARY_SOURCES = frozenset({"zotero", "bibtex", "csl", "pdf_folder"})
+
+
+def library_unregistered_references(
+    references, corpus_records: list[dict], user_pdf_dirs: set[str],
+) -> set[int]:
+  """Refs indexes bound to a library record no registry identifies."""
+  if not isinstance(references, list):
+    return set()
+  pdf_records = [_record_for_paper_id(corpus_records, d) for d in user_pdf_dirs]
+  indexes = set()
+  for index, item in enumerate(references):
+    record, _ = _reference_record(item, corpus_records)
+    if (record is not None
+        and _LIBRARY_SOURCES & set(str(record.get("found_via") or "").split("+"))
+        and not any((record.get("ids") or {}).get(n) for n in _REGISTRY_IDS)
+        and any(r is record for r in pdf_records)):
+      indexes.add(index)
+  return indexes
+
+
 _DOI_PREFIX_RE = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)")
 
 

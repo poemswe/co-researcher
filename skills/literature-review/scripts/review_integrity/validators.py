@@ -370,6 +370,7 @@ def _valid_citation_report(report: object, bibliography: object) -> tuple[bool, 
 def citation_findings(
     report: dict | None, bibliography: list | None = None, *,
     require_report: bool = False,
+    library_unregistered: frozenset[int] = frozenset(),
 ) -> tuple[Finding, ...]:
   """Map an explicit citation report without constructing a resolver."""
   if report is None:
@@ -403,6 +404,10 @@ def citation_findings(
       findings.append(_citation_finding(
           ReasonCode.CITATION_RETRACTED, Severity.CRITICAL,
           "citation resolves to a retracted publication", result, index))
+    elif status == "not_found" and index in library_unregistered:
+      findings.append(_citation_finding(
+          ReasonCode.SOURCE_UNREGISTERED, Severity.WARNING,
+          "cited library source is not in any registry", result, index))
     elif status in {"mismatched", "not_found"}:
       findings.append(_citation_finding(
           ReasonCode.CITATION_IDENTITY_MISMATCH, Severity.CRITICAL,
@@ -615,6 +620,18 @@ def unregistered_source_findings(
   ) for message, context in problems)
 
 
+def _user_pdf_dirs(receipts: dict[str, bytes | None] | None) -> set[str]:
+  dirs = set()
+  for path, raw in (receipts or {}).items():
+    try:
+      receipt = json.loads(raw) if raw is not None else None
+    except ValueError:
+      continue
+    if isinstance(receipt, dict) and receipt.get("source") == "user_pdf":
+      dirs.add(PurePosixPath(path).parent.name)
+  return dirs
+
+
 def receipt_source_paths(snapshot: WorkspaceSnapshot) -> tuple[str, ...]:
   """Source paths whose text claims are checked against."""
   return tuple(artifact.relative_path for artifact in snapshot.files
@@ -691,8 +708,12 @@ def validate_snapshot(
   def citations() -> tuple[Finding, ...]:
     references = snapshot.read_json("refs.json")
     entries = verify_citations.normalize_citation_entries(references)
+    library = frozenset(check_claims.library_unregistered_references(
+        references, snapshot.read_json("corpus.json"),
+        _user_pdf_dirs(receipts))) if strict_bibliography else frozenset()
     return citation_findings(
-        citation_report, entries, require_report=strict_bibliography)
+        citation_report, entries, require_report=strict_bibliography,
+        library_unregistered=library)
 
   run("citation", "refs.json", citations)
   if strict_bibliography:
