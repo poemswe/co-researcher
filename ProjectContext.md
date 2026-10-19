@@ -45,7 +45,7 @@ PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock
 
 ## Pitfalls
 
-- A `&&` chain does not stop on pytest failures reported in output you don't read. Run the tests, check the counts, then commit in a separate step. Locally, run tests with `PYTHONNOUSERSITE=1 uv run --no-project --with pytest --with 'pymupdf4llm<2' --with python-dotenv python -m pytest -q tests`; plain `uv run` picks up an x86_64 pymupdf from user site-packages.
+- A `&&` chain does not stop on pytest failures reported in output you don't read. Run the tests, check the counts, then commit in a separate step. Locally, run tests with `PYTHONNOUSERSITE=1 uv run --no-project --with pytest --with 'pymupdf4llm<2' --with python-dotenv --with 'bibtexparser>=1.4,<2' python -m pytest -q tests`; plain `uv run` picks up an x86_64 pymupdf from user site-packages.
 - Never squash or rebase-merge a release branch into `main`. Both rewrite commit IDs and break the claim-verifier benchmark pin `TARGET_COMMIT`; use a merge commit.
 - `http_client.py` and `jats.py` are plain sibling modules in `scripts/` (no package/build). `uv run script.py` puts the script dir on `sys.path`, so `import http_client` resolves; tests load scripts by path and must `sys.path.insert(0, <scripts dir>)` first. Editing them is live — no `--reinstall` needed.
 - OpenAlex `--search` queries cost 10x more than `--filter`. Prefer `--filter` with resolved IDs over name-based `--search` when possible.

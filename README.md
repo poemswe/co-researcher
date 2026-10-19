@@ -121,7 +121,7 @@ score is not an integrity result. Running and publishing evals is covered in
 ## Development
 
 ```bash
-PYTHONNOUSERSITE=1 uv run --no-project --with pytest --with 'pymupdf4llm<2' --with python-dotenv python -m pytest -q tests
+PYTHONNOUSERSITE=1 uv run --no-project --with pytest --with 'pymupdf4llm<2' --with python-dotenv --with 'bibtexparser>=1.4,<2' python -m pytest -q tests
 ```
 
 The suite runs offline on fixture data. `tests/test_research_smoke.py` alone
