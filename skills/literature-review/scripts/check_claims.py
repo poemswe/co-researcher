@@ -425,7 +425,18 @@ def _author_year_is_ambiguous(key: str, records: list[dict]) -> bool:
   return sum(
       1 for record in records
       if (record.get("screening") or {}).get("status") != "excluded"
-      and _author_year_binding_matches(key, record)) > 1
+      and _author_year_binding_matches(key, record)
+      and _coauthor_fits(key, record)) > 1
+
+
+def _coauthor_fits(key: str, record: dict) -> bool:
+  """A cited "X and Y" names the record's second author as Y."""
+  author = key.split(":", 2)[1]
+  if " and " not in author:
+    return True
+  coauthor = author.split(" and ", 1)[1]
+  authors = record.get("authors") or []
+  return len(authors) > 1 and coauthor in _name_aliases(authors[1])
 
 
 def _normalized_tokens(text: str) -> str:

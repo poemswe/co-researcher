@@ -1678,8 +1678,16 @@ def _lumen(key, title):
           "year": 2024, "role": "evidence"}
 
 
+def _pair(key, coauthor):
+  return {**_lumen(key, key), "authors": ["Mira Lumen", f"Ana {coauthor}"]}
+
+
 @pytest.mark.parametrize(("citation", "records", "reason"), [
     ("Lumen, 2024", [_lumen("amber", "Amber"), _lumen("ivory", "Ivory")],
+     "citation_ambiguous"),
+    ("Lumen and Vale, 2024", [_pair("amber", "Vale"), _pair("ivory", "Reed")],
+     None),
+    ("Lumen et al., 2024", [_pair("amber", "Vale"), _pair("ivory", "Reed")],
      "citation_ambiguous"),
     ("Lumen, 2024a", [_lumen("amber", "Amber"), _lumen("ivory", "Ivory")],
      None),
