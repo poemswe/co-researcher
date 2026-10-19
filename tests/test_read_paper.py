@@ -27,6 +27,7 @@ _spec.loader.exec_module(read_paper)
 
 import check_claims  # noqa: E402
 from review_integrity import workspace  # noqa: E402
+import zotero_local  # noqa: E402
 
 
 def test_paper_directories_and_claim_lookup_share_one_sanitizer():
@@ -600,3 +601,68 @@ def test_doi_route_receipt_has_no_origin(tmp_path, monkeypatch):
 ])
 def test_identifier_args_routes_every_receipt_id(identifier, expected):
   assert read_paper.identifier_args(identifier) == expected
+
+
+def _zotero_workspace(tmp_path, monkeypatch, text="# extracted"):
+  d = tmp_path / "papers" / "10.1_x"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-fake")
+  (d / "paper.origin.json").write_text(json.dumps(
+      {"kind": "zotero", "item": "ITEM1", "attachment": "ATT1"}), encoding="utf-8")
+  library_pdf = tmp_path / "zotero" / "x.pdf"
+  library_pdf.parent.mkdir()
+  library_pdf.write_bytes(b"%PDF-library")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: text)
+  read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None, workspace=tmp_path)
+  monkeypatch.setattr(zotero_local, "attachment_parent", lambda k: "ITEM1")
+  monkeypatch.setattr(zotero_local, "attachment_path", lambda k: library_pdf)
+  return d / "fulltext.md"
+
+
+def test_recheck_matches_a_pdf_still_in_zotero(tmp_path, capsys, monkeypatch):
+  _zotero_workspace(tmp_path, monkeypatch)
+  code, results = _recheck(tmp_path, capsys)
+  assert code == 0
+  assert results == [{"file": "papers/10.1_x/fulltext.md",
+                      "source": "user_pdf", "result": "match"}]
+
+
+def test_recheck_flags_text_edited_after_import(tmp_path, capsys, monkeypatch):
+  text = _zotero_workspace(tmp_path, monkeypatch)
+  text.write_text("# forged", encoding="utf-8")
+  _, results = _recheck(tmp_path, capsys)
+  assert results[0]["result"] == "mismatch"
+
+
+def test_recheck_flags_an_attachment_of_another_item(tmp_path, capsys, monkeypatch):
+  _zotero_workspace(tmp_path, monkeypatch)
+  monkeypatch.setattr(zotero_local, "attachment_parent", lambda k: "ITEM2")
+  _, results = _recheck(tmp_path, capsys)
+  assert results[0]["result"] == "mismatch"
+
+
+@pytest.mark.parametrize("path_result", ["down", None])
+def test_recheck_reports_zotero_unavailable(tmp_path, capsys, monkeypatch,
+                                            path_result):
+  _zotero_workspace(tmp_path, monkeypatch)
+
+  def attachment_path(key):
+    if path_result == "down":
+      raise zotero_local.ZoteroUnavailable("not running")
+    return None
+
+  monkeypatch.setattr(zotero_local, "attachment_path", attachment_path)
+  _, results = _recheck(tmp_path, capsys)
+  assert results[0]["result"] == "unavailable"
+
+
+def test_recheck_cannot_verify_a_file_origin(tmp_path, capsys, monkeypatch):
+  d = tmp_path / "papers" / "10.1_x"
+  d.mkdir(parents=True)
+  (d / "paper.pdf").write_bytes(b"%PDF-fake")
+  (d / "paper.origin.json").write_text(
+      json.dumps({"kind": "file", "path": "/lib/x.pdf"}), encoding="utf-8")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
+  read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None, workspace=tmp_path)
+  _, results = _recheck(tmp_path, capsys)
+  assert results[0]["result"] == "unverifiable"

@@ -34,6 +34,7 @@ import pymupdf4llm
 
 import http_client
 import jats
+import zotero_local
 from check_claims import sanitize_id
 
 _OPENALEX = http_client.HttpClient("https://api.openalex.org/", qps=1.0)
@@ -252,6 +253,26 @@ def identifier_args(identifier: str) -> dict:
   return args
 
 
+def recheck_user_pdf(receipt: dict, current: pathlib.Path) -> str:
+  origin = receipt.get("origin")
+  if not isinstance(origin, dict) or origin.get("kind") != "zotero":
+    return "unverifiable"
+  try:
+    if zotero_local.attachment_parent(origin["attachment"]) != origin["item"]:
+      return "mismatch"
+    pdf = zotero_local.attachment_path(origin["attachment"])
+  except (zotero_local.ZoteroUnavailable, KeyError, TypeError):
+    return "unavailable"
+  if pdf is None or not pdf.is_file():
+    return "unavailable"
+  with tempfile.TemporaryDirectory() as tmp:
+    fresh = pathlib.Path(tmp) / "fulltext.md"
+    if not try_extract(pdf, fresh):
+      return "unavailable"
+    same = current.is_file() and current.read_bytes() == fresh.read_bytes()
+  return "match" if same else "mismatch"
+
+
 def recheck_source(receipt_path: pathlib.Path,
                    current: pathlib.Path) -> tuple[str | None, str]:
   try:
@@ -262,7 +283,7 @@ def recheck_source(receipt_path: pathlib.Path,
   except (ValueError, KeyError, TypeError):
     return None, "unreadable_receipt"
   if source == "user_pdf":
-    return source, "unverifiable"
+    return source, recheck_user_pdf(receipt, current)
   with tempfile.TemporaryDirectory() as tmp:
     try:
       _, path, fresh_source, _ = acquire(workspace=tmp, **identifier_args(identifier))
