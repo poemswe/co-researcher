@@ -20,6 +20,8 @@ import stat
 from types import MappingProxyType
 from typing import Any, Mapping, Optional
 
+from check_claims import sanitize_id as _sanitize_id
+
 from .models import ReasonCode
 
 
@@ -488,11 +490,6 @@ class _SnapshotReader:
           f"required artifact is missing: {relative_path}",
           ReasonCode.ARTIFACT_MISSING, relative_path)
     return payload
-
-
-def _sanitize_id(identifier: str) -> str:
-  safe = re.sub(r"[^A-Za-z0-9._-]", "_", identifier)
-  return re.sub(r"^\.+", "_", safe) or "_"
 
 
 def _trusted_ids(record: dict[str, object], index: int) -> set[str]:

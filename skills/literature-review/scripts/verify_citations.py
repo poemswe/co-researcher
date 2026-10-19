@@ -250,13 +250,14 @@ def resolve_doi(doi: str, *, fail_on_unavailable: bool = False) -> dict | None:
           "resolution_status": "partial" if openalex_unavailable else "complete"}
 
 
-def _registration(client, url: str, registry: str, doi: str) -> dict:
+def _registration(client, url: str, registry: str, doi: str) -> dict | None:
   try:
     return client.fetch_json(url, max_retries=1)
   except http_client.HttpError as err:
-    if err.status_code != 404:
-      print(f"{registry} error for DOI {doi}: {err}", file=sys.stderr)
-    return {}
+    if err.status_code == 404:
+      return {}
+    print(f"{registry} error for DOI {doi}: {err}", file=sys.stderr)
+    return None
 
 
 def registered_titles(doi: str):
@@ -265,15 +266,21 @@ def registered_titles(doi: str):
   OpenAlex sometimes attaches a DOI to the wrong work, such as a dataset
   snapshot in place of the arXiv paper, so a title mismatch against OpenAlex
   is checked against the registration before it is reported. DataCite is
-  asked only when no Crossref title matched.
+  asked only when no Crossref title matched. An unreachable registry yields
+  (registry, None).
   """
   path = urllib.parse.quote(doi)
-  message = _registration(_CROSSREF, f"https://api.crossref.org/works/{path}",
-                          "Crossref", doi).get("message") or {}
-  for title in message.get("title") or []:
+  crossref = _registration(
+      _CROSSREF, f"https://api.crossref.org/works/{path}", "Crossref", doi)
+  if crossref is None:
+    yield "crossref", None
+  for title in (crossref or {}).get("message", {}).get("title") or []:
     yield "crossref", title
-  data = _registration(_DATACITE, f"https://api.datacite.org/dois/{path}",
-                       "DataCite", doi).get("data") or {}
+  datacite = _registration(
+      _DATACITE, f"https://api.datacite.org/dois/{path}", "DataCite", doi)
+  if datacite is None:
+    yield "datacite", None
+  data = (datacite or {}).get("data") or {}
   for item in (data.get("attributes") or {}).get("titles") or []:
     yield "datacite", item.get("title") or ""
 
@@ -430,12 +437,17 @@ def verify_one(entry: dict, *, fail_on_unavailable: bool = False) -> dict:
         claimed = entry.get("title")
         if (claimed and hit["title"] and _extract_doi(claimed) is None
             and not titles_match(claimed, hit["title"])):
+          unreachable = False
           for registry, title in registered_titles(entry["doi"]):
-            if titles_match(claimed, title):
+            if title is None:
+              unreachable = True
+            elif titles_match(claimed, title):
               result.update(source=registry, matched_title=title)
               break
           else:
             result["status"] = "mismatched"
+            if unreachable:
+              result["resolution_status"] = "partial"
     return result
   if entry.get("title"):
     hit = resolve_title(entry["title"],

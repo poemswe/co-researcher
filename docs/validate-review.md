@@ -58,7 +58,11 @@ it stays outside the offline validator.
 A cited paper whose `corpus.json` record has no DOI, PMID, PMCID or arXiv id
 gets a `source_unregistered` warning. A web page an agent published during the
 run has none of these, so check each flagged source by hand before relying on
-it. The warning cannot be repaired and does not lower the score.
+it. A cited record's DOI also has to appear among the DOIs the citation report
+verified, or the paper gets the same warning naming that DOI, so an invented
+DOI written into `corpus.json` does not clear it. PMID, PMCID and arXiv ids
+are not resolved yet and are still taken as written. The warning cannot be
+repaired and does not lower the score.
 
 Fixtures built from invented papers cannot resolve or be fetched. For those,
 pass `--synthetic-fixture`, which skips both checks, restores the old warning,
