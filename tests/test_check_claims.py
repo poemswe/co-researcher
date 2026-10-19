@@ -1721,3 +1721,44 @@ def test_author_year_citation_must_name_one_corpus_paper(
   entry = {"claim": "x", "paper_id": "amber", "citation": citation}
   [result] = cc._validate_citation_bindings([entry], records, None)
   assert (result or {}).get("reason_code") == reason
+
+
+def _library_record(**fields):
+  record = {"key": "aministryreport", "ids": {"zotero": "I9"},
+            "title": "A Ministry Report", "authors": ["Cy Reed"], "year": 2022,
+            "found_via": "zotero", "screening": {"status": "included"}}
+  record.update(fields)
+  return record
+
+
+@pytest.mark.parametrize("reference", [
+    {"title": "A Ministry Report"},
+    "A ministry report.",
+])
+def test_identifierless_library_reference_is_flagged_for_downgrade(reference):
+  corpus = [_library_record()]
+  assert cc.library_unregistered_references(
+      [reference], corpus, {"aministryreport"}) == {0}
+
+
+@pytest.mark.parametrize("reference, title", [
+    ("Reed, C. (2022). A Ministry Report. Ministry of Health.",
+     "A Ministry Report"),
+    ("WHO. Guidelines for invented treatment Y. 2019.", "Guidelines"),
+    ({"title": "Guidelines for invented treatment Y"}, "Guidelines"),
+])
+def test_downgrade_needs_the_reference_title_to_be_the_record_title(
+    reference, title):
+  corpus = [_library_record(title=title, key="r")]
+  assert cc.library_unregistered_references(
+      [reference], corpus, {"r"}) == set()
+
+
+@pytest.mark.parametrize("record, dirs", [
+    (_library_record(found_via="openalex"), {"aministryreport"}),
+    (_library_record(ids={"doi": "10.1/x"}), {"aministryreport"}),
+    (_library_record(), set()),
+])
+def test_downgrade_needs_library_no_identifier_and_user_pdf(record, dirs):
+  assert cc.library_unregistered_references(
+      [{"title": "A Ministry Report"}], [record], dirs) == set()

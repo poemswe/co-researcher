@@ -1,10 +1,11 @@
-"""Unified full-text acquisition for a paper given a DOI, arXiv ID, or PMCID.
+"""Unified full-text acquisition for a paper given a DOI, arXiv ID, PMCID, or corpus key.
 
 Resolution chain: cached/user files, Europe PMC JATS, arXiv PDF,
 OpenAlex best_oa_location PDF, OpenAlex abstract fallback.
 Prints exactly one JSON status line to stdout:
   {"status": "fulltext|abstract-only", "path": ..., "source": ..., "id": ...}
 Paywalled papers are a normal outcome (abstract-only), not an error.
+`--key` reads only a PDF the user placed and never touches the network.
 """
 
 # /// script
@@ -33,7 +34,9 @@ import pymupdf4llm
 
 import http_client
 import jats
-from check_claims import sanitize_id
+import verify_citations
+import zotero_local
+from check_claims import _record_for_paper_id, sanitize_id
 
 _OPENALEX = http_client.HttpClient("https://api.openalex.org/", qps=1.0)
 _EPMC = http_client.HttpClient(
@@ -57,6 +60,8 @@ def abstract_from_inverted_index(inv: dict) -> str:
 
 
 _PMCID = re.compile(r"PMC\d+")
+_ARXIV_ID = re.compile(
+    r"(?:\d{4}\.\d{4,5}|[a-z-]+(?:\.[A-Z]{2})?/\d{7})(?:v\d+)?")
 
 
 def pmcid_from_ids(ids: dict) -> str | None:
@@ -83,6 +88,12 @@ def deliver(status: str, path: pathlib.Path, source: str,
       "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
       "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
   }
+  origin_path = path.parent / "paper.origin.json"
+  if source == "user_pdf" and origin_path.is_file():
+    try:
+      receipt["origin"] = json.loads(origin_path.read_text(encoding="utf-8"))
+    except ValueError:
+      pass
   path.with_suffix(".receipt.json").write_text(
       json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
   return status, path, source, identifier
@@ -179,12 +190,14 @@ def fetch_oa_pdf(url: str, dest: pathlib.Path) -> bool:
   return _download_pdf(client, url, dest, timeout=120)
 
 
-def read_paper(doi, arxiv, pmcid, workspace) -> None:
-  emit(*acquire(doi, arxiv, pmcid, workspace))
+def read_paper(doi, arxiv, pmcid, workspace, key=None) -> tuple:
+  result = acquire(doi, arxiv, pmcid, workspace, key=key)
+  emit(*result)
+  return result
 
 
-def acquire(doi, arxiv, pmcid, workspace) -> tuple:
-  identifier = doi or arxiv or pmcid
+def acquire(doi, arxiv, pmcid, workspace, key=None) -> tuple:
+  identifier = doi or arxiv or pmcid or key
   paper_dir = pathlib.Path(workspace) / "papers" / sanitize_id(identifier)
   paper_dir.mkdir(parents=True, exist_ok=True)
   pdf_path = paper_dir / "paper.pdf"
@@ -195,6 +208,8 @@ def acquire(doi, arxiv, pmcid, workspace) -> tuple:
     return "fulltext", fulltext_path, "cached", identifier
   if pdf_path.exists() and try_extract(pdf_path, fulltext_path):
     return deliver("fulltext", fulltext_path, "user_pdf", identifier)
+  if key:
+    return "abstract-only", None, "none", identifier
 
   work = (lookup_openalex_work(doi) if doi else None) or {}
   pmcid = pmcid or pmcid_from_ids(work.get("ids") or {})
@@ -226,16 +241,49 @@ def acquire(doi, arxiv, pmcid, workspace) -> tuple:
   return "abstract-only", None, "none", identifier
 
 
-def identifier_args(identifier: str) -> tuple:
+def identifier_args(identifier: str) -> dict:
+  args = {"doi": None, "arxiv": None, "pmcid": None, "key": None}
   if _PMCID.fullmatch(identifier):
-    return None, None, identifier
-  if identifier.startswith("10."):
-    return identifier, None, None
-  return None, identifier, None
+    args["pmcid"] = identifier
+  elif identifier.startswith("10."):
+    args["doi"] = identifier
+  elif _ARXIV_ID.fullmatch(identifier):
+    args["arxiv"] = identifier
+  else:
+    args["key"] = identifier
+  return args
 
 
-def recheck_source(receipt_path: pathlib.Path,
-                   current: pathlib.Path) -> tuple[str | None, str]:
+def recheck_user_pdf(receipt: dict, current: pathlib.Path,
+                     record: dict | None) -> str:
+  origin = receipt.get("origin")
+  if (not isinstance(origin, dict) or origin.get("kind") != "zotero"
+      or record is None):
+    return "unverifiable"
+  if (record.get("ids") or {}).get("zotero") != origin.get("item"):
+    return "mismatch"
+  try:
+    if zotero_local.attachment_parent(origin["attachment"]) != origin["item"]:
+      return "mismatch"
+    title = zotero_local.item_title(origin["item"])
+    if not title or not verify_citations.titles_match(
+        title, record.get("title") or ""):
+      return "mismatch"
+    pdf = zotero_local.attachment_path(origin["attachment"])
+  except (zotero_local.ZoteroUnavailable, KeyError, TypeError):
+    return "unavailable"
+  if pdf is None or not pdf.is_file():
+    return "unavailable"
+  with tempfile.TemporaryDirectory() as tmp:
+    fresh = pathlib.Path(tmp) / "fulltext.md"
+    if not try_extract(pdf, fresh):
+      return "unavailable"
+    same = current.is_file() and current.read_bytes() == fresh.read_bytes()
+  return "match" if same else "mismatch"
+
+
+def recheck_source(receipt_path: pathlib.Path, current: pathlib.Path,
+                   records: list[dict] = ()) -> tuple[str | None, str]:
   try:
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     source, identifier = receipt["source"], receipt["id"]
@@ -244,10 +292,12 @@ def recheck_source(receipt_path: pathlib.Path,
   except (ValueError, KeyError, TypeError):
     return None, "unreadable_receipt"
   if source == "user_pdf":
-    return source, "unverifiable"
+    return source, recheck_user_pdf(
+        receipt, current,
+        _record_for_paper_id(list(records), receipt_path.parent.name))
   with tempfile.TemporaryDirectory() as tmp:
     try:
-      _, path, fresh_source, _ = acquire(*identifier_args(identifier), tmp)
+      _, path, fresh_source, _ = acquire(workspace=tmp, **identifier_args(identifier))
     except Exception as err:
       print(f"Recheck fetch failed for {identifier}: {err}", file=sys.stderr)
       return source, "unavailable"
@@ -260,10 +310,17 @@ def recheck_source(receipt_path: pathlib.Path,
 def recheck(workspace) -> int:
   root = pathlib.Path(workspace)
   failed = False
+  try:
+    records = json.loads((root / "corpus.json").read_text(encoding="utf-8"))
+  except (OSError, ValueError):
+    records = []
+  if not isinstance(records, list):
+    records = []
+  records = [record for record in records if isinstance(record, dict)]
   for receipt_path in sorted(root.glob("papers/*/*.receipt.json")):
     current = receipt_path.with_name(
         receipt_path.name.removesuffix(".receipt.json") + ".md")
-    source, result = recheck_source(receipt_path, current)
+    source, result = recheck_source(receipt_path, current, records)
     failed = failed or result != "match"
     shown = receipt_path if source is None else current
     print(json.dumps({"file": shown.relative_to(root).as_posix(),
@@ -280,6 +337,10 @@ def parse_args() -> argparse.Namespace:
   group.add_argument("--arxiv", help="arXiv ID, e.g. 1706.03762")
   group.add_argument("--pmcid", help="PubMed Central ID, e.g. PMC8371605")
   group.add_argument(
+      "--key",
+      help="Corpus key of a paper whose PDF the user placed; extracts it offline",
+  )
+  group.add_argument(
       "--recheck", action="store_true",
       help="Re-fetch every receipted source and compare it to the workspace copy",
   )
@@ -290,8 +351,15 @@ def parse_args() -> argparse.Namespace:
   return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main() -> None:
   args = parse_args()
   if args.recheck:
     sys.exit(recheck(args.workspace))
-  read_paper(args.doi, args.arxiv, args.pmcid, args.workspace)
+  _, _, source, _ = read_paper(args.doi, args.arxiv, args.pmcid,
+                               args.workspace, key=args.key)
+  if args.key and source == "none":
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+  main()

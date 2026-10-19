@@ -61,8 +61,13 @@ run has none of these, so check each flagged source by hand before relying on
 it. A cited record's DOI also has to appear among the DOIs the citation report
 verified, or the paper gets the same warning naming that DOI, so an invented
 DOI written into `corpus.json` does not clear it. PMID, PMCID and arXiv ids
-are not resolved yet and are still taken as written. The warning cannot be
-repaired and does not lower the score.
+are not resolved yet and are still taken as written. A cited source imported
+from the user's library that no registry knows gets the same warning on
+`refs.json` in place of a critical `citation_identity_mismatch`. That applies
+only when its `refs.json` title is exactly the title of a corpus record that
+came from the library, has no identifier, and has a `user_pdf` receipt in its
+paper directory. The warning cannot be repaired and
+does not lower the score.
 
 Fixtures built from invented papers cannot resolve or be fetched. For those,
 pass `--synthetic-fixture`, which skips both checks, restores the old warning,

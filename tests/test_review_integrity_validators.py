@@ -863,3 +863,46 @@ def test_source_scope_enrichment_rejects_invalid_or_conflicting_aliases(scopes):
               "fulltext": "stale"}]
   with pytest.raises(ValueError, match="scope|conflict"):
     check_claims.corpus_with_source_scopes(records, scopes)
+
+
+_LIBRARY_ENTRIES = [{"doi": None, "title": "A Ministry Report",
+                     "raw": "A Ministry Report"}]
+_NOT_FOUND = dict(status="not_found", matched_title=None,
+                  retraction_checked=False, retraction_source=None,
+                  retraction_status="not_applicable")
+
+
+def test_not_found_library_source_is_a_warning():
+  report = _citation_report(_LIBRARY_ENTRIES, _StaticResolver(**_NOT_FOUND))
+  (finding,) = _validators().citation_findings(
+      report, _LIBRARY_ENTRIES, library_unregistered=frozenset({0}))
+  assert finding.reason_code is ReasonCode.SOURCE_UNREGISTERED
+  assert finding.severity is Severity.WARNING
+  assert finding.message == "cited library source is not in any registry"
+
+
+def test_not_found_outside_the_library_stays_critical():
+  report = _citation_report(_LIBRARY_ENTRIES, _StaticResolver(**_NOT_FOUND))
+  (finding,) = _validators().citation_findings(report, _LIBRARY_ENTRIES)
+  assert finding.reason_code is ReasonCode.CITATION_IDENTITY_MISMATCH
+  assert finding.severity is Severity.CRITICAL
+
+
+def test_mismatched_library_source_is_never_downgraded():
+  report = _citation_report(
+      _LIBRARY_ENTRIES, _StaticResolver(status="mismatched",
+                                        matched_title="Another Report"))
+  findings = _validators().citation_findings(
+      report, _LIBRARY_ENTRIES, library_unregistered=frozenset({0}))
+  assert [f.severity for f in findings] == [Severity.CRITICAL]
+
+
+def test_user_pdf_dirs_reads_only_user_pdf_receipts():
+  receipts = {
+      "papers/aministryreport/fulltext.md":
+          json.dumps({"source": "user_pdf"}).encode(),
+      "papers/PMC1/fulltext.md": json.dumps({"source": "epmc"}).encode(),
+      "papers/broken/fulltext.md": b"{",
+      "papers/none/fulltext.md": None,
+  }
+  assert _validators()._user_pdf_dirs(receipts) == {"aministryreport"}
