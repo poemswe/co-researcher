@@ -2,8 +2,8 @@ import json
 import pathlib
 import sys
 
-import pymupdf
 import pytest
+from pdf_fixtures import make_pdf
 
 _SCRIPTS = (pathlib.Path(__file__).resolve().parent.parent
             / "skills/literature-review/scripts")
@@ -105,19 +105,10 @@ def test_csl_must_be_an_array(tmp_path):
     library_sources.read_csl(path)
 
 
-def _pdf(path, text):
-  doc = pymupdf.open()
-  page = doc.new_page()
-  if text:
-    page.insert_text((72, 72), text)
-  path.parent.mkdir(parents=True, exist_ok=True)
-  doc.save(path)
-  return path
-
-
 def test_zotero_reader_walks_subcollections_once(monkeypatch, tmp_path):
-  pdf = _pdf(tmp_path / "z.pdf", "x")
-  monkeypatch.setattr(zotero_local, "collection_key", lambda c: "ROOT")
+  pdf = make_pdf(tmp_path / "z.pdf", "x")
+  monkeypatch.setattr(zotero_local, "collection_key",
+                      lambda c, names=None: "ROOT")
   monkeypatch.setattr(zotero_local, "collection_names",
                       lambda: {"ROOT": "Review", "SUB": "Methods"})
   monkeypatch.setattr(zotero_local, "subcollection_keys",
@@ -142,7 +133,8 @@ def test_zotero_reader_walks_subcollections_once(monkeypatch, tmp_path):
 
 def test_zotero_attachment_missing_from_disk_keeps_its_origin(
     monkeypatch):
-  monkeypatch.setattr(zotero_local, "collection_key", lambda c: "ROOT")
+  monkeypatch.setattr(zotero_local, "collection_key",
+                      lambda c, names=None: "ROOT")
   monkeypatch.setattr(zotero_local, "collection_names", lambda: {"ROOT": "R"})
   monkeypatch.setattr(zotero_local, "subcollection_keys", lambda k: ["ROOT"])
   monkeypatch.setattr(zotero_local, "collection_items",
@@ -157,8 +149,8 @@ def test_zotero_attachment_missing_from_disk_keeps_its_origin(
 
 
 def test_first_page_doi_and_text(tmp_path):
-  with_doi = _pdf(tmp_path / "a.pdf", "Journal. doi:10.1234/Abc.5.")
-  blank = _pdf(tmp_path / "b.pdf", "")
+  with_doi = make_pdf(tmp_path / "a.pdf", "Journal. doi:10.1234/Abc.5.")
+  blank = make_pdf(tmp_path / "b.pdf", "")
   assert library_sources.first_page_doi(with_doi) == "10.1234/Abc.5"
   assert library_sources.first_page_doi(blank) is None
   assert library_sources.first_page_text(blank).strip() == ""
@@ -166,16 +158,16 @@ def test_first_page_doi_and_text(tmp_path):
 
 
 def test_pdf_files_is_recursive_and_case_insensitive(tmp_path):
-  a = _pdf(tmp_path / "x" / "A.PDF", "a")
-  b = _pdf(tmp_path / "b.pdf", "b")
+  a = make_pdf(tmp_path / "x" / "A.PDF", "a")
+  b = make_pdf(tmp_path / "b.pdf", "b")
   (tmp_path / "notes.txt").write_text("n", encoding="utf-8")
   assert library_sources.pdf_files(tmp_path) == sorted([a, b])
 
 
 def test_pdf_folder_resolves_dois_through_crossref(monkeypatch, tmp_path):
-  good = _pdf(tmp_path / "good.pdf", "doi:10.1000/good")
-  dead = _pdf(tmp_path / "dead.pdf", "doi:10.1000/dead")
-  bare = _pdf(tmp_path / "bare.pdf", "no identifier here")
+  good = make_pdf(tmp_path / "good.pdf", "doi:10.1000/good")
+  dead = make_pdf(tmp_path / "dead.pdf", "doi:10.1000/dead")
+  bare = make_pdf(tmp_path / "bare.pdf", "no identifier here")
 
   def fetch_json(path, **kwargs):
     if "10.1000/good" in path:

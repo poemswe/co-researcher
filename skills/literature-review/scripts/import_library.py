@@ -34,11 +34,9 @@ def _label(item: dict) -> str:
 
 
 def paper_dir_name(item: dict) -> str:
-  doi = item.get("DOI")
-  identifier = ((check_claims.doi_key(doi) if doi else None)
-                or item.get("arxiv") or item.get("PMCID")
-                or build_corpus.normalize_key(None, item.get("title"),
-                                              build_corpus.library_ids(item)))
+  ids = build_corpus.library_ids(item)
+  identifier = (ids["doi"] or ids["arxiv"] or ids["pmcid"]
+                or build_corpus.normalize_key(None, item.get("title"), ids))
   return check_claims.sanitize_id(identifier or "")
 
 
@@ -69,9 +67,9 @@ def match_pdf_dir(items: list[dict], pdf_dir: pathlib.Path):
       unmatched.append(str(pdf))
   claimed, conflicts = set(), []
   for item in items:
-    if _has_pdf(item) or not item.get("DOI"):
+    key = build_corpus.library_ids(item)["doi"]
+    if _has_pdf(item) or not key:
       continue
-    key = check_claims.doi_key(item["DOI"])
     pdfs = found.get(key, [])
     if pdfs:
       claimed.add(key)
@@ -165,7 +163,7 @@ def main(argv=None) -> int:
       "items": len(items),
       "by_collection": counts,
       "pdfs_matched": placed,
-      "no_pdf": sum(1 for i in items if not i.get("pdf") and not i.get("origin")),
+      "no_pdf": sum(1 for i in items if not i.get("origin")),
       "no_identifier": [_label(i) for i in items
                         if not any(i.get(f) for f in _REGISTRY_FIELDS)],
       "no_text_layer": no_text,

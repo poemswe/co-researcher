@@ -58,8 +58,8 @@ def collection_names() -> dict[str, str]:
   return {c["key"]: c["data"]["name"] for c in _list("collections")}
 
 
-def collection_key(name_or_key: str) -> str:
-  names = collection_names()
+def collection_key(name_or_key: str, names: dict[str, str] | None = None) -> str:
+  names = collection_names() if names is None else names
   if name_or_key in names:
     return name_or_key
   named = sorted(key for key, name in names.items() if name == name_or_key)

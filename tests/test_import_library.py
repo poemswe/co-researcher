@@ -2,8 +2,8 @@ import json
 import pathlib
 import sys
 
-import pymupdf
 import pytest
+from pdf_fixtures import make_pdf
 
 _SCRIPTS = (pathlib.Path(__file__).resolve().parent.parent
             / "skills/literature-review/scripts")
@@ -13,16 +13,6 @@ import import_library  # noqa: E402
 import library_sources  # noqa: E402
 import verify_citations  # noqa: E402
 import zotero_local  # noqa: E402
-
-
-def _pdf(path, text):
-  doc = pymupdf.open()
-  page = doc.new_page()
-  if text:
-    page.insert_text((72, 72), text)
-  path.parent.mkdir(parents=True, exist_ok=True)
-  doc.save(path)
-  return path
 
 
 def _item(**fields):
@@ -65,11 +55,11 @@ def test_title_lookup_fills_a_missing_doi(monkeypatch):
 
 
 def test_pdf_dir_matches_by_first_page_doi(tmp_path):
-  one = _pdf(tmp_path / "pdfs/one.pdf", "doi:10.1000/ONE")
-  twin_a = _pdf(tmp_path / "pdfs/twin_a.pdf", "doi:10.1000/twin")
-  twin_b = _pdf(tmp_path / "pdfs/twin_b.pdf", "10.1000/twin")
-  stray = _pdf(tmp_path / "pdfs/stray.pdf", "doi:10.1000/other")
-  bare = _pdf(tmp_path / "pdfs/bare.pdf", "nothing")
+  one = make_pdf(tmp_path / "pdfs/one.pdf", "doi:10.1000/ONE")
+  twin_a = make_pdf(tmp_path / "pdfs/twin_a.pdf", "doi:10.1000/twin")
+  twin_b = make_pdf(tmp_path / "pdfs/twin_b.pdf", "10.1000/twin")
+  stray = make_pdf(tmp_path / "pdfs/stray.pdf", "doi:10.1000/other")
+  bare = make_pdf(tmp_path / "pdfs/bare.pdf", "nothing")
   items = [_item(DOI="10.1000/one"), _item(DOI="10.1000/twin"), _item(title="T")]
 
   unmatched, conflicts = import_library.match_pdf_dir(items, tmp_path / "pdfs")
@@ -82,8 +72,8 @@ def test_pdf_dir_matches_by_first_page_doi(tmp_path):
 
 
 def test_attachment_wins_over_the_pdf_dir(tmp_path):
-  attached = _pdf(tmp_path / "attached.pdf", "a")
-  _pdf(tmp_path / "pdfs/other.pdf", "doi:10.1000/one")
+  attached = make_pdf(tmp_path / "attached.pdf", "a")
+  make_pdf(tmp_path / "pdfs/other.pdf", "doi:10.1000/one")
   items = [_item(DOI="10.1000/one", pdf=str(attached),
                  origin={"kind": "zotero", "item": "I", "attachment": "A"})]
   import_library.match_pdf_dir(items, tmp_path / "pdfs")
@@ -91,7 +81,7 @@ def test_attachment_wins_over_the_pdf_dir(tmp_path):
 
 
 def test_place_pdf_writes_origin_and_is_idempotent(tmp_path):
-  pdf = _pdf(tmp_path / "src.pdf", "x")
+  pdf = make_pdf(tmp_path / "src.pdf", "x")
   item = _item(DOI="10.1/x", pdf=str(pdf), origin={"kind": "file", "path": str(pdf)})
   ws = tmp_path / "ws"
   assert import_library.place_pdf(item, ws) is True
@@ -104,7 +94,7 @@ def test_place_pdf_writes_origin_and_is_idempotent(tmp_path):
 
 @pytest.mark.parametrize("existing", ["paper.pdf", "fulltext.md"])
 def test_place_pdf_refuses_to_overwrite(tmp_path, existing):
-  pdf = _pdf(tmp_path / "src.pdf", "x")
+  pdf = make_pdf(tmp_path / "src.pdf", "x")
   target = tmp_path / "ws/papers/10.1_x"
   target.mkdir(parents=True)
   (target / existing).write_bytes(b"other")
@@ -114,8 +104,8 @@ def test_place_pdf_refuses_to_overwrite(tmp_path, existing):
 
 
 def test_bibtex_import_writes_library_and_summary(tmp_path, capsys):
-  good = _pdf(tmp_path / "good.pdf", "text")
-  scan = _pdf(tmp_path / "scan.pdf", "")
+  good = make_pdf(tmp_path / "good.pdf", "text")
+  scan = make_pdf(tmp_path / "scan.pdf", "")
   bib = tmp_path / "lib.bib"
   bib.write_text(
       "@article{a, title={Good}, author={Lumen, Ana}, year={2024},"
@@ -141,7 +131,7 @@ def test_bibtex_import_writes_library_and_summary(tmp_path, capsys):
 
 
 def test_rerun_reports_no_new_conflicts(tmp_path, capsys):
-  good = _pdf(tmp_path / "good.pdf", "text")
+  good = make_pdf(tmp_path / "good.pdf", "text")
   bib = tmp_path / "lib.bib"
   bib.write_text("@article{a, title={Good}, author={Lumen, Ana}, year={2024},"
                  f" doi={{10.1/good}}, file={{{good}}}}}\n", encoding="utf-8")
@@ -163,7 +153,7 @@ def test_zotero_import_reports_collection_counts(monkeypatch, tmp_path, capsys):
 
 
 def test_pdf_dir_alone_uses_the_folder_reader(monkeypatch, tmp_path, capsys):
-  pdf = _pdf(tmp_path / "pdfs/p.pdf", "doi:10.1/p")
+  pdf = make_pdf(tmp_path / "pdfs/p.pdf", "doi:10.1/p")
   monkeypatch.setattr(library_sources, "read_pdf_folder", lambda d: (
       [_item(title="P", DOI="10.1/p", pdf=str(pdf),
              origin={"kind": "file", "path": str(pdf)})], [str(tmp_path / "x.pdf")]))

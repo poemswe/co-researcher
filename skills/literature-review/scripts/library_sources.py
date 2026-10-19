@@ -5,6 +5,7 @@ Every reader returns items shaped {"title", "DOI", "arxiv", "PMID", "PMCID",
 issued values.
 """
 
+import functools
 import json
 import pathlib
 import re
@@ -27,7 +28,6 @@ _BIB_FIELD_SPLIT_RE = re.compile(r"(?<!\\):")
 _BIB_ESCAPE_RE = re.compile(r"\\(.)")
 _WINDOWS_PATH_RE = re.compile(r"^[A-Za-z]:[\\/]")
 _AND_RE = re.compile(r"\s+and\s+")
-_DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"'<>]+")
 
 
 def _item(**fields) -> dict:
@@ -115,12 +115,13 @@ def read_bibtex(path: pathlib.Path) -> list[dict]:
 
 
 def read_zotero(collection: str) -> tuple[list[dict], dict[str, int]]:
-  root = zotero_local.collection_key(collection)
   names = zotero_local.collection_names()
+  root = zotero_local.collection_key(collection, names)
   items, seen, counts = [], set(), {}
   for key in zotero_local.subcollection_keys(root):
     found = zotero_local.collection_items(key)
-    counts[names.get(key, key)] = counts.get(names.get(key, key), 0) + len(found)
+    label = names.get(key, key)
+    counts[label] = counts.get(label, 0) + len(found)
     for item_key, csl in found:
       if item_key in seen:
         continue
@@ -142,6 +143,11 @@ def pdf_files(directory: pathlib.Path) -> list[pathlib.Path]:
 
 
 def first_page_text(pdf: pathlib.Path) -> str:
+  return _first_page_text(str(pdf))
+
+
+@functools.cache
+def _first_page_text(pdf: str) -> str:
   try:
     with pymupdf.open(pdf) as doc:
       return doc[0].get_text() if doc.page_count else ""
@@ -150,8 +156,7 @@ def first_page_text(pdf: pathlib.Path) -> str:
 
 
 def first_page_doi(pdf: pathlib.Path) -> str | None:
-  match = _DOI_RE.search(first_page_text(pdf))
-  return match.group(0).rstrip(".,;:)]}") if match else None
+  return verify_citations._extract_doi(first_page_text(pdf))
 
 
 def crossref_csl(doi: str) -> dict | None:

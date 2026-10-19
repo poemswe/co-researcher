@@ -1154,23 +1154,30 @@ def unregistered_cited_papers(
 _LIBRARY_SOURCES = frozenset({"zotero", "bibtex", "csl", "pdf_folder"})
 
 
+def _unregistered_library_record(record: dict) -> bool:
+  sources = set(str(record.get("found_via") or "").split("+"))
+  return bool(_LIBRARY_SOURCES & sources) and not any(
+      (record.get("ids") or {}).get(name) for name in _REGISTRY_IDS)
+
+
 def library_unregistered_references(
     references, corpus_records: list[dict], user_pdf_dirs: set[str],
 ) -> set[int]:
   """Refs indexes whose title is exactly a library record no registry identifies."""
-  if not isinstance(references, list):
+  if not isinstance(references, list) or not user_pdf_dirs:
     return set()
-  pdf_records = [_record_for_paper_id(corpus_records, d) for d in user_pdf_dirs]
+  candidates = {id(record) for directory in user_pdf_dirs
+                if (record := _record_for_paper_id(corpus_records, directory))
+                and _unregistered_library_record(record)}
   indexes = set()
-  for index, item in enumerate(references):
-    record, _ = _reference_record(item, corpus_records)
+  for index, item in enumerate(references if candidates else ()):
     cited = item.get("title") if isinstance(item, dict) else item
-    if (record is not None and isinstance(cited, str)
+    if not isinstance(cited, str):
+      continue
+    record, _ = _reference_record(item, corpus_records)
+    if (record is not None and id(record) in candidates
         and _normalized_tokens(cited) == _normalized_tokens(
-            record.get("title") or "")
-        and _LIBRARY_SOURCES & set(str(record.get("found_via") or "").split("+"))
-        and not any((record.get("ids") or {}).get(n) for n in _REGISTRY_IDS)
-        and any(r is record for r in pdf_records)):
+            record.get("title") or "")):
       indexes.add(index)
   return indexes
 
