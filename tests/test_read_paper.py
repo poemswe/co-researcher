@@ -26,6 +26,12 @@ read_paper = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(read_paper)
 
 
+def test_paper_directories_and_claim_lookup_share_one_sanitizer():
+  import check_claims
+
+  assert read_paper.sanitize_id is check_claims.sanitize_id
+
+
 def test_sanitize_id_replaces_unsafe_chars():
   assert read_paper.sanitize_id("10.1038/s41586-021-03819-2") == (
       "10.1038_s41586-021-03819-2"
