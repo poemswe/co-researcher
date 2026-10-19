@@ -289,6 +289,24 @@ def test_cli_flags_a_cited_doi_the_citation_report_did_not_confirm(tmp_path):
       {"paper_id": "p1", "doi": "10.9/invented"})]
 
 
+def test_cli_rejects_a_claim_citing_a_paper_missing_from_the_corpus(tmp_path):
+  refs = [{"doi": "10.1/example", "title": "Example Study"}]
+  workspace = _review(tmp_path / "review", refs=refs)
+  claims_path = workspace / "claims.json"
+  claims = json.loads(claims_path.read_text())
+  claims[0]["paper_id"] = "ghost"
+  claims_path.write_text(json.dumps(claims))
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, refs)
+
+  result = _run(workspace, "--citation-report", str(citation_path))
+
+  assert result.returncode == 1
+  report = _report(result)
+  assert report["status"] == "invalid"
+  assert "citation_identity_mismatch" in report["repair_feedback"]["reason_codes"]
+
+
 def test_synthetic_fixture_skips_the_registry_check(tmp_path):
   workspace = _review(tmp_path / "review", refs=[], receipt=False,
                       ids={"url": "p1"})
