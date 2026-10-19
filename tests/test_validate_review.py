@@ -951,3 +951,56 @@ def test_help_exits_two_on_stderr_without_non_json_stdout():
   assert result.stdout == ""
   assert "usage:" in result.stderr.lower()
   assert "not validated" in result.stderr.lower()
+
+
+def test_cli_accepts_a_cited_library_source_no_registry_knows(
+    tmp_path, monkeypatch):
+  import build_corpus
+  import read_paper
+  workspace = tmp_path / "review"
+  paper = workspace / "papers/aministryreport"
+  paper.mkdir(parents=True)
+  text = ("Thirty-day readmissions fell 18% in the treatment arm relative "
+          "to usual care across all enrolled regional hospitals.")
+  library = tmp_path / "library.json"
+  library.write_text(json.dumps({"source": "zotero", "items": [{
+      "title": "A Ministry Report", "zotero": "I9",
+      "author": [{"family": "Reed", "given": "Cy"}],
+      "issued": {"date-parts": [[2022]]}}]}), encoding="utf-8")
+  build_corpus.main(["--library", str(library),
+                     "--output", str(workspace / "corpus.json")])
+  corpus = json.loads((workspace / "corpus.json").read_text(encoding="utf-8"))
+  corpus[0].update(screening={"status": "included"}, fulltext="fulltext",
+                   role="evidence")
+  refs = [{"title": "A Ministry Report"}]
+  payloads = {
+      "protocol.md": "# Protocol\n",
+      "corpus.json": json.dumps(corpus),
+      "claims.json": json.dumps([{
+          "claim": "Readmissions fell 18% in the treatment arm.",
+          "paper_id": "aministryreport", "citation": "Reed, 2022",
+          "supporting_quote": text}]),
+      "synthesis.md": "Readmissions fell 18% in the treatment arm (Reed, 2022).",
+      "refs.json": json.dumps(refs),
+      "project.json": json.dumps({"project": "review"}),
+  }
+  for relative, content in payloads.items():
+    (workspace / relative).write_text(content, encoding="utf-8")
+  (paper / "paper.pdf").write_bytes(b"%PDF-library")
+  (paper / "paper.origin.json").write_text(json.dumps(
+      {"kind": "zotero", "item": "I9", "attachment": "A9"}), encoding="utf-8")
+  monkeypatch.setattr(read_paper, "extract_pdf", lambda path: text)
+  read_paper.read_paper(None, None, None, workspace, key="aministryreport")
+  citation_path = tmp_path / "citation.json"
+  _citation_report(citation_path, refs, status="not_found")
+
+  result = _run(workspace, "--citation-report", str(citation_path))
+
+  assert result.returncode == 0, result.stdout + result.stderr
+  report = _report(result)
+  assert report["status"] == "valid_with_warnings"
+  findings = report["findings"]
+  assert {item["reason_code"] for item in findings} == {"source_unregistered"}
+  assert {item["artifact"] for item in findings} == {"refs.json", "corpus.json"}
+  assert "cited library source is not in any registry" in {
+      item["message"] for item in findings}
