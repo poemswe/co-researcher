@@ -1,6 +1,6 @@
 {
     "name": "co-researcher",
-    "version": "2.9.0",
+    "version": "2.10.0",
     "description": "Academic research extension for Gemini CLI: literature reviews, systematic reviews, peer review and citation checking, with every citation verified against OpenAlex, arXiv and Europe PMC",
     "author": "poemswe",
     "license": "MIT",
