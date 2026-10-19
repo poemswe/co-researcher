@@ -416,6 +416,16 @@ def _author_year_binding_matches(key: str, record: dict) -> bool:
   return False
 
 
+def _author_year_is_ambiguous(key: str, records: list[dict]) -> bool:
+  """An unsuffixed author-year key that fits several unexcluded papers."""
+  if key[-1].isalpha():
+    return False
+  return sum(
+      1 for record in records
+      if (record.get("screening") or {}).get("status") != "excluded"
+      and _author_year_binding_matches(key, record)) > 1
+
+
 def _normalized_tokens(text: str) -> str:
   folded = unicodedata.normalize("NFKC", text).casefold()
   return " ".join("".join(char if char.isalnum() else " " for char in folded).split())
@@ -1014,6 +1024,8 @@ def _validate_citation_bindings(
         results.append(_invalid_binding(entry, "corpus_metadata_missing")); continue
       if not _author_year_binding_matches(key, record):
         results.append(_invalid_binding(entry, "citation_identity_mismatch")); continue
+      if _author_year_is_ambiguous(key, records):
+        results.append(_invalid_binding(entry, "citation_ambiguous")); continue
     elif key not in numeric or numeric.get(key) is None:
       results.append(_invalid_binding(entry, "reference_not_found")); continue
     elif "_binding_error" in numeric[key]:

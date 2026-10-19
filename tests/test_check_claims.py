@@ -1640,3 +1640,25 @@ def test_unregistered_cited_papers_lacks_doi_pmid_pmcid_and_arxiv():
       {"paper_id": "unknown"}, "not-an-entry"]
 
   assert cc.unregistered_cited_papers(entries, corpus) == ["c", "e"]
+
+
+def _lumen(key, title):
+  return {"key": key, "ids": {}, "title": title, "authors": ["Mira Lumen"],
+          "year": 2024, "role": "evidence"}
+
+
+@pytest.mark.parametrize(("citation", "records", "reason"), [
+    ("Lumen, 2024", [_lumen("amber", "Amber"), _lumen("ivory", "Ivory")],
+     "citation_ambiguous"),
+    ("Lumen, 2024a", [_lumen("amber", "Amber"), _lumen("ivory", "Ivory")],
+     None),
+    ("Lumen, 2024", [_lumen("amber", "Amber")], None),
+    ("Lumen, 2024", [_lumen("amber", "Amber"),
+                     {**_lumen("ivory", "Ivory"),
+                      "screening": {"status": "excluded"}}], None),
+])
+def test_author_year_citation_must_name_one_corpus_paper(
+    citation, records, reason):
+  entry = {"claim": "x", "paper_id": "amber", "citation": citation}
+  [result] = cc._validate_citation_bindings([entry], records, None)
+  assert (result or {}).get("reason_code") == reason
