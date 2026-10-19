@@ -17,6 +17,7 @@ CLI = SCRIPTS / "validate_review.py"
 sys.path.insert(0, str(SCRIPTS))
 
 import verify_citations  # noqa: E402
+from review_integrity import validators  # noqa: E402
 
 
 class _StaticResolver:
@@ -304,7 +305,29 @@ def test_cli_rejects_a_claim_citing_a_paper_missing_from_the_corpus(tmp_path):
   assert result.returncode == 1
   report = _report(result)
   assert report["status"] == "invalid"
-  assert "citation_identity_mismatch" in report["repair_feedback"]["reason_codes"]
+  assert [(item["reason_code"], item["context"]["validator_reason"])
+          for item in report["findings"]
+          if item["context"].get("paper_id") == "ghost"] == [
+      ("citation_identity_mismatch", "paper_not_in_corpus")]
+
+
+@pytest.mark.parametrize("status, warned", [
+    ("verified", False), ("retracted", False), ("mismatched", False),
+    ("not_found", True),
+])
+def test_a_resolved_doi_counts_as_confirmed_whatever_its_status(status, warned):
+  report = {"results": [{"status": status, "doi": "10.1/EXAMPLE"}]}
+  corpus = [{"key": "p1", "ids": {"doi": "https://doi.org/10.1/example"}}]
+  findings = validators.unregistered_source_findings(
+      [{"paper_id": "p1"}], corpus, report)
+  assert bool(findings) is warned
+
+
+@pytest.mark.parametrize("report", [None, {}, {"results": "x"}])
+def test_doi_confirmation_needs_a_readable_report(report):
+  corpus = [{"key": "p1", "ids": {"doi": "10.9/invented"}}]
+  assert validators.unregistered_source_findings(
+      [{"paper_id": "p1"}], corpus, report) == ()
 
 
 def test_synthetic_fixture_skips_the_registry_check(tmp_path):
