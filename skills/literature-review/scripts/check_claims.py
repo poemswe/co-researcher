@@ -296,6 +296,27 @@ _NON_PROSE_TOKEN_RE = re.compile(
     r"`[^`]*`|\S*[a-z]\S*/\S*|\S*/\S*[a-z]\S*")
 
 
+_COUNTED_NUMBER_RE = re.compile(
+    r"(?<![\w.])([-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+))\s+([a-z]+)")
+
+
+def _number_bindings(text: str) -> list[tuple[str, str]]:
+  """(number, counted word) pairs such as ("40", "adult") in prose."""
+  return [(_norm_num(number), word.rstrip("s"))
+          for number, word in _COUNTED_NUMBER_RE.findall(
+              _NON_PROSE_TOKEN_RE.sub(" ", text))
+          if word not in _STOPWORDS]
+
+
+def _misbound_numbers(text: str, reference: set[tuple[str, str]]) -> list[str]:
+  """Numbers the reference ties to a different counted word."""
+  counted = {word for _, word in reference}
+  bound = {number for number, _ in reference}
+  return [number for number, word in _number_bindings(text)
+          if word in counted and number in bound
+          and (number, word) not in reference]
+
+
 def _prose_numbers(text: str) -> list[str]:
   """Numbers in prose, ignoring code spans and path, URL, or DOI tokens."""
   return extract_numbers(_NON_PROSE_TOKEN_RE.sub(" ", text))
@@ -397,6 +418,27 @@ def _author_year_binding_matches(key: str, record: dict) -> bool:
   return False
 
 
+def _author_year_is_ambiguous(key: str, records: list[dict]) -> bool:
+  """An unsuffixed author-year key that fits several unexcluded papers."""
+  if key[-1].isalpha():
+    return False
+  return sum(
+      1 for record in records
+      if (record.get("screening") or {}).get("status") != "excluded"
+      and _author_year_binding_matches(key, record)
+      and _coauthor_fits(key, record)) > 1
+
+
+def _coauthor_fits(key: str, record: dict) -> bool:
+  """A cited "X and Y" names the record's second author as Y."""
+  author = key.split(":", 2)[1]
+  if " and " not in author:
+    return True
+  coauthor = author.split(" and ", 1)[1]
+  authors = record.get("authors") or []
+  return len(authors) > 1 and coauthor in _name_aliases(authors[1])
+
+
 def _normalized_tokens(text: str) -> str:
   folded = unicodedata.normalize("NFKC", text).casefold()
   return " ".join("".join(char if char.isalnum() else " " for char in folded).split())
@@ -480,8 +522,13 @@ def _anchor_check(claim_norm: str, quote_norm: str) -> tuple[dict, bool]:
   words = extract_words(claim_norm)
   numbers_found = []
   numbers_missing = []
+  misbound = collections.Counter(
+      _misbound_numbers(claim_norm, set(_number_bindings(quote_norm))))
   for number in numbers:
-    if quote_numbers[number]:
+    if misbound[number]:
+      numbers_missing.append(number)
+      misbound[number] -= 1
+    elif quote_numbers[number]:
       numbers_found.append(number)
       quote_numbers[number] -= 1
     else:
@@ -564,8 +611,10 @@ def _check_entry_loaded(entry: dict, loaded) -> dict:
       normalize_text(claim_without_citations),
       normalize_text(quote_without_citations))
   result["anchors"] = anchors
-  result["context_risks"] = _boundary_context_risks(
-      source_norm, match["start"], match["end"])
+  result["context_risks"] = [
+      *_boundary_context_risks(source_norm, match["start"], match["end"]),
+      *_polarity_risks(normalize_text(claim_without_citations),
+                       normalize_text(quote_without_citations))]
   title = _title_of(source_raw)
   if title and find_quote(quote_norm, title)["method"] is not None:
     result["quote_is_title"] = True
@@ -798,6 +847,22 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
   return len(_NEGATION_RE.findall(text_norm)) % 2, poles
 
 
+_QUANTIFIER_RE = re.compile(
+    r"\b(?:more|less|fewer|greater)\s+than\s+[-+]?[\d.,]*\d")
+
+
+def _polarity_risks(claim_norm: str, quote_norm: str) -> list[str]:
+  """Flag a claim whose negation or direction reverses its quote."""
+  claim_negated, claim_poles = _polarity(_QUANTIFIER_RE.sub(" ", claim_norm))
+  quote_negated, quote_poles = _polarity(_QUANTIFIER_RE.sub(" ", quote_norm))
+  risks = []
+  if claim_negated != quote_negated:
+    risks.append("claim_negation_mismatch")
+  if claim_poles and quote_poles and claim_poles.isdisjoint(quote_poles):
+    risks.append("claim_direction_mismatch")
+  return risks
+
+
 _HEADING_RE = re.compile(r"\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*\Z")
 _ORDERED_ITEM_RE = re.compile(r"\s{0,3}\d{1,9}[.)]\s+")
 _REFERENCE_HEADINGS = frozenset(
@@ -863,6 +928,7 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
         "keys": citation_keys(claim.get("citation") or ""),
         "role": claim.get("role", "evidence"),
         "numbers": collections.Counter(_prose_numbers(claim_norm)),
+        "bindings": set(_number_bindings(claim_norm)),
     })
   gaps = []
   for sentence_index, sentence in enumerate(_split_sentences(synthesis)):
@@ -896,7 +962,9 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
           for number, count in item["numbers"].items():
             available_numbers[number] = max(
                 available_numbers[number], count)
-        if sentence_numbers - available_numbers:
+        bindings = set().union(*(item["bindings"] for item in matching))
+        if (sentence_numbers - available_numbers
+            or _misbound_numbers(sent_norm, bindings)):
           reason = "coverage_number_missing"
         else:
           continue
@@ -973,6 +1041,8 @@ def _validate_citation_bindings(
         results.append(_invalid_binding(entry, "corpus_metadata_missing")); continue
       if not _author_year_binding_matches(key, record):
         results.append(_invalid_binding(entry, "citation_identity_mismatch")); continue
+      if _author_year_is_ambiguous(key, records):
+        results.append(_invalid_binding(entry, "citation_ambiguous")); continue
     elif key not in numeric or numeric.get(key) is None:
       results.append(_invalid_binding(entry, "reference_not_found")); continue
     elif "_binding_error" in numeric[key]:
@@ -1079,6 +1149,23 @@ def unregistered_cited_papers(
               entries, corpus_records)
           if not any((record.get("ids") or {}).get(name)
                      for name in _REGISTRY_IDS)]
+
+
+_DOI_PREFIX_RE = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)")
+
+
+def doi_key(doi) -> str:
+  return _DOI_PREFIX_RE.sub("", str(doi).strip().lower())
+
+
+def unconfirmed_doi_papers(
+    entries: list[dict], corpus_records: list[dict], confirmed: set[str],
+) -> list[tuple[str, str]]:
+  """(paper id, DOI) for each cited record whose DOI is not in `confirmed`."""
+  return [(paper_id, doi) for paper_id, record in _cited_records(
+              entries, corpus_records)
+          if (doi := (record.get("ids") or {}).get("doi"))
+          and doi_key(doi) not in confirmed]
 
 
 def check_claims_document(
