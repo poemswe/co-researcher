@@ -616,7 +616,15 @@ def _zotero_workspace(tmp_path, monkeypatch, text="# extracted"):
   read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None, workspace=tmp_path)
   monkeypatch.setattr(zotero_local, "attachment_parent", lambda k: "ITEM1")
   monkeypatch.setattr(zotero_local, "attachment_path", lambda k: library_pdf)
+  monkeypatch.setattr(zotero_local, "item_title", lambda k: "Real Paper")
+  _write_corpus(tmp_path, {"zotero": "ITEM1"})
   return d / "fulltext.md"
+
+
+def _write_corpus(workspace, ids, title="Real Paper"):
+  (workspace / "corpus.json").write_text(json.dumps([{
+      "key": "10.1/x", "ids": {"doi": "10.1/x", **ids}, "title": title,
+      "found_via": "zotero"}]), encoding="utf-8")
 
 
 def test_recheck_matches_a_pdf_still_in_zotero(tmp_path, capsys, monkeypatch):
@@ -664,5 +672,29 @@ def test_recheck_cannot_verify_a_file_origin(tmp_path, capsys, monkeypatch):
       json.dumps({"kind": "file", "path": "/lib/x.pdf"}), encoding="utf-8")
   monkeypatch.setattr(read_paper, "extract_pdf", lambda p: "# extracted")
   read_paper.read_paper(doi="10.1/x", arxiv=None, pmcid=None, workspace=tmp_path)
+  _, results = _recheck(tmp_path, capsys)
+  assert results[0]["result"] == "unverifiable"
+
+
+def test_recheck_rejects_an_origin_naming_another_zotero_item(
+    tmp_path, capsys, monkeypatch):
+  _zotero_workspace(tmp_path, monkeypatch)
+  _write_corpus(tmp_path, {"zotero": "OTHER"})
+  _, results = _recheck(tmp_path, capsys)
+  assert results[0]["result"] == "mismatch"
+
+
+def test_recheck_rejects_a_zotero_item_with_another_title(
+    tmp_path, capsys, monkeypatch):
+  _zotero_workspace(tmp_path, monkeypatch)
+  _write_corpus(tmp_path, {"zotero": "ITEM1"}, title="Invented trial of X")
+  _, results = _recheck(tmp_path, capsys)
+  assert results[0]["result"] == "mismatch"
+
+
+def test_recheck_cannot_verify_a_zotero_origin_outside_the_corpus(
+    tmp_path, capsys, monkeypatch):
+  _zotero_workspace(tmp_path, monkeypatch)
+  (tmp_path / "corpus.json").unlink()
   _, results = _recheck(tmp_path, capsys)
   assert results[0]["result"] == "unverifiable"

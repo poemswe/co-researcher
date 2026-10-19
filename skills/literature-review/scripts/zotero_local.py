@@ -87,6 +87,11 @@ def attachment_parent(attachment_key: str) -> str | None:
   return (item.get("data") or {}).get("parentItem")
 
 
+def item_title(item_key: str) -> str | None:
+  item = _get(f"items/{item_key}", missing_ok=True) or {}
+  return (item.get("data") or {}).get("title")
+
+
 def attachment_path(attachment_key: str) -> pathlib.Path | None:
   url = _get(f"items/{attachment_key}/file/view/url", text=True, missing_ok=True)
   if not url:

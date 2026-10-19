@@ -34,8 +34,9 @@ import pymupdf4llm
 
 import http_client
 import jats
+import verify_citations
 import zotero_local
-from check_claims import sanitize_id
+from check_claims import _record_for_paper_id, sanitize_id
 
 _OPENALEX = http_client.HttpClient("https://api.openalex.org/", qps=1.0)
 _EPMC = http_client.HttpClient(
@@ -253,12 +254,20 @@ def identifier_args(identifier: str) -> dict:
   return args
 
 
-def recheck_user_pdf(receipt: dict, current: pathlib.Path) -> str:
+def recheck_user_pdf(receipt: dict, current: pathlib.Path,
+                     record: dict | None) -> str:
   origin = receipt.get("origin")
-  if not isinstance(origin, dict) or origin.get("kind") != "zotero":
+  if (not isinstance(origin, dict) or origin.get("kind") != "zotero"
+      or record is None):
     return "unverifiable"
+  if (record.get("ids") or {}).get("zotero") != origin.get("item"):
+    return "mismatch"
   try:
     if zotero_local.attachment_parent(origin["attachment"]) != origin["item"]:
+      return "mismatch"
+    title = zotero_local.item_title(origin["item"])
+    if not title or not verify_citations.titles_match(
+        title, record.get("title") or ""):
       return "mismatch"
     pdf = zotero_local.attachment_path(origin["attachment"])
   except (zotero_local.ZoteroUnavailable, KeyError, TypeError):
@@ -273,8 +282,8 @@ def recheck_user_pdf(receipt: dict, current: pathlib.Path) -> str:
   return "match" if same else "mismatch"
 
 
-def recheck_source(receipt_path: pathlib.Path,
-                   current: pathlib.Path) -> tuple[str | None, str]:
+def recheck_source(receipt_path: pathlib.Path, current: pathlib.Path,
+                   records: list[dict] = ()) -> tuple[str | None, str]:
   try:
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     source, identifier = receipt["source"], receipt["id"]
@@ -283,7 +292,9 @@ def recheck_source(receipt_path: pathlib.Path,
   except (ValueError, KeyError, TypeError):
     return None, "unreadable_receipt"
   if source == "user_pdf":
-    return source, recheck_user_pdf(receipt, current)
+    return source, recheck_user_pdf(
+        receipt, current,
+        _record_for_paper_id(list(records), receipt_path.parent.name))
   with tempfile.TemporaryDirectory() as tmp:
     try:
       _, path, fresh_source, _ = acquire(workspace=tmp, **identifier_args(identifier))
@@ -299,10 +310,17 @@ def recheck_source(receipt_path: pathlib.Path,
 def recheck(workspace) -> int:
   root = pathlib.Path(workspace)
   failed = False
+  try:
+    records = json.loads((root / "corpus.json").read_text(encoding="utf-8"))
+  except (OSError, ValueError):
+    records = []
+  if not isinstance(records, list):
+    records = []
+  records = [record for record in records if isinstance(record, dict)]
   for receipt_path in sorted(root.glob("papers/*/*.receipt.json")):
     current = receipt_path.with_name(
         receipt_path.name.removesuffix(".receipt.json") + ".md")
-    source, result = recheck_source(receipt_path, current)
+    source, result = recheck_source(receipt_path, current, records)
     failed = failed or result != "match"
     shown = receipt_path if source is None else current
     print(json.dumps({"file": shown.relative_to(root).as_posix(),

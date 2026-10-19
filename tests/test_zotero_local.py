@@ -109,3 +109,11 @@ def test_requests_are_relative_to_the_local_api(monkeypatch):
   requested = _serve(monkeypatch, {"collections": _COLLECTIONS})
   zotero_local.collection_key("Sleep review")
   assert all("://" not in path for path in requested)
+
+
+def test_item_title_reads_the_item_record(monkeypatch):
+  _serve(monkeypatch, {"items/ITEM0001": {"data": {"title": "Real Paper"}},
+                       "items/GONE0001": http_client.HttpError(
+                           "gone", status_code=404)})
+  assert zotero_local.item_title("ITEM0001") == "Real Paper"
+  assert zotero_local.item_title("GONE0001") is None
