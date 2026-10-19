@@ -296,6 +296,25 @@ _NON_PROSE_TOKEN_RE = re.compile(
     r"`[^`]*`|\S*[a-z]\S*/\S*|\S*/\S*[a-z]\S*")
 
 
+_COUNTED_NUMBER_RE = re.compile(
+    r"(?<![\w.])([-+]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+))\s+([a-z]+)")
+
+
+def _number_bindings(text: str) -> list[tuple[str, str]]:
+  """(number, counted word) pairs such as ("40", "adult") in prose."""
+  return [(_norm_num(number), word.rstrip("s"))
+          for number, word in _COUNTED_NUMBER_RE.findall(
+              _NON_PROSE_TOKEN_RE.sub(" ", text))
+          if word not in _STOPWORDS]
+
+
+def _misbound_numbers(text: str, reference: set[tuple[str, str]]) -> list[str]:
+  """Numbers counting a word the reference counts only with other numbers."""
+  counted = {word for _, word in reference}
+  return [number for number, word in _number_bindings(text)
+          if word in counted and (number, word) not in reference]
+
+
 def _prose_numbers(text: str) -> list[str]:
   """Numbers in prose, ignoring code spans and path, URL, or DOI tokens."""
   return extract_numbers(_NON_PROSE_TOKEN_RE.sub(" ", text))
@@ -480,8 +499,13 @@ def _anchor_check(claim_norm: str, quote_norm: str) -> tuple[dict, bool]:
   words = extract_words(claim_norm)
   numbers_found = []
   numbers_missing = []
+  misbound = collections.Counter(
+      _misbound_numbers(claim_norm, set(_number_bindings(quote_norm))))
   for number in numbers:
-    if quote_numbers[number]:
+    if misbound[number]:
+      numbers_missing.append(number)
+      misbound[number] -= 1
+    elif quote_numbers[number]:
       numbers_found.append(number)
       quote_numbers[number] -= 1
     else:
@@ -877,6 +901,7 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
         "keys": citation_keys(claim.get("citation") or ""),
         "role": claim.get("role", "evidence"),
         "numbers": collections.Counter(_prose_numbers(claim_norm)),
+        "bindings": set(_number_bindings(claim_norm)),
     })
   gaps = []
   for sentence_index, sentence in enumerate(_split_sentences(synthesis)):
@@ -910,7 +935,9 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
           for number, count in item["numbers"].items():
             available_numbers[number] = max(
                 available_numbers[number], count)
-        if sentence_numbers - available_numbers:
+        bindings = set().union(*(item["bindings"] for item in matching))
+        if (sentence_numbers - available_numbers
+            or _misbound_numbers(sent_norm, bindings)):
           reason = "coverage_number_missing"
         else:
           continue

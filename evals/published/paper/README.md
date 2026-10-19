@@ -24,7 +24,7 @@ Some Codex snapshots contain temporary file paths that Codex wrote into its own 
 
 ## Counterexamples
 
-`counterexamples/base` is the repaired case 001 workspace. The four other folders each change it in one way, and each `-report.json` was produced at fc9061c, whose gate code is unchanged since cb54321, the version §3 describes. All four return `valid` with integrity 100 and no findings. Later gate versions catch some of them: since #60, a claim whose negation or direction reverses its quote is `needs_review`, so `polarity-reversal` now fails. The saved reports keep the fc9061c result. Each workspace has an empty bibliography, so the citation-resolution check is not applicable.
+`counterexamples/base` is the repaired case 001 workspace. The four other folders each change it in one way, and each `-report.json` was produced at fc9061c, whose gate code is unchanged since cb54321, the version §3 describes. All four return `valid` with integrity 100 and no findings. Later gate versions catch some of them: since #60, a claim whose negation or direction reverses its quote is `needs_review`, so `polarity-reversal` now fails, and a number must count the same word it counts in the claim or quote, so `number-swap` fails too. The saved reports keep the fc9061c result. Each workspace has an empty bibliography, so the citation-resolution check is not applicable.
 
 | Folder | Edit | Gap (§3, §7) |
 |---|---|---|

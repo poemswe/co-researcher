@@ -764,6 +764,32 @@ def test_coverage_rejects_added_number_for_each_identity():
   assert gaps[0]["reason_code"] == "coverage_number_missing"
 
 
+_SWAP_CLAIM = "The trial enrolled 40 adults and 60 children from regional clinics."
+
+
+@pytest.mark.parametrize("synthesis, gaps_expected", [
+    ("The trial enrolled 60 adults and 40 children from regional clinics "
+     "(Patel, 2022).", ["coverage_number_missing"]),
+    ("The trial enrolled 40 adults and 60 children from regional clinics "
+     "(Patel, 2022).", []),
+])
+def test_coverage_binds_each_number_to_the_word_it_counts(
+    synthesis, gaps_expected):
+  claims = [_entry(claim=_SWAP_CLAIM)]
+  gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
+  assert [gap["reason_code"] for gap in gaps] == gaps_expected
+
+
+def test_needs_review_when_claim_swaps_the_quote_numbers(tmp_path):
+  source = ("The trial enrolled 40 adults and 60 children from regional "
+            "clinics across the first year of follow-up.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim="The trial enrolled 60 adults and 40 children.", quote=source), ws)
+  assert r["status"] == "needs_review"
+  assert r["anchors"]["numbers_missing"] == ["60", "40"]
+
+
 def test_coverage_rejects_ungrounded_four_digit_count_but_not_year():
   synthesis = ("In 2020, the trial enrolled 2019 participants from regional "
                "clinics (Patel, 2022).")
