@@ -320,6 +320,17 @@ def test_doi_mismatch_stands_when_registry_unreachable(monkeypatch, capsys):
   assert "DataCite" in capsys.readouterr().err
 
 
+def test_doi_mismatch_is_partial_when_crossref_is_unreachable(monkeypatch):
+  monkeypatch.setattr(vc._OPENALEX, "fetch_json",
+                      lambda url: _openalex_work("OpenAlex Snapshot"))
+  _registry(monkeypatch,
+            crossref=vc.http_client.HttpError("down", status_code=503))
+  result = vc.verify_one({"doi": "10.48550/arxiv.2205.01833",
+                          "title": _OPENALEX_PAPER, "raw": "x"})
+  assert (result["status"], result["resolution_status"]) == (
+      "mismatched", "partial")
+
+
 def test_doi_mismatch_is_complete_when_registries_answer(monkeypatch):
   monkeypatch.setattr(vc._OPENALEX, "fetch_json",
                       lambda url: _openalex_work("OpenAlex Snapshot"))
