@@ -64,8 +64,9 @@ DOI written into `corpus.json` does not clear it. PMID, PMCID and arXiv ids
 are not resolved yet and are still taken as written. A cited source imported
 from the user's library that no registry knows gets the same warning on
 `refs.json` in place of a critical `citation_identity_mismatch`. That applies
-only when its corpus record came from the library, has no identifier, and its
-paper directory holds a `user_pdf` receipt. The warning cannot be repaired and
+only when its `refs.json` title is exactly the title of a corpus record that
+came from the library, has no identifier, and has a `user_pdf` receipt in its
+paper directory. The warning cannot be repaired and
 does not lower the score.
 
 Fixtures built from invented papers cannot resolve or be fetched. For those,

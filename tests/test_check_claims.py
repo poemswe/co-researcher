@@ -1733,12 +1733,25 @@ def _library_record(**fields):
 
 @pytest.mark.parametrize("reference", [
     {"title": "A Ministry Report"},
-    "Reed, C. (2022). A Ministry Report. Ministry of Health.",
+    "A ministry report.",
 ])
 def test_identifierless_library_reference_is_flagged_for_downgrade(reference):
   corpus = [_library_record()]
   assert cc.library_unregistered_references(
       [reference], corpus, {"aministryreport"}) == {0}
+
+
+@pytest.mark.parametrize("reference, title", [
+    ("Reed, C. (2022). A Ministry Report. Ministry of Health.",
+     "A Ministry Report"),
+    ("WHO. Guidelines for invented treatment Y. 2019.", "Guidelines"),
+    ({"title": "Guidelines for invented treatment Y"}, "Guidelines"),
+])
+def test_downgrade_needs_the_reference_title_to_be_the_record_title(
+    reference, title):
+  corpus = [_library_record(title=title, key="r")]
+  assert cc.library_unregistered_references(
+      [reference], corpus, {"r"}) == set()
 
 
 @pytest.mark.parametrize("record, dirs", [
