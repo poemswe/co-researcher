@@ -696,8 +696,23 @@ def test_claim_that_reverses_its_quote_is_needs_review(
   assert r["context_risks"] == [risk]
 
 
+def test_reversed_claim_keeps_the_boundary_negation_risk(tmp_path):
+  source = ("The intervention did not reduce mortality among adults across "
+            "the full follow-up period in this regional cohort.")
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(
+      claim="The intervention did not reduce mortality among adults.",
+      quote="reduce mortality among adults across the full follow-up period "
+            "in this regional cohort"), ws)
+  assert r["status"] == "needs_review"
+  assert r["context_risks"] == [
+      "leading_negation_context", "claim_negation_mismatch"]
+
+
 @pytest.mark.parametrize("source, claim", [
     (_RECALL, "The program did not change recall."),
+    ("More than 200 patients avoided readmission after the program across "
+     "all twelve regional hospitals.", "The program reduced readmissions."),
     (_READMISSIONS, "Readmissions rose after the program."),
     (_READMISSIONS, "The program was followed for a year in twelve hospitals."),
 ])
@@ -778,6 +793,22 @@ def test_coverage_binds_each_number_to_the_word_it_counts(
   claims = [_entry(claim=_SWAP_CLAIM)]
   gaps = cc.coverage_gaps(synthesis, claims, _trusted_results(claims))
   assert [gap["reason_code"] for gap in gaps] == gaps_expected
+
+
+@pytest.mark.parametrize("claim, quote", [
+    ("Outcomes were assessed at 6 months.",
+     "Outcomes were assessed at 3, 6 and 12 months in every enrolled clinic."),
+    ("Participants were aged 18 years or older.",
+     "Participants were aged 18 to 65 years across every enrolled clinic."),
+    ("The trial enrolled 40 participants.",
+     "The trial enrolled 40 adults and 60 children across every clinic."),
+    ("The trial ran 12 weeks and enrolled 12 clinics.",
+     "The trial ran 12 weeks and enrolled 12 clinics across the region."),
+])
+def test_number_binding_leaves_honest_claims_alone(claim, quote):
+  anchors, numbers_ok = cc._anchor_check(
+      cc.normalize_text(claim), cc.normalize_text(quote))
+  assert numbers_ok, anchors
 
 
 def test_needs_review_when_claim_swaps_the_quote_numbers(tmp_path):
