@@ -370,7 +370,7 @@ def _valid_citation_report(report: object, bibliography: object) -> tuple[bool, 
 def citation_findings(
     report: dict | None, bibliography: list | None = None, *,
     require_report: bool = False,
-    library_unregistered: frozenset[int] = frozenset(),
+    library_unregistered: set[int] | frozenset[int] = frozenset(),
 ) -> tuple[Finding, ...]:
   """Map an explicit citation report without constructing a resolver."""
   if report is None:
@@ -620,6 +620,13 @@ def unregistered_source_findings(
   ) for message, context in problems)
 
 
+def _has_not_found(report: dict | None) -> bool:
+  results = report.get("results") if isinstance(report, dict) else None
+  return isinstance(results, list) and any(
+      isinstance(result, dict) and result.get("status") == "not_found"
+      for result in results)
+
+
 def _user_pdf_dirs(receipts: dict[str, bytes | None] | None) -> set[str]:
   dirs = set()
   for path, raw in (receipts or {}).items():
@@ -708,9 +715,11 @@ def validate_snapshot(
   def citations() -> tuple[Finding, ...]:
     references = snapshot.read_json("refs.json")
     entries = verify_citations.normalize_citation_entries(references)
-    library = frozenset(check_claims.library_unregistered_references(
-        references, snapshot.read_json("corpus.json"),
-        _user_pdf_dirs(receipts))) if strict_bibliography else frozenset()
+    library = set()
+    if strict_bibliography and _has_not_found(citation_report):
+      library = check_claims.library_unregistered_references(
+          references, snapshot.read_json("corpus.json"),
+          _user_pdf_dirs(receipts))
     return citation_findings(
         citation_report, entries, require_report=strict_bibliography,
         library_unregistered=library)
