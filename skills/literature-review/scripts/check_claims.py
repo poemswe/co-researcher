@@ -564,8 +564,10 @@ def _check_entry_loaded(entry: dict, loaded) -> dict:
       normalize_text(claim_without_citations),
       normalize_text(quote_without_citations))
   result["anchors"] = anchors
-  result["context_risks"] = _boundary_context_risks(
-      source_norm, match["start"], match["end"])
+  result["context_risks"] = [
+      *_boundary_context_risks(source_norm, match["start"], match["end"]),
+      *_polarity_risks(normalize_text(claim_without_citations),
+                       normalize_text(quote_without_citations))]
   title = _title_of(source_raw)
   if title and find_quote(quote_norm, title)["method"] is not None:
     result["quote_is_title"] = True
@@ -796,6 +798,18 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
                     for word in re.findall(r"[a-z]+", text_norm)
                     if word in _DIRECTION_POLES)
   return len(_NEGATION_RE.findall(text_norm)) % 2, poles
+
+
+def _polarity_risks(claim_norm: str, quote_norm: str) -> list[str]:
+  """Flag a claim whose negation or direction reverses its quote."""
+  claim_negated, claim_poles = _polarity(claim_norm)
+  quote_negated, quote_poles = _polarity(quote_norm)
+  risks = []
+  if claim_negated != quote_negated:
+    risks.append("claim_negation_mismatch")
+  if claim_poles and quote_poles and claim_poles.isdisjoint(quote_poles):
+    risks.append("claim_direction_mismatch")
+  return risks
 
 
 _HEADING_RE = re.compile(r"\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*\Z")

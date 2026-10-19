@@ -676,6 +676,38 @@ def test_boundary_negation_is_needs_review(tmp_path):
   assert r["context_risks"] == ["leading_negation_context"]
 
 
+_RECALL = ("The program found no change in recall after four guided "
+           "sessions among adult learners at two regional campuses.")
+_READMISSIONS = ("Readmissions increased after the program across all twelve "
+                 "regional hospitals in the first year of follow-up.")
+
+
+@pytest.mark.parametrize("source, claim, risk", [
+    (_RECALL, "The program found a change in recall.",
+     "claim_negation_mismatch"),
+    (_READMISSIONS, "The program reduced readmissions.",
+     "claim_direction_mismatch"),
+])
+def test_claim_that_reverses_its_quote_is_needs_review(
+    tmp_path, source, claim, risk):
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(claim=claim, quote=source), ws)
+  assert r["status"] == "needs_review"
+  assert r["context_risks"] == [risk]
+
+
+@pytest.mark.parametrize("source, claim", [
+    (_RECALL, "The program did not change recall."),
+    (_READMISSIONS, "Readmissions rose after the program."),
+    (_READMISSIONS, "The program was followed for a year in twelve hospitals."),
+])
+def test_claim_that_keeps_its_quote_polarity_is_verified(
+    tmp_path, source, claim):
+  ws = _ws(tmp_path, {"p1": {"fulltext.md": source}})
+  r = cc.check_entry(_entry(claim=claim, quote=source), ws)
+  assert r["status"] == "verified"
+
+
 def test_title_quote_on_abstract_is_needs_review(tmp_path):
   abs_md = ("# Effects of Structured Exercise Programs on Hospital "
             "Readmission Rates in Adults\n\n"
