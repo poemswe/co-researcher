@@ -1305,6 +1305,11 @@ def test_parenthetical_citation_with_trailing_identifier(rendered):
   assert cc.citation_keys(rendered) == cc.citation_keys("(Lai et al., 2020)")
 
 
+def test_narrative_citation_with_trailing_identifier():
+  assert cc.citation_keys("Lai et al. (2020, PMID 31420959) found this.") == (
+      cc.citation_keys("Lai et al. (2020) found this."))
+
+
 def test_parenthetical_identifier_without_author_is_not_a_citation():
   assert cc.citation_keys("(PMID 31420959)") == set()
 

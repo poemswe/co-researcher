@@ -651,7 +651,7 @@ _SURNAME = (rf"(?:{_PARTICLE}\s+){{0,3}}"
 _NARRATIVE_RE = re.compile(
     rf"\b(?P<author>{_SURNAME}(?:\s+et\s+al\.?|"
     rf"\s+(?:and|&)\s+{_SURNAME})?)\s+"
-    rf"\((?P<year>{_YEAR}){_LOCATOR}\)")
+    rf"\((?P<year>{_YEAR}){_LOCATOR}{_IDENTIFIER}\)")
 _NUMERIC_CITATION_RE = re.compile(
     r"\[(?P<body>\d+(?:\s*(?:,|[-\u2013\u2014])\s*\d+)*)\]")
 _ABSTRACT_TAG_RE = re.compile(r"\[abstract-only\]", re.IGNORECASE)
