@@ -859,7 +859,7 @@ _CERTAINTY_ROOTS = {
 _FINDING_CUES = frozenset(
     "increase increased increases increasing rise rises rose risen rising "
     "improve improved improves improving gain gained gains decrease "
-    "decreased decreases decreasing fall falls fell fallen falling worsen "
+    "decreased decreases decreasing fell fallen falling worsen "
     "worsened worsens reduce reduced reduces reducing decline declined "
     "declines declining drop dropped drops found showed shown demonstrated "
     "observed associated linked caused causes outperformed predicted "
@@ -871,6 +871,9 @@ _EFFECT_WORDS = frozenset(
     "differed association associations benefit benefits impact "
     "impacts".split())
 _HEDGE_MODALS = frozenset({"may", "might", "could"})
+_RESULT_INFINITIVES = frozenset(
+    "shown found proven known likely able said reported demonstrated "
+    "thought believed".split())
 _RESEARCH_VERBS = frozenset(
     "determine test examine assess investigate establish clarify".split())
 _OPEN_QUESTION_RE = re.compile(
@@ -881,11 +884,15 @@ _QUESTION_RE = re.compile(
 
 
 def _cue_tokens(text_norm: str) -> list[str]:
-  return re.findall(r"[a-z]+", text_norm.replace("n't", " not"))
+  return re.findall(
+      r"[a-z]+", text_norm.replace("n't", " not").replace("cannot", "can not"))
 
 
 def _hedged(tokens: list[str], index: int, text_norm: str) -> bool:
   if _HEDGE_MODALS.intersection(tokens[max(0, index - 2):index]):
+    return True
+  if (index and tokens[index - 1] == "to"
+      and (index < 2 or tokens[index - 2] not in _RESULT_INFINITIVES)):
     return True
   whether = [position for position in range(max(0, index - 6), index)
              if tokens[position] == "whether"]

@@ -999,6 +999,30 @@ def test_certainty_roots_skip_hedged_negated_and_honest(sentence):
 
 
 @pytest.mark.parametrize("sentence", [
+    "We cannot prove this.",
+    "Interventions to prevent falls are reviewed here.",
+    "Further trials are needed to prove efficacy.",
+    "This review aims to prevent duplication of effort.",
+])
+def test_certainty_roots_skip_cannot_and_purpose_clauses(sentence):
+  assert _roots(sentence) == frozenset()
+
+
+@pytest.mark.parametrize(("sentence", "roots"), [
+    ("Exercise was shown to prevent falls.", {"prevent"}),
+    ("Exercise is able to prevent falls.", {"prevent"}),
+    ("The drug is known to cure dementia.", {"cure"}),
+])
+def test_certainty_roots_keep_result_infinitives(sentence, roots):
+  assert _roots(sentence) == roots
+
+
+def test_states_finding_skips_purpose_clause():
+  assert not cc._states_finding(cc.normalize_text(
+      "Interventions to reduce falls are reviewed here."))
+
+
+@pytest.mark.parametrize("sentence", [
     "The amber garden trial found no change in recall.",
     "Guided sessions improved recall.",
     "The groups did not differ.",
