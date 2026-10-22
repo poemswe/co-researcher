@@ -937,6 +937,102 @@ def test_coverage_requires_normalized_temporal_variants(synthesis, claim):
   assert [gap["reason_code"] for gap in gaps] == ["coverage_number_missing"]
 
 
+_HONEST_SPIKE_SENTENCES = (
+    "These results support improved case-finding, not a general claim that "
+    "AI independently diagnoses disease across medicine.",
+    "Recent foundation-model work reports large gains in constrained "
+    "evaluations.",
+    "Evidence is mixed on whether assistance improves clinicians, leaves them "
+    "unchanged, or creates over-reliance.",
+    "The verified 2020–2024 Nature/Science-family papers located in this "
+    "search addressed quantum coherence, vibronic mixing, charge transfer, or "
+    "ultrafast electron extraction—not quantum entanglement as an "
+    "experimentally tested or quantitatively modeled causal effect on plant "
+    "photosynthesis.",
+    "The search located no 2020–2024 Nature/Science-family primary study that "
+    "established entanglement in a plant photosynthetic complex and linked it "
+    "causally to photosynthetic function.",
+    "The recent evidence does not support a single average effect.",
+    "Offering two home days per week to 1,612 Trip.com graduate employees did "
+    "not change performance grades, promotion rates, or engineers’ lines of "
+    "code, while reducing quits by about one-third.",
+    "In contrast, Gibbs, Mengel, and Siemroth’s personnel/analytics study of "
+    "more than 10,000 IT professionals found higher hours but lower output per "
+    "hour, with productivity falling 8–19%.",
+    "Taken together, the emerging pattern is conditional: remote work can "
+    "support individual focus and retention, but coordination, onboarding, "
+    "supervision, home constraints, and crisis conditions can reduce output "
+    "per hour.",
+    "No common outcome allows a defensible pooled effect across studies.",
+)
+
+
+def _roots(sentence):
+  return cc._certainty_roots(cc.normalize_text(sentence))
+
+
+@pytest.mark.parametrize(("sentence", "roots"), [
+    ("This treatment conclusively cures dementia.", {"conclusive", "cure"}),
+    ("Daily walks prevent dementia.", {"prevent"}),
+    ("The treatment is not only proven but widely available.", {"prove"}),
+    ("No treatment cures dementia.", {"cure"}),
+    ("This treatment conclusively cures dementia, although side effects may "
+     "occur.", {"conclusive", "cure"}),
+    ("If patients want relief, this treatment eliminates symptoms.",
+     {"eliminate"}),
+])
+def test_certainty_roots_flag_assertions(sentence, roots):
+  assert _roots(sentence) == roots
+
+
+@pytest.mark.parametrize("sentence", _HONEST_SPIKE_SENTENCES + (
+    "Whether this treatment prevents dementia remains unknown.",
+    "Whether daily walks prevent dementia has not been tested.",
+    "Exercise may prevent dementia.",
+    "The drug does not cure dementia.",
+    "The drug didn’t cure dementia.",
+    "Treat this as a proposed test, not a proven teaching intervention.",
+    "Does this treatment cure dementia?",
+))
+def test_certainty_roots_skip_hedged_negated_and_honest(sentence):
+  assert _roots(sentence) == frozenset()
+
+
+@pytest.mark.parametrize("sentence", [
+    "The amber garden trial found no change in recall.",
+    "Guided sessions improved recall.",
+    "The groups did not differ.",
+    "The groups didn’t differ.",
+    "The drug does not cure dementia.",
+])
+def test_states_finding_flags_results(sentence):
+  assert cc._states_finding(cc.normalize_text(sentence))
+
+
+@pytest.mark.parametrize("sentence", [
+    "Recall is commonly measured with free-recall tasks.",
+    "This review covers twelve trials.",
+    "More research is needed.",
+    "Recall scores were higher in older adults.",
+    "Future trials should determine whether guided sessions improve recall.",
+    "Guided sessions may improve recall.",
+])
+def test_states_finding_passes_framing_and_hedges(sentence):
+  assert not cc._states_finding(cc.normalize_text(sentence))
+
+
+def test_leftover_ignores_replaced_and_reporting_words():
+  claim = cc.normalize_text("The amber garden trial found no change in recall")
+  assert not cc._leftover_states_finding(cc.normalize_text(
+      "The amber garden trial showed no change in recall"), [claim])
+  assert not cc._leftover_states_finding(cc.normalize_text(
+      "Lumen found the amber garden trial had no change in recall"),
+      [cc.normalize_text("The amber garden trial had no change in recall")])
+  assert cc._leftover_states_finding(cc.normalize_text(
+      "The amber garden trial found no change in recall, linked to session "
+      "length"), [claim])
+
+
 def test_background_cannot_cover_numbered_sentence():
   synthesis = "Readmissions fell 18% in the treatment arm (Patel, 2022)."
   claims = [_entry(role="background")]
