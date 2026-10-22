@@ -1044,12 +1044,17 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
     sentence_numbers = collections.Counter(_prose_numbers(sent_norm))
     if not sentence_keys:
       if sentence_numbers:
-        gaps.append({
-            "sentence": sentence.strip(),
-            "synthesis_sentence_index": sentence_index,
-            "citation_key": None,
-            "reason_code": "coverage_number_missing",
-        })
+        reason = "coverage_number_missing"
+      elif _certainty_roots(sent_norm):
+        reason = "coverage_uncited_assertion"
+      else:
+        continue
+      gaps.append({
+          "sentence": sentence.strip(),
+          "synthesis_sentence_index": sentence_index,
+          "citation_key": None,
+          "reason_code": reason,
+      })
       continue
     sent_polarity = _polarity(sent_norm)
     for key in sorted(sentence_keys):
@@ -1073,7 +1078,9 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
             or _misbound_numbers(sent_norm, bindings)):
           reason = "coverage_number_missing"
         else:
-          continue
+          reason = _wording_gap(sent_norm, matching)
+          if reason is None:
+            continue
       gaps.append({
           "sentence": sentence.strip(),
           "synthesis_sentence_index": sentence_index,

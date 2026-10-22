@@ -1040,6 +1040,131 @@ def test_background_cannot_cover_numbered_sentence():
   assert gaps[0]["reason_code"] == "coverage_role_invalid"
 
 
+_REVIEW_GAPS = {"coverage_uncited_assertion", "coverage_background_finding",
+                "coverage_unsupported_certainty", "coverage_leftover_finding"}
+
+
+def _gate(synthesis, claims):
+  entries = [_entry(paper_id=f"p{index}", **claim)
+             for index, claim in enumerate(claims)]
+  last = len(cc._split_sentences(synthesis)) - 1
+  reasons = [gap["reason_code"] for gap in cc.coverage_gaps(
+      synthesis, entries, _trusted_results(entries))
+      if gap["synthesis_sentence_index"] == last]
+  if not reasons:
+    return "pass"
+  kind = "warning" if reasons[0] in _REVIEW_GAPS else "critical"
+  return f"{kind}:{reasons[0]}"
+
+
+_PATEL = [{"claim": "Readmissions fell 18% in the treatment arm",
+           "citation": "Patel, 2022"}]
+_PATEL_FIRST = "Readmissions fell 18% in the treatment arm (Patel, 2022). "
+_AMBER = "The amber garden trial found no change in recall"
+
+
+@pytest.mark.parametrize(("expected", "synthesis", "claims"), [
+    ("warning:coverage_unsupported_certainty",
+     "The amber garden trial proved no change in recall after four guided "
+     "sessions (Lumen, 2024).",
+     [{"claim": f"{_AMBER} after four guided sessions",
+       "citation": "Lumen, 2024"}]),
+    ("pass",
+     "The amber garden trial showed no change in recall after four guided "
+     "sessions (Lumen, 2024).",
+     [{"claim": f"{_AMBER} after four guided sessions",
+       "citation": "Lumen, 2024"}]),
+    ("warning:coverage_unsupported_certainty",
+     "Guided sessions in the amber garden trial prevents forgetting among "
+     "learners (Lumen, 2024).",
+     [{"claim": "Guided sessions in the amber garden trial may prevent "
+                "forgetting among learners", "citation": "Lumen, 2024"}]),
+    ("critical:coverage_identity_missing",
+     "The amber garden method is proven to aid recall among learners "
+     "(Lumen, 2024).",
+     [{"claim": "The amber garden method is not proven to aid recall among "
+                "learners", "citation": "Lumen, 2024"}]),
+    ("pass",
+     "The amber garden method suggested better recall among learners "
+     "(Lumen, 2024).",
+     [{"claim": "The amber garden method proved better recall among "
+                "learners", "citation": "Lumen, 2024"}]),
+    ("pass",
+     "The amber garden method proved better recall among adult learners "
+     "(Lumen, 2024).",
+     [{"claim": "The amber garden method proved better recall among adult "
+                "learners", "citation": "Lumen, 2024"}]),
+    ("warning:coverage_uncited_assertion",
+     _PATEL_FIRST + "The treatment is not only proven but widely available.",
+     _PATEL),
+    ("warning:coverage_uncited_assertion",
+     _PATEL_FIRST + "No treatment cures dementia.", _PATEL),
+    ("pass", _PATEL_FIRST + "The drug does not cure dementia.", _PATEL),
+    ("pass", _PATEL_FIRST + "Treat this as a proposed test, not a proven "
+     "teaching intervention.", _PATEL),
+    ("pass", _PATEL_FIRST + "Whether this treatment prevents dementia "
+     "remains unknown.", _PATEL),
+    ("warning:coverage_uncited_assertion",
+     _PATEL_FIRST + "This treatment conclusively cures dementia, although "
+     "side effects may occur.", _PATEL),
+    ("warning:coverage_uncited_assertion",
+     _PATEL_FIRST + "If patients want relief, this treatment eliminates "
+     "symptoms.", _PATEL),
+    ("pass", _PATEL_FIRST + "Does this treatment cure dementia?", _PATEL),
+    ("critical:coverage_number_missing",
+     _PATEL_FIRST + "Whether this treatment prevents dementia in 40% of "
+     "patients remains unknown.", _PATEL),
+    ("critical:coverage_number_missing",
+     "Whether the amber garden trial may prevent forgetting in 12 learners "
+     "is unclear (Lumen, 2024).",
+     [{"claim": "Whether the amber garden trial may prevent forgetting is "
+                "unclear", "citation": "Lumen, 2024"}]),
+    ("critical:coverage_identity_missing",
+     f"{_AMBER}, which proves the method works (Lumen, 2024).",
+     [{"claim": f"{_AMBER}.", "citation": "Lumen, 2024"}]),
+    ("warning:coverage_unsupported_certainty",
+     f"{_AMBER}, which proves the method works (Lumen, 2024).",
+     [{"claim": _AMBER, "citation": "Lumen, 2024"}]),
+    ("critical:coverage_identity_missing",
+     f"{_AMBER} but improved mood (Lumen, 2024).",
+     [{"claim": _AMBER, "citation": "Lumen, 2024"}]),
+    ("warning:coverage_unsupported_certainty",
+     "Guided sessions were delivered in the amber garden trial; this "
+     "treatment conclusively cures dementia (Lumen, 2024).",
+     [{"claim": "Guided sessions were delivered in the amber garden trial",
+       "citation": "Lumen, 2024"}]),
+    ("warning:coverage_leftover_finding",
+     f"{_AMBER}, linked to session length (Lumen, 2024).",
+     [{"claim": _AMBER, "citation": "Lumen, 2024"}]),
+    ("pass",
+     "Lumen (2024) found the amber garden trial had no change in recall.",
+     [{"claim": "The amber garden trial had no change in recall",
+       "citation": "Lumen, 2024"}]),
+    ("pass", f"{_AMBER} overall (Lumen, 2024).",
+     [{"claim": f"{_AMBER}.", "citation": "Lumen, 2024"}]),
+    ("critical:coverage_identity_missing",
+     f"{_AMBER} and the ivory harbor trial found no change in recall "
+     "(Lumen, 2024).",
+     [{"claim": _AMBER, "citation": "Lumen, 2024"},
+      {"claim": "the ivory harbor trial found no change in recall",
+       "citation": "Lumen, 2024"}]),
+    ("warning:coverage_background_finding", f"{_AMBER} (Lumen, 2024).",
+     [{"claim": f"{_AMBER}.", "citation": "Lumen, 2024",
+       "role": "background"}]),
+    ("pass",
+     "Future trials should determine whether guided sessions improve recall "
+     "(Lumen, 2024).",
+     [{"claim": "Future trials should determine whether guided sessions "
+                "improve recall.", "citation": "Lumen, 2024",
+       "role": "background"}]),
+    ("critical:coverage_role_invalid",
+     "Readmissions fell 18% in the treatment arm (Patel, 2022).",
+     [{**_PATEL[0], "role": "background"}]),
+])
+def test_coverage_gate_outcomes(expected, synthesis, claims):
+  assert _gate(synthesis, claims) == expected
+
+
 def test_multiple_claims_jointly_ground_sentence_numbers():
   synthesis = ("Thirty-day readmissions fell 18% in the treatment arm, and "
                "ninety-day mortality fell 4% during follow-up (Patel, 2022).")
@@ -1517,6 +1642,18 @@ def test_main_exit_one_on_uncovered_claim(tmp_path, capsys):
   assert uncovered["synthesis_sentence_index"] == 0
 
 
+def test_main_exit_one_on_uncited_assertion(tmp_path, capsys):
+  code = _run_main(tmp_path, [_entry()],
+                   synthesis="Readmissions fell 18% in the treatment arm of "
+                             "the trial (Patel, 2022). This treatment "
+                             "conclusively cures dementia.")
+  out = json.loads(capsys.readouterr().out)
+  assert code == 1
+  assert [result["reason_code"] for result in out["results"]
+          if result["status"] == "uncovered_claim"] == [
+      "coverage_uncited_assertion"]
+
+
 def test_main_reports_coverage_number_reason_and_identity(tmp_path, capsys):
   entry = _entry(claim="Readmissions fell in the treatment arm.")
   synthesis = "Readmissions fell 99% in the treatment arm (Patel, 2022)."
@@ -1639,15 +1776,19 @@ def test_ambiguous_reference_title_is_invalid_binding(tmp_path, capsys):
   assert json.loads(capsys.readouterr().out)["results"][0]["reason_code"] == "reference_ambiguous"
 
 
-def test_main_accepts_verified_background_trace(tmp_path, capsys):
+def test_main_flags_background_finding_trace(tmp_path, capsys):
   corpus = [{"key": "paper-one", "ids": {"pmcid": "p1"},
              "title": "A Paper", "authors": ["Priya Patel"], "year": 2022,
              "role": "background"}]
   synthesis = "Readmissions fell in the treatment arm (Patel, 2022)."
   entry = _entry(claim="Readmissions fell in the treatment arm.",
                  role="background")
-  assert _run_main(tmp_path, [entry], synthesis=synthesis, corpus=corpus) == 0
-  assert json.loads(capsys.readouterr().out)["background"] == 1
+  assert _run_main(tmp_path, [entry], synthesis=synthesis, corpus=corpus) == 1
+  out = json.loads(capsys.readouterr().out)
+  assert out["background"] == 1
+  assert [result["reason_code"] for result in out["results"]
+          if result["status"] == "uncovered_claim"] == [
+      "coverage_background_finding"]
 
 
 def test_coverage_detects_parenthetical_year_suffix():
