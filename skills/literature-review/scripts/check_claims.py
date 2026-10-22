@@ -636,9 +636,11 @@ def check_entry(entry: dict, workspace, source_cache=None) -> dict:
 
 _YEAR = r"(?:19|20)\d{2}[a-z]?"
 _LOCATOR = r"(?:,\s*(?:pp?\.?\s*)?\d+(?:\s*[-\u2013\u2014]\s*\d+)?)?"
+_IDENTIFIER = (r"(?:,\s*(?i:pmid:?\s*\d+|pmcid:?\s*pmc\d+|doi:?\s*10\.\S+"
+               r"|arxiv:?\s*\S+))*")
 _PAREN_RE = re.compile(r"\((?P<body>[^()]*)\)")
 _PAREN_AUTHOR_YEAR_RE = re.compile(
-    rf"^(?P<author>.+),\s*(?P<year>{_YEAR}){_LOCATOR}$")
+    rf"^(?P<author>.+),\s*(?P<year>{_YEAR}){_LOCATOR}{_IDENTIFIER}$")
 _LETTER = r"[^\W\d_]"
 _NAME_TOKEN = rf"{_LETTER}+(?:['’\-]{_LETTER}+)*"
 _NAME_TOKEN_RE = re.compile(_NAME_TOKEN, re.UNICODE)
@@ -649,7 +651,7 @@ _SURNAME = (rf"(?:{_PARTICLE}\s+){{0,3}}"
 _NARRATIVE_RE = re.compile(
     rf"\b(?P<author>{_SURNAME}(?:\s+et\s+al\.?|"
     rf"\s+(?:and|&)\s+{_SURNAME})?)\s+"
-    rf"\((?P<year>{_YEAR}){_LOCATOR}\)")
+    rf"\((?P<year>{_YEAR}){_LOCATOR}{_IDENTIFIER}\)")
 _NUMERIC_CITATION_RE = re.compile(
     r"\[(?P<body>\d+(?:\s*(?:,|[-\u2013\u2014])\s*\d+)*)\]")
 _ABSTRACT_TAG_RE = re.compile(r"\[abstract-only\]", re.IGNORECASE)

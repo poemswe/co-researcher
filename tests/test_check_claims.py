@@ -1291,6 +1291,38 @@ def test_coverage_detects_citation_with_page_locator():
   assert [gap["sentence"] for gap in gaps] == [synthesis]
 
 
+@pytest.mark.parametrize("rendered", [
+    "(Lai et al., 2020, PMID 31420959)",
+    "(Lai et al., 2020, PMID: 31420959)",
+    "(Lai et al., 2020, PMCID PMC6789012)",
+    "(Lai et al., 2020, DOI 10.2196/64963)",
+    "(Lai et al., 2020, doi:10.2196/64963)",
+    "(Lai et al., 2020, arXiv:2001.01234)",
+    "(Lai et al., 2020, p. 4, PMID 31420959)",
+    "(Lai et al., 2020, PMID 31420959; DOI 10.2196/64963)",
+])
+def test_parenthetical_citation_with_trailing_identifier(rendered):
+  assert cc.citation_keys(rendered) == cc.citation_keys("(Lai et al., 2020)")
+
+
+def test_narrative_citation_with_trailing_identifier():
+  assert cc.citation_keys("Lai et al. (2020, PMID 31420959) found this.") == (
+      cc.citation_keys("Lai et al. (2020) found this."))
+
+
+def test_parenthetical_identifier_without_author_is_not_a_citation():
+  assert cc.citation_keys("(PMID 31420959)") == set()
+
+
+def test_coverage_matches_sentence_cited_with_pmid():
+  synthesis = ("AI-ECG access increased new diagnoses from 1.6% to 2.1% "
+               "(Lai et al., 2020, PMID 31420959; DOI 10.2196/64963).")
+  claims = [_entry(
+      claim="AI-ECG access increased new diagnoses from 1.6% to 2.1%.",
+      citation="Lai et al., 2020")]
+  assert cc.coverage_gaps(synthesis, claims, _trusted_results(claims)) == []
+
+
 @pytest.mark.parametrize("rendered, expected", [
     ("[1, 2]", {"number:1", "number:2"}),
     ("[1-3]", {"number:1", "number:2", "number:3"}),
