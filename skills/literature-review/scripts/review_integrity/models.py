@@ -61,6 +61,7 @@ class ReasonCode(_StringEnum):
   COVERAGE_NUMBER_MISSING = "coverage_number_missing"
   COVERAGE_CLAIM_MISSING = "coverage_claim_missing"
   COVERAGE_ROLE_INVALID = "coverage_role_invalid"
+  COVERAGE_NEEDS_REVIEW = "coverage_needs_review"
   BIBLIOGRAPHY_INCOMPLETE = "bibliography_incomplete"
   PRISMA_EXCLUSION_REASON_MISSING = "prisma_exclusion_reason_missing"
   ABSTRACT_ONLY_SUPPORT = "abstract_only_support"
@@ -76,6 +77,7 @@ class ReasonCode(_StringEnum):
 
 REPAIRABLE_WARNINGS = frozenset({
     ReasonCode.CLAIM_NEEDS_REVIEW,
+    ReasonCode.COVERAGE_NEEDS_REVIEW,
     ReasonCode.BIBLIOGRAPHY_INCOMPLETE,
     ReasonCode.PRISMA_EXCLUSION_REASON_MISSING,
 })

@@ -154,6 +154,20 @@ def claim_findings(report: dict) -> tuple[Finding, ...]:
       "coverage_role_invalid": ReasonCode.COVERAGE_ROLE_INVALID,
       "coverage_identity_missing": ReasonCode.COVERAGE_CLAIM_MISSING,
   }
+  review_messages = {
+      "coverage_uncited_assertion":
+          "uncited sentence asserts a result; cite the claim that supports "
+          "it or soften the wording",
+      "coverage_background_finding":
+          "finding is attributed to a background-role source; add an "
+          "evidence claim or reword it as context",
+      "coverage_unsupported_certainty":
+          "sentence states more certainty than its matching claim; use the "
+          "claim's wording or cite a claim that supports it",
+      "coverage_leftover_finding":
+          "part of the sentence states a finding no matching claim covers; "
+          "cite a claim for it or split it into its own sentence",
+  }
   for index, result in enumerate(results):
     if not isinstance(result, dict):
       findings.append(_incomplete("claim", "claims.json"))
@@ -176,6 +190,11 @@ def claim_findings(report: dict) -> tuple[Finding, ...]:
           reason, Severity.CRITICAL,
           "claim citation does not bind uniquely to its trusted source",
           result, index))
+    elif (status == "uncovered_claim"
+          and result.get("reason_code") in review_messages):
+      findings.append(_claim_finding(
+          ReasonCode.COVERAGE_NEEDS_REVIEW, Severity.WARNING,
+          review_messages[result["reason_code"]], result, index))
     elif status == "uncovered_claim":
       validator_reason = result.get("reason_code")
       reason = (coverage_reasons.get(validator_reason)
