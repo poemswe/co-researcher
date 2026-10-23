@@ -33,6 +33,7 @@ review flags and source, quote, or coverage failures return nonzero.
 import argparse
 import collections
 import difflib
+import itertools
 import json
 import pathlib
 import re
@@ -856,16 +857,16 @@ _CERTAINTY_ROOTS = {
     **dict.fromkeys("cure cures cured".split(), "cure"),
     **dict.fromkeys("prevent prevents prevented".split(), "prevent"),
 }
-_FINDING_CUES = frozenset(
+_REPORTING_CUES = frozenset("found showed shown demonstrated observed".split())
+_LEFTOVER_CUES = frozenset(
     "increase increased increases increasing rise rises rose risen rising "
     "improve improved improves improving gain gained gains decrease "
     "decreased decreases decreasing fell fallen falling worsen "
     "worsened worsens reduce reduced reduces reducing decline declined "
-    "declines declining drop dropped drops found showed shown demonstrated "
-    "observed associated linked caused causes outperformed predicted "
-    "effective efficacy".split()) | frozenset(_CERTAINTY_ROOTS)
-_LEFTOVER_CUES = _FINDING_CUES - frozenset(
-    "found showed shown demonstrated observed".split())
+    "declines declining drop dropped drops associated linked caused causes "
+    "outperformed predicted effective efficacy".split()) | frozenset(
+        _CERTAINTY_ROOTS)
+_FINDING_CUES = _LEFTOVER_CUES | _REPORTING_CUES
 _EFFECT_WORDS = frozenset(
     "change changes changed effect effects difference differences differ "
     "differed association associations benefit benefits impact "
@@ -935,17 +936,11 @@ def _leftover_states_finding(sent_norm: str, claim_texts: list[str]) -> bool:
     for tag, _i1, _i2, j1, j2 in matcher.get_opcodes():
       if tag in ("equal", "replace"):
         covered[j1:j2] = [True] * (j2 - j1)
-  runs, run = [], []
-  for token, is_covered in zip(tokens, covered):
-    if is_covered:
-      if run:
-        runs.append(run)
-      run = []
-    else:
-      run.append(token)
-  if run:
-    runs.append(run)
-  return any(_states_finding(" ".join(run), _LEFTOVER_CUES) for run in runs)
+  return any(
+      _states_finding(" ".join(token for token, _ in run), _LEFTOVER_CUES)
+      for is_covered, run in itertools.groupby(
+          zip(tokens, covered), key=lambda pair: pair[1])
+      if not is_covered)
 
 
 def _wording_gap(sent_norm: str, matching: list[dict]) -> str | None:
