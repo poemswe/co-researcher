@@ -376,21 +376,25 @@ def score_integrity(
         zero(name, finding)
       mapped = True
 
-    if reason in _COVERAGE_REASONS:
+    if (reason in _COVERAGE_REASONS
+        or reason is ReasonCode.COVERAGE_NEEDS_REVIEW):
       sentence = context.get("synthesis_sentence")
       identity = context.get("citation_identity")
       sentence_index = _strict_index(
           context.get("synthesis_sentence_index"), len(coverage_sentences))
-      context_matches = (
+      sentence_matches = (
           sentence_index is not None
           and isinstance(sentence, str)
-          and isinstance(identity, str)
-          and coverage_sentences[sentence_index][0] == sentence
-          and identity in coverage_sentences[sentence_index][1]
-      )
-      if context_matches:
+          and coverage_sentences[sentence_index][0] == sentence)
+      if (sentence_matches and isinstance(identity, str)
+          and identity in coverage_sentences[sentence_index][1]):
         mapped |= fail_unit(
             "synthesis_coverage", (sentence_index, identity), finding)
+      elif (reason is ReasonCode.COVERAGE_NEEDS_REVIEW and sentence_matches
+            and identity is None
+            and not coverage_sentences[sentence_index][1]):
+        attach("synthesis_coverage", finding)
+        mapped = True
       if not mapped:
         zero("synthesis_coverage", finding)
         mapped = True

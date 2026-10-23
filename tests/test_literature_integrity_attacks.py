@@ -234,6 +234,20 @@ def test_known_gap_is_reported_as_a_false_negative(
   assert score.confusion["true_positive"] == 0
 
 
+def test_overstated_finding_draws_coverage_review_warning(tmp_path):
+  case = next(item for item in load_cases(ATTACKS)
+              if item.case_id == "integrity-case-014")
+  runner = literature_integrity.LiteratureIntegrityRunner(
+      _ScenarioExecutor(), _ScenarioJudge(),
+      workspace_parent=tmp_path / "workspaces", scorecard_directory=ATTACKS)
+
+  result = runner.run_case(case)
+
+  assert ReasonCode.COVERAGE_NEEDS_REVIEW in {
+      finding.reason_code
+      for finding in result.model_first_pass.integrity.findings}
+
+
 def test_repair_operational_failure_keeps_latest_trusted_findings(tmp_path):
   case = next(
       item for item in load_cases(ATTACKS)

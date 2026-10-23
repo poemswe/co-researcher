@@ -74,7 +74,7 @@ Shared helper modules `http_client.py` (rate limiting/retries/backoff) and `jats
 `skills/literature-review/scripts/review_integrity/` is one engine shared by the plugin and the evals:
 
 - **Workspace loading** — reads `review/{slug}/` without following symlinks or allowing path traversal and hashes every artifact into a canonical manifest.
-- **Validators** — workspace contract, corpus and PRISMA, bibliography resolution, citation binding, quote authentication, quantitative grounding, synthesis coverage (numbers, negation and direction must match a verified claim; uncited numbers are flagged). A check that cannot complete raises `validator_incomplete`.
+- **Validators** — workspace contract, corpus and PRISMA, bibliography resolution, citation binding, quote authentication, quantitative grounding, synthesis coverage (numbers, negation and direction must match a verified claim; uncited numbers are flagged; four lexical wording checks raise the repairable `coverage_needs_review`). A check that cannot complete raises `validator_incomplete`.
 - **Scoring and status** — six weighted dimensions (quotes 25, binding 20, grounding 20, coverage 15, bibliography 10, PRISMA and artifacts 10); any critical finding makes the status `invalid` whatever the score.
 - **Repair** — up to three rounds, stopping after two without progress; critical findings and the warnings an edit can fix trigger repair, and the writer sees only public findings plus the skill's artifact contract.
 - **Delivery gate** — `validate_review.py` returns `pass`, `repair` or `stop_invalid` and keeps an external run report; a `stop_invalid` draft ships with the `INVALID EVIDENCE` warning.

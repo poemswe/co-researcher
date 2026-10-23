@@ -149,6 +149,31 @@ def test_other_coverage_reasons_map_stably(validator_reason, stable_reason):
   assert finding.severity is Severity.CRITICAL
 
 
+@pytest.mark.parametrize(("validator_reason", "message"), [
+    ("coverage_uncited_assertion",
+     "uncited sentence asserts a result; cite the claim that supports it or "
+     "soften the wording"),
+    ("coverage_background_finding",
+     "finding is attributed to a background-role source; add an evidence "
+     "claim or reword it as context"),
+    ("coverage_unsupported_certainty",
+     "sentence states more certainty than its matching claim; use the "
+     "claim's wording or cite a claim that supports it"),
+    ("coverage_leftover_finding",
+     "part of the sentence states a finding no matching claim covers; cite a "
+     "claim for it or split it into its own sentence"),
+])
+def test_review_coverage_reasons_are_repairable_warnings(
+    validator_reason, message):
+  from review_integrity.models import REPAIRABLE_WARNINGS
+  finding = _validators().claim_findings(_claim_report([_claim_result(
+      "uncovered_claim", reason_code=validator_reason,
+      synthesis_sentence_index=0)]))[0]
+  assert (finding.reason_code, finding.severity, finding.message) == (
+      ReasonCode.COVERAGE_NEEDS_REVIEW, Severity.WARNING, message)
+  assert ReasonCode.COVERAGE_NEEDS_REVIEW in REPAIRABLE_WARNINGS
+
+
 @pytest.mark.parametrize("index", [True, False, -1, "0", None])
 def test_coverage_occurrence_index_must_be_nonnegative_integer(index):
   finding = _validators().claim_findings(_claim_report([_claim_result(

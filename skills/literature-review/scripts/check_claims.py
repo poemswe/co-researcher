@@ -33,6 +33,7 @@ review flags and source, quote, or coverage failures return nonzero.
 import argparse
 import collections
 import difflib
+import itertools
 import json
 import pathlib
 import re
@@ -849,6 +850,111 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
   return len(_NEGATION_RE.findall(text_norm)) % 2, poles
 
 
+_CERTAINTY_ROOTS = {
+    "conclusively": "conclusive", "definitively": "definitive",
+    "undoubtedly": "undoubted", "eliminates": "eliminate",
+    **dict.fromkeys("prove proves proved proven".split(), "prove"),
+    **dict.fromkeys("cure cures cured".split(), "cure"),
+    **dict.fromkeys("prevent prevents prevented".split(), "prevent"),
+}
+_REPORTING_CUES = frozenset("found showed shown demonstrated observed".split())
+_LEFTOVER_CUES = frozenset(
+    "increase increased increases increasing rise rises rose risen rising "
+    "improve improved improves improving gain gained gains decrease "
+    "decreased decreases decreasing fell fallen falling worsen "
+    "worsened worsens reduce reduced reduces reducing decline declined "
+    "declines declining drop dropped drops associated linked caused causes "
+    "outperformed predicted effective efficacy".split()) | frozenset(
+        _CERTAINTY_ROOTS)
+_FINDING_CUES = _LEFTOVER_CUES | _REPORTING_CUES
+_EFFECT_WORDS = frozenset(
+    "change changes changed effect effects difference differences differ "
+    "differed association associations benefit benefits impact "
+    "impacts".split())
+_HEDGE_MODALS = frozenset({"may", "might", "could"})
+_RESULT_INFINITIVES = frozenset(
+    "shown found proven known likely able said reported demonstrated "
+    "thought believed".split())
+_RESEARCH_VERBS = frozenset(
+    "determine test examine assess investigate establish clarify".split())
+_OPEN_QUESTION_RE = re.compile(
+    r"\b(?:remains?|is|are|was) (?:unknown|unclear|untested|uncertain)\b"
+    r"|\bhas not been (?:tested|established)\b")
+_QUESTION_RE = re.compile(
+    r"^(?:do|does|did|can|could|is|are|was|were|will|would|should)\b[^?]*\?$")
+
+
+def _cue_tokens(text_norm: str) -> list[str]:
+  return re.findall(
+      r"[a-z]+", text_norm.replace("n't", " not").replace("cannot", "can not"))
+
+
+def _hedged(tokens: list[str], index: int, text_norm: str) -> bool:
+  if _HEDGE_MODALS.intersection(tokens[max(0, index - 2):index]):
+    return True
+  if (index and tokens[index - 1] == "to"
+      and (index < 2 or tokens[index - 2] not in _RESULT_INFINITIVES)):
+    return True
+  whether = [position for position in range(max(0, index - 6), index)
+             if tokens[position] == "whether"]
+  if not whether:
+    return False
+  start = whether[-1]
+  return bool(_RESEARCH_VERBS.intersection(tokens[max(0, start - 3):start])
+              or _OPEN_QUESTION_RE.search(text_norm))
+
+
+def _live_cues(tokens: list[str], text_norm: str, vocabulary) -> list[int]:
+  if _QUESTION_RE.match(text_norm):
+    return []
+  return [index for index, token in enumerate(tokens)
+          if token in vocabulary and not _hedged(tokens, index, text_norm)]
+
+
+def _certainty_roots(text_norm: str) -> frozenset[str]:
+  tokens = _cue_tokens(text_norm)
+  return frozenset(
+      _CERTAINTY_ROOTS[tokens[index]]
+      for index in _live_cues(tokens, text_norm, _CERTAINTY_ROOTS)
+      if not ({"not", "never"}.intersection(tokens[max(0, index - 2):index])
+              and "only" not in tokens[max(0, index - 2):index + 3]))
+
+
+def _states_finding(text_norm: str, cues=_FINDING_CUES) -> bool:
+  tokens = _cue_tokens(text_norm)
+  return bool(_live_cues(tokens, text_norm, cues)
+              or (_NEGATION_RE.search(text_norm)
+                  and _live_cues(tokens, text_norm, _EFFECT_WORDS)))
+
+
+def _leftover_states_finding(sent_norm: str, claim_texts: list[str]) -> bool:
+  tokens = _cue_tokens(sent_norm)
+  covered = [False] * len(tokens)
+  for claim_text in claim_texts:
+    matcher = difflib.SequenceMatcher(
+        None, _cue_tokens(claim_text), tokens, autojunk=False)
+    for tag, _i1, _i2, j1, j2 in matcher.get_opcodes():
+      if tag in ("equal", "replace"):
+        covered[j1:j2] = [True] * (j2 - j1)
+  return any(
+      _states_finding(" ".join(token for token, _ in run), _LEFTOVER_CUES)
+      for is_covered, run in itertools.groupby(
+          zip(tokens, covered), key=lambda pair: pair[1])
+      if not is_covered)
+
+
+def _wording_gap(sent_norm: str, matching: list[dict]) -> str | None:
+  if (all(item["role"] == "background" for item in matching)
+      and _states_finding(sent_norm)):
+    return "coverage_background_finding"
+  if _certainty_roots(sent_norm) - frozenset().union(
+      *(_certainty_roots(item["text"]) for item in matching)):
+    return "coverage_unsupported_certainty"
+  if _leftover_states_finding(sent_norm, [item["text"] for item in matching]):
+    return "coverage_leftover_finding"
+  return None
+
+
 _QUANTIFIER_RE = re.compile(
     r"\b(?:more|less|fewer|greater)\s+than\s+[-+]?[\d.,]*\d")
 
@@ -940,12 +1046,17 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
     sentence_numbers = collections.Counter(_prose_numbers(sent_norm))
     if not sentence_keys:
       if sentence_numbers:
-        gaps.append({
-            "sentence": sentence.strip(),
-            "synthesis_sentence_index": sentence_index,
-            "citation_key": None,
-            "reason_code": "coverage_number_missing",
-        })
+        reason = "coverage_number_missing"
+      elif _certainty_roots(sent_norm):
+        reason = "coverage_uncited_assertion"
+      else:
+        continue
+      gaps.append({
+          "sentence": sentence.strip(),
+          "synthesis_sentence_index": sentence_index,
+          "citation_key": None,
+          "reason_code": reason,
+      })
       continue
     sent_polarity = _polarity(sent_norm)
     for key in sorted(sentence_keys):
@@ -969,7 +1080,9 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
             or _misbound_numbers(sent_norm, bindings)):
           reason = "coverage_number_missing"
         else:
-          continue
+          reason = _wording_gap(sent_norm, matching)
+          if reason is None:
+            continue
       gaps.append({
           "sentence": sentence.strip(),
           "synthesis_sentence_index": sentence_index,

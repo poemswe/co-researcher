@@ -13,6 +13,8 @@ COUNTEREXAMPLES = ("polarity-reversal", "uncited-qualitative",
                    "background-role", "number-swap")
 CAUGHT = {"polarity-reversal": "claim_needs_review",
           "number-swap": "coverage_number_missing"}
+FLAGGED = {"uncited-qualitative": "coverage_needs_review",
+           "background-role": "coverage_needs_review"}
 
 
 def _validate(workspace, tmp_path, returncode=0):
@@ -26,7 +28,8 @@ def _validate(workspace, tmp_path, returncode=0):
 
 
 @pytest.mark.parametrize("name", ("base",) + tuple(
-    name for name in COUNTEREXAMPLES if name not in CAUGHT))
+    name for name in COUNTEREXAMPLES
+    if name not in CAUGHT and name not in FLAGGED))
 def test_counterexample_workspaces_pass_the_gate(name, tmp_path):
   report = _validate(EVIDENCE / "counterexamples" / name, tmp_path)
 
@@ -40,6 +43,14 @@ def test_fixed_counterexample_no_longer_passes(name, reason_code, tmp_path):
   report = _validate(EVIDENCE / "counterexamples" / name, tmp_path, 1)
 
   assert report["status"] == "invalid"
+  assert reason_code in report["repair_feedback"]["reason_codes"]
+
+
+@pytest.mark.parametrize("name, reason_code", FLAGGED.items())
+def test_flagged_counterexample_needs_review(name, reason_code, tmp_path):
+  report = _validate(EVIDENCE / "counterexamples" / name, tmp_path)
+
+  assert report["status"] == "valid_with_warnings"
   assert reason_code in report["repair_feedback"]["reason_codes"]
 
 
