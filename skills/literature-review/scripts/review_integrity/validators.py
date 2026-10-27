@@ -153,6 +153,7 @@ def claim_findings(report: dict) -> tuple[Finding, ...]:
       "coverage_number_missing": ReasonCode.COVERAGE_NUMBER_MISSING,
       "coverage_role_invalid": ReasonCode.COVERAGE_ROLE_INVALID,
       "coverage_identity_missing": ReasonCode.COVERAGE_CLAIM_MISSING,
+      "coverage_negation_conflict": ReasonCode.COVERAGE_CLAIM_MISSING,
   }
   review_messages = {
       "coverage_uncited_assertion":
@@ -167,6 +168,9 @@ def claim_findings(report: dict) -> tuple[Finding, ...]:
       "coverage_leftover_finding":
           "part of the sentence states a finding no matching claim covers; "
           "cite a claim for it or split it into its own sentence",
+      "coverage_negation_unaligned":
+          "a negation in the sentence does not line up with its matching "
+          "claim; use the claim's wording or split the sentence",
   }
   for index, result in enumerate(results):
     if not isinstance(result, dict):

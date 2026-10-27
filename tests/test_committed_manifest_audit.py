@@ -89,11 +89,13 @@ def test_audit_is_deterministic_and_reads_only_index_and_listed_manifests(
     return descriptor
 
   def recording_fstat(descriptor):
-    descriptor_operations.append(("fstat", descriptor_names[descriptor]))
+    if descriptor in descriptor_names:
+      descriptor_operations.append(("fstat", descriptor_names[descriptor]))
     return real_fstat(descriptor)
 
   def recording_read(descriptor, size):
-    descriptor_operations.append(("read", descriptor_names[descriptor]))
+    if descriptor in descriptor_names:
+      descriptor_operations.append(("read", descriptor_names[descriptor]))
     return real_read(descriptor, size)
 
   monkeypatch.setattr(os, "open", recording_open)

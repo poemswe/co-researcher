@@ -850,6 +850,92 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
   return len(_NEGATION_RE.findall(text_norm)) % 2, poles
 
 
+_NEGATION_TOKENS = frozenset("no not never neither nor none without".split())
+
+
+def _token_span(claim_tokens: list[str], sent_tokens: list[str]) -> set[int]:
+  return {position
+          for lo in range(len(sent_tokens) - len(claim_tokens) + 1)
+          if sent_tokens[lo:lo + len(claim_tokens)] == claim_tokens
+          for position in range(lo, lo + len(claim_tokens))}
+
+
+def _claim_windows(claim_tokens: list[str], sent_tokens: list[str],
+                   taken: set[int]) -> tuple[float, list[tuple[int, int]]]:
+  scored = []
+  for length in range(max(1, len(claim_tokens) - 2), len(claim_tokens) + 3):
+    for lo in range(max(1, len(sent_tokens) - length + 1)):
+      hi = min(lo + length, len(sent_tokens))
+      if not taken.intersection(range(lo, hi)):
+        scored.append((difflib.SequenceMatcher(
+            None, claim_tokens, sent_tokens[lo:hi], autojunk=False).ratio(),
+            lo, hi))
+  best = max((ratio for ratio, _lo, _hi in scored), default=0.0)
+  return best, sorted({(lo, hi) for ratio, lo, hi in scored if ratio == best})
+
+
+def _negation_count(tokens: list[str]) -> int:
+  return sum(token in _NEGATION_TOKENS for token in tokens)
+
+
+def _window_conflicts(claim_tokens: list[str], sent_tokens: list[str],
+                      lo: int, hi: int) -> tuple[set[int], list[bool]]:
+  opcodes = difflib.SequenceMatcher(
+      None, claim_tokens, sent_tokens[lo:hi], autojunk=False).get_opcodes()
+  equal, conflicts = set(), []
+  for index, (tag, i1, i2, j1, j2) in enumerate(opcodes):
+    if tag == "equal":
+      equal.update(range(lo + j1, lo + j2))
+    elif (_negation_count(claim_tokens[i1:i2])
+          != _negation_count(sent_tokens[lo + j1:lo + j2])):
+      conflicts.append(
+          i2 - i1 <= 1 and j2 - j1 <= 1 and 0 < index < len(opcodes) - 1
+          and opcodes[index - 1][0] == opcodes[index + 1][0] == "equal")
+  return equal, conflicts
+
+
+def _negation_verdict(sent_norm: str, claim_texts: list[str],
+                      explained: bool = False) -> str | None:
+  sent_tokens = _cue_tokens(sent_norm)
+  claims = [_cue_tokens(text) for text in claim_texts]
+  owned = [_token_span(claim_tokens, sent_tokens) for claim_tokens in claims]
+
+  def windows_for(index):
+    taken = set().union(*owned[:index], *owned[index + 1:])
+    ratio, windows = _claim_windows(claims[index], sent_tokens, taken)
+    if ratio < _COVERAGE_MATCH_THRESHOLD:
+      return []
+    return [(set(range(lo, hi)), *_window_conflicts(
+        claims[index], sent_tokens, lo, hi)) for lo, hi in windows]
+
+  aligned = set().union(*owned)
+  pending = []
+  for index in range(len(claims)):
+    if owned[index]:
+      continue
+    results = windows_for(index)
+    if results and not any(conflicts for _, _, conflicts in results):
+      owned[index] = set.intersection(*(span for span, _, _ in results))
+      aligned |= set.intersection(*(equal for _, equal, _ in results))
+    elif results:
+      pending.append(index)
+  verdict = None
+  for index in pending:
+    results = windows_for(index)
+    if not results:
+      continue
+    aligned |= set.intersection(*(equal for _, equal, _ in results))
+    if all(any(conflicts) for _, _, conflicts in results):
+      return "critical"
+    if any(conflicts for _, _, conflicts in results):
+      verdict = "warning"
+  if not explained and any(
+      token in _NEGATION_TOKENS and position not in aligned
+      for position, token in enumerate(sent_tokens)):
+    return "warning"
+  return verdict
+
+
 _CERTAINTY_ROOTS = {
     "conclusively": "conclusive", "definitively": "definitive",
     "undoubtedly": "undoubted", "eliminates": "eliminate",
@@ -1059,12 +1145,25 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
       })
       continue
     sent_polarity = _polarity(sent_norm)
+    parts = [part.strip(" .!?") for part in re.split(r"\band\b", sent_norm)]
     for key in sorted(sentence_keys):
-      matching = [item for item in claim_data
-                  if key in item["keys"]
-                  and _claim_text_matches(item["text"], sent_norm)
+      keyed = [item for item in claim_data if key in item["keys"]]
+      matching = [item for item in keyed
+                  if _claim_text_matches(item["text"], sent_norm)
                   and _polarity(item["text"]) == sent_polarity]
-      if not matching:
+      exact = {item["text"].strip(" .!?"): item for item in keyed}
+      if len(parts) > 1 and all(len(part) >= 30 and part in exact
+                                for part in parts):
+        matching += [exact[part] for part in parts
+                     if exact[part] not in matching]
+      sent_negations = _negation_count(_cue_tokens(sent_norm))
+      negation = _negation_verdict(
+          sent_norm, [item["text"] for item in keyed],
+          any(_negation_count(_cue_tokens(item["text"])) == sent_negations
+              for item in matching))
+      if negation == "critical":
+        reason = "coverage_negation_conflict"
+      elif not matching:
         reason = "coverage_identity_missing"
       elif sentence_numbers and any(item["role"] == "background"
                                     for item in matching):
@@ -1080,7 +1179,8 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
             or _misbound_numbers(sent_norm, bindings)):
           reason = "coverage_number_missing"
         else:
-          reason = _wording_gap(sent_norm, matching)
+          reason = _wording_gap(sent_norm, matching) or (
+              "coverage_negation_unaligned" if negation else None)
           if reason is None:
             continue
       gaps.append({

@@ -162,6 +162,9 @@ def test_other_coverage_reasons_map_stably(validator_reason, stable_reason):
     ("coverage_leftover_finding",
      "part of the sentence states a finding no matching claim covers; cite a "
      "claim for it or split it into its own sentence"),
+    ("coverage_negation_unaligned",
+     "a negation in the sentence does not line up with its matching claim; "
+     "use the claim's wording or split the sentence"),
 ])
 def test_review_coverage_reasons_are_repairable_warnings(
     validator_reason, message):
@@ -172,6 +175,14 @@ def test_review_coverage_reasons_are_repairable_warnings(
   assert (finding.reason_code, finding.severity, finding.message) == (
       ReasonCode.COVERAGE_NEEDS_REVIEW, Severity.WARNING, message)
   assert ReasonCode.COVERAGE_NEEDS_REVIEW in REPAIRABLE_WARNINGS
+
+
+def test_negation_conflict_is_a_critical_missing_claim():
+  finding = _validators().claim_findings(_claim_report([_claim_result(
+      "uncovered_claim", reason_code="coverage_negation_conflict",
+      synthesis_sentence_index=0)]))[0]
+  assert (finding.reason_code, finding.severity) == (
+      ReasonCode.COVERAGE_CLAIM_MISSING, Severity.CRITICAL)
 
 
 @pytest.mark.parametrize("index", [True, False, -1, "0", None])
