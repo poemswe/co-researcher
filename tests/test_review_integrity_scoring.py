@@ -299,6 +299,67 @@ def test_mismatched_coverage_identity_context_fails_dimension_closed(tmp_path):
   assert report.dimensions["synthesis_coverage"].score == 0.0
 
 
+def _review_finding(sentence, index, identity):
+  return _finding(
+      ReasonCode.COVERAGE_NEEDS_REVIEW,
+      context={
+          "synthesis_sentence": sentence,
+          "synthesis_sentence_index": index,
+          "citation_identity": identity,
+      },
+  )
+
+
+_CITED = "Readmissions fell 18% in the treatment arm (Patel, 2022)."
+_UNCITED = "This treatment conclusively cures readmissions."
+_PATEL_KEY = next(iter(check_claims.citation_keys("Patel, 2022")))
+
+
+def _scores(report):
+  return {name: d.score for name, d in report.dimensions.items()}
+
+
+def test_cited_review_warning_fails_its_unit(tmp_path):
+  snapshot = _snapshot(tmp_path, synthesis=f"{_CITED} {_UNCITED}")
+  report = score_integrity(snapshot, (
+      _review_finding(_CITED, 0, _PATEL_KEY),))
+  dimension = report.dimensions["synthesis_coverage"]
+  assert (dimension.evaluated_units, dimension.passed_units) == (1, 0)
+
+
+def test_uncited_review_warning_changes_no_score(tmp_path):
+  snapshot = _snapshot(tmp_path, synthesis=f"{_CITED} {_UNCITED}")
+  report = score_integrity(snapshot, (
+      _review_finding(_UNCITED, 1, None),))
+  assert _scores(report) == _scores(score_integrity(snapshot, ()))
+  assert report.status.value == "valid_with_warnings"
+  assert report.repair_required
+
+
+@pytest.mark.parametrize(("sentence", "index", "identity"), [
+    (_CITED, 0, None),
+    (_UNCITED, 1, _PATEL_KEY),
+    ("Different sentence.", 1, None),
+    (_UNCITED, 7, None),
+])
+def test_malformed_review_warning_fails_coverage_closed(
+    tmp_path, sentence, index, identity):
+  snapshot = _snapshot(tmp_path, synthesis=f"{_CITED} {_UNCITED}")
+  baseline = _scores(score_integrity(snapshot, ()))
+  report = _scores(score_integrity(snapshot, (
+      _review_finding(sentence, index, identity),)))
+  assert report == {**baseline, "synthesis_coverage": 0.0}
+
+
+def test_malformed_critical_coverage_zeroes_only_coverage(tmp_path):
+  sentence = "An unsupported finding appears here (Lee, 2021)."
+  snapshot = _snapshot(tmp_path, synthesis=f"{sentence} {sentence}")
+  baseline = _scores(score_integrity(snapshot, ()))
+  report = _scores(score_integrity(snapshot, (
+      _coverage_finding(sentence, -1),)))
+  assert report == {**baseline, "synthesis_coverage": 0.0}
+
+
 def test_zero_numeric_claims_are_not_applicable_and_weights_renormalize(
     tmp_path,
 ):
