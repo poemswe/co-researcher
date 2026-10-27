@@ -1227,7 +1227,7 @@ def _lumen(*texts, role="evidence"):
      "mood (Lumen, 2024).",
      _lumen("the trial found no change in recall",
             "the trial found no change in mood")),
-    ("warning:coverage_negation_unaligned",
+    ("pass",
      "Readmissions never fell in the treatment arm (Lumen, 2024).",
      _lumen("Readmissions did not fall in the treatment arm")),
     ("critical:coverage_negation_conflict",
@@ -1237,6 +1237,33 @@ def _lumen(*texts, role="evidence"):
      "The amber garden trial found change in recall (Lumen, 2024; "
      "Patel, 2022).",
      _lumen(_AMBER) + [{"claim": _AMBER, "citation": "Patel, 2022"}]),
+    ("pass", "The drug had no effect on the pain at 30 days (Lumen, 2024).",
+     _lumen("The drug had no effect on pain at 30 days",
+            "The drug had an effect on pain at 90 days")),
+    ("pass",
+     "The reading program had no effect on the fluency scores among boys in "
+     "the third grade cohort (Lumen, 2024).",
+     _lumen("The reading program had no effect on fluency scores among boys "
+            "in the third grade cohort",
+            "The reading program had an effect on fluency scores among girls "
+            "in the third grade cohort")),
+    ("pass",
+     "Mortality did not differ between the groups at 30 days (Lumen, 2024).",
+     _lumen("Mortality did not differ between groups at 30 days",
+            "Mortality did differ between groups at 90 days")),
+    ("pass",
+     "Participants show no reductions in anxiety score (Lumen, 2024).",
+     _lumen("Participants showed no reduction in anxiety scores")),
+    ("pass",
+     "The drug did not lower pain at 30 days in the trial (Lumen, 2024).",
+     _lumen("The drug did not reduce pain at 30 days in the trial",
+            "The drug reduced pain at 90 days in the trial")),
+    ("pass",
+     f"{_AMBER}, while the ivory harbor study found a change in recall "
+     "(Lumen, 2024).", _lumen(_AMBER, _IVORY)),
+    ("pass",
+     f"{_AMBER} and the ivory harbor trial found a change (Lumen, 2024).",
+     _lumen(_AMBER, _IVORY)),
     ("critical:coverage_identity_missing",
      "The amber garden trial found that recall remained unchanged "
      "(Lumen, 2024).",
@@ -1390,6 +1417,20 @@ def test_window_conflicts(claim, window, conflicts):
 ])
 def test_negation_verdict(sentence, claims, verdict):
   assert cc._negation_verdict(sentence, claims) == verdict
+
+
+def test_negation_verdict_clean_claim_owns_its_window():
+  assert cc._negation_verdict(
+      "the drug had no effect on the pain at days",
+      ["the drug had no effect on pain at days",
+       "the drug had an effect on pain at days"]) is None
+
+
+def test_negation_verdict_explained_negation_is_aligned():
+  sentence = "participants show no reductions in anxiety score"
+  claims = ["participants showed no reduction in anxiety scores"]
+  assert cc._negation_verdict(sentence, claims) == "warning"
+  assert cc._negation_verdict(sentence, claims, explained=True) is None
 
 
 def test_negation_verdict_verbatim_claim_repeated():

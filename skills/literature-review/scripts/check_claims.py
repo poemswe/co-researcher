@@ -894,28 +894,44 @@ def _window_conflicts(claim_tokens: list[str], sent_tokens: list[str],
   return equal, conflicts
 
 
-def _negation_verdict(sent_norm: str, claim_texts: list[str]) -> str | None:
+def _negation_verdict(sent_norm: str, claim_texts: list[str],
+                      explained: bool = False) -> str | None:
   sent_tokens = _cue_tokens(sent_norm)
   claims = [_cue_tokens(text) for text in claim_texts]
-  spans = [_token_span(claim_tokens, sent_tokens) for claim_tokens in claims]
-  aligned = set().union(*spans)
-  verdict = None
-  for index, claim_tokens in enumerate(claims):
-    if spans[index]:
-      continue
-    taken = set().union(*spans[:index], *spans[index + 1:])
-    ratio, windows = _claim_windows(claim_tokens, sent_tokens, taken)
+  owned = [_token_span(claim_tokens, sent_tokens) for claim_tokens in claims]
+
+  def windows_for(index):
+    taken = set().union(*owned[:index], *owned[index + 1:])
+    ratio, windows = _claim_windows(claims[index], sent_tokens, taken)
     if ratio < _COVERAGE_MATCH_THRESHOLD:
+      return []
+    return [(set(range(lo, hi)), *_window_conflicts(
+        claims[index], sent_tokens, lo, hi)) for lo, hi in windows]
+
+  aligned = set().union(*owned)
+  pending = []
+  for index in range(len(claims)):
+    if owned[index]:
       continue
-    results = [_window_conflicts(claim_tokens, sent_tokens, lo, hi)
-               for lo, hi in windows]
-    aligned |= set.intersection(*(equal for equal, _ in results))
-    if all(any(conflicts) for _, conflicts in results):
+    results = windows_for(index)
+    if results and not any(conflicts for _, _, conflicts in results):
+      owned[index] = set.intersection(*(span for span, _, _ in results))
+      aligned |= set.intersection(*(equal for _, equal, _ in results))
+    elif results:
+      pending.append(index)
+  verdict = None
+  for index in pending:
+    results = windows_for(index)
+    if not results:
+      continue
+    aligned |= set.intersection(*(equal for _, equal, _ in results))
+    if all(any(conflicts) for _, _, conflicts in results):
       return "critical"
-    if any(conflicts for _, conflicts in results):
+    if any(conflicts for _, _, conflicts in results):
       verdict = "warning"
-  if any(token in _NEGATION_TOKENS and position not in aligned
-         for position, token in enumerate(sent_tokens)):
+  if not explained and any(
+      token in _NEGATION_TOKENS and position not in aligned
+      for position, token in enumerate(sent_tokens)):
     return "warning"
   return verdict
 
@@ -1140,7 +1156,11 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
                                 for part in parts):
         matching += [exact[part] for part in parts
                      if exact[part] not in matching]
-      negation = _negation_verdict(sent_norm, [item["text"] for item in keyed])
+      sent_negations = _negation_count(_cue_tokens(sent_norm))
+      negation = _negation_verdict(
+          sent_norm, [item["text"] for item in keyed],
+          any(_negation_count(_cue_tokens(item["text"])) == sent_negations
+              for item in matching))
       if negation == "critical":
         reason = "coverage_negation_conflict"
       elif not matching:
