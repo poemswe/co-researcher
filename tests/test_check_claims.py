@@ -1260,6 +1260,83 @@ def test_coverage_rejects_reversed_comparative():
   assert [gap["reason_code"] for gap in gaps] == ["coverage_identity_missing"]
 
 
+def _toks(text):
+  return cc._cue_tokens(text)
+
+
+def test_token_span_covers_every_verbatim_occurrence():
+  assert cc._token_span(_toks("b c"), _toks("a b c b c")) == {1, 2, 3, 4}
+  assert cc._token_span(_toks("b d"), _toks("a b c")) == set()
+
+
+def test_claim_windows_returns_every_tied_window():
+  ratio, windows = cc._claim_windows(
+      _toks("found no change in recall"),
+      _toks("x found a change in recall y found no shift in recall"), set())
+  assert (ratio, windows) == (0.8, [(1, 6), (7, 12)])
+
+
+def test_claim_windows_skips_taken_positions():
+  _ratio, windows = cc._claim_windows(
+      _toks("found no change in recall"),
+      _toks("x found a change in recall y found no shift in recall"),
+      set(range(1, 6)))
+  assert windows == [(7, 12)]
+
+
+def test_claim_windows_short_claim():
+  ratio, windows = cc._claim_windows(_toks("no"), _toks("a b"), set())
+  assert ratio == 0.0 and windows
+
+
+@pytest.mark.parametrize(("claim", "window", "conflicts"), [
+    ("readmissions fell in the arm", "readmissions never fell in the arm",
+     [True]),
+    ("found no change in recall", "found change in recall", [True]),
+    ("found no change in recall", "found a change in recall", [True]),
+    ("did not fall in the arm", "never fell in the arm", []),
+    ("readmissions fell in the arm", "no readmissions fell in the arm",
+     [False]),
+    ("recall did not change", "recall remained unchanged", [False]),
+])
+def test_window_conflicts(claim, window, conflicts):
+  sent = _toks(window)
+  _equal, found = cc._window_conflicts(_toks(claim), sent, 0, len(sent))
+  assert found == conflicts
+
+
+@pytest.mark.parametrize(("sentence", "claims", "verdict"), [
+    ("the trial found a change in recall",
+     ["the trial found no change in recall"], "critical"),
+    ("x found a change in recall y found a change in recall",
+     ["found no change in recall"], "critical"),
+    ("x found a change in recall y found no shift in recall",
+     ["found no change in recall"], "warning"),
+    ("it is not true that the trial found no change in recall",
+     ["the trial found no change in recall"], "warning"),
+    ("the trial found no change in recall",
+     ["the trial found no change in recall",
+      "the trial found a change in recall later"], None),
+    ("the trial found a change in recall and the trial found no change in "
+     "mood", ["the trial found no change in recall",
+              "the trial found no change in mood"], "critical"),
+    ("the trial found no change in recall", ["unrelated words here"],
+     "warning"),
+    ("the trial found an effect", ["unrelated words here"], None),
+])
+def test_negation_verdict(sentence, claims, verdict):
+  assert cc._negation_verdict(sentence, claims) == verdict
+
+
+def test_negation_verdict_verbatim_claim_repeated():
+  claim = "the trial found no change in recall"
+  assert cc._negation_verdict(f"{claim} and {claim}", [claim]) is None
+
+
+def test_negation_verdict_empty_sentence():
+  assert cc._negation_verdict("", ["the trial found no change"]) is None
+
+
 def test_split_sentences_keeps_headings_out_of_sentences():
   synthesis = ("# Review\n\n## 2. Results\n\n### Immediate performance: a "
                "positive signal\n\nReadmissions fell 18% (Patel, 2022). "

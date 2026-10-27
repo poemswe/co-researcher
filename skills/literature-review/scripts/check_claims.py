@@ -850,6 +850,76 @@ def _polarity(text_norm: str) -> tuple[int, frozenset[str]]:
   return len(_NEGATION_RE.findall(text_norm)) % 2, poles
 
 
+_NEGATION_TOKENS = frozenset("no not never neither nor none without".split())
+
+
+def _token_span(claim_tokens: list[str], sent_tokens: list[str]) -> set[int]:
+  return {position
+          for lo in range(len(sent_tokens) - len(claim_tokens) + 1)
+          if sent_tokens[lo:lo + len(claim_tokens)] == claim_tokens
+          for position in range(lo, lo + len(claim_tokens))}
+
+
+def _claim_windows(claim_tokens: list[str], sent_tokens: list[str],
+                   taken: set[int]) -> tuple[float, list[tuple[int, int]]]:
+  scored = []
+  for length in range(max(1, len(claim_tokens) - 2), len(claim_tokens) + 3):
+    for lo in range(max(1, len(sent_tokens) - length + 1)):
+      hi = min(lo + length, len(sent_tokens))
+      if not taken.intersection(range(lo, hi)):
+        scored.append((difflib.SequenceMatcher(
+            None, claim_tokens, sent_tokens[lo:hi], autojunk=False).ratio(),
+            lo, hi))
+  best = max((ratio for ratio, _lo, _hi in scored), default=0.0)
+  return best, sorted({(lo, hi) for ratio, lo, hi in scored if ratio == best})
+
+
+def _negation_count(tokens: list[str]) -> int:
+  return sum(token in _NEGATION_TOKENS for token in tokens)
+
+
+def _window_conflicts(claim_tokens: list[str], sent_tokens: list[str],
+                      lo: int, hi: int) -> tuple[set[int], list[bool]]:
+  opcodes = difflib.SequenceMatcher(
+      None, claim_tokens, sent_tokens[lo:hi], autojunk=False).get_opcodes()
+  equal, conflicts = set(), []
+  for index, (tag, i1, i2, j1, j2) in enumerate(opcodes):
+    if tag == "equal":
+      equal.update(range(lo + j1, lo + j2))
+    elif (_negation_count(claim_tokens[i1:i2])
+          != _negation_count(sent_tokens[lo + j1:lo + j2])):
+      conflicts.append(
+          i2 - i1 <= 1 and j2 - j1 <= 1 and 0 < index < len(opcodes) - 1
+          and opcodes[index - 1][0] == opcodes[index + 1][0] == "equal")
+  return equal, conflicts
+
+
+def _negation_verdict(sent_norm: str, claim_texts: list[str]) -> str | None:
+  sent_tokens = _cue_tokens(sent_norm)
+  claims = [_cue_tokens(text) for text in claim_texts]
+  spans = [_token_span(claim_tokens, sent_tokens) for claim_tokens in claims]
+  aligned = set().union(*spans)
+  verdict = None
+  for index, claim_tokens in enumerate(claims):
+    if spans[index]:
+      continue
+    taken = set().union(*spans[:index], *spans[index + 1:])
+    ratio, windows = _claim_windows(claim_tokens, sent_tokens, taken)
+    if ratio < _COVERAGE_MATCH_THRESHOLD:
+      continue
+    results = [_window_conflicts(claim_tokens, sent_tokens, lo, hi)
+               for lo, hi in windows]
+    aligned |= set.intersection(*(equal for equal, _ in results))
+    if all(any(conflicts) for _, conflicts in results):
+      return "critical"
+    if any(conflicts for _, conflicts in results):
+      verdict = "warning"
+  if any(token in _NEGATION_TOKENS and position not in aligned
+         for position, token in enumerate(sent_tokens)):
+    return "warning"
+  return verdict
+
+
 _CERTAINTY_ROOTS = {
     "conclusively": "conclusive", "definitively": "definitive",
     "undoubtedly": "undoubted", "eliminates": "eliminate",
