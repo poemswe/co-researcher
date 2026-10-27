@@ -1129,12 +1129,21 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
       })
       continue
     sent_polarity = _polarity(sent_norm)
+    parts = [part.strip(" .!?") for part in re.split(r"\band\b", sent_norm)]
     for key in sorted(sentence_keys):
-      matching = [item for item in claim_data
-                  if key in item["keys"]
-                  and _claim_text_matches(item["text"], sent_norm)
+      keyed = [item for item in claim_data if key in item["keys"]]
+      matching = [item for item in keyed
+                  if _claim_text_matches(item["text"], sent_norm)
                   and _polarity(item["text"]) == sent_polarity]
-      if not matching:
+      exact = {item["text"].strip(" .!?"): item for item in keyed}
+      if len(parts) > 1 and all(len(part) >= 30 and part in exact
+                                for part in parts):
+        matching += [exact[part] for part in parts
+                     if exact[part] not in matching]
+      negation = _negation_verdict(sent_norm, [item["text"] for item in keyed])
+      if negation == "critical":
+        reason = "coverage_negation_conflict"
+      elif not matching:
         reason = "coverage_identity_missing"
       elif sentence_numbers and any(item["role"] == "background"
                                     for item in matching):
@@ -1150,7 +1159,8 @@ def coverage_gaps(synthesis: str, claims: list, results: list) -> list[dict]:
             or _misbound_numbers(sent_norm, bindings)):
           reason = "coverage_number_missing"
         else:
-          reason = _wording_gap(sent_norm, matching)
+          reason = _wording_gap(sent_norm, matching) or (
+              "coverage_negation_unaligned" if negation else None)
           if reason is None:
             continue
       gaps.append({

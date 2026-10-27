@@ -1065,7 +1065,8 @@ def test_background_cannot_cover_numbered_sentence():
 
 
 _REVIEW_GAPS = {"coverage_uncited_assertion", "coverage_background_finding",
-                "coverage_unsupported_certainty", "coverage_leftover_finding"}
+                "coverage_unsupported_certainty", "coverage_leftover_finding",
+                "coverage_negation_unaligned"}
 
 
 def _gate(synthesis, claims):
@@ -1085,6 +1086,12 @@ _PATEL = [{"claim": "Readmissions fell 18% in the treatment arm",
            "citation": "Patel, 2022"}]
 _PATEL_FIRST = "Readmissions fell 18% in the treatment arm (Patel, 2022). "
 _AMBER = "The amber garden trial found no change in recall"
+_IVORY = "the ivory harbor trial found no change in recall"
+_LUMEN = "Lumen, 2024"
+
+
+def _lumen(*texts, role="evidence"):
+  return [{"claim": text, "citation": _LUMEN, "role": role} for text in texts]
 
 
 @pytest.mark.parametrize(("expected", "synthesis", "claims"), [
@@ -1103,7 +1110,7 @@ _AMBER = "The amber garden trial found no change in recall"
      "learners (Lumen, 2024).",
      [{"claim": "Guided sessions in the amber garden trial may prevent "
                 "forgetting among learners", "citation": "Lumen, 2024"}]),
-    ("critical:coverage_identity_missing",
+    ("critical:coverage_negation_conflict",
      "The amber garden method is proven to aid recall among learners "
      "(Lumen, 2024).",
      [{"claim": "The amber garden method is not proven to aid recall among "
@@ -1166,7 +1173,7 @@ _AMBER = "The amber garden trial found no change in recall"
        "citation": "Lumen, 2024"}]),
     ("pass", f"{_AMBER} overall (Lumen, 2024).",
      [{"claim": f"{_AMBER}.", "citation": "Lumen, 2024"}]),
-    ("critical:coverage_identity_missing",
+    ("pass",
      f"{_AMBER} and the ivory harbor trial found no change in recall "
      "(Lumen, 2024).",
      [{"claim": _AMBER, "citation": "Lumen, 2024"},
@@ -1184,6 +1191,59 @@ _AMBER = "The amber garden trial found no change in recall"
     ("critical:coverage_role_invalid",
      "Readmissions fell 18% in the treatment arm (Patel, 2022).",
      [{**_PATEL[0], "role": "background"}]),
+    ("pass",
+     "The amber garden trial increased recall and the ivory harbor trial "
+     "decreased errors (Lumen, 2024).",
+     _lumen("The amber garden trial increased recall",
+            "the ivory harbor trial decreased errors")),
+    ("pass",
+     "The amber garden trial increased recall and the ivory harbor trial did "
+     "not improve errors (Lumen, 2024).",
+     _lumen("The amber garden trial increased recall",
+            "the ivory harbor trial did not improve errors")),
+    ("critical:coverage_negation_conflict",
+     f"{_AMBER} and the ivory harbor trial found a change in recall "
+     "(Lumen, 2024).", _lumen(_AMBER, _IVORY)),
+    ("warning:coverage_negation_unaligned",
+     f"It is not true that {_AMBER.lower()} and {_IVORY} (Lumen, 2024).",
+     _lumen(_AMBER, _IVORY)),
+    ("critical:coverage_negation_conflict",
+     "The amber garden trial found change in recall (Lumen, 2024).",
+     _lumen(_AMBER)),
+    ("pass",
+     "Recall did not change in the amber trial and recall did not change in "
+     "the ivory trial (Lumen, 2024).",
+     _lumen("Recall did not change in the amber trial",
+            "recall did not change in the ivory trial")),
+    ("critical:coverage_negation_conflict",
+     "Recall did not change in the amber garden trial and recall did change "
+     "in the ivory harbor trial (Lumen, 2024).",
+     _lumen("Recall did not change in the amber garden trial",
+            "recall did not change in the ivory harbor trial")),
+    ("pass", f"{_AMBER} (Lumen, 2024).",
+     _lumen(_AMBER, "The amber garden trial found a change in recall later")),
+    ("critical:coverage_negation_conflict",
+     "The trial found a change in recall and the trial found no change in "
+     "mood (Lumen, 2024).",
+     _lumen("the trial found no change in recall",
+            "the trial found no change in mood")),
+    ("warning:coverage_negation_unaligned",
+     "Readmissions never fell in the treatment arm (Lumen, 2024).",
+     _lumen("Readmissions did not fall in the treatment arm")),
+    ("critical:coverage_negation_conflict",
+     "The amber garden trial found change in recall (Lumen, 2024).",
+     _lumen(_AMBER, role="background")),
+    ("critical:coverage_negation_conflict",
+     "The amber garden trial found change in recall (Lumen, 2024; "
+     "Patel, 2022).",
+     _lumen(_AMBER) + [{"claim": _AMBER, "citation": "Patel, 2022"}]),
+    ("critical:coverage_identity_missing",
+     "The amber garden trial found that recall remained unchanged "
+     "(Lumen, 2024).",
+     _lumen("The amber garden trial found that recall did not change")),
+    ("critical:coverage_identity_missing",
+     f"{_AMBER}, although attendance was not recorded (Lumen, 2024).",
+     _lumen(_AMBER)),
 ])
 def test_coverage_gate_outcomes(expected, synthesis, claims):
   assert _gate(synthesis, claims) == expected
@@ -1241,16 +1301,20 @@ def test_coverage_flags_number_without_parsed_citation(sentence):
       (1, None, "coverage_number_missing")]
 
 
-@pytest.mark.parametrize("sentence", [
-    "Readmissions did not fall in the treatment arm (Patel, 2022).",
-    "Readmissions never fell in the treatment arm (Patel, 2022).",
-    "No readmissions fell in the treatment arm (Patel, 2022).",
-    "Readmissions rose in the treatment arm (Patel, 2022).",
+@pytest.mark.parametrize(("sentence", "reason"), [
+    ("Readmissions did not fall in the treatment arm (Patel, 2022).",
+     "coverage_identity_missing"),
+    ("Readmissions never fell in the treatment arm (Patel, 2022).",
+     "coverage_negation_conflict"),
+    ("No readmissions fell in the treatment arm (Patel, 2022).",
+     "coverage_identity_missing"),
+    ("Readmissions rose in the treatment arm (Patel, 2022).",
+     "coverage_identity_missing"),
 ])
-def test_coverage_rejects_reversed_claim_polarity(sentence):
+def test_coverage_rejects_reversed_claim_polarity(sentence, reason):
   claims = [_entry(claim="Readmissions fell in the treatment arm.")]
   gaps = cc.coverage_gaps(sentence, claims, _trusted_results(claims))
-  assert [gap["reason_code"] for gap in gaps] == ["coverage_identity_missing"]
+  assert [gap["reason_code"] for gap in gaps] == [reason]
 
 
 def test_coverage_rejects_reversed_comparative():
