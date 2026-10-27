@@ -32,8 +32,4 @@ REASON_CODES = (
     "coverage_identity_missing",
     "coverage_number_missing",
     "coverage_role_invalid",
-    "coverage_uncited_assertion",
-    "coverage_background_finding",
-    "coverage_unsupported_certainty",
-    "coverage_leftover_finding",
 )
