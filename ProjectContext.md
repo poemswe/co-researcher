@@ -44,7 +44,7 @@ PR #29 (icaromol, Windows rate-limiter lock) has changes requested: a stale lock
 
 - **Coverage negation follow-ups (after #106).** #105 stays open for a reversed clause reworded below the 0.80 ratio. Not filed yet: the same parity flaw in claim-vs-quote `_polarity_risks`. Deferred minors: the negation check runs on sentences with no negation (2.5 s against 0.62 s on a stress test), the "and" fallback cannot split a claim containing "and", and "without any change" has no test row.
 - **`/paper/` gap list is stale.** #86-#92, #103 and #106 closed gaps it still lists. Editing the public pages needs the user's OK.
-- **Open issues.** #56-#59 (manuscript citations, Semantic Scholar, corpus diff, dual screening), #61 item 2, #75-#81 (#67 follow-ups). #67 is still open although all five steps merged in #68.
+- **Open issues.** #56-#59 (manuscript citations, Semantic Scholar, corpus diff, dual screening), #61 item 2, #75-#81 (#67 follow-ups). #67 closed 2026-10-28.
 - **Resolver follow-up (#61 item 2, not started).** The registry title check could move into `resolve_doi` as a step that returns candidate titles.
 - Decision pending on whether to merge `literature-review` and `systematic-review` into one skill with a rigor parameter. Currently kept separate (PRISMA distinction is meaningful).
 - **No multi-reviewer screening.** Covidence and Rayyan support two independent screeners with conflict adjudication, which real systematic reviews require. We have nothing there. Biggest honest capability gap vs incumbents.
